@@ -1,0 +1,606 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── USUARIOS ────────────────────────────────────────────
+model Usuario {
+  id            Int        @id @default(autoincrement())
+  nombre        String
+  apellido      String
+  email         String     @unique
+  passwordHash  String
+  telefono      String?
+  rol           RolUsuario
+  activo        Boolean    @default(true)
+  fechaCreacion DateTime   @default(now())
+
+  // Relaciones
+  clientes         Cliente[]
+  cotizaciones     Cotizacion[]
+  ventas           Venta[]
+  compras          Compra[]
+  listaPrecios     ListaPrecio[]
+  historialPrecios HistorialPrecio[]
+  movimientosStock MovimientoStock[]
+  logisticas       Logistica[]
+  facturas         Factura[]
+  pagos            PagoCobro[]
+  notasCredito     NotaCredito[]
+  pagosProveedores PagoProveedor[]
+  retirosParciales RetiroParcial[]
+  seguimientos     SeguimientoCotizacion[]
+
+  @@map("usuarios")
+}
+
+enum RolUsuario {
+  propietario_carlos
+  propietario_juancruz
+  admin
+}
+
+// ─── CLIENTES ────────────────────────────────────────────
+model Cliente {
+  id                Int           @id @default(autoincrement())
+  razonSocial       String
+  cuit              String?
+  nombreContacto    String?
+  telefonoContacto  String?
+  emailContacto     String?
+  canalEntrada      CanalEntrada?
+  usuarioAsignadoId Int
+  direccionEntrega  String?
+  localidad         String?
+  esExportador      Boolean       @default(false)
+  observaciones     String?
+  fechaAlta         DateTime      @default(now())
+  activo            Boolean       @default(true)
+
+  // Relaciones
+  usuarioAsignado Usuario       @relation(fields: [usuarioAsignadoId], references: [id])
+  cotizaciones    Cotizacion[]
+  ventas          Venta[]
+  facturas        Factura[]
+  pagos           PagoCobro[]
+  notasCredito    NotaCredito[]
+
+  @@map("clientes")
+}
+
+enum CanalEntrada {
+  whatsapp
+  formulario_web
+  llamada
+  recomendacion
+  otro
+}
+
+// ─── PRODUCTOS ───────────────────────────────────────────
+model Producto {
+  id             Int             @id @default(autoincrement())
+  nombre         String
+  tipo           TipoPallet
+  condicion      CondicionPallet
+  dimensionLargo Int?
+  dimensionAncho Int?
+  cargaMaximaKg  Int?
+  requiereSenasa Boolean         @default(false)
+  descripcion    String?
+  activo         Boolean         @default(true)
+
+  // Relaciones
+  prodProveedores    ProductoProveedor[]
+  listaPrecios       ListaPrecio[]
+  historialPrecios   HistorialPrecio[]
+  stocks             Stock[]
+  detallesCotizacion DetalleCotizacion[]
+  detallesVenta      DetalleVenta[]
+  detallesCompra     DetalleCompra[]
+
+  @@map("productos")
+}
+
+enum TipoPallet {
+  estandar
+  reforzado
+  liviano
+  exportacion
+  carton
+  a_medida
+}
+
+enum CondicionPallet {
+  nuevo
+  seminuevo
+  usado
+}
+
+// ─── PROVEEDORES ─────────────────────────────────────────
+model Proveedor {
+  id                  Int                   @id @default(autoincrement())
+  nombreEmpresa       String
+  nombreContacto      String
+  telefono            String?
+  email               String?
+  tipoProducto        TipoProductoProveedor
+  contactoExclusivoId Int?
+  distanciaKm         Int?
+  observaciones       String?
+  activo              Boolean               @default(true)
+
+  // Relaciones
+  prodProveedores ProductoProveedor[]
+  stocks          Stock[]
+  compras         Compra[]
+  pagos           PagoProveedor[]
+
+  @@map("proveedores")
+}
+
+enum TipoProductoProveedor {
+  seminuevo
+  nuevo_medida
+  ambos
+}
+
+// ─── PRODUCTO_PROVEEDOR ──────────────────────────────────
+model ProductoProveedor {
+  id                 Int      @id @default(autoincrement())
+  proveedorId        Int
+  productoId         Int
+  precioCosto        Decimal  @db.Decimal(12, 2)
+  fechaActualizacion DateTime @default(now())
+  observaciones      String?
+
+  proveedor Proveedor @relation(fields: [proveedorId], references: [id])
+  producto  Producto  @relation(fields: [productoId], references: [id])
+
+  @@map("producto_proveedor")
+}
+
+// ─── LISTA DE PRECIOS ────────────────────────────────────
+model ListaPrecio {
+  id             Int       @id @default(autoincrement())
+  productoId     Int
+  precioUnitario Decimal   @db.Decimal(12, 2)
+  margenPct      Decimal?  @db.Decimal(5, 2)
+  cantMinima     Int
+  cantMaxima     Int?
+  bonificaFlete  Boolean   @default(false)
+  vigentDesde    DateTime  @default(now())
+  vigentHasta    DateTime?
+  creadoPorId    Int
+  observaciones  String?
+
+  producto  Producto @relation(fields: [productoId], references: [id])
+  creadoPor Usuario  @relation(fields: [creadoPorId], references: [id])
+
+  @@map("lista_precios")
+}
+
+// ─── HISTORIAL DE PRECIOS ────────────────────────────────
+model HistorialPrecio {
+  id              Int      @id @default(autoincrement())
+  productoId      Int
+  precioAnterior  Decimal  @db.Decimal(12, 2)
+  precioNuevo     Decimal  @db.Decimal(12, 2)
+  motivo          String?
+  fechaCambio     DateTime @default(now())
+  registradoPorId Int
+
+  producto      Producto @relation(fields: [productoId], references: [id])
+  registradoPor Usuario  @relation(fields: [registradoPorId], references: [id])
+
+  @@map("historial_precios")
+}
+
+// ─── STOCK ───────────────────────────────────────────────
+model Stock {
+  id                  Int      @id @default(autoincrement())
+  productoId          Int
+  proveedorId         Int
+  cantidadDisponible  Int      @default(0)
+  cantidadMinima      Int?
+  ultimaActualizacion DateTime @updatedAt
+  observaciones       String?
+
+  producto    Producto          @relation(fields: [productoId], references: [id])
+  proveedor   Proveedor         @relation(fields: [proveedorId], references: [id])
+  movimientos MovimientoStock[]
+
+  @@unique([productoId, proveedorId])
+  @@map("stock")
+}
+
+// ─── MOVIMIENTOS DE STOCK ────────────────────────────────
+model MovimientoStock {
+  id              Int              @id @default(autoincrement())
+  stockId         Int
+  tipoMovimiento  TipoMovimiento
+  cantidad        Int
+  motivo          MotivoMovimiento
+  idReferencia    Int?
+  fecha           DateTime         @default(now())
+  registradoPorId Int
+
+  stock         Stock   @relation(fields: [stockId], references: [id])
+  registradoPor Usuario @relation(fields: [registradoPorId], references: [id])
+
+  @@map("movimientos_stock")
+}
+
+enum TipoMovimiento {
+  entrada
+  salida
+  ajuste
+}
+
+enum MotivoMovimiento {
+  venta
+  compra
+  devolucion
+  ajuste_manual
+}
+
+// ─── COTIZACIONES ────────────────────────────────────────
+model Cotizacion {
+  id               Int                   @id @default(autoincrement())
+  clienteId        Int
+  usuarioId        Int
+  fechaCotizacion  DateTime              @default(now())
+  fechaVencimiento DateTime?
+  estado           EstadoCotizacion      @default(enviada)
+  incluyeFlete     Boolean               @default(false)
+  costoFlete       Decimal?              @db.Decimal(12, 2)
+  fleteIncluido    Boolean               @default(true)
+  requiereSenasa   Boolean               @default(false)
+  costoSenasa      Decimal?              @db.Decimal(12, 2)
+  totalSinIva      Decimal?              @db.Decimal(12, 2)
+  totalConIva      Decimal?              @db.Decimal(12, 2)
+  canalEnvio       CanalEnvioCotizacion?
+  observaciones    String?
+
+  cliente      Cliente                 @relation(fields: [clienteId], references: [id])
+  usuario      Usuario                 @relation(fields: [usuarioId], references: [id])
+  detalles     DetalleCotizacion[]
+  venta        Venta?
+  seguimientos SeguimientoCotizacion[]
+
+  @@map("cotizaciones")
+}
+
+enum EstadoCotizacion {
+  enviada
+  en_seguimiento
+  aceptada
+  rechazada
+  perdida
+  vencida
+}
+
+enum CanalEnvioCotizacion {
+  whatsapp
+  email
+}
+
+// ─── DETALLE COTIZACION ──────────────────────────────────
+model DetalleCotizacion {
+  id             Int     @id @default(autoincrement())
+  cotizacionId   Int
+  productoId     Int
+  cantidad       Int
+  precioUnitario Decimal @db.Decimal(12, 2)
+  subtotal       Decimal @db.Decimal(12, 2)
+  esAMedida      Boolean @default(false)
+
+  cotizacion     Cotizacion            @relation(fields: [cotizacionId], references: [id])
+  producto       Producto              @relation(fields: [productoId], references: [id])
+  especificacion EspecificacionMedida?
+
+  @@map("detalle_cotizacion")
+}
+
+// ─── ESPECIFICACIONES A MEDIDA ───────────────────────────
+model EspecificacionMedida {
+  id                   Int     @id @default(autoincrement())
+  detalleCotizacionId  Int?    @unique
+  detalleVentaId       Int?    @unique
+  largoMm              Int?
+  anchoMm              Int?
+  altoMm               Int?
+  cargaMaximaKg        Int?
+  tipoMadera           String?
+  observacionesCliente String?
+
+  detalleCotizacion DetalleCotizacion? @relation(fields: [detalleCotizacionId], references: [id])
+  detalleVenta      DetalleVenta?      @relation(fields: [detalleVentaId], references: [id])
+
+  @@map("especificaciones_medida")
+}
+
+// ─── SEGUIMIENTO COTIZACION ──────────────────────────────
+model SeguimientoCotizacion {
+  id              Int                  @id @default(autoincrement())
+  cotizacionId    Int
+  usuarioId       Int
+  fechaContacto   DateTime             @default(now())
+  tipoContacto    TipoContacto
+  resultado       ResultadoSeguimiento
+  observaciones   String?
+  proximoContacto DateTime?
+
+  cotizacion Cotizacion @relation(fields: [cotizacionId], references: [id])
+  usuario    Usuario    @relation(fields: [usuarioId], references: [id])
+
+  @@map("seguimiento_cotizacion")
+}
+
+enum TipoContacto {
+  whatsapp
+  llamada
+  email
+  presencial
+}
+
+enum ResultadoSeguimiento {
+  sin_respuesta
+  interesado
+  no_interesado
+  cerrado
+  reprogramado
+}
+
+// ─── VENTAS ──────────────────────────────────────────────
+model Venta {
+  id                Int          @id @default(autoincrement())
+  cotizacionId      Int?         @unique
+  clienteId         Int
+  usuarioId         Int
+  fechaVenta        DateTime     @default(now())
+  estadoPedido      EstadoPedido @default(confirmado)
+  tipoEntrega       TipoEntrega
+  requiereSenasa    Boolean      @default(false)
+  fechaEstimEntrega DateTime?
+  fechaEntregaReal  DateTime?
+  totalSinIva       Decimal?     @db.Decimal(12, 2)
+  totalConIva       Decimal?     @db.Decimal(12, 2)
+  costoFlete        Decimal?     @db.Decimal(12, 2)
+  observaciones     String?
+
+  cotizacion Cotizacion?    @relation(fields: [cotizacionId], references: [id])
+  cliente    Cliente        @relation(fields: [clienteId], references: [id])
+  usuario    Usuario        @relation(fields: [usuarioId], references: [id])
+  detalles   DetalleVenta[]
+  logistica  Logistica?
+  facturas   Factura[]
+  compras    Compra[]
+
+  @@map("ventas")
+}
+
+enum EstadoPedido {
+  confirmado
+  en_preparacion
+  listo_para_envio
+  en_transito
+  entregado
+  entregado_parcial
+  cancelado
+}
+
+enum TipoEntrega {
+  retira_cliente
+  envio_woodpallet
+}
+
+// ─── DETALLE VENTA ───────────────────────────────────────
+model DetalleVenta {
+  id                Int     @id @default(autoincrement())
+  ventaId           Int
+  productoId        Int
+  cantidadPedida    Int
+  cantidadEntregada Int     @default(0)
+  precioUnitario    Decimal @db.Decimal(12, 2)
+  subtotal          Decimal @db.Decimal(12, 2)
+  observaciones     String?
+
+  venta          Venta                 @relation(fields: [ventaId], references: [id])
+  producto       Producto              @relation(fields: [productoId], references: [id])
+  especificacion EspecificacionMedida?
+  retiros        RetiroParcial[]
+
+  @@map("detalle_venta")
+}
+
+// ─── RETIROS PARCIALES ───────────────────────────────────
+model RetiroParcial {
+  id               Int      @id @default(autoincrement())
+  detalleVentaId   Int
+  fechaRetiro      DateTime @default(now())
+  cantidadRetirada Int
+  registradoPorId  Int
+
+  detalleVenta  DetalleVenta @relation(fields: [detalleVentaId], references: [id])
+  registradoPor Usuario      @relation(fields: [registradoPorId], references: [id])
+
+  @@map("retiros_parciales")
+}
+
+// ─── COMPRAS ─────────────────────────────────────────────
+model Compra {
+  id            Int          @id @default(autoincrement())
+  proveedorId   Int
+  usuarioId     Int
+  ventaId       Int?
+  fechaCompra   DateTime     @default(now())
+  estado        EstadoCompra @default(solicitada)
+  esAnticipado  Boolean      @default(false)
+  total         Decimal?     @db.Decimal(12, 2)
+  nroRemito     String?
+  observaciones String?
+
+  proveedor Proveedor       @relation(fields: [proveedorId], references: [id])
+  usuario   Usuario         @relation(fields: [usuarioId], references: [id])
+  venta     Venta?          @relation(fields: [ventaId], references: [id])
+  detalles  DetalleCompra[]
+  pagos     PagoProveedor[]
+
+  @@map("compras")
+}
+
+enum EstadoCompra {
+  solicitada
+  confirmada
+  recibida
+  pagada
+}
+
+// ─── DETALLE COMPRA ──────────────────────────────────────
+model DetalleCompra {
+  id              Int     @id @default(autoincrement())
+  compraId        Int
+  productoId      Int
+  cantidad        Int
+  precioCostoUnit Decimal @db.Decimal(12, 2)
+  subtotal        Decimal @db.Decimal(12, 2)
+
+  compra   Compra   @relation(fields: [compraId], references: [id])
+  producto Producto @relation(fields: [productoId], references: [id])
+
+  @@map("detalle_compra")
+}
+
+// ─── LOGISTICA ───────────────────────────────────────────
+model Logistica {
+  id                  Int           @id @default(autoincrement())
+  ventaId             Int           @unique
+  nombreTransportista String
+  telefonoTransp      String?
+  fechaRetiroGalpon   DateTime?
+  horaRetiro          DateTime?
+  horaEstimadaEntrega DateTime?
+  horaEntregaReal     DateTime?
+  estadoEntrega       EstadoEntrega @default(pendiente)
+  confTransportista   Boolean       @default(false)
+  confCliente         Boolean       @default(false)
+  costoFlete          Decimal?      @db.Decimal(12, 2)
+  registradoPorId     Int
+  observaciones       String?
+
+  venta         Venta   @relation(fields: [ventaId], references: [id])
+  registradoPor Usuario @relation(fields: [registradoPorId], references: [id])
+
+  @@map("logistica")
+}
+
+enum EstadoEntrega {
+  pendiente
+  en_camino
+  entregado
+  con_problema
+}
+
+// ─── FACTURAS ────────────────────────────────────────────
+model Factura {
+  id               Int         @id @default(autoincrement())
+  ventaId          Int
+  clienteId        Int
+  usuarioId        Int
+  tipoFactura      TipoFactura @default(A)
+  nroFactura       String?
+  esSinFactura     Boolean     @default(false)
+  fechaEmision     DateTime    @default(now())
+  fechaVencimiento DateTime?
+  totalNeto        Decimal     @db.Decimal(12, 2)
+  iva              Decimal     @db.Decimal(12, 2)
+  totalConIva      Decimal     @db.Decimal(12, 2)
+  estadoCobro      EstadoCobro @default(pendiente)
+  observaciones    String?
+
+  venta        Venta         @relation(fields: [ventaId], references: [id])
+  cliente      Cliente       @relation(fields: [clienteId], references: [id])
+  usuario      Usuario       @relation(fields: [usuarioId], references: [id])
+  pagos        PagoCobro[]
+  notasCredito NotaCredito[]
+
+  @@map("facturas")
+}
+
+enum TipoFactura {
+  A
+}
+
+enum EstadoCobro {
+  pendiente
+  cobrada_parcial
+  cobrada_total
+  vencida
+  incobrable
+}
+
+// ─── PAGOS / COBROS ──────────────────────────────────────
+model PagoCobro {
+  id              Int       @id @default(autoincrement())
+  facturaId       Int
+  clienteId       Int
+  fechaPago       DateTime  @default(now())
+  monto           Decimal   @db.Decimal(12, 2)
+  medioPago       MedioPago
+  nroComprobante  String?
+  esAdelanto      Boolean   @default(false)
+  registradoPorId Int
+  observaciones   String?
+
+  factura       Factura @relation(fields: [facturaId], references: [id])
+  cliente       Cliente @relation(fields: [clienteId], references: [id])
+  registradoPor Usuario @relation(fields: [registradoPorId], references: [id])
+
+  @@map("pagos_cobros")
+}
+
+enum MedioPago {
+  transferencia
+  e_check
+  efectivo
+}
+
+// ─── NOTAS DE CREDITO ────────────────────────────────────
+model NotaCredito {
+  id           Int      @id @default(autoincrement())
+  facturaId    Int
+  clienteId    Int
+  usuarioId    Int
+  fechaEmision DateTime @default(now())
+  nroNota      String?
+  monto        Decimal  @db.Decimal(12, 2)
+  motivo       String
+
+  factura Factura @relation(fields: [facturaId], references: [id])
+  cliente Cliente @relation(fields: [clienteId], references: [id])
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@map("notas_credito")
+}
+
+// ─── PAGOS A PROVEEDORES ─────────────────────────────────
+model PagoProveedor {
+  id              Int       @id @default(autoincrement())
+  compraId        Int
+  proveedorId     Int
+  fechaPago       DateTime  @default(now())
+  monto           Decimal   @db.Decimal(12, 2)
+  medioPago       MedioPago
+  nroComprobante  String?
+  registradoPorId Int
+  observaciones   String?
+
+  compra        Compra    @relation(fields: [compraId], references: [id])
+  proveedor     Proveedor @relation(fields: [proveedorId], references: [id])
+  registradoPor Usuario   @relation(fields: [registradoPorId], references: [id])
+
+  @@map("pagos_proveedores")
+}
