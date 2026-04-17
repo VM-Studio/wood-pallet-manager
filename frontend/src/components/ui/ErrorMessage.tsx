@@ -1,10 +1,20 @@
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react'
 
-export default function ErrorMessage({ mensaje = 'Ocurrió un error al cargar los datos.' }: { mensaje?: string }) {
+interface Props { message?: string; onRetry?: () => void }
+
+export default function ErrorMessage({ message = 'Ocurrió un error al cargar los datos', onRetry }: Props) {
   return (
-    <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-      <AlertCircle size={20} className="shrink-0" />
-      <p className="text-sm">{mensaje}</p>
+    <div className="empty-state">
+      <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <AlertCircle className="w-8 h-8 text-red-500" />
+      </div>
+      <p className="text-gray-900 font-semibold mb-1">Error al cargar</p>
+      <p className="text-gray-500 text-sm mb-5 max-w-xs">{message}</p>
+      {onRetry && (
+        <button onClick={onRetry} className="btn-secondary">
+          Reintentar
+        </button>
+      )}
     </div>
-  );
+  )
 }

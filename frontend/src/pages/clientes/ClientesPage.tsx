@@ -42,8 +42,8 @@ export default function ClientesPage() {
 
   const esAsignado = (cliente: Cliente) => cliente.usuarioAsignadoId === usuario?.id;
 
-  if (isLoading) return <LoadingSpinner texto="Cargando clientes..." />;
-  if (error) return <ErrorMessage mensaje="No se pudieron cargar los clientes." />;
+  if (isLoading) return <LoadingSpinner text="Cargando clientes..." />;
+  if (error) return <ErrorMessage message="No se pudieron cargar los clientes." />;
 
   return (
     <div className="space-y-6">

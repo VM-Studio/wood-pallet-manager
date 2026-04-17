@@ -28,8 +28,8 @@ export default function DashboardPage() {
 
   const esCarlos = usuario?.rol === 'propietario_carlos';
 
-  if (loadingDash) return <LoadingSpinner texto="Cargando dashboard..." />;
-  if (errorDash) return <ErrorMessage mensaje="No se pudo cargar el dashboard. Verificá que el backend esté corriendo." />;
+  if (loadingDash) return <LoadingSpinner text="Cargando dashboard..." />;
+  if (errorDash) return <ErrorMessage message="No se pudo cargar el dashboard. Verificá que el backend esté corriendo." />;
 
   const kpis = dashboard?.kpis;
   const porPropietario = dashboard?.porPropietario;
@@ -242,7 +242,7 @@ export default function DashboardPage() {
             </button>
           </div>
           {loadingAlertas ? (
-            <LoadingSpinner texto="Cargando alertas..." />
+            <LoadingSpinner text="Cargando alertas..." />
           ) : alertasData.length === 0 ? (
             <div className="text-center py-8">
               <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">

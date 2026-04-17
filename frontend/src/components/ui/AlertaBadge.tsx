@@ -1,39 +1,46 @@
-import { clsx } from 'clsx';
-import { AlertTriangle, AlertCircle, Info } from 'lucide-react';
+import { AlertTriangle, Info, XCircle, CheckCircle } from 'lucide-react'
 
 interface AlertaBadgeProps {
-  urgencia: 'alta' | 'media' | 'baja';
-  titulo: string;
-  detalle: string;
-  onClick?: () => void;
+  /** nuevo: tipo/urgencia de la alerta */
+  tipo?: 'critica' | 'alta' | 'media' | 'baja' | string
+  /** alias legacy del Dashboard */
+  urgencia?: 'critica' | 'alta' | 'media' | 'baja' | string
+  /** nuevo: texto del mensaje */
+  mensaje?: string
+  /** legacy: título corto */
+  titulo?: string
+  /** legacy: detalle largo */
+  detalle?: string
+  fecha?: string
+  onClick?: () => void
 }
 
-export default function AlertaBadge({ urgencia, titulo, detalle, onClick }: AlertaBadgeProps) {
-  const config = {
-    alta:  { bg: 'bg-red-50 border-red-200',    text: 'text-red-700',    badge: 'bg-red-100 text-red-700',    icono: <AlertCircle size={16} /> },
-    media: { bg: 'bg-amber-50 border-amber-200', text: 'text-amber-700',  badge: 'bg-amber-100 text-amber-700', icono: <AlertTriangle size={16} /> },
-    baja:  { bg: 'bg-blue-50 border-blue-200',   text: 'text-blue-700',   badge: 'bg-blue-100 text-blue-700',   icono: <Info size={16} /> },
-  }[urgencia];
+const cfgMap: Record<string, { icon: typeof XCircle; cls: string; label: string }> = {
+  critica: { icon: XCircle,        cls: 'badge-red',    label: 'Crítica' },
+  alta:    { icon: AlertTriangle,  cls: 'badge-yellow', label: 'Alta' },
+  media:   { icon: Info,           cls: 'badge-blue',   label: 'Media' },
+  baja:    { icon: CheckCircle,    cls: 'badge-gray',   label: 'Baja' },
+}
+
+export default function AlertaBadge({ tipo, urgencia, mensaje, titulo, detalle, fecha, onClick }: AlertaBadgeProps) {
+  const nivel = tipo ?? urgencia ?? 'media'
+  const c = cfgMap[nivel] ?? cfgMap.media
+  const Icon = c.icon
+  const texto = mensaje ?? (titulo ? `${titulo}${detalle ? ` — ${detalle}` : ''}` : '')
 
   return (
     <div
-      className={clsx(
-        'flex items-start gap-3 p-3 rounded-lg border',
-        config.bg,
-        onClick && 'cursor-pointer hover:opacity-80 transition-opacity'
-      )}
+      className={`flex items-start gap-3 py-3 border-b border-gray-50 last:border-b-0 ${onClick ? 'cursor-pointer hover:bg-gray-50 rounded-xl px-2 -mx-2 transition-colors' : ''}`}
       onClick={onClick}
     >
-      <div className={clsx('mt-0.5 shrink-0', config.text)}>
-        {config.icono}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className={clsx('text-sm font-medium', config.text)}>{titulo}</p>
-        <p className="text-xs text-gray-500 mt-0.5 truncate">{detalle}</p>
-      </div>
-      <span className={clsx('text-xs font-medium px-2 py-0.5 rounded-full shrink-0', config.badge)}>
-        {urgencia}
+      <span className={c.cls}>
+        <Icon className="w-3 h-3" />
+        {c.label}
       </span>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm text-gray-700 leading-snug">{texto}</p>
+        {fecha && <p className="text-xs text-gray-400 mt-0.5">{fecha}</p>}
+      </div>
     </div>
-  );
+  )
 }

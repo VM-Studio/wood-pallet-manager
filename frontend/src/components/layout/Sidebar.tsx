@@ -1,91 +1,109 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Users, Package, FileText, ShoppingCart,
-  Truck, Warehouse, Receipt, BarChart3, Settings,
-  ClipboardList, Bell, LogOut
-} from 'lucide-react';
-import { useAuthStore } from '../../store/auth.store';
-import { clsx } from 'clsx';
+  Truck, Warehouse, Receipt, BarChart3, Bell, LogOut,
+  Package2, DollarSign
+} from 'lucide-react'
+import { useAuthStore } from '../../store/auth.store'
 
-const menuItems = [
-  { path: '/dashboard',     label: 'Dashboard',     icon: LayoutDashboard },
-  { path: '/clientes',      label: 'Clientes',      icon: Users },
-  { path: '/productos',     label: 'Productos',     icon: Package },
-  { path: '/cotizaciones',  label: 'Cotizaciones',  icon: FileText },
-  { path: '/ventas',        label: 'Ventas',        icon: ShoppingCart },
-  { path: '/compras',       label: 'Compras',       icon: ClipboardList },
-  { path: '/inventario',    label: 'Inventario',    icon: Warehouse },
-  { path: '/logistica',     label: 'Logística',     icon: Truck },
-  { path: '/facturacion',   label: 'Facturación',   icon: Receipt },
-  { path: '/reportes',      label: 'Reportes',      icon: BarChart3 },
-  { path: '/alertas',       label: 'Alertas',       icon: Bell },
-  { path: '/configuracion', label: 'Configuración', icon: Settings },
-];
+const groups = [
+  {
+    label: 'Principal',
+    items: [
+      { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+      { to: '/alertas',   icon: Bell,            label: 'Alertas', badge: true },
+    ],
+  },
+  {
+    label: 'Comercial',
+    items: [
+      { to: '/clientes',     icon: Users,         label: 'Clientes' },
+      { to: '/productos',    icon: Package,        label: 'Productos' },
+      { to: '/cotizaciones', icon: FileText,       label: 'Cotizaciones' },
+      { to: '/ventas',       icon: DollarSign,     label: 'Ventas' },
+    ],
+  },
+  {
+    label: 'Operaciones',
+    items: [
+      { to: '/compras',    icon: ShoppingCart, label: 'Compras' },
+      { to: '/inventario', icon: Warehouse,    label: 'Inventario' },
+      { to: '/logistica',  icon: Truck,        label: 'Logística' },
+    ],
+  },
+  {
+    label: 'Finanzas',
+    items: [
+      { to: '/facturacion', icon: Receipt,    label: 'Facturación' },
+      { to: '/reportes',    icon: BarChart3,  label: 'Reportes' },
+    ],
+  },
+]
 
 export default function Sidebar() {
-  const { usuario, logout } = useAuthStore();
-  const esCarlos = usuario?.rol === 'propietario_carlos';
+  const { usuario, logout } = useAuthStore()
+  const navigate = useNavigate()
+
+  const handleLogout = () => { logout(); navigate('/login') }
+
+  const initials = usuario?.nombre
+    ? usuario.nombre.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()
+    : '??'
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-navy-900 flex flex-col z-50">
-      <div className="p-6 border-b border-navy-800">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-primary-600 rounded-lg flex items-center justify-center flex-shrink-0">
-            <span className="text-white font-bold text-sm">WP</span>
-          </div>
-          <div>
-            <h1 className="text-white font-bold text-sm leading-tight">WoodPallet</h1>
-            <p className="text-navy-400 text-xs">Manager</p>
-          </div>
+    <aside className="fixed top-0 left-0 h-screen w-[260px] bg-[#1e3a5f] flex flex-col z-30">
+      {/* Logo */}
+      <div className="flex items-center gap-3 px-5 h-16 border-b border-white/10 flex-shrink-0">
+        <div className="w-9 h-9 bg-green-500 rounded-xl flex items-center justify-center">
+          <Package2 className="w-5 h-5 text-white" />
         </div>
+        <span className="text-white font-bold text-lg tracking-tight">WoodPallet</span>
       </div>
+
+      {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-4 px-3">
-        <ul className="space-y-1">
-          {menuItems.map(({ path, label, icon: Icon }) => (
-            <li key={path}>
-              <NavLink
-                to={path}
-                className={({ isActive }) =>
-                  clsx(
-                    'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150',
-                    isActive
-                      ? 'bg-primary-600 text-white'
-                      : 'text-navy-300 hover:bg-navy-800 hover:text-white'
-                  )
-                }
-              >
-                <Icon size={18} />
-                {label}
-              </NavLink>
-            </li>
-          ))}
-        </ul>
+        {groups.map(group => (
+          <div key={group.label} className="mb-5">
+            <p className="text-white/30 text-[10px] font-semibold uppercase tracking-widest px-3 mb-2">
+              {group.label}
+            </p>
+            <div className="space-y-0.5">
+              {group.items.map(item => (
+                <NavLink key={item.to} to={item.to}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
+                      isActive
+                        ? 'bg-white/15 text-white'
+                        : 'text-white/60 hover:bg-white/8 hover:text-white'
+                    }`
+                  }
+                >
+                  <item.icon className="w-[18px] h-[18px] flex-shrink-0" />
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
+          </div>
+        ))}
       </nav>
-      <div className="p-4 border-t border-navy-800">
-        <div className="flex items-center gap-3 mb-3">
-          <div className={clsx(
-            'w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-white font-semibold text-sm',
-            esCarlos ? 'bg-teal-600' : 'bg-primary-600'
-          )}>
-            {usuario?.nombre[0]}{usuario?.apellido[0]}
+
+      {/* User */}
+      <div className="flex-shrink-0 border-t border-white/10 p-4">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 bg-green-500 rounded-xl flex items-center justify-center flex-shrink-0">
+            <span className="text-white text-xs font-bold">{initials}</span>
           </div>
-          <div className="min-w-0">
-            <p className="text-white text-sm font-medium truncate">
-              {usuario?.nombre} {usuario?.apellido}
-            </p>
-            <p className="text-navy-400 text-xs truncate">
-              {esCarlos ? 'Propietario' : 'Propietario Digital'}
-            </p>
+          <div className="flex-1 min-w-0">
+            <p className="text-white text-sm font-medium truncate">{usuario?.nombre ?? 'Usuario'}</p>
+            <p className="text-white/40 text-xs truncate">{usuario?.email ?? ''}</p>
           </div>
+          <button onClick={handleLogout}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:bg-white/10 hover:text-white transition-colors"
+            title="Cerrar sesión">
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
-        <button
-          onClick={logout}
-          className="w-full flex items-center gap-2 px-3 py-2 text-navy-400 hover:text-white hover:bg-navy-800 rounded-lg text-sm transition-colors"
-        >
-          <LogOut size={16} />
-          Cerrar sesión
-        </button>
       </div>
     </aside>
-  );
+  )
 }

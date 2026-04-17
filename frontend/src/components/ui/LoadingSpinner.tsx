@@ -1,8 +1,11 @@
-export default function LoadingSpinner({ texto = 'Cargando...' }: { texto?: string }) {
+interface Props { size?: 'sm' | 'md' | 'lg'; text?: string }
+
+export default function LoadingSpinner({ size = 'md', text }: Props) {
+  const s = size === 'sm' ? 'w-5 h-5' : size === 'lg' ? 'w-12 h-12' : 'w-8 h-8'
   return (
-    <div className="flex flex-col items-center justify-center py-16 gap-3">
-      <div className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
-      <p className="text-sm text-gray-400">{texto}</p>
+    <div className="flex flex-col items-center justify-center gap-3 py-12">
+      <div className={`${s} rounded-full border-2 border-gray-100 border-t-green-500 animate-spin`} />
+      {text && <p className="text-sm text-gray-500">{text}</p>}
     </div>
-  );
+  )
 }

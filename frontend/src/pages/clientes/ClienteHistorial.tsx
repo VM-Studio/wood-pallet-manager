@@ -70,7 +70,7 @@ export default function ClienteHistorial({ clienteId, onClose }: ClienteHistoria
         {/* Historial de ventas */}
         <div className="flex-1 overflow-y-auto p-6">
           {isLoading ? (
-            <LoadingSpinner texto="Cargando historial..." />
+            <LoadingSpinner text="Cargando historial..." />
           ) : !data?.ventas?.length ? (
             <div className="text-center py-8 text-gray-400">
               <Package size={32} className="mx-auto mb-2 opacity-50" />
