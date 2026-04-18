@@ -5,6 +5,7 @@ import {
   DollarSign
 } from 'lucide-react'
 import { useAuthStore } from '../../store/auth.store'
+import { useQueryClient } from '@tanstack/react-query'
 
 const groups = [
   {
@@ -43,8 +44,13 @@ const groups = [
 export default function Sidebar() {
   const { logout } = useAuthStore()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
 
-  const handleLogout = () => { logout(); navigate('/login') }
+  const handleLogout = () => {
+    queryClient.clear()
+    logout()
+    navigate('/login')
+  }
 
   return (
     <aside className="fixed top-0 left-0 h-screen w-65 bg-[#3c250f] flex flex-col z-30">

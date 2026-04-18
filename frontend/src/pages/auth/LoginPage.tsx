@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Package2, Leaf } from 'lucide-react'
 import { useAuthStore } from '../../store/auth.store'
+import { useQueryClient } from '@tanstack/react-query'
 import api from '../../services/api'
 
 export default function LoginPage() {
   const navigate = useNavigate()
   const { login } = useAuthStore()
+  const queryClient = useQueryClient()
   const [tab, setTab] = useState<'login' | 'registro'>('login')
 
   const [loginData, setLoginData] = useState({ email: '', password: '' })
@@ -24,6 +26,7 @@ export default function LoginPage() {
     setLoginLoading(true)
     try {
       const res = await api.post('/auth/login', loginData)
+      queryClient.clear()
       login(res.data.token, res.data.usuario)
       navigate('/dashboard')
     } catch (err: unknown) {
