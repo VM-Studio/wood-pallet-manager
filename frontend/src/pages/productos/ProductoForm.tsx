@@ -22,7 +22,6 @@ export default function ProductoForm({ producto, onClose }: ProductoFormProps) {
     dimensionAncho:   producto?.dimensionAncho != null ? String(producto.dimensionAncho) : '',
     cargaMaximaKg:    producto?.cargaMaximaKg  != null ? String(producto.cargaMaximaKg)  : '',
     stockDisponible:  producto?.stockDisponible != null ? String(producto.stockDisponible) : '',
-    requiereSenasa:   producto?.requiereSenasa ?? false,
     descripcion:      producto?.descripcion    ?? ''
   });
 
@@ -33,7 +32,6 @@ export default function ProductoForm({ producto, onClose }: ProductoFormProps) {
       nombre:           form.nombre,
       tipo:             form.tipo,
       condicion:        form.condicion,
-      requiereSenasa:   form.requiereSenasa,
       descripcion:      form.descripcion || undefined,
       dimensionLargo:   form.dimensionLargo ? parseInt(form.dimensionLargo) : undefined,
       dimensionAncho:   form.dimensionAncho ? parseInt(form.dimensionAncho) : undefined,
@@ -163,15 +161,6 @@ export default function ProductoForm({ producto, onClose }: ProductoFormProps) {
                 rows={2}
               />
             </div>
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.requiereSenasa}
-                onChange={e => setForm({ ...form, requiereSenasa: e.target.checked })}
-                className="w-4 h-4 text-[#16A34A] rounded"
-              />
-              <span className="text-sm text-gray-700">🌿 Requiere tratamiento SENASA (exportación)</span>
-            </label>
             {error && (
               <p className="text-sm text-red-600 bg-red-50 border border-red-200 px-3 py-2.5 rounded-xl">
                 {error}
