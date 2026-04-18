@@ -61,7 +61,8 @@ export default function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3">
+      <nav className="flex-1 overflow-y-auto py-4 px-3" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        <style>{`aside nav::-webkit-scrollbar{display:none}`}</style>
         {groups.map(group => (
           <div key={group.label} className="mb-5">
             <p className="text-white/30 text-[10px] font-semibold uppercase tracking-widest px-3 mb-2">
