@@ -50,7 +50,7 @@ export default function ClienteForm({ cliente, onClose, onSuccess }: ClienteForm
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" style={{ borderRadius: '0.25rem' }}>
 
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
@@ -74,6 +74,7 @@ export default function ClienteForm({ cliente, onClose, onSuccess }: ClienteForm
                 value={form.razonSocial}
                 onChange={(e) => setForm({ ...form, razonSocial: e.target.value })}
                 className="input-field"
+                style={{ borderRadius: '0.25rem' }}
                 placeholder="Nombre de la empresa"
                 required
               />
@@ -86,6 +87,7 @@ export default function ClienteForm({ cliente, onClose, onSuccess }: ClienteForm
                 value={form.cuit}
                 onChange={(e) => setForm({ ...form, cuit: e.target.value })}
                 className="input-field"
+                style={{ borderRadius: '0.25rem' }}
                 placeholder="30-12345678-9"
               />
             </div>
@@ -96,6 +98,7 @@ export default function ClienteForm({ cliente, onClose, onSuccess }: ClienteForm
                 value={form.canalEntrada}
                 onChange={(e) => setForm({ ...form, canalEntrada: e.target.value })}
                 className="input-field"
+                style={{ borderRadius: '0.25rem' }}
               >
                 <option value="whatsapp">WhatsApp</option>
                 <option value="formulario_web">Formulario web</option>
@@ -112,6 +115,7 @@ export default function ClienteForm({ cliente, onClose, onSuccess }: ClienteForm
                 value={form.nombreContacto}
                 onChange={(e) => setForm({ ...form, nombreContacto: e.target.value })}
                 className="input-field"
+                style={{ borderRadius: '0.25rem' }}
                 placeholder="Nombre del responsable de compras"
               />
             </div>
@@ -123,6 +127,7 @@ export default function ClienteForm({ cliente, onClose, onSuccess }: ClienteForm
                 value={form.telefonoContacto}
                 onChange={(e) => setForm({ ...form, telefonoContacto: e.target.value })}
                 className="input-field"
+                style={{ borderRadius: '0.25rem' }}
                 placeholder="11 1234 5678"
               />
             </div>
@@ -134,6 +139,7 @@ export default function ClienteForm({ cliente, onClose, onSuccess }: ClienteForm
                 value={form.emailContacto}
                 onChange={(e) => setForm({ ...form, emailContacto: e.target.value })}
                 className="input-field"
+                style={{ borderRadius: '0.25rem' }}
                 placeholder="contacto@empresa.com"
               />
             </div>
@@ -145,6 +151,7 @@ export default function ClienteForm({ cliente, onClose, onSuccess }: ClienteForm
                 value={form.direccionEntrega}
                 onChange={(e) => setForm({ ...form, direccionEntrega: e.target.value })}
                 className="input-field"
+                style={{ borderRadius: '0.25rem' }}
                 placeholder="Calle y número"
               />
             </div>
@@ -156,6 +163,7 @@ export default function ClienteForm({ cliente, onClose, onSuccess }: ClienteForm
                 value={form.localidad}
                 onChange={(e) => setForm({ ...form, localidad: e.target.value })}
                 className="input-field"
+                style={{ borderRadius: '0.25rem' }}
                 placeholder="Ciudad / partido"
               />
             </div>
@@ -166,6 +174,7 @@ export default function ClienteForm({ cliente, onClose, onSuccess }: ClienteForm
                 value={form.observaciones}
                 onChange={(e) => setForm({ ...form, observaciones: e.target.value })}
                 className="input-field resize-none"
+                style={{ borderRadius: '0.25rem' }}
                 rows={3}
                 placeholder="Notas internas sobre el cliente..."
               />
@@ -193,10 +202,32 @@ export default function ClienteForm({ cliente, onClose, onSuccess }: ClienteForm
           )}
 
           <div className="flex justify-end gap-3 pt-2">
-            <button type="button" onClick={onClose} className="btn-secondary">
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                background: '#fff', color: '#374151',
+                border: '1px solid #E5E7EB', fontWeight: 500,
+                fontSize: '0.875rem', padding: '0.5rem 1rem',
+                borderRadius: '0.25rem', cursor: 'pointer', transition: 'all 0.2s'
+              }}
+            >
               Cancelar
             </button>
-            <button type="submit" disabled={loading} className="btn-primary">
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
+                color: 'white', fontWeight: 500,
+                fontSize: '0.875rem', padding: '0.5rem 1rem',
+                borderRadius: '0.25rem', border: 'none',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.6 : 1, transition: 'all 0.2s'
+              }}
+            >
               {loading ? 'Guardando...' : esEdicion ? 'Guardar cambios' : 'Crear cliente'}
             </button>
           </div>
