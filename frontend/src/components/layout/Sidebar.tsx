@@ -41,14 +41,10 @@ const groups = [
 ]
 
 export default function Sidebar() {
-  const { usuario, logout } = useAuthStore()
+  const { logout } = useAuthStore()
   const navigate = useNavigate()
 
   const handleLogout = () => { logout(); navigate('/login') }
-
-  const initials = usuario?.nombre
-    ? usuario.nombre.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()
-    : '??'
 
   return (
     <aside className="fixed top-0 left-0 h-screen w-65 bg-[#3c250f] flex flex-col z-30">
@@ -86,22 +82,16 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* User */}
+      {/* Cerrar sesión */}
       <div className="shrink-0 border-t border-white/10 p-4">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-green-500 rounded-xl flex items-center justify-center shrink-0">
-            <span className="text-white text-xs font-bold">{initials}</span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-white text-sm font-medium truncate">{usuario?.nombre ?? 'Usuario'}</p>
-            <p className="text-white/40 text-xs truncate">{usuario?.email ?? ''}</p>
-          </div>
-          <button onClick={handleLogout}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:bg-white/10 hover:text-white transition-colors"
-            title="Cerrar sesión">
-            <LogOut className="w-4 h-4" />
-          </button>
-        </div>
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+          style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic', fontWeight: 600, fontSize: '1.05rem' }}
+        >
+          <LogOut className="w-4 h-4 shrink-0" />
+          Cerrar sesión
+        </button>
       </div>
     </aside>
   )
