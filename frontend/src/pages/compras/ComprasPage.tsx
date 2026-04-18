@@ -7,7 +7,6 @@ import CompraDetalle from './CompraDetalle';
 import EstadoBadge from '../../components/ui/EstadoBadge';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
-import { clsx } from 'clsx';
 
 interface DeudaItem {
   proveedor: { id: number; nombreEmpresa: string };
@@ -49,20 +48,37 @@ export default function ComprasPage() {
 
   const deudaTotal = deuda?.reduce((acc, d) => acc + d.deudaTotal, 0) ?? 0;
 
-  if (isLoading) return <div className="p-8"><LoadingSpinner text="Cargando compras..." /></div>;
-  if (isError)  return <div className="p-8"><ErrorMessage message="No se pudieron cargar las compras." /></div>;
+  if (isLoading) return <LoadingSpinner text="Cargando compras..." />;
+  if (isError)  return <ErrorMessage message="No se pudieron cargar las compras." />;
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="animate-fade-in space-y-5">
 
       {/* Header */}
-      <div className="page-header">
+      <div className="flex items-start justify-between">
         <div>
-          <h1 className="page-title">Compras</h1>
-          <p className="page-subtitle">{compras?.length ?? 0} compras registradas</p>
+          <h1 className="titulo-modulo">Compras</h1>
+          <p className="text-sm text-gray-600 mt-1">{compras?.length ?? 0} compras registradas</p>
         </div>
-        <button onClick={() => setShowNueva(true)} className="btn-primary">
-          <Plus size={18} /> Nueva compra
+        <button
+          onClick={() => setShowNueva(true)}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: '6px',
+            background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
+            color: 'white', fontWeight: 500, fontSize: '0.875rem',
+            padding: '0.5rem 1rem', borderRadius: '0.25rem',
+            border: 'none', cursor: 'pointer', transition: 'all 0.2s'
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, #5A3022 0%, #B07848 100%)';
+            (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)';
+            (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+          }}
+        >
+          <Plus size={16} /> Nueva compra
         </button>
       </div>
 
@@ -72,13 +88,12 @@ export default function ComprasPage() {
           {deuda.map(d => (
             <div
               key={d.proveedor.id}
-              className={clsx(
-                'card-p flex items-center gap-4',
-                d.deudaTotal > 0 && 'border-l-4 border-l-amber-400'
-              )}
+              className="card-base flex items-center gap-4"
+              style={d.deudaTotal > 0 ? { borderLeft: '4px solid #F59E0B' } : undefined}
             >
-              <div className="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
-                <TrendingDown size={20} className="text-amber-600" />
+              <div className="w-10 h-10 flex items-center justify-center shrink-0"
+                style={{ background: '#FFFBEB', borderRadius: '0.25rem' }}>
+                <TrendingDown size={18} className="text-amber-600" />
               </div>
               <div className="flex-1">
                 <p className="font-semibold text-gray-900 text-sm">{d.proveedor.nombreEmpresa}</p>
@@ -97,9 +112,10 @@ export default function ComprasPage() {
 
       {/* Total deuda */}
       {deudaTotal > 0 && (
-        <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between">
+        <div className="flex items-center justify-between px-4 py-3 bg-amber-50 border border-amber-200"
+          style={{ borderRadius: '0.25rem' }}>
           <div className="flex items-center gap-2">
-            <AlertTriangle size={18} className="text-amber-600" />
+            <AlertTriangle size={16} className="text-amber-600" />
             <p className="text-sm font-semibold text-amber-700">Deuda total con proveedores</p>
           </div>
           <p className="text-lg font-bold text-amber-700">{formatPesos(deudaTotal)}</p>
@@ -108,8 +124,9 @@ export default function ComprasPage() {
 
       {/* Nota de rol */}
       {!esCarlos && (
-        <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-2">
-          <AlertTriangle size={15} className="text-blue-600 shrink-0 mt-0.5" />
+        <div className="flex items-start gap-2 px-3 py-2.5 bg-blue-50 border border-blue-200"
+          style={{ borderRadius: '0.25rem' }}>
+          <AlertTriangle size={14} className="text-blue-600 shrink-0 mt-0.5" />
           <p className="text-xs text-blue-700">
             Las compras a Todo Pallets solo las puede crear Carlos. Podés registrar compras al Galpón Familiar.
           </p>
@@ -125,20 +142,28 @@ export default function ComprasPage() {
             placeholder="Buscar por proveedor o número..."
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
-            className="input pl-10"
+            className="input-field pl-10"
           />
         </div>
-        <div className="flex gap-1 bg-white border border-gray-200 rounded-xl p-1 overflow-x-auto">
-          {estadoFiltros.map(f => (
+        <div className="flex border border-gray-200 overflow-hidden" style={{ borderRadius: '0.25rem' }}>
+          {estadoFiltros.map((f, i) => (
             <button
               key={f.key}
               onClick={() => setFiltroEstado(f.key)}
-              className={clsx(
-                'px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all',
-                filtroEstado === f.key
-                  ? 'bg-[#16A34A] text-white shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              )}
+              style={{
+                padding: '0.5rem 0.75rem',
+                fontSize: '0.75rem',
+                fontWeight: 500,
+                whiteSpace: 'nowrap',
+                transition: 'all 0.15s',
+                background: filtroEstado === f.key
+                  ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)'
+                  : '#fff',
+                color: filtroEstado === f.key ? '#fff' : '#6B7280',
+                border: 'none',
+                borderLeft: i > 0 ? '1px solid #E5E7EB' : 'none',
+                cursor: 'pointer'
+              }}
             >
               {f.label}
             </button>
@@ -148,13 +173,18 @@ export default function ComprasPage() {
 
       {/* Tabla */}
       {!filtradas?.length ? (
-        <div className="empty-state">
-          <div className="empty-icon"><TrendingDown size={24} /></div>
-          <p className="text-sm font-semibold text-gray-700">Sin compras registradas</p>
-          <p className="text-sm text-gray-400 mt-1">Registrá la primera con el botón de arriba</p>
+        <div className="card-base flex flex-col items-center justify-center py-12 text-center">
+          <div className="w-12 h-12 bg-gray-100 flex items-center justify-center mx-auto mb-3"
+            style={{ borderRadius: '0.25rem' }}>
+            <TrendingDown size={22} className="text-gray-400" />
+          </div>
+          <p className="titulo-card">Sin compras registradas</p>
+          <p className="text-xs text-gray-400 mt-1">
+            {busqueda ? 'Probá con otro término de búsqueda' : 'Registrá la primera con el botón de arriba'}
+          </p>
         </div>
       ) : (
-        <div className="table-container">
+        <div className="card-base" style={{ padding: 0, overflow: 'hidden' }}>
           <table className="table">
             <thead>
               <tr>
@@ -194,14 +224,15 @@ export default function ComprasPage() {
                   <td><EstadoBadge estado={c.estado} /></td>
                   <td>
                     <span className="text-xs text-gray-600">
-                      {c.esAnticipado ? '📦 Anticipada' : '🔄 A pedido'}
+                      {c.esAnticipado ? 'Anticipada' : 'A pedido'}
                     </span>
                   </td>
                   <td className="text-xs text-gray-400">{formatFecha(c.fechaCompra)}</td>
                   <td>
                     <button
                       onClick={() => setCompraDetalle(c.id)}
-                      className="btn-icon w-8 h-8 text-gray-400 hover:text-[#16A34A] hover:bg-green-50"
+                      className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+                      title="Ver detalle"
                     >
                       <Eye size={15} />
                     </button>
