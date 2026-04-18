@@ -6,7 +6,6 @@ import NuevaLogistica from './NuevaLogistica';
 import EntregaCard from './EntregaCard';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
-import { clsx } from 'clsx';
 
 interface LogisticaConVenta {
   id: number;
@@ -83,67 +82,71 @@ export default function LogisticaPage() {
     <div className="space-y-6 animate-fade-in">
 
       {/* Header */}
-      <div className="page-header">
+      <div className="flex items-start justify-between">
         <div>
-          <h1 className="page-title">Logística</h1>
-          <p className="page-subtitle">
+          <h1 className="titulo-modulo">Logística</h1>
+          <p className="text-sm text-gray-500 mt-1">
             {esCarlos
               ? 'Coordinación centralizada de todas las entregas'
               : 'Estado de las entregas de tus ventas'
             }
           </p>
         </div>
-        <button onClick={() => setShowNueva(true)} className="btn-primary">
-          <Plus size={18} />
+        <button
+          onClick={() => setShowNueva(true)}
+          style={{ background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', borderRadius: '0.25rem' }}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white"
+        >
+          <Plus size={16} />
           {esCarlos ? 'Coordinar entrega' : 'Consultar entrega'}
         </button>
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="kpi-card kpi-amber">
+        <div className="card-kpi">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
-              <Clock size={18} className="text-amber-600" />
+            <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ background: '#FEF3E2', borderRadius: '0.25rem' }}>
+              <Clock size={18} style={{ color: '#C4895A' }} />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{pendientes}</p>
+              <p className="text-2xl font-bold" style={{ color: '#6B3A2A' }}>{pendientes}</p>
               <p className="text-xs text-gray-500">Pendientes</p>
             </div>
           </div>
         </div>
 
-        <div className="kpi-card kpi-blue">
+        <div className="card-kpi">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
-              <Truck size={18} className="text-blue-600" />
+            <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ background: '#F3EDE8', borderRadius: '0.25rem' }}>
+              <Truck size={18} style={{ color: '#6B3A2A' }} />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{enCamino}</p>
+              <p className="text-2xl font-bold" style={{ color: '#6B3A2A' }}>{enCamino}</p>
               <p className="text-xs text-gray-500">En camino</p>
             </div>
           </div>
         </div>
 
-        <div className="kpi-card kpi-green">
+        <div className="card-kpi">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center shrink-0">
-              <CheckCircle size={18} className="text-green-600" />
+            <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ background: '#FEF3E2', borderRadius: '0.25rem' }}>
+              <CheckCircle size={18} style={{ color: '#C4895A' }} />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{entregadas}</p>
+              <p className="text-2xl font-bold" style={{ color: '#6B3A2A' }}>{entregadas}</p>
               <p className="text-xs text-gray-500">Entregadas</p>
             </div>
           </div>
         </div>
 
-        <div className="kpi-card kpi-purple">
+        <div className="card-kpi">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
-              <Calendar size={18} className="text-purple-600" />
+            <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ background: '#F3EDE8', borderRadius: '0.25rem' }}>
+              <Calendar size={18} style={{ color: '#6B3A2A' }} />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{entregasHoy?.length ?? 0}</p>
+              <p className="text-2xl font-bold" style={{ color: '#6B3A2A' }}>{entregasHoy?.length ?? 0}</p>
               <p className="text-xs text-gray-500">Hoy</p>
             </div>
           </div>
@@ -154,8 +157,8 @@ export default function LogisticaPage() {
       {entregasHoy && entregasHoy.length > 0 && (
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <Calendar size={16} className="text-purple-600" />
-            <h2 className="text-sm font-semibold text-gray-700">
+            <Calendar size={16} style={{ color: '#6B3A2A' }} />
+            <h2 className="text-sm font-semibold" style={{ color: '#6B3A2A' }}>
               Entregas programadas para hoy ({entregasHoy.length})
             </h2>
           </div>
@@ -176,18 +179,20 @@ export default function LogisticaPage() {
             placeholder="Buscar por cliente o número de venta..."
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
-            className="input pl-10"
+            className="input-field pl-10"
           />
         </div>
-        <div className="flex gap-1 bg-white border border-gray-200 rounded-xl p-1 overflow-x-auto">
+        <div className="flex gap-1 p-1 overflow-x-auto" style={{ background: '#fff', borderRadius: '0.25rem', border: '1px solid #e5e7eb' }}>
           {estadoFiltros.map(f => (
-            <button key={f.key} onClick={() => setFiltroEstado(f.key)}
-              className={clsx(
-                'px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all',
-                filtroEstado === f.key
-                  ? 'bg-[#16A34A] text-white shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              )}>
+            <button
+              key={f.key}
+              onClick={() => setFiltroEstado(f.key)}
+              style={filtroEstado === f.key
+                ? { background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', color: '#fff', borderRadius: '0.25rem' }
+                : { borderRadius: '0.25rem' }
+              }
+              className="px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-all text-gray-500 hover:bg-gray-50"
+            >
               {f.label}
             </button>
           ))}
@@ -196,10 +201,12 @@ export default function LogisticaPage() {
 
       {/* Lista de entregas */}
       {!filtradas?.length ? (
-        <div className="empty-state">
-          <div className="empty-icon"><Truck size={24} /></div>
-          <p className="text-sm font-semibold text-gray-700">Sin entregas registradas</p>
-          <p className="text-sm text-gray-400 mt-1">
+        <div className="card-base flex flex-col items-center justify-center py-16 text-center">
+          <div className="w-14 h-14 flex items-center justify-center mb-4" style={{ background: '#F3EDE8', borderRadius: '0.25rem' }}>
+            <Truck size={24} style={{ color: '#6B3A2A' }} />
+          </div>
+          <p className="titulo-card" style={{ color: '#6B3A2A' }}>Sin entregas registradas</p>
+          <p className="text-xs text-gray-400 mt-1">
             {esCarlos
               ? 'Coordiná la primera entrega con el botón de arriba'
               : 'Las entregas aparecen cuando Carlos las coordina'
