@@ -76,22 +76,34 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
 
   return (
     <div className="modal-overlay">
-      <div className="modal max-w-3xl animate-slide-up">
+      <div
+        className="animate-slide-up w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl"
+        style={{ background: '#FDF6EE', border: '1.5px solid #C4895A' }}
+      >
 
-        {/* Header */}
-        <div className="modal-header">
+        {/* Header degradé café */}
+        <div
+          className="flex items-center justify-between px-6 py-5 rounded-t-xl"
+          style={{ background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' }}
+        >
           <div>
             <div className="flex items-center gap-3">
-              <h2 className="modal-title">Venta #{ventaId}</h2>
+              <h2 className="text-xl font-bold text-white">Venta #{ventaId}</h2>
               {venta && <EstadoBadge estado={venta.estadoPedido} />}
             </div>
             {venta && (
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-[#F5DEC8] mt-0.5">
                 {venta.cliente?.razonSocial} · {formatFecha(venta.fechaVenta)}
               </p>
             )}
           </div>
-          <button onClick={onClose} className="btn-icon"><X size={18} /></button>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-1.5 transition-colors hover:bg-white/20"
+            style={{ color: '#fff' }}
+          >
+            <X size={18} />
+          </button>
         </div>
 
         {isLoading ? (
@@ -99,7 +111,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
         ) : venta && (
           <>
             {/* Tabs */}
-            <div className="flex border-b border-gray-100 px-6">
+            <div className="flex border-b px-6" style={{ borderColor: '#E8C9A0', background: '#FDF6EE' }}>
               {tabs.map(t => (
                 <button
                   key={t.key}
@@ -107,8 +119,8 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                   className={clsx(
                     'px-4 py-3 text-sm font-medium border-b-2 transition-colors -mb-px',
                     tab === t.key
-                      ? 'border-[#16A34A] text-[#16A34A]'
-                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                      ? 'border-[#6B3A2A] text-[#6B3A2A]'
+                      : 'border-transparent text-[#9C6B47] hover:text-[#6B3A2A]'
                   )}
                 >
                   {t.label}
@@ -116,34 +128,34 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
               ))}
             </div>
 
-            <div className="modal-body max-h-[60vh] overflow-y-auto">
+            <div className="p-6 max-h-[60vh] overflow-y-auto">
 
               {/* Tab: Detalle */}
               {tab === 'detalle' && (
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 bg-gray-50 rounded-xl">
-                      <p className="text-xs text-gray-500 mb-1">Tipo de entrega</p>
-                      <p className="text-sm font-semibold text-gray-900">
+                    <div className="p-3 rounded-xl border" style={{ background: '#FFF8F0', borderColor: '#E8C9A0' }}>
+                      <p className="text-xs mb-1" style={{ color: '#9C6B47' }}>Tipo de entrega</p>
+                      <p className="text-sm font-semibold" style={{ color: '#3D1F0F' }}>
                         {venta.tipoEntrega === 'retira_cliente' ? '🏭 Retira el cliente' : '🚛 Envío coordinado'}
                       </p>
                     </div>
-                    <div className="p-3 bg-gray-50 rounded-xl">
-                      <p className="text-xs text-gray-500 mb-1">Fecha estimada de entrega</p>
-                      <p className="text-sm font-semibold text-gray-900">
+                    <div className="p-3 rounded-xl border" style={{ background: '#FFF8F0', borderColor: '#E8C9A0' }}>
+                      <p className="text-xs mb-1" style={{ color: '#9C6B47' }}>Fecha estimada de entrega</p>
+                      <p className="text-sm font-semibold" style={{ color: '#3D1F0F' }}>
                         {venta.fechaEstimEntrega ? formatFecha(venta.fechaEstimEntrega) : 'No definida'}
                       </p>
                     </div>
                     {venta.requiereSenasa && (
-                      <div className="col-span-2 p-3 bg-green-50 border border-green-200 rounded-xl">
-                        <p className="text-sm text-green-700 font-medium">🌿 Requiere tratamiento SENASA</p>
+                      <div className="col-span-2 p-3 rounded-xl border" style={{ background: '#F0FDF4', borderColor: '#BBF7D0' }}>
+                        <p className="text-sm font-medium text-green-700">🌿 Requiere tratamiento SENASA</p>
                       </div>
                     )}
                   </div>
 
                   {/* Productos */}
                   <div>
-                    <p className="text-sm font-semibold text-gray-700 mb-2">Productos del pedido</p>
+                    <p className="text-sm font-semibold mb-2" style={{ color: '#6B3A2A' }}>Productos del pedido</p>
                     <div className="space-y-2">
                       {venta.detalles?.map(d => {
                         const totalRetirado = (d.retiros as { cantidadRetirada: number }[] | undefined)
@@ -151,22 +163,22 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                         const pendiente = d.cantidadPedida - totalRetirado;
                         const pct = Math.round((totalRetirado / d.cantidadPedida) * 100);
                         return (
-                          <div key={d.id} className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                          <div key={d.id} className="p-3 rounded-xl border" style={{ background: '#FFF8F0', borderColor: '#E8C9A0' }}>
                             <div className="flex items-center justify-between mb-2">
-                              <p className="text-sm font-semibold text-gray-900">{d.producto?.nombre}</p>
-                              <p className="text-sm font-bold text-gray-900">{formatPesos(d.subtotal)}</p>
+                              <p className="text-sm font-semibold" style={{ color: '#3D1F0F' }}>{d.producto?.nombre}</p>
+                              <p className="text-sm font-bold" style={{ color: '#6B3A2A' }}>{formatPesos(d.subtotal)}</p>
                             </div>
-                            <div className="flex items-center gap-4 text-xs text-gray-500 mb-2">
+                            <div className="flex items-center gap-4 text-xs mb-2" style={{ color: '#9C6B47' }}>
                               <span>Pedido: {d.cantidadPedida} u</span>
                               <span className="text-green-600">Entregado: {totalRetirado} u</span>
                               <span className={pendiente > 0 ? 'text-amber-600 font-medium' : 'text-gray-400'}>
                                 Pendiente: {pendiente} u
                               </span>
                             </div>
-                            <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#E8C9A0' }}>
                               <div
-                                className="h-full bg-[#16A34A] rounded-full transition-all"
-                                style={{ width: `${pct}%` }}
+                                className="h-full rounded-full transition-all"
+                                style={{ width: `${pct}%`, background: 'linear-gradient(to right, #C4895A, #6B3A2A)' }}
                               />
                             </div>
                           </div>
@@ -176,13 +188,16 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                   </div>
 
                   {/* Total */}
-                  <div className="p-4 bg-[#1c3557] rounded-xl text-white">
+                  <div
+                    className="p-4 rounded-xl text-white"
+                    style={{ background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' }}
+                  >
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-300">Total con IVA</span>
+                      <span className="text-sm" style={{ color: '#F5DEC8' }}>Total con IVA</span>
                       <span className="text-xl font-bold">{formatPesos(venta.totalConIva || 0)}</span>
                     </div>
                     {venta.costoFlete && (
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs mt-1" style={{ color: '#F5DEC8' }}>
                         Flete: {formatPesos(venta.costoFlete)}
                       </p>
                     )}
@@ -196,7 +211,8 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                         estado: siguienteEstado(venta.estadoPedido)!
                       })}
                       disabled={actualizarEstado.isPending}
-                      className="btn-primary w-full justify-center"
+                      className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg font-semibold text-white transition-opacity disabled:opacity-50"
+                      style={{ background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' }}
                     >
                       <ChevronRight size={16} />
                       Avanzar a: {estadoLabel[siguienteEstado(venta.estadoPedido)!]}
@@ -208,7 +224,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
               {/* Tab: Retiros */}
               {tab === 'retiros' && (
                 <div className="space-y-4">
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm" style={{ color: '#9C6B47' }}>
                     Registrá cada vez que el cliente retira una parte del pedido.
                     El stock se descuenta automáticamente.
                   </p>
@@ -218,11 +234,11 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                     const pendiente = d.cantidadPedida - totalRetirado;
 
                     return (
-                      <div key={d.id} className="card-p">
+                      <div key={d.id} className="p-4 rounded-xl border" style={{ background: '#FFF8F0', borderColor: '#E8C9A0' }}>
                         <div className="flex items-start justify-between mb-3">
                           <div>
-                            <p className="font-semibold text-gray-900">{d.producto?.nombre}</p>
-                            <p className="text-sm text-gray-500 mt-0.5">
+                            <p className="font-semibold" style={{ color: '#3D1F0F' }}>{d.producto?.nombre}</p>
+                            <p className="text-sm mt-0.5" style={{ color: '#9C6B47' }}>
                               {totalRetirado} / {d.cantidadPedida} unidades entregadas
                             </p>
                           </div>
@@ -235,9 +251,9 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                         {retiros && retiros.length > 0 && (
                           <div className="space-y-1.5 mb-3">
                             {retiros.map((r, i) => (
-                              <div key={i} className="flex items-center justify-between text-xs bg-gray-50 rounded-lg px-3 py-2">
-                                <span className="text-gray-500">{formatFecha(r.fechaRetiro)}</span>
-                                <span className="font-semibold text-gray-900">{r.cantidadRetirada} unidades</span>
+                              <div key={i} className="flex items-center justify-between text-xs rounded-lg px-3 py-2" style={{ background: '#F5E6D0' }}>
+                                <span style={{ color: '#9C6B47' }}>{formatFecha(r.fechaRetiro)}</span>
+                                <span className="font-semibold" style={{ color: '#3D1F0F' }}>{r.cantidadRetirada} unidades</span>
                               </div>
                             ))}
                           </div>
@@ -254,19 +270,22 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                                   value={cantidadRetiro || ''}
                                   onChange={e => setCantidadRetiro(parseInt(e.target.value) || 0)}
                                   placeholder={`Máx. ${pendiente} u`}
-                                  className="input flex-1 text-sm"
+                                  className="flex-1 px-3 py-2 text-sm rounded-lg border outline-none"
+                                  style={{ borderColor: '#C4895A', background: '#fff', color: '#3D1F0F' }}
                                   autoFocus
                                 />
                                 <button
                                   onClick={() => handleRetiro(d.id)}
                                   disabled={registrarRetiro.isPending}
-                                  className="btn-primary"
+                                  className="px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
+                                  style={{ background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' }}
                                 >
                                   {registrarRetiro.isPending ? '...' : 'Registrar'}
                                 </button>
                                 <button
                                   onClick={() => { setRetiroDetalle(null); setErrorRetiro(''); }}
-                                  className="btn-secondary"
+                                  className="px-3 py-2 rounded-lg text-sm border"
+                                  style={{ borderColor: '#C4895A', color: '#6B3A2A', background: '#FFF8F0' }}
                                 >
                                   <X size={14} />
                                 </button>
@@ -280,7 +299,8 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                           ) : (
                             <button
                               onClick={() => { setRetiroDetalle(d.id); setCantidadRetiro(0); setErrorRetiro(''); }}
-                              className="btn-secondary text-sm w-full justify-center"
+                              className="w-full flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-lg border transition-colors"
+                              style={{ borderColor: '#C4895A', color: '#6B3A2A', background: '#FFF8F0' }}
                             >
                               <Plus size={15} /> Registrar retiro parcial
                             </button>
@@ -298,29 +318,29 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                   {venta.logistica ? (
                     <div className="space-y-4">
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="p-3 bg-gray-50 rounded-xl">
-                          <p className="text-xs text-gray-500 mb-1">Transportista</p>
-                          <p className="text-sm font-semibold text-gray-900">{venta.logistica.nombreTransportista}</p>
+                        <div className="p-3 rounded-xl border" style={{ background: '#FFF8F0', borderColor: '#E8C9A0' }}>
+                          <p className="text-xs mb-1" style={{ color: '#9C6B47' }}>Transportista</p>
+                          <p className="text-sm font-semibold" style={{ color: '#3D1F0F' }}>{venta.logistica.nombreTransportista}</p>
                           {venta.logistica.telefonoTransp && (
-                            <p className="text-xs text-gray-400">{venta.logistica.telefonoTransp}</p>
+                            <p className="text-xs" style={{ color: '#9C6B47' }}>{venta.logistica.telefonoTransp}</p>
                           )}
                         </div>
-                        <div className="p-3 bg-gray-50 rounded-xl">
-                          <p className="text-xs text-gray-500 mb-1">Estado de entrega</p>
+                        <div className="p-3 rounded-xl border" style={{ background: '#FFF8F0', borderColor: '#E8C9A0' }}>
+                          <p className="text-xs mb-1" style={{ color: '#9C6B47' }}>Estado de entrega</p>
                           <EstadoBadge estado={venta.logistica.estadoEntrega} />
                         </div>
                         {venta.logistica.fechaRetiroGalpon && (
-                          <div className="p-3 bg-gray-50 rounded-xl">
-                            <p className="text-xs text-gray-500 mb-1">Fecha de retiro del galpón</p>
-                            <p className="text-sm font-semibold text-gray-900">
+                          <div className="p-3 rounded-xl border" style={{ background: '#FFF8F0', borderColor: '#E8C9A0' }}>
+                            <p className="text-xs mb-1" style={{ color: '#9C6B47' }}>Fecha de retiro del galpón</p>
+                            <p className="text-sm font-semibold" style={{ color: '#3D1F0F' }}>
                               {formatFecha(venta.logistica.fechaRetiroGalpon)}
                             </p>
                           </div>
                         )}
                         {venta.logistica.costoFlete && (
-                          <div className="p-3 bg-gray-50 rounded-xl">
-                            <p className="text-xs text-gray-500 mb-1">Costo del flete</p>
-                            <p className="text-sm font-semibold text-gray-900">
+                          <div className="p-3 rounded-xl border" style={{ background: '#FFF8F0', borderColor: '#E8C9A0' }}>
+                            <p className="text-xs mb-1" style={{ color: '#9C6B47' }}>Costo del flete</p>
+                            <p className="text-sm font-semibold" style={{ color: '#3D1F0F' }}>
                               {formatPesos(venta.logistica.costoFlete)}
                             </p>
                           </div>
@@ -333,10 +353,14 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                         ].map(({ ok, label }) => (
                           <div key={label} className={clsx(
                             'flex-1 p-3 rounded-xl border text-center',
-                            ok ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
-                          )}>
-                            <p className="text-xs text-gray-500 mb-1">{label}</p>
-                            <p className={clsx('text-sm font-semibold', ok ? 'text-green-700' : 'text-gray-400')}>
+                            ok ? 'bg-green-50 border-green-200' : ''
+                          )}
+                          style={!ok ? { background: '#FFF8F0', borderColor: '#E8C9A0' } : {}}
+                          >
+                            <p className="text-xs mb-1" style={{ color: '#9C6B47' }}>{label}</p>
+                            <p className={clsx('text-sm font-semibold', ok ? 'text-green-700' : '')}
+                               style={!ok ? { color: '#C4895A' } : {}}
+                            >
                               {ok ? '✓ Confirmado' : 'Pendiente'}
                             </p>
                           </div>
@@ -345,9 +369,9 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                     </div>
                   ) : (
                     <div className="empty-state">
-                      <div className="empty-icon"><Truck size={22} /></div>
-                      <p className="text-sm font-semibold text-gray-700">Sin logística coordinada</p>
-                      <p className="text-sm text-gray-400 mt-1">
+                      <div className="empty-icon" style={{ background: '#F5E6D0', color: '#C4895A' }}><Truck size={22} /></div>
+                      <p className="text-sm font-semibold" style={{ color: '#6B3A2A' }}>Sin logística coordinada</p>
+                      <p className="text-sm mt-1" style={{ color: '#9C6B47' }}>
                         {venta.tipoEntrega === 'retira_cliente'
                           ? 'El cliente retira directamente del galpón'
                           : 'Coordiná la entrega desde el módulo de Logística'}
@@ -363,13 +387,13 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                   {venta.facturas && venta.facturas.length > 0 ? (
                     <div className="space-y-3">
                       {(venta.facturas as Record<string, unknown>[]).map((f) => (
-                        <div key={f.id as number} className="card-p">
+                        <div key={f.id as number} className="p-4 rounded-xl border" style={{ background: '#FFF8F0', borderColor: '#E8C9A0' }}>
                           <div className="flex items-start justify-between mb-3">
                             <div>
-                              <p className="font-semibold text-gray-900">
+                              <p className="font-semibold" style={{ color: '#3D1F0F' }}>
                                 {f.esSinFactura ? 'Operación SN (sin factura)' : `Factura A ${(f.nroFactura as string) || ''}`}
                               </p>
-                              <p className="text-xs text-gray-400 mt-0.5">
+                              <p className="text-xs mt-0.5" style={{ color: '#9C6B47' }}>
                                 Emitida: {formatFecha(f.fechaEmision as string)}
                                 {f.fechaVencimiento && ` · Vence: ${formatFecha(f.fechaVencimiento as string)}`}
                               </p>
@@ -377,24 +401,24 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                             <EstadoBadge estado={f.estadoCobro as string} />
                           </div>
                           <div className="grid grid-cols-3 gap-3 text-center">
-                            <div className="p-2 bg-gray-50 rounded-lg">
-                              <p className="text-xs text-gray-500">Neto</p>
-                              <p className="text-sm font-semibold">{formatPesos(f.totalNeto as number)}</p>
+                            <div className="p-2 rounded-lg" style={{ background: '#F5E6D0' }}>
+                              <p className="text-xs" style={{ color: '#9C6B47' }}>Neto</p>
+                              <p className="text-sm font-semibold" style={{ color: '#3D1F0F' }}>{formatPesos(f.totalNeto as number)}</p>
                             </div>
-                            <div className="p-2 bg-gray-50 rounded-lg">
-                              <p className="text-xs text-gray-500">IVA 21%</p>
-                              <p className="text-sm font-semibold">{formatPesos(f.iva as number)}</p>
+                            <div className="p-2 rounded-lg" style={{ background: '#F5E6D0' }}>
+                              <p className="text-xs" style={{ color: '#9C6B47' }}>IVA 21%</p>
+                              <p className="text-sm font-semibold" style={{ color: '#3D1F0F' }}>{formatPesos(f.iva as number)}</p>
                             </div>
-                            <div className="p-2 bg-[#16A34A]/10 rounded-lg">
-                              <p className="text-xs text-gray-500">Total</p>
-                              <p className="text-sm font-bold text-[#16A34A]">{formatPesos(f.totalConIva as number)}</p>
+                            <div className="p-2 rounded-lg" style={{ background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' }}>
+                              <p className="text-xs text-[#F5DEC8]">Total</p>
+                              <p className="text-sm font-bold text-white">{formatPesos(f.totalConIva as number)}</p>
                             </div>
                           </div>
                           {(f.pagos as Record<string, unknown>[] | undefined)?.length && (
-                            <div className="mt-3 pt-3 border-t border-gray-100">
-                              <p className="text-xs font-semibold text-gray-500 mb-2">Pagos recibidos</p>
+                            <div className="mt-3 pt-3 border-t" style={{ borderColor: '#E8C9A0' }}>
+                              <p className="text-xs font-semibold mb-2" style={{ color: '#9C6B47' }}>Pagos recibidos</p>
                               {(f.pagos as Record<string, unknown>[]).map((p) => (
-                                <div key={p.id as number} className="flex justify-between text-xs text-gray-600 py-1">
+                                <div key={p.id as number} className="flex justify-between text-xs py-1" style={{ color: '#6B3A2A' }}>
                                   <span>{formatFecha(p.fechaPago as string)} · {p.medioPago as string}</span>
                                   <span className="font-semibold text-green-700">{formatPesos(p.monto as number)}</span>
                                 </div>
@@ -406,9 +430,9 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                     </div>
                   ) : (
                     <div className="empty-state">
-                      <div className="empty-icon"><Receipt size={22} /></div>
-                      <p className="text-sm font-semibold text-gray-700">Sin factura emitida</p>
-                      <p className="text-sm text-gray-400 mt-1">
+                      <div className="empty-icon" style={{ background: '#F5E6D0', color: '#C4895A' }}><Receipt size={22} /></div>
+                      <p className="text-sm font-semibold" style={{ color: '#6B3A2A' }}>Sin factura emitida</p>
+                      <p className="text-sm mt-1" style={{ color: '#9C6B47' }}>
                         Emitila desde ARCA y registrala en el módulo de Facturación
                       </p>
                     </div>
