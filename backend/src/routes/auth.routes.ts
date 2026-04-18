@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { login, crearUsuario, getMe } from '../controllers/auth.controller';
+import { login, crearUsuario, getMe, register } from '../controllers/auth.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 
 const router = Router();
@@ -7,7 +7,10 @@ const router = Router();
 // POST /api/auth/login
 router.post('/login', login);
 
-// POST /api/auth/registro (solo para crear los dos usuarios iniciales)
+// POST /api/auth/register — registro público (cualquier usuario nuevo)
+router.post('/register', register);
+
+// POST /api/auth/registro (solo para crear los dos usuarios iniciales con rol específico)
 router.post('/registro', crearUsuario);
 
 // GET /api/auth/me (requiere token)

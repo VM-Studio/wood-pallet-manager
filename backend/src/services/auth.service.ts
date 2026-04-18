@@ -101,3 +101,44 @@ export const getMeService = async (userId: number) => {
 
   return usuario;
 };
+
+export const registerService = async (
+  nombre: string,
+  apellido: string,
+  email: string,
+  password: string,
+) => {
+  const existente = await prisma.usuario.findUnique({ where: { email } });
+  if (existente) {
+    throw new Error('Ya existe una cuenta con ese email');
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+
+  const usuario = await prisma.usuario.create({
+    data: {
+      nombre,
+      apellido,
+      email,
+      passwordHash,
+      rol: 'admin',
+    },
+  });
+
+  const token = jwt.sign(
+    { userId: usuario.id, email: usuario.email, rol: usuario.rol },
+    process.env.JWT_SECRET!,
+    { expiresIn: '7d' }
+  );
+
+  return {
+    token,
+    usuario: {
+      id: usuario.id,
+      nombre: usuario.nombre,
+      apellido: usuario.apellido,
+      email: usuario.email,
+      rol: usuario.rol,
+    },
+  };
+};

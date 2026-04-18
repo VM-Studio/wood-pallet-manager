@@ -1,18 +1,20 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { lazy, Suspense } from 'react';
 import MainLayout from './components/layout/MainLayout';
-import LoginPage from './pages/auth/LoginPage';
-import DashboardPage from './pages/dashboard/DashboardPage';
-import ClientesPage from './pages/clientes/ClientesPage';
-import ProductosPage from './pages/productos/ProductosPage';
-import CotizacionesPage from './pages/cotizaciones/CotizacionesPage';
-import VentasPage from './pages/ventas/VentasPage';
-import ComprasPage from './pages/compras/ComprasPage';
-import InventarioPage from './pages/inventario/InventarioPage';
-import LogisticaPage from './pages/logistica/LogisticaPage';
-import FacturacionPage from './pages/facturacion/FacturacionPage';
-import ReportesPage from './pages/reportes/ReportesPage';
-import AlertasPage from './pages/alertas/AlertasPage';
+
+const LoginPage       = lazy(() => import('./pages/auth/LoginPage'));
+const DashboardPage   = lazy(() => import('./pages/dashboard/DashboardPage'));
+const ClientesPage    = lazy(() => import('./pages/clientes/ClientesPage'));
+const ProductosPage   = lazy(() => import('./pages/productos/ProductosPage'));
+const CotizacionesPage = lazy(() => import('./pages/cotizaciones/CotizacionesPage'));
+const VentasPage      = lazy(() => import('./pages/ventas/VentasPage'));
+const ComprasPage     = lazy(() => import('./pages/compras/ComprasPage'));
+const InventarioPage  = lazy(() => import('./pages/inventario/InventarioPage'));
+const LogisticaPage   = lazy(() => import('./pages/logistica/LogisticaPage'));
+const FacturacionPage = lazy(() => import('./pages/facturacion/FacturacionPage'));
+const ReportesPage    = lazy(() => import('./pages/reportes/ReportesPage'));
+const AlertasPage     = lazy(() => import('./pages/alertas/AlertasPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,7 +26,8 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Routes>
+        <Suspense fallback={<div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',fontFamily:'Inter,sans-serif',color:'#6B7280'}}>Cargando...</div>}>
+          <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/" element={<MainLayout />}>
             <Route index element={<Navigate to="/dashboard" replace />} />
@@ -42,6 +45,7 @@ export default function App() {
           </Route>
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
+        </Suspense>
       </BrowserRouter>
     </QueryClientProvider>
   );

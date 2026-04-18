@@ -13,7 +13,7 @@ export default function LoginPage() {
   const [loginError, setLoginError] = useState('')
   const [loginLoading, setLoginLoading] = useState(false)
 
-  const [regData, setRegData] = useState({ nombre: '', email: '', password: '', password2: '' })
+  const [regData, setRegData] = useState({ nombre: '', apellido: '', email: '', password: '', password2: '' })
   const [regError, setRegError] = useState('')
   const [regLoading, setRegLoading] = useState(false)
   const [regSuccess, setRegSuccess] = useState(false)
@@ -24,7 +24,7 @@ export default function LoginPage() {
     setLoginLoading(true)
     try {
       const res = await api.post('/auth/login', loginData)
-      login(res.data.token, res.data.user)
+      login(res.data.token, res.data.usuario)
       navigate('/dashboard')
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
@@ -41,9 +41,8 @@ export default function LoginPage() {
     if (regData.password.length < 8) { setRegError('La contraseña debe tener al menos 8 caracteres'); return }
     setRegLoading(true)
     try {
-      await api.post('/auth/registro', { nombre: regData.nombre, email: regData.email, password: regData.password })
-      setRegSuccess(true)
-    } catch (err: unknown) {
+      await api.post('/auth/register', { nombre: regData.nombre, apellido: regData.apellido, email: regData.email, password: regData.password })
+      setRegSuccess(true)    } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
       setRegError(msg ?? 'Error al crear la cuenta')
     } finally {
@@ -53,6 +52,7 @@ export default function LoginPage() {
 
   const switchTab = (t: 'login' | 'registro') => {
     setTab(t); setLoginError(''); setRegError(''); setRegSuccess(false)
+    setRegData({ nombre: '', apellido: '', email: '', password: '', password2: '' })
   }
 
   return (
@@ -135,9 +135,14 @@ export default function LoginPage() {
                 ) : (
                   <form onSubmit={handleRegistro} className="space-y-4">
                     <div>
-                      <label className="label">Nombre completo</label>
-                      <input type="text" className="input" placeholder="Juan García"
+                      <label className="label">Nombre</label>
+                      <input type="text" className="input" placeholder="Juan"
                         value={regData.nombre} onChange={e => setRegData(p => ({ ...p, nombre: e.target.value }))} required autoFocus />
+                    </div>
+                    <div>
+                      <label className="label">Apellido</label>
+                      <input type="text" className="input" placeholder="García"
+                        value={regData.apellido} onChange={e => setRegData(p => ({ ...p, apellido: e.target.value }))} />
                     </div>
                     <div>
                       <label className="label">Correo electrónico</label>

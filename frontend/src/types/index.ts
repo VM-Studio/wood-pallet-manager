@@ -130,7 +130,7 @@ export interface Venta {
   totalConIva?: number;
   costoFlete?: number;
   observaciones?: string;
-  cliente?: { razonSocial: string };
+  cliente?: { razonSocial: string; cuit?: string };
   usuario?: { nombre: string; apellido: string; rol: string };
   detalles?: DetalleVenta[];
   facturas?: Factura[];
