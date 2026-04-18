@@ -23,7 +23,7 @@ export default function ClientesPage() {
   const { data: clientes, isLoading, error } = useClientes();
   const eliminarCliente = useEliminarCliente();
   const [busqueda, setBusqueda] = useState('');
-  const [filtro, setFiltro] = useState<'todos' | 'mios'>('todos');
+  const [filtro, setFiltro] = useState<'todos' | 'mios'>('mios');
   const [showForm, setShowForm] = useState(false);
   const [clienteEditar, setClienteEditar] = useState<Cliente | null>(null);
   const [clienteHistorial, setClienteHistorial] = useState<number | null>(null);

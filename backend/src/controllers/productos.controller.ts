@@ -55,6 +55,9 @@ export const crearProducto = async (req: AuthRequest, res: Response) => {
   try {
     const datos = crearProductoSchema.parse(req.body);
     const propietarioId = req.user!.userId;
+    if (!propietarioId) {
+      return res.status(400).json({ error: 'No se pudo identificar al propietario. Cerrá sesión y volvé a ingresar.' });
+    }
     const producto = await crearProductoService({ ...datos, propietarioId });
     res.status(201).json(producto);
   } catch (error: any) {
