@@ -175,6 +175,8 @@ export const convertirCotizacionAVentaService = async (
     tipoEntrega: 'retira_cliente' | 'envio_woodpallet';
     fechaEstimEntrega?: Date;
     observaciones?: string;
+    medioPago: 'transferencia' | 'e_check' | 'efectivo';
+    modalidadPago: 'completo_anticipado' | 'completo_entrega' | 'mitad_adelanto_mitad_entrega';
   },
   usuarioId: number
 ) => {
@@ -191,7 +193,7 @@ export const convertirCotizacionAVentaService = async (
     throw new Error('Esta cotización ya fue convertida en venta');
   }
 
-  return prisma.venta.create({
+  const venta = await prisma.venta.create({
     data: {
       cotizacionId,
       clienteId: cotizacion.clienteId,
@@ -217,6 +219,66 @@ export const convertirCotizacionAVentaService = async (
       detalles: { include: { producto: true } },
     },
   });
+
+  // ── Auto-crear factura según modalidad de pago ──────────────────────────
+  const totalConIva = Number(cotizacion.totalConIva ?? 0);
+  const totalNeto = Number(cotizacion.totalSinIva ?? totalConIva / 1.21);
+  const iva = totalConIva - totalNeto;
+
+  if (totalConIva > 0) {
+    const factura = await prisma.factura.create({
+      data: {
+        ventaId: venta.id,
+        clienteId: cotizacion.clienteId,
+        usuarioId,
+        totalNeto,
+        iva,
+        totalConIva,
+        estadoCobro: 'pendiente',
+        observaciones: `Generada automáticamente al convertir cotización #${cotizacionId}`,
+      },
+    });
+
+    if (datos.modalidadPago === 'completo_anticipado') {
+      // Pago completo ya realizado → registrar cobro por el total
+      await prisma.pagoCobro.create({
+        data: {
+          facturaId: factura.id,
+          clienteId: cotizacion.clienteId,
+          monto: totalConIva,
+          medioPago: datos.medioPago,
+          esAdelanto: true,
+          registradoPorId: usuarioId,
+          observaciones: 'Pago completo anticipado',
+        },
+      });
+      await prisma.factura.update({
+        where: { id: factura.id },
+        data: { estadoCobro: 'cobrada_total' },
+      });
+    } else if (datos.modalidadPago === 'mitad_adelanto_mitad_entrega') {
+      // 50% ya fue pagado → registrar cobro parcial
+      const mitad = Math.round((totalConIva / 2) * 100) / 100;
+      await prisma.pagoCobro.create({
+        data: {
+          facturaId: factura.id,
+          clienteId: cotizacion.clienteId,
+          monto: mitad,
+          medioPago: datos.medioPago,
+          esAdelanto: true,
+          registradoPorId: usuarioId,
+          observaciones: '50% adelantado — saldo restante al entregar',
+        },
+      });
+      await prisma.factura.update({
+        where: { id: factura.id },
+        data: { estadoCobro: 'cobrada_parcial' },
+      });
+    }
+    // completo_entrega → factura queda en pendiente, sin pago registrado
+  }
+
+  return venta;
 };
 
 export const generarTextoWhatsAppService = async (cotizacionId: number) => {

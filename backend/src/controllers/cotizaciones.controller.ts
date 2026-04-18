@@ -52,6 +52,8 @@ const convertirSchema = z.object({
   tipoEntrega: z.enum(['retira_cliente', 'envio_woodpallet']),
   fechaEstimEntrega: z.string().optional(),
   observaciones: z.string().optional(),
+  medioPago: z.enum(['transferencia', 'e_check', 'efectivo']),
+  modalidadPago: z.enum(['completo_anticipado', 'completo_entrega', 'mitad_adelanto_mitad_entrega']),
 });
 
 export const getCotizaciones = async (req: AuthRequest, res: Response) => {

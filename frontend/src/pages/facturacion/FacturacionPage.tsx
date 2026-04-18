@@ -319,9 +319,10 @@ export default function FacturacionPage() {
                             totalCobrado
                           })}
                           className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white"
-                          style={{ background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', borderRadius: '0.25rem' }}
+                          style={{ background: 'linear-gradient(135deg, #16A34A 0%, #15803D 100%)', borderRadius: '0.25rem' }}
                         >
-                          <DollarSign size={13} /> Cobrar
+                          <CheckCircle size={13} />
+                          {f.estadoCobro === 'cobrada_parcial' ? `Pago restante (${formatPesos(saldo)})` : 'Pago aprobado'}
                         </button>
                       )}
                     </td>

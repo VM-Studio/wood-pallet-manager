@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, ShoppingCart, Check, Truck, Warehouse } from 'lucide-react';
+import { X, ShoppingCart, Check, Truck, Warehouse, CreditCard } from 'lucide-react';
 import { useConvertirAVenta } from '../../hooks/useCotizaciones';
 import api from '../../services/api';
 
@@ -9,12 +9,17 @@ interface ConvertirVentaModalProps {
   onSuccess: () => void;
 }
 
+type MedioPago = 'transferencia' | 'e_check' | 'efectivo';
+type ModalidadPago = 'completo_anticipado' | 'completo_entrega' | 'mitad_adelanto_mitad_entrega';
+
 export default function ConvertirVentaModal({ cotizacionId, onClose, onSuccess }: ConvertirVentaModalProps) {
   const convertir = useConvertirAVenta();
   const [form, setForm] = useState({
     tipoEntrega: 'envio_woodpallet' as 'retira_cliente' | 'envio_woodpallet',
     fechaEstimEntrega: '',
-    observaciones: ''
+    observaciones: '',
+    medioPago: 'transferencia' as MedioPago,
+    modalidadPago: 'completo_entrega' as ModalidadPago,
   });
   const [error, setError] = useState('');
 
@@ -34,7 +39,7 @@ export default function ConvertirVentaModal({ cotizacionId, onClose, onSuccess }
     }
   };
 
-  const opciones = [
+  const opcionesEntrega = [
     {
       value: 'envio_woodpallet',
       label: 'Envío',
@@ -46,6 +51,26 @@ export default function ConvertirVentaModal({ cotizacionId, onClose, onSuccess }
       label: 'Retiro en galpón',
       sub: 'El cliente retira personalmente',
       icon: <Warehouse size={18} />,
+    },
+  ];
+
+  const accionEntrega = form.tipoEntrega === 'retira_cliente' ? 'retirar' : 'entregar';
+
+  const opcionesModalidad: { value: ModalidadPago; label: string; sub: string }[] = [
+    {
+      value: 'completo_anticipado',
+      label: 'Pago completo anticipado',
+      sub: 'El cliente pagó el total antes de la entrega',
+    },
+    {
+      value: 'completo_entrega',
+      label: `Pago completo al ${accionEntrega}`,
+      sub: `El cliente paga el total cuando ${form.tipoEntrega === 'retira_cliente' ? 'retira' : 'recibe'} la mercadería`,
+    },
+    {
+      value: 'mitad_adelanto_mitad_entrega',
+      label: `50% adelantado, 50% al ${accionEntrega}`,
+      sub: `Mitad ya abonada, el resto al ${form.tipoEntrega === 'retira_cliente' ? 'retiro' : 'momento de entrega'}`,
     },
   ];
 
@@ -80,7 +105,7 @@ export default function ConvertirVentaModal({ cotizacionId, onClose, onSuccess }
             <div>
               <label className="label">Tipo de entrega</label>
               <div className="grid grid-cols-2 gap-2">
-                {opciones.map(op => {
+                {opcionesEntrega.map(op => {
                   const activo = form.tipoEntrega === op.value;
                   return (
                     <button
@@ -120,6 +145,73 @@ export default function ConvertirVentaModal({ cotizacionId, onClose, onSuccess }
                 className="input"
                 style={{ borderRadius: '0.25rem' }}
               />
+            </div>
+
+            {/* Método de pago */}
+            <div>
+              <label className="label flex items-center gap-1.5">
+                <CreditCard size={14} />
+                Método de pago <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={form.medioPago}
+                onChange={e => setForm({ ...form, medioPago: e.target.value as MedioPago })}
+                className="select"
+                style={{ borderRadius: '0.25rem' }}
+                required
+              >
+                <option value="transferencia">Transferencia bancaria</option>
+                <option value="e_check">E-check</option>
+                <option value="efectivo">Efectivo</option>
+              </select>
+            </div>
+
+            {/* Modalidad de pago */}
+            <div>
+              <label className="label">Modalidad de pago <span className="text-red-500">*</span></label>
+              <div className="space-y-2">
+                {opcionesModalidad.map(op => {
+                  const activo = form.modalidadPago === op.value;
+                  return (
+                    <button
+                      key={op.value}
+                      type="button"
+                      onClick={() => setForm({ ...form, modalidadPago: op.value })}
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem 1rem',
+                        textAlign: 'left',
+                        border: `1.5px solid ${activo ? '#16A34A' : '#E5E7EB'}`,
+                        borderRadius: '0.25rem',
+                        background: activo ? '#F0FDF4' : '#fff',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 16, height: 16, borderRadius: '50%',
+                          border: `2px solid ${activo ? '#16A34A' : '#D1D5DB'}`,
+                          background: activo ? '#16A34A' : '#fff',
+                          flexShrink: 0,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}
+                      >
+                        {activo && <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff' }} />}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold" style={{ color: activo ? '#15803D' : '#111827' }}>
+                          {op.label}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-0.5">{op.sub}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Observaciones */}
@@ -176,3 +268,4 @@ export default function ConvertirVentaModal({ cotizacionId, onClose, onSuccess }
     </div>
   );
 }
+
