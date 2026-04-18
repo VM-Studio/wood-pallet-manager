@@ -101,27 +101,24 @@ export const ajustarStockService = async (
 export const getStockConsolidadoService = async () => {
   const stock = await prisma.stock.findMany({
     include: {
-      producto: { select: { id: true, nombre: true, tipo: true, condicion: true } },
+      producto: { select: { id: true, nombre: true } },
       proveedor: { select: { id: true, nombreEmpresa: true } },
     },
+    orderBy: [
+      { producto: { nombre: 'asc' } },
+      { proveedor: { nombreEmpresa: 'asc' } },
+    ],
   });
 
-  const consolidado: Record<number, any> = {};
-
-  for (const s of stock) {
-    const prodId = s.producto.id;
-    if (!consolidado[prodId]) {
-      consolidado[prodId] = { producto: s.producto, stockTotal: 0, porGalpon: [] };
-    }
-    consolidado[prodId].stockTotal += s.cantidadDisponible;
-    consolidado[prodId].porGalpon.push({
-      proveedor: s.proveedor,
-      cantidad: s.cantidadDisponible,
-      cantidadMinima: s.cantidadMinima,
-      bajoMinimo:
-        s.cantidadMinima !== null && s.cantidadDisponible <= s.cantidadMinima,
-    });
-  }
-
-  return Object.values(consolidado);
+  return stock.map(s => ({
+    stockId: s.id,
+    productoId: s.productoId,
+    proveedorId: s.proveedorId,
+    productoNombre: s.producto.nombre,
+    proveedorNombre: s.proveedor.nombreEmpresa,
+    cantidadDisponible: s.cantidadDisponible,
+    cantidadMinima: s.cantidadMinima ?? undefined,
+    bajoMinimo:
+      s.cantidadMinima !== null && s.cantidadDisponible <= s.cantidadMinima,
+  }));
 };
