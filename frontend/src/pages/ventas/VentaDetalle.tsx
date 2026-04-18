@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { X, Truck, Receipt, ChevronRight, Plus, AlertCircle } from 'lucide-react';
 import { useVenta, useActualizarEstadoVenta, useRegistrarRetiro } from '../../hooks/useVentas';
 import EstadoBadge from '../../components/ui/EstadoBadge';
@@ -74,9 +74,29 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
     { key: 'factura',   label: 'Factura' },
   ] as const;
 
+  const btnBrown = {
+    display: 'inline-flex', alignItems: 'center', gap: '6px',
+    background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
+    color: 'white', fontWeight: 500, fontSize: '0.875rem',
+    padding: '0.5rem 1rem', borderRadius: '0.25rem', border: 'none',
+    cursor: 'pointer', transition: 'all 0.2s',
+  } as React.CSSProperties;
+
+  const btnCancel = {
+    display: 'inline-flex', alignItems: 'center', gap: '6px',
+    background: '#fff', color: '#374151', border: '1px solid #E5E7EB',
+    fontWeight: 500, fontSize: '0.875rem', padding: '0.5rem 1rem',
+    borderRadius: '0.25rem', cursor: 'pointer',
+  } as React.CSSProperties;
+
+  const infoBox = {
+    padding: '0.75rem', background: '#F9FAFB',
+    border: '1px solid #E5E7EB', borderRadius: '0.25rem',
+  } as React.CSSProperties;
+
   return (
     <div className="modal-overlay">
-      <div className="modal max-w-3xl animate-slide-up">
+      <div className="modal max-w-3xl animate-slide-up" style={{ borderRadius: '0.25rem' }}>
 
         {/* Header */}
         <div className="modal-header">
@@ -91,7 +111,9 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
               </p>
             )}
           </div>
-          <button onClick={onClose} className="btn-icon"><X size={18} /></button>
+          <button onClick={onClose} className="btn-icon" style={{ borderRadius: '0.25rem' }}>
+            <X size={18} />
+          </button>
         </div>
 
         {isLoading ? (
@@ -107,7 +129,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                   className={clsx(
                     'px-4 py-3 text-sm font-medium border-b-2 transition-colors -mb-px',
                     tab === t.key
-                      ? 'border-[#16A34A] text-[#16A34A]'
+                      ? 'border-[#6B3A2A] text-[#6B3A2A]'
                       : 'border-transparent text-gray-500 hover:text-gray-700'
                   )}
                 >
@@ -122,21 +144,21 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
               {tab === 'detalle' && (
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                    <div style={infoBox}>
                       <p className="text-xs text-gray-500 mb-1">Tipo de entrega</p>
                       <p className="text-sm font-semibold text-gray-900">
                         {venta.tipoEntrega === 'retira_cliente' ? 'Retira el cliente' : 'Envío coordinado'}
                       </p>
                     </div>
-                    <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                    <div style={infoBox}>
                       <p className="text-xs text-gray-500 mb-1">Fecha estimada de entrega</p>
                       <p className="text-sm font-semibold text-gray-900">
                         {venta.fechaEstimEntrega ? formatFecha(venta.fechaEstimEntrega) : 'No definida'}
                       </p>
                     </div>
                     {venta.requiereSenasa && (
-                      <div className="col-span-2 p-3 bg-green-50 border border-green-200 rounded-xl">
-                        <p className="text-sm text-green-700 font-medium">Requiere tratamiento SENASA</p>
+                      <div className="col-span-2 p-3" style={{ background: '#FDF6EE', border: '1px solid #C4895A', borderRadius: '0.25rem' }}>
+                        <p className="text-sm font-medium" style={{ color: '#6B3A2A' }}>Requiere tratamiento SENASA</p>
                       </div>
                     )}
                   </div>
@@ -151,22 +173,22 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                         const pendiente = d.cantidadPedida - totalRetirado;
                         const pct = Math.round((totalRetirado / d.cantidadPedida) * 100);
                         return (
-                          <div key={d.id} className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                          <div key={d.id} style={{ ...infoBox, padding: '0.75rem' }}>
                             <div className="flex items-center justify-between mb-2">
                               <p className="text-sm font-semibold text-gray-900">{d.producto?.nombre}</p>
                               <p className="text-sm font-bold text-gray-900">{formatPesos(d.subtotal)}</p>
                             </div>
                             <div className="flex items-center gap-4 text-xs text-gray-500 mb-2">
                               <span>Pedido: {d.cantidadPedida} u</span>
-                              <span className="text-green-600">Entregado: {totalRetirado} u</span>
+                              <span style={{ color: '#6B3A2A' }}>Entregado: {totalRetirado} u</span>
                               <span className={pendiente > 0 ? 'text-amber-600 font-medium' : 'text-gray-400'}>
                                 Pendiente: {pendiente} u
                               </span>
                             </div>
-                            <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                            <div className="h-1.5 overflow-hidden" style={{ background: '#E5E7EB', borderRadius: '0.125rem' }}>
                               <div
-                                className="h-full bg-[#16A34A] rounded-full transition-all"
-                                style={{ width: `${pct}%` }}
+                                className="h-full transition-all"
+                                style={{ width: `${pct}%`, background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', borderRadius: '0.125rem' }}
                               />
                             </div>
                           </div>
@@ -176,7 +198,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                   </div>
 
                   {/* Total */}
-                  <div className="p-4 bg-[#1c3557] rounded-xl text-white">
+                  <div className="p-4 text-white" style={{ background: '#1c3557', borderRadius: '0.25rem' }}>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-300">Total con IVA</span>
                       <span className="text-xl font-bold">{formatPesos(venta.totalConIva || 0)}</span>
@@ -196,7 +218,12 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                         estado: siguienteEstado(venta.estadoPedido)!
                       })}
                       disabled={actualizarEstado.isPending}
-                      className="btn-primary w-full justify-center"
+                      style={{
+                        ...btnBrown,
+                        width: '100%', justifyContent: 'center',
+                        opacity: actualizarEstado.isPending ? 0.5 : 1,
+                        cursor: actualizarEstado.isPending ? 'not-allowed' : 'pointer',
+                      }}
                     >
                       <ChevronRight size={16} />
                       Avanzar a: {estadoLabel[siguienteEstado(venta.estadoPedido)!]}
@@ -218,7 +245,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                     const pendiente = d.cantidadPedida - totalRetirado;
 
                     return (
-                      <div key={d.id} className="card-p">
+                      <div key={d.id} className="card-p" style={{ borderRadius: '0.25rem' }}>
                         <div className="flex items-start justify-between mb-3">
                           <div>
                             <p className="font-semibold text-gray-900">{d.producto?.nombre}</p>
@@ -235,7 +262,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                         {retiros && retiros.length > 0 && (
                           <div className="space-y-1.5 mb-3">
                             {retiros.map((r, i) => (
-                              <div key={i} className="flex items-center justify-between text-xs bg-gray-50 rounded-lg px-3 py-2">
+                              <div key={i} className="flex items-center justify-between text-xs px-3 py-2" style={{ background: '#F9FAFB', borderRadius: '0.25rem' }}>
                                 <span className="text-gray-500">{formatFecha(r.fechaRetiro)}</span>
                                 <span className="font-semibold text-gray-900">{r.cantidadRetirada} unidades</span>
                               </div>
@@ -255,24 +282,25 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                                   onChange={e => setCantidadRetiro(parseInt(e.target.value) || 0)}
                                   placeholder={`Máx. ${pendiente} u`}
                                   className="input flex-1 text-sm"
+                                  style={{ borderRadius: '0.25rem' }}
                                   autoFocus
                                 />
                                 <button
                                   onClick={() => handleRetiro(d.id)}
                                   disabled={registrarRetiro.isPending}
-                                  className="btn-primary"
+                                  style={{ ...btnBrown, opacity: registrarRetiro.isPending ? 0.5 : 1 }}
                                 >
                                   {registrarRetiro.isPending ? '...' : 'Registrar'}
                                 </button>
                                 <button
                                   onClick={() => { setRetiroDetalle(null); setErrorRetiro(''); }}
-                                  className="btn-secondary"
+                                  style={btnCancel}
                                 >
                                   <X size={14} />
                                 </button>
                               </div>
                               {errorRetiro && (
-                                <p className="text-xs text-red-600 flex items-center gap-1">
+                                <p className="text-xs flex items-center gap-1 px-3 py-2" style={{ color: '#B91C1C', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '0.25rem' }}>
                                   <AlertCircle size={12} /> {errorRetiro}
                                 </p>
                               )}
@@ -280,7 +308,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                           ) : (
                             <button
                               onClick={() => { setRetiroDetalle(d.id); setCantidadRetiro(0); setErrorRetiro(''); }}
-                              className="btn-secondary text-sm w-full justify-center"
+                              style={{ ...btnCancel, width: '100%', justifyContent: 'center' }}
                             >
                               <Plus size={15} /> Registrar retiro parcial
                             </button>
@@ -298,19 +326,19 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                   {venta.logistica ? (
                     <div className="space-y-4">
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="p-3 bg-gray-50 rounded-xl">
+                        <div style={infoBox}>
                           <p className="text-xs text-gray-500 mb-1">Transportista</p>
                           <p className="text-sm font-semibold text-gray-900">{venta.logistica.nombreTransportista}</p>
                           {venta.logistica.telefonoTransp && (
                             <p className="text-xs text-gray-400">{venta.logistica.telefonoTransp}</p>
                           )}
                         </div>
-                        <div className="p-3 bg-gray-50 rounded-xl">
+                        <div style={infoBox}>
                           <p className="text-xs text-gray-500 mb-1">Estado de entrega</p>
                           <EstadoBadge estado={venta.logistica.estadoEntrega} />
                         </div>
                         {venta.logistica.fechaRetiroGalpon && (
-                          <div className="p-3 bg-gray-50 rounded-xl">
+                          <div style={infoBox}>
                             <p className="text-xs text-gray-500 mb-1">Fecha de retiro del galpón</p>
                             <p className="text-sm font-semibold text-gray-900">
                               {formatFecha(venta.logistica.fechaRetiroGalpon)}
@@ -318,7 +346,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                           </div>
                         )}
                         {venta.logistica.costoFlete && (
-                          <div className="p-3 bg-gray-50 rounded-xl">
+                          <div style={infoBox}>
                             <p className="text-xs text-gray-500 mb-1">Costo del flete</p>
                             <p className="text-sm font-semibold text-gray-900">
                               {formatPesos(venta.logistica.costoFlete)}
@@ -331,12 +359,17 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                           { ok: venta.logistica.confTransportista, label: 'Confirmación transportista' },
                           { ok: venta.logistica.confCliente, label: 'Confirmación cliente' },
                         ].map(({ ok, label }) => (
-                          <div key={label} className={clsx(
-                            'flex-1 p-3 rounded-xl border text-center',
-                            ok ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
-                          )}>
+                          <div
+                            key={label}
+                            className="flex-1 p-3 text-center"
+                            style={{
+                              borderRadius: '0.25rem',
+                              background: ok ? '#FDF6EE' : '#F9FAFB',
+                              border: `1px solid ${ok ? '#C4895A' : '#E5E7EB'}`,
+                            }}
+                          >
                             <p className="text-xs text-gray-500 mb-1">{label}</p>
-                            <p className={clsx('text-sm font-semibold', ok ? 'text-green-700' : 'text-gray-400')}>
+                            <p className="text-sm font-semibold" style={{ color: ok ? '#6B3A2A' : '#9CA3AF' }}>
                               {ok ? 'Confirmado' : 'Pendiente'}
                             </p>
                           </div>
@@ -345,7 +378,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                     </div>
                   ) : (
                     <div className="empty-state">
-                      <div className="empty-icon"><Truck size={22} /></div>
+                      <div className="empty-icon" style={{ borderRadius: '0.25rem' }}><Truck size={22} /></div>
                       <p className="text-sm font-semibold text-gray-700">Sin logística coordinada</p>
                       <p className="text-sm text-gray-400 mt-1">
                         {venta.tipoEntrega === 'retira_cliente'
@@ -363,7 +396,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                   {venta.facturas && venta.facturas.length > 0 ? (
                     <div className="space-y-3">
                       {(venta.facturas as Record<string, unknown>[]).map((f) => (
-                        <div key={f.id as number} className="card-p">
+                        <div key={f.id as number} className="card-p" style={{ borderRadius: '0.25rem' }}>
                           <div className="flex items-start justify-between mb-3">
                             <div>
                               <p className="font-semibold text-gray-900">
@@ -377,17 +410,17 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                             <EstadoBadge estado={f.estadoCobro as string} />
                           </div>
                           <div className="grid grid-cols-3 gap-3 text-center">
-                            <div className="p-2 bg-gray-50 rounded-lg">
+                            <div className="p-2" style={{ background: '#F9FAFB', borderRadius: '0.25rem' }}>
                               <p className="text-xs text-gray-500">Neto</p>
                               <p className="text-sm font-semibold">{formatPesos(f.totalNeto as number)}</p>
                             </div>
-                            <div className="p-2 bg-gray-50 rounded-lg">
+                            <div className="p-2" style={{ background: '#F9FAFB', borderRadius: '0.25rem' }}>
                               <p className="text-xs text-gray-500">IVA 21%</p>
                               <p className="text-sm font-semibold">{formatPesos(f.iva as number)}</p>
                             </div>
-                            <div className="p-2 bg-[#16A34A]/10 rounded-lg">
+                            <div className="p-2" style={{ background: '#FDF6EE', borderRadius: '0.25rem' }}>
                               <p className="text-xs text-gray-500">Total</p>
-                              <p className="text-sm font-bold text-[#16A34A]">{formatPesos(f.totalConIva as number)}</p>
+                              <p className="text-sm font-bold" style={{ color: '#6B3A2A' }}>{formatPesos(f.totalConIva as number)}</p>
                             </div>
                           </div>
                           {(f.pagos as Record<string, unknown>[] | undefined)?.length && (
@@ -396,7 +429,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                               {(f.pagos as Record<string, unknown>[]).map((p) => (
                                 <div key={p.id as number} className="flex justify-between text-xs text-gray-600 py-1">
                                   <span>{formatFecha(p.fechaPago as string)} · {p.medioPago as string}</span>
-                                  <span className="font-semibold text-green-700">{formatPesos(p.monto as number)}</span>
+                                  <span className="font-semibold" style={{ color: '#6B3A2A' }}>{formatPesos(p.monto as number)}</span>
                                 </div>
                               ))}
                             </div>
@@ -406,7 +439,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                     </div>
                   ) : (
                     <div className="empty-state">
-                      <div className="empty-icon"><Receipt size={22} /></div>
+                      <div className="empty-icon" style={{ borderRadius: '0.25rem' }}><Receipt size={22} /></div>
                       <p className="text-sm font-semibold text-gray-700">Sin factura emitida</p>
                       <p className="text-sm text-gray-400 mt-1">
                         Emitila desde ARCA y registrala en el módulo de Facturación
