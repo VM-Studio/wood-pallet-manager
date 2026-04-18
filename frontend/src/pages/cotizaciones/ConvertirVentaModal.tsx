@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, ShoppingCart, Check, Truck, Warehouse } from 'lucide-react';
 import { useConvertirAVenta } from '../../hooks/useCotizaciones';
+import api from '../../services/api';
 
 interface ConvertirVentaModalProps {
   cotizacionId: number;
@@ -21,6 +22,9 @@ export default function ConvertirVentaModal({ cotizacionId, onClose, onSuccess }
     e.preventDefault();
     setError('');
     try {
+      // Primero marcar como aceptada (requerido por el backend)
+      await api.put(`/cotizaciones/${cotizacionId}/estado`, { estado: 'aceptada' });
+      // Luego convertir a venta
       await convertir.mutateAsync({ id: cotizacionId, datos: form });
       onSuccess();
       onClose();
