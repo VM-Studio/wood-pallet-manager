@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
-  Plus, MessageCircle, ArrowRight, CheckCircle,
-  XCircle, Search, FileText, Truck, Leaf
+  Plus, MessageCircle,
+  CheckCircle, XCircle, Search, FileText, Truck, Leaf
 } from 'lucide-react';
 import { useCotizaciones, useActualizarEstadoCotizacion } from '../../hooks/useCotizaciones';
 import NuevaCotizacion from './NuevaCotizacion';
@@ -190,8 +190,8 @@ export default function CotizacionesPage() {
                       {(c.estado === 'enviada' || c.estado === 'en_seguimiento') && (
                         <>
                           <button
-                            onClick={() => actualizarEstado.mutate({ id: c.id, estado: 'aceptada' })}
-                            title="Aceptar cotización"
+                            onClick={() => setConvertirId(c.id)}
+                            title="Aceptar y convertir a venta"
                             style={{
                               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                               width: '1.875rem', height: '1.875rem', borderRadius: '0.25rem',
@@ -218,15 +218,6 @@ export default function CotizacionesPage() {
                             <XCircle size={15} />
                           </button>
                         </>
-                      )}
-                      {c.estado === 'aceptada' && (
-                        <button
-                          onClick={() => setConvertirId(c.id)}
-                          className="p-1.5 text-blue-500 hover:bg-blue-50 rounded transition-colors"
-                          title="Convertir a venta"
-                        >
-                          <ArrowRight size={15} />
-                        </button>
                       )}
                     </div>
                   </td>
