@@ -7,7 +7,6 @@ import RegistrarCobro from './RegistrarCobro';
 import EstadoBadge from '../../components/ui/EstadoBadge';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
-import { clsx } from 'clsx';
 
 interface FacturaVencida extends Factura {
   saldoPendiente: number;
@@ -86,85 +85,79 @@ export default function FacturacionPage() {
     <div className="space-y-6 animate-fade-in">
 
       {/* Header */}
-      <div className="page-header">
+      <div className="flex items-start justify-between">
         <div>
-          <h1 className="page-title">Facturación y Cobranzas</h1>
-          <p className="page-subtitle">{facturas?.length ?? 0} facturas registradas</p>
+          <h1 className="titulo-modulo">Facturación y Cobranzas</h1>
+          <p className="text-sm text-gray-500 mt-1">{facturas?.length ?? 0} facturas registradas</p>
         </div>
-        <button onClick={() => setShowNueva(true)} className="btn-primary">
-          <Plus size={18} /> Registrar factura
+        <button
+          onClick={() => setShowNueva(true)}
+          style={{ background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', borderRadius: '0.25rem' }}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white"
+        >
+          <Plus size={16} /> Registrar factura
         </button>
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="kpi-card kpi-amber">
+        <div className="card-kpi">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                Cobros pendientes
-              </p>
-              <p className="text-2xl font-bold text-gray-900">{formatPesos(totalPendiente)}</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Cobros pendientes</p>
+              <p className="text-2xl font-bold" style={{ color: '#6B3A2A' }}>{formatPesos(totalPendiente)}</p>
               <p className="text-xs text-gray-400 mt-1">
                 {pendientes?.length ?? 0} factura{(pendientes?.length ?? 0) !== 1 ? 's' : ''}
               </p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
-              <Clock size={18} className="text-amber-600" />
+            <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ background: '#FEF3E2', borderRadius: '0.25rem' }}>
+              <Clock size={18} style={{ color: '#C4895A' }} />
             </div>
           </div>
         </div>
 
-        <div className={clsx('kpi-card', totalVencidas > 0 ? 'kpi-red' : 'kpi-green')}>
+        <div className="card-kpi">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                Facturas vencidas
-              </p>
-              <p className={clsx('text-2xl font-bold', totalVencidas > 0 ? 'text-red-600' : 'text-gray-900')}>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Facturas vencidas</p>
+              <p className="text-2xl font-bold" style={{ color: totalVencidas > 0 ? '#B91C1C' : '#6B3A2A' }}>
                 {vencidas?.length ?? 0}
               </p>
               {totalVencidas > 0 && (
                 <p className="text-xs text-red-500 mt-1">{formatPesos(totalVencidas)}</p>
               )}
             </div>
-            <div className={clsx(
-              'w-10 h-10 rounded-xl flex items-center justify-center shrink-0',
-              totalVencidas > 0 ? 'bg-red-50' : 'bg-green-50'
-            )}>
-              <AlertTriangle size={18} className={totalVencidas > 0 ? 'text-red-600' : 'text-green-600'} />
+            <div className="w-10 h-10 flex items-center justify-center shrink-0"
+              style={{ background: totalVencidas > 0 ? '#FEF2F2' : '#FEF3E2', borderRadius: '0.25rem' }}>
+              <AlertTriangle size={18} style={{ color: totalVencidas > 0 ? '#B91C1C' : '#C4895A' }} />
             </div>
           </div>
         </div>
 
-        <div className="kpi-card kpi-green">
+        <div className="card-kpi">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                Cobradas
-              </p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Cobradas</p>
+              <p className="text-2xl font-bold" style={{ color: '#6B3A2A' }}>
                 {facturas?.filter(f => f.estadoCobro === 'cobrada_total').length ?? 0}
               </p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center shrink-0">
-              <CheckCircle size={18} className="text-green-600" />
+            <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ background: '#FEF3E2', borderRadius: '0.25rem' }}>
+              <CheckCircle size={18} style={{ color: '#C4895A' }} />
             </div>
           </div>
         </div>
 
-        <div className="kpi-card kpi-blue">
+        <div className="card-kpi">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                Total emitido
-              </p>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Total emitido</p>
+              <p className="text-xl font-bold" style={{ color: '#6B3A2A' }}>
                 {formatPesos(facturas?.reduce((acc, f) => acc + Number(f.totalConIva), 0) ?? 0)}
               </p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-              <Receipt size={18} className="text-blue-600" />
+            <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ background: '#F3EDE8', borderRadius: '0.25rem' }}>
+              <Receipt size={18} style={{ color: '#6B3A2A' }} />
             </div>
           </div>
         </div>
@@ -172,7 +165,7 @@ export default function FacturacionPage() {
 
       {/* Panel de alertas vencidas */}
       {vencidas && vencidas.length > 0 && (
-        <div className="card-p border-l-4 border-l-red-400">
+        <div className="card-base" style={{ borderLeft: '4px solid #EF4444' }}>
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle size={16} className="text-red-600" />
             <p className="text-sm font-semibold text-red-700">
@@ -182,7 +175,8 @@ export default function FacturacionPage() {
           <div className="space-y-2">
             {vencidas.slice(0, 3).map(f => (
               <div key={f.id}
-                className="flex items-center justify-between p-3 bg-red-50 rounded-xl border border-red-100">
+                className="flex items-center justify-between p-3 bg-red-50 border border-red-100"
+                style={{ borderRadius: '0.25rem' }}>
                 <div>
                   <p className="text-sm font-semibold text-red-800">{f.cliente?.razonSocial}</p>
                   <p className="text-xs text-red-500">
@@ -193,10 +187,7 @@ export default function FacturacionPage() {
                 <div className="flex items-center gap-3">
                   <div className="text-right">
                     <p className="text-sm font-bold text-red-700">{formatPesos(f.saldoPendiente)}</p>
-                    <span className={clsx(
-                      'text-xs font-semibold',
-                      f.urgencia === 'alta' ? 'text-red-600' : 'text-amber-600'
-                    )}>
+                    <span className={`text-xs font-semibold ${f.urgencia === 'alta' ? 'text-red-600' : 'text-amber-600'}`}>
                       {f.urgencia}
                     </span>
                   </div>
@@ -210,7 +201,8 @@ export default function FacturacionPage() {
                         totalCobrado
                       });
                     }}
-                    className="btn-sm bg-red-600 hover:bg-red-700 text-white flex items-center gap-1"
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white"
+                    style={{ background: '#B91C1C', borderRadius: '0.25rem' }}
                   >
                     <DollarSign size={13} /> Cobrar
                   </button>
@@ -227,17 +219,16 @@ export default function FacturacionPage() {
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input type="text" placeholder="Buscar por cliente, N° factura..."
             value={busqueda} onChange={e => setBusqueda(e.target.value)}
-            className="input pl-10" />
+            className="input-field pl-10" />
         </div>
-        <div className="flex gap-1 bg-white border border-gray-200 rounded-xl p-1 overflow-x-auto">
+        <div className="flex gap-1 p-1 overflow-x-auto" style={{ background: '#fff', borderRadius: '0.25rem', border: '1px solid #e5e7eb' }}>
           {estadoFiltros.map(f => (
             <button key={f.key} onClick={() => setFiltroEstado(f.key)}
-              className={clsx(
-                'px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all',
-                filtroEstado === f.key
-                  ? 'bg-[#16A34A] text-white shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              )}>
+              style={filtroEstado === f.key
+                ? { background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', color: '#fff', borderRadius: '0.25rem' }
+                : { borderRadius: '0.25rem' }
+              }
+              className="px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-all text-gray-500 hover:bg-gray-50">
               {f.label}
             </button>
           ))}
@@ -246,13 +237,15 @@ export default function FacturacionPage() {
 
       {/* Tabla */}
       {!filtradas?.length ? (
-        <div className="empty-state">
-          <div className="empty-icon"><Receipt size={24} /></div>
-          <p className="text-sm font-semibold text-gray-700">Sin facturas</p>
-          <p className="text-sm text-gray-400 mt-1">Registrá la primera factura con el botón de arriba</p>
+        <div className="card-base flex flex-col items-center justify-center py-16 text-center">
+          <div className="w-14 h-14 flex items-center justify-center mb-4" style={{ background: '#F3EDE8', borderRadius: '0.25rem' }}>
+            <Receipt size={24} style={{ color: '#6B3A2A' }} />
+          </div>
+          <p className="titulo-card" style={{ color: '#6B3A2A' }}>Sin facturas</p>
+          <p className="text-xs text-gray-400 mt-1">Registrá la primera factura con el botón de arriba</p>
         </div>
       ) : (
-        <div className="table-container">
+        <div className="card-base" style={{ padding: 0, overflow: 'hidden' }}>
           <table className="table">
             <thead>
               <tr>
@@ -275,7 +268,7 @@ export default function FacturacionPage() {
                   && f.estadoCobro !== 'cobrada_total';
 
                 return (
-                  <tr key={f.id} className={vencida ? 'bg-red-50/50' : ''}>
+                  <tr key={f.id} style={vencida ? { background: 'rgba(254,242,242,0.5)' } : {}}>
                     <td className="font-semibold text-gray-400 text-xs">#{f.id}</td>
                     <td>
                       <p className="font-semibold text-gray-900 text-sm">{f.cliente?.razonSocial}</p>
@@ -306,7 +299,7 @@ export default function FacturacionPage() {
                     <td>
                       {f.fechaVencimiento ? (
                         <div>
-                          <p className={clsx('text-sm', vencida ? 'text-red-600 font-semibold' : 'text-gray-700')}>
+                          <p className="text-sm" style={vencida ? { color: '#B91C1C', fontWeight: 600 } : { color: '#374151' }}>
                             {formatFecha(f.fechaVencimiento)}
                           </p>
                           {vencida && <p className="text-xs text-red-500">Vencida</p>}
@@ -325,7 +318,8 @@ export default function FacturacionPage() {
                             totalFactura: Number(f.totalConIva),
                             totalCobrado
                           })}
-                          className="btn-sm bg-[#16A34A] text-white hover:bg-[#15803D] flex items-center gap-1.5"
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white"
+                          style={{ background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', borderRadius: '0.25rem' }}
                         >
                           <DollarSign size={13} /> Cobrar
                         </button>
