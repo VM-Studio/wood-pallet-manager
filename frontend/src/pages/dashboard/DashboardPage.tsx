@@ -44,30 +44,42 @@ function KpiCard({ titulo, valor, variacion, subtitulo, icono, onClick }: KpiPro
 
   return (
     <div
-      className={clsx('card-kpi', onClick && 'cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-0.5')}
+      className={clsx(
+        'card-kpi',
+        onClick && 'cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-0.5'
+      )}
       onClick={onClick}
     >
-      <div className="flex items-start justify-between mb-3">
-        <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+      {/* Título + ícono en la misma fila */}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
           {icono}
         </div>
+        <p className="titulo-card flex-1">{titulo}</p>
+      </div>
+
+      {/* Valor */}
+      <p className="text-3xl font-bold text-gray-900 leading-none mb-2">
+        {valor}
+      </p>
+
+      {/* Subtítulo + variación */}
+      <div className="flex items-center justify-between mt-2">
+        {subtitulo && (
+          <p className="text-xs text-gray-400">{subtitulo}</p>
+        )}
         {variacion !== undefined && (
           <div className={clsx(
-            'flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-lg',
+            'flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-md ml-auto',
             positivo ? 'bg-green-50 text-green-700' :
             negativo ? 'bg-red-50 text-red-600' :
             'bg-gray-50 text-gray-400'
           )}>
-            {positivo ? <TrendingUp size={11} /> : negativo ? <TrendingDown size={11} /> : <Minus size={11} />}
+            {positivo ? <TrendingUp size={10} /> : negativo ? <TrendingDown size={10} /> : <Minus size={10} />}
             {positivo ? '+' : ''}{variacion}%
           </div>
         )}
       </div>
-      <p className="text-2xl font-bold text-gray-900 mb-1 leading-none">{valor}</p>
-      <p className="titulo-card">{titulo}</p>
-      {subtitulo && (
-        <p className="text-xs text-gray-400 mt-1.5">{subtitulo}</p>
-      )}
     </div>
   );
 }
@@ -92,12 +104,12 @@ function AlertaItem({ urgencia, titulo, detalle, onClick }: {
       )}
       onClick={onClick}
     >
-      <div className={clsx('w-2 h-2 rounded-full mt-1.5 shrink-0', dot)} />
+      <div className={clsx('w-2 h-2 rounded-full mt-2 shrink-0', dot)} />
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900 truncate">{titulo}</p>
+        <p className="text-sm font-medium text-gray-800 truncate">{titulo}</p>
         <p className="text-xs text-gray-400 mt-0.5 truncate">{detalle}</p>
       </div>
-      <ArrowRight size={14} className="text-gray-300 shrink-0 mt-0.5" />
+      <ArrowRight size={14} className="text-gray-300 shrink-0 mt-1" />
     </div>
   );
 }
@@ -110,7 +122,7 @@ export default function DashboardPage() {
   const esCarlos = usuario?.rol === 'propietario_carlos';
 
   if (loadingDash) return <LoadingSpinner text="Cargando dashboard..." />;
-  if (errorDash) return <ErrorMessage message="No se pudo cargar el dashboard. Verificá que el backend esté corriendo." />;
+  if (errorDash) return <ErrorMessage message="No se pudo cargar el dashboard." />;
 
   const kpis = dashboard?.kpis;
   const porPropietario = dashboard?.porPropietario;
@@ -126,7 +138,7 @@ export default function DashboardPage() {
           <h1 className="titulo-modulo">
             Bienvenido, {usuario?.nombre}
           </h1>
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="text-sm text-gray-600 mt-1">
             {new Date().toLocaleDateString('es-AR', {
               weekday: 'long', year: 'numeric',
               month: 'long', day: 'numeric'
@@ -134,10 +146,7 @@ export default function DashboardPage() {
           </p>
         </div>
         {alertas && alertas.alta > 0 && (
-          <button
-            onClick={() => navigate('/alertas')}
-            className="btn-brand-sm"
-          >
+          <button onClick={() => navigate('/alertas')} className="btn-brand-sm">
             <AlertTriangle size={13} />
             {alertas.alta} alerta{alertas.alta > 1 ? 's' : ''} urgente{alertas.alta > 1 ? 's' : ''}
           </button>
@@ -212,7 +221,12 @@ export default function DashboardPage() {
 
         {/* Gráfico */}
         <div className="xl:col-span-2 card-base">
-          <h2 className="titulo-seccion mb-5">Ventas — Últimos 12 meses</h2>
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+              <TrendingUp size={18} />
+            </div>
+            <h2 className="titulo-seccion">Ventas — Últimos 12 meses</h2>
+          </div>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={grafico} margin={{ top: 0, right: 0, left: -15, bottom: 0 }}>
               <defs>
@@ -250,27 +264,32 @@ export default function DashboardPage() {
 
         {/* Panel propietarios */}
         <div className="card-base">
-          <h2 className="titulo-seccion mb-4">Este mes</h2>
-          <div className="space-y-3">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+              <Users size={18} />
+            </div>
+            <h2 className="titulo-seccion">Este mes</h2>
+          </div>
 
+          <div className="space-y-3">
             {/* Carlos */}
             <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-gray-200 flex items-center justify-center text-gray-600 font-semibold text-xs">
-                    CH
-                  </div>
-                  <p className="text-sm font-semibold text-gray-900">Carlos</p>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-7 h-7 rounded-lg bg-gray-200 flex items-center justify-center text-gray-600 font-semibold text-xs shrink-0">
+                  CH
                 </div>
-                <p className="text-xs text-gray-400">Propietario</p>
+                <div className="flex items-center justify-between flex-1">
+                  <p className="text-sm font-semibold text-gray-900">Carlos</p>
+                  <p className="text-xs text-gray-400">Propietario</p>
+                </div>
               </div>
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div>
-                  <p className="text-lg font-bold text-gray-900">{porPropietario?.carlos.ventas || 0}</p>
+                  <p className="text-xl font-bold text-gray-900">{porPropietario?.carlos.ventas || 0}</p>
                   <p className="text-xs text-gray-400">Ventas</p>
                 </div>
                 <div>
-                  <p className="text-lg font-bold text-gray-900">{formatNumero(porPropietario?.carlos.pallets || 0)}</p>
+                  <p className="text-xl font-bold text-gray-900">{formatNumero(porPropietario?.carlos.pallets || 0)}</p>
                   <p className="text-xs text-gray-400">Pallets</p>
                 </div>
                 <div>
@@ -282,22 +301,22 @@ export default function DashboardPage() {
 
             {/* Juan Cruz */}
             <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-gray-200 flex items-center justify-center text-gray-600 font-semibold text-xs">
-                    JC
-                  </div>
-                  <p className="text-sm font-semibold text-gray-900">Juan Cruz</p>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-7 h-7 rounded-lg bg-gray-200 flex items-center justify-center text-gray-600 font-semibold text-xs shrink-0">
+                  JC
                 </div>
-                <p className="text-xs text-gray-400">Propietario Digital</p>
+                <div className="flex items-center justify-between flex-1">
+                  <p className="text-sm font-semibold text-gray-900">Juan Cruz</p>
+                  <p className="text-xs text-gray-400">Propietario Digital</p>
+                </div>
               </div>
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div>
-                  <p className="text-lg font-bold text-gray-900">{porPropietario?.juanCruz.ventas || 0}</p>
+                  <p className="text-xl font-bold text-gray-900">{porPropietario?.juanCruz.ventas || 0}</p>
                   <p className="text-xs text-gray-400">Ventas</p>
                 </div>
                 <div>
-                  <p className="text-lg font-bold text-gray-900">{formatNumero(porPropietario?.juanCruz.pallets || 0)}</p>
+                  <p className="text-xl font-bold text-gray-900">{formatNumero(porPropietario?.juanCruz.pallets || 0)}</p>
                   <p className="text-xs text-gray-400">Pallets</p>
                 </div>
                 <div>
@@ -309,8 +328,13 @@ export default function DashboardPage() {
 
             {/* Total */}
             <div className="p-4 rounded-xl border border-gray-200 bg-white">
-              <p className="titulo-card">Total consolidado</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+                  <TrendingUp size={14} />
+                </div>
+                <p className="titulo-card">Total consolidado</p>
+              </div>
+              <p className="text-2xl font-bold text-gray-900">
                 {formatPesosCompleto(
                   (porPropietario?.carlos.facturacion || 0) +
                   (porPropietario?.juanCruz.facturacion || 0)
@@ -333,11 +357,13 @@ export default function DashboardPage() {
         {/* Alertas */}
         <div className="card-base">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="titulo-seccion">Alertas activas</h2>
-            <button
-              onClick={() => navigate('/alertas')}
-              className="btn-brand-outline text-xs px-3 py-1.5"
-            >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+                <AlertTriangle size={18} />
+              </div>
+              <h2 className="titulo-seccion">Alertas activas</h2>
+            </div>
+            <button onClick={() => navigate('/alertas')} className="btn-brand-outline text-xs px-3 py-1.5">
               Ver todas
             </button>
           </div>
@@ -370,22 +396,51 @@ export default function DashboardPage() {
 
         {/* Accesos rápidos */}
         <div className="card-base">
-          <h2 className="titulo-seccion mb-4">Accesos rápidos</h2>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+              <Plus size={18} />
+            </div>
+            <h2 className="titulo-seccion">Accesos rápidos</h2>
+          </div>
           <div className="grid grid-cols-2 gap-3">
-            {([
+            {[
               { label: 'Nueva cotización', ruta: '/cotizaciones', icono: <Plus size={16} /> },
               { label: 'Nuevo cliente',    ruta: '/clientes',     icono: <Users size={16} /> },
               { label: 'Registrar cobro',  ruta: '/facturacion',  icono: <DollarSign size={16} /> },
               { label: 'Nueva compra',     ruta: '/compras',      icono: <ClipboardList size={16} /> },
-            ] as { label: string; ruta: string; icono: React.ReactNode }[]).map((item) => (
+            ].map((item) => (
               <button
                 key={item.label}
                 onClick={() => navigate(item.ruta)}
-                className="btn-brand w-full rounded-xl"
-                style={{ flexDirection: 'column', gap: '0.375rem', height: 'auto', padding: '0.875rem 1rem' }}
+                style={{
+                  background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '20px 16px',
+                  borderRadius: '12px',
+                  color: 'white',
+                  fontWeight: 500,
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  border: 'none',
+                  transition: 'all 0.2s',
+                  width: '100%'
+                }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, #5A3022 0%, #B07848 100%)';
+                  (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
+                  (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(107, 58, 42, 0.35)';
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)';
+                  (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+                  (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+                }}
               >
                 {item.icono}
-                <span className="text-xs font-medium">{item.label}</span>
+                <span>{item.label}</span>
               </button>
             ))}
           </div>

@@ -31,7 +31,7 @@
     -webkit-font-smoothing: antialiased;
   }
   body {
-    background-color: #F4F6FA;
+    background-color: #d0ccc6;
     color: #111827;
     margin: 0;
     padding: 0;
@@ -154,25 +154,27 @@
   /* ── Fuente de títulos ── */
   .titulo-modulo {
     font-family: 'Cormorant Garamond', Georgia, serif;
-    font-size: 1.5rem;
+    font-size: 2.25rem;
     font-weight: 600;
     font-style: italic;
     color: #111827;
     letter-spacing: -0.025em;
+    line-height: 1.1;
   }
   .titulo-seccion {
     font-family: 'Cormorant Garamond', Georgia, serif;
-    font-size: 1rem;
+    font-size: 1.5rem;
     font-weight: 600;
     font-style: italic;
     color: #1F2937;
   }
   .titulo-card {
     font-family: 'Cormorant Garamond', Georgia, serif;
-    font-size: 0.875rem;
+    font-size: 1.125rem;
     font-weight: 600;
     font-style: italic;
     color: #374151;
+    line-height: 1.25;
   }
 
   /* ── Botones con degradé café/caramelo ── */
@@ -241,10 +243,10 @@
     border-color: transparent;
   }
 
-  /* ── Cards base sin color ── */
-  .card-base    { background: #fff; border-radius: 0.75rem; border: 1px solid #F3F4F6; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04); padding: 1.5rem; }
-  .card-base-sm { background: #fff; border-radius: 0.75rem; border: 1px solid #F3F4F6; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04); padding: 1rem; }
-  .card-kpi     { background: #fff; border-radius: 0.75rem; border: 1px solid #F3F4F6; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04); padding: 1.25rem; }
+  /* ── Cards cuadradas blancas sobre fondo #d0ccc6 ── */
+  .card-base    { background: #fff; border-radius: 0.75rem; border: 1px solid rgba(255,255,255,0.8); box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 1.5rem; }
+  .card-base-sm { background: #fff; border-radius: 0.75rem; border: 1px solid rgba(255,255,255,0.8); box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 1rem; }
+  .card-kpi     { background: #fff; border-radius: 0.75rem; border: 1px solid rgba(255,255,255,0.8); box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 1.25rem; }
 }
 
 @keyframes fadeIn  { from { opacity: 0; }                              to { opacity: 1; } }
