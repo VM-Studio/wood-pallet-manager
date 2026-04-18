@@ -1,0 +1,174 @@
+import { useState } from 'react';
+import { X, Package } from 'lucide-react';
+import { useCrearProducto, useActualizarProducto } from '../../hooks/useProductos';
+import type { Producto } from '../../types';
+
+interface ProductoFormProps {
+  producto?: Producto;
+  onClose: () => void;
+}
+
+export default function ProductoForm({ producto, onClose }: ProductoFormProps) {
+  const esEdicion = !!producto;
+  const crear = useCrearProducto();
+  const actualizar = useActualizarProducto();
+  const [error, setError] = useState('');
+
+  const [form, setForm] = useState({
+    nombre:         producto?.nombre         ?? '',
+    tipo:           producto?.tipo           ?? 'estandar',
+    condicion:      producto?.condicion      ?? 'seminuevo',
+    dimensionLargo: producto?.dimensionLargo != null ? String(producto.dimensionLargo) : '',
+    dimensionAncho: producto?.dimensionAncho != null ? String(producto.dimensionAncho) : '',
+    cargaMaximaKg:  producto?.cargaMaximaKg  != null ? String(producto.cargaMaximaKg)  : '',
+    requiereSenasa: producto?.requiereSenasa ?? false,
+    descripcion:    producto?.descripcion    ?? ''
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    const datos: Partial<Producto> = {
+      nombre:         form.nombre,
+      tipo:           form.tipo,
+      condicion:      form.condicion,
+      requiereSenasa: form.requiereSenasa,
+      descripcion:    form.descripcion || undefined,
+      dimensionLargo: form.dimensionLargo ? parseInt(form.dimensionLargo) : undefined,
+      dimensionAncho: form.dimensionAncho ? parseInt(form.dimensionAncho) : undefined,
+      cargaMaximaKg:  form.cargaMaximaKg  ? parseInt(form.cargaMaximaKg)  : undefined,
+    };
+    try {
+      if (esEdicion) {
+        await actualizar.mutateAsync({ id: producto.id, datos });
+      } else {
+        await crear.mutateAsync(datos);
+      }
+      onClose();
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { error?: string } } };
+      setError(e.response?.data?.error || 'Error al guardar el producto');
+    }
+  };
+
+  const loading = crear.isPending || actualizar.isPending;
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal max-w-xl animate-slide-up">
+        <div className="modal-header">
+          <h2 className="modal-title flex items-center gap-2">
+            <Package size={18} className="text-[#16A34A]" />
+            {esEdicion ? 'Editar producto' : 'Nuevo producto'}
+          </h2>
+          <button onClick={onClose} className="btn-icon"><X size={18} /></button>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body space-y-4">
+            <div>
+              <label className="label">Nombre <span className="text-red-500">*</span></label>
+              <input
+                type="text"
+                value={form.nombre}
+                onChange={e => setForm({ ...form, nombre: e.target.value })}
+                className="input"
+                placeholder="Ej: Pallet Reforzado"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="label">Tipo</label>
+                <select
+                  value={form.tipo}
+                  onChange={e => setForm({ ...form, tipo: e.target.value })}
+                  className="select"
+                >
+                  <option value="estandar">Estándar</option>
+                  <option value="reforzado">Reforzado</option>
+                  <option value="liviano">Liviano</option>
+                  <option value="exportacion">Exportación</option>
+                  <option value="carton">Cartón</option>
+                  <option value="a_medida">A medida</option>
+                </select>
+              </div>
+              <div>
+                <label className="label">Condición</label>
+                <select
+                  value={form.condicion}
+                  onChange={e => setForm({ ...form, condicion: e.target.value })}
+                  className="select"
+                >
+                  <option value="nuevo">Nuevo</option>
+                  <option value="seminuevo">Semi-nuevo</option>
+                  <option value="usado">Usado</option>
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="label">Largo (mm)</label>
+                <input
+                  type="number"
+                  value={form.dimensionLargo}
+                  onChange={e => setForm({ ...form, dimensionLargo: e.target.value })}
+                  className="input"
+                  placeholder="1200"
+                />
+              </div>
+              <div>
+                <label className="label">Ancho (mm)</label>
+                <input
+                  type="number"
+                  value={form.dimensionAncho}
+                  onChange={e => setForm({ ...form, dimensionAncho: e.target.value })}
+                  className="input"
+                  placeholder="1000"
+                />
+              </div>
+              <div>
+                <label className="label">Carga máx. (kg)</label>
+                <input
+                  type="number"
+                  value={form.cargaMaximaKg}
+                  onChange={e => setForm({ ...form, cargaMaximaKg: e.target.value })}
+                  className="input"
+                  placeholder="1500"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="label">Descripción</label>
+              <textarea
+                value={form.descripcion}
+                onChange={e => setForm({ ...form, descripcion: e.target.value })}
+                className="input resize-none"
+                rows={2}
+              />
+            </div>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.requiereSenasa}
+                onChange={e => setForm({ ...form, requiereSenasa: e.target.checked })}
+                className="w-4 h-4 text-[#16A34A] rounded"
+              />
+              <span className="text-sm text-gray-700">🌿 Requiere tratamiento SENASA (exportación)</span>
+            </label>
+            {error && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 px-3 py-2.5 rounded-xl">
+                {error}
+              </p>
+            )}
+          </div>
+          <div className="modal-footer">
+            <button type="button" onClick={onClose} className="btn-secondary">Cancelar</button>
+            <button type="submit" disabled={loading} className="btn-primary">
+              {loading ? 'Guardando...' : esEdicion ? 'Guardar cambios' : 'Crear producto'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
