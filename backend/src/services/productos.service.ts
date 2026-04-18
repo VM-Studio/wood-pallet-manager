@@ -16,6 +16,12 @@ export const getProductosService = async () => {
           proveedor: { select: { id: true, nombreEmpresa: true } },
         },
       },
+      listaPrecios: {
+        where: {
+          OR: [{ vigentHasta: null }, { vigentHasta: { gte: new Date() } }],
+        },
+        orderBy: { cantMinima: 'asc' },
+      },
     },
     orderBy: { nombre: 'asc' },
   });
