@@ -19,7 +19,6 @@ const formatFecha = (f: string) =>
 
 const estadoFiltros = [
   { key: 'todos',          label: 'Todas' },
-  { key: 'enviada',        label: 'Enviadas' },
   { key: 'en_seguimiento', label: 'Seguimiento' },
   { key: 'aceptada',       label: 'Aceptadas' },
   { key: 'rechazada',      label: 'Rechazadas' },
@@ -39,7 +38,11 @@ export default function CotizacionesPage() {
     const matchBusqueda =
       c.cliente?.razonSocial.toLowerCase().includes(busqueda.toLowerCase()) ||
       `#${c.id}`.includes(busqueda);
-    const matchEstado = filtroEstado === 'todos' || c.estado === filtroEstado;
+    const matchEstado =
+      filtroEstado === 'todos' ||
+      (filtroEstado === 'en_seguimiento'
+        ? c.estado === 'enviada' || c.estado === 'en_seguimiento'
+        : c.estado === filtroEstado);
     return matchBusqueda && matchEstado;
   });
 
@@ -176,7 +179,7 @@ export default function CotizacionesPage() {
                   <td><EstadoBadge estado={c.estado} /></td>
                   <td className="text-xs text-gray-400">{formatFecha(c.fechaCotizacion)}</td>
                   <td>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => setWhatsappId(c.id)}
                         className="p-1.5 text-green-500 hover:text-green-700 hover:bg-green-50 rounded transition-colors"
@@ -185,14 +188,36 @@ export default function CotizacionesPage() {
                         <MessageCircle size={15} />
                       </button>
                       {(c.estado === 'enviada' || c.estado === 'en_seguimiento') && (
-                        <button
-                          onClick={() => actualizarEstado.mutate({ id: c.id, estado: 'aceptada' })}
-                          className="p-1.5 hover:bg-green-50 rounded transition-colors"
-                          style={{ color: '#6B3A2A' }}
-                          title="Marcar aceptada"
-                        >
-                          <CheckCircle size={15} />
-                        </button>
+                        <>
+                          <button
+                            onClick={() => actualizarEstado.mutate({ id: c.id, estado: 'aceptada' })}
+                            title="Aceptar cotización"
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                              width: '1.875rem', height: '1.875rem', borderRadius: '0.25rem',
+                              background: '#F0FDF4', border: '1.5px solid #86EFAC',
+                              color: '#16A34A', cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0
+                            }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#DCFCE7'; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#F0FDF4'; }}
+                          >
+                            <CheckCircle size={15} />
+                          </button>
+                          <button
+                            onClick={() => actualizarEstado.mutate({ id: c.id, estado: 'rechazada' })}
+                            title="Rechazar cotización"
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                              width: '1.875rem', height: '1.875rem', borderRadius: '0.25rem',
+                              background: '#FEF2F2', border: '1.5px solid #FCA5A5',
+                              color: '#DC2626', cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0
+                            }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#FEE2E2'; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#FEF2F2'; }}
+                          >
+                            <XCircle size={15} />
+                          </button>
+                        </>
                       )}
                       {c.estado === 'aceptada' && (
                         <button
@@ -201,15 +226,6 @@ export default function CotizacionesPage() {
                           title="Convertir a venta"
                         >
                           <ArrowRight size={15} />
-                        </button>
-                      )}
-                      {(c.estado === 'enviada' || c.estado === 'en_seguimiento') && (
-                        <button
-                          onClick={() => actualizarEstado.mutate({ id: c.id, estado: 'rechazada' })}
-                          className="p-1.5 text-red-400 hover:bg-red-50 rounded transition-colors"
-                          title="Marcar rechazada"
-                        >
-                          <XCircle size={15} />
                         </button>
                       )}
                     </div>
