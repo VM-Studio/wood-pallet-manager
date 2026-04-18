@@ -95,6 +95,8 @@ export const useConvertirAVenta = () => {
       queryClient.invalidateQueries({ queryKey: ['cotizaciones'] });
       queryClient.invalidateQueries({ queryKey: ['ventas'] });
       queryClient.invalidateQueries({ queryKey: ['facturas'] });
+      queryClient.invalidateQueries({ queryKey: ['cobros-pendientes'] });
+      queryClient.invalidateQueries({ queryKey: ['facturas-vencidas'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     }
   });

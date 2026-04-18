@@ -27,7 +27,9 @@ export const useFacturas = () => {
     queryFn: async () => {
       const { data } = await api.get('/facturas');
       return data;
-    }
+    },
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 };
 
