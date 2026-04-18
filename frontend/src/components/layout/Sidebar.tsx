@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Users, Package, FileText, ShoppingCart,
   Truck, Warehouse, Receipt, BarChart3, Bell, LogOut,
-  Package2, DollarSign
+  DollarSign
 } from 'lucide-react'
 import { useAuthStore } from '../../store/auth.store'
 
@@ -51,13 +51,11 @@ export default function Sidebar() {
     : '??'
 
   return (
-    <aside className="fixed top-0 left-0 h-screen w-[260px] bg-[#3c250f] flex flex-col z-30">
+    <aside className="fixed top-0 left-0 h-screen w-65 bg-[#3c250f] flex flex-col z-30">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-5 h-16 border-b border-white/10 flex-shrink-0">
-        <div className="w-9 h-9 bg-green-500 rounded-xl flex items-center justify-center">
-          <Package2 className="w-5 h-5 text-white" />
-        </div>
-        <span className="text-white font-bold text-lg tracking-tight">WoodPallet</span>
+      <div className="flex items-center gap-3 px-5 h-16 border-b border-white/10 shrink-0">
+        <img src="/palletlogo.png" alt="WoodPallet logo" className="w-9 h-9 object-contain" />
+        <span className="text-white text-xl tracking-tight" style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic', fontWeight: 600 }}>WoodPallet</span>
       </div>
 
       {/* Nav */}
@@ -79,7 +77,7 @@ export default function Sidebar() {
                     }`
                   }
                 >
-                  <item.icon className="w-[18px] h-[18px] flex-shrink-0" />
+                  <item.icon className="w-4.5 h-4.5 shrink-0" />
                   {item.label}
                 </NavLink>
               ))}
@@ -89,9 +87,9 @@ export default function Sidebar() {
       </nav>
 
       {/* User */}
-      <div className="flex-shrink-0 border-t border-white/10 p-4">
+      <div className="shrink-0 border-t border-white/10 p-4">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-green-500 rounded-xl flex items-center justify-center flex-shrink-0">
+          <div className="w-9 h-9 bg-green-500 rounded-xl flex items-center justify-center shrink-0">
             <span className="text-white text-xs font-bold">{initials}</span>
           </div>
           <div className="flex-1 min-w-0">
