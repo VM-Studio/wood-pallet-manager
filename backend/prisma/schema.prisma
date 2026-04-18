@@ -19,20 +19,22 @@ model Usuario {
   fechaCreacion DateTime   @default(now())
 
   // Relaciones
-  clientes         Cliente[]
-  cotizaciones     Cotizacion[]
-  ventas           Venta[]
-  compras          Compra[]
-  listaPrecios     ListaPrecio[]
-  historialPrecios HistorialPrecio[]
-  movimientosStock MovimientoStock[]
-  logisticas       Logistica[]
-  facturas         Factura[]
-  pagos            PagoCobro[]
-  notasCredito     NotaCredito[]
-  pagosProveedores PagoProveedor[]
-  retirosParciales RetiroParcial[]
-  seguimientos     SeguimientoCotizacion[]
+  clientes             Cliente[]
+  cotizaciones         Cotizacion[]
+  ventas               Venta[]
+  compras              Compra[]
+  listaPrecios         ListaPrecio[]
+  historialPrecios     HistorialPrecio[]
+  movimientosStock     MovimientoStock[]
+  logisticas           Logistica[]
+  facturas             Factura[]
+  pagos                PagoCobro[]
+  notasCredito         NotaCredito[]
+  pagosProveedores     PagoProveedor[]
+  retirosParciales     RetiroParcial[]
+  seguimientos         SeguimientoCotizacion[]
+  solicitudesEnviadas  SolicitudLogistica[]    @relation("SolicitudSolicitante")
+  solicitudesRecibidas SolicitudLogistica[]    @relation("SolicitudDestinatario")
 
   @@map("usuarios")
 }
@@ -371,13 +373,14 @@ model Venta {
   costoFlete        Decimal?     @db.Decimal(12, 2)
   observaciones     String?
 
-  cotizacion Cotizacion?    @relation(fields: [cotizacionId], references: [id])
-  cliente    Cliente        @relation(fields: [clienteId], references: [id])
-  usuario    Usuario        @relation(fields: [usuarioId], references: [id])
-  detalles   DetalleVenta[]
-  logistica  Logistica?
-  facturas   Factura[]
-  compras    Compra[]
+  cotizacion           Cotizacion?          @relation(fields: [cotizacionId], references: [id])
+  cliente              Cliente              @relation(fields: [clienteId], references: [id])
+  usuario              Usuario              @relation(fields: [usuarioId], references: [id])
+  detalles             DetalleVenta[]
+  logistica            Logistica?
+  facturas             Factura[]
+  compras              Compra[]
+  solicitudesLogistica SolicitudLogistica[]
 
   @@map("ventas")
 }
@@ -603,4 +606,32 @@ model PagoProveedor {
   registradoPor Usuario   @relation(fields: [registradoPorId], references: [id])
 
   @@map("pagos_proveedores")
+}
+
+// ─── SOLICITUDES DE LOGISTICA ────────────────────────────
+model SolicitudLogistica {
+  id               Int                      @id @default(autoincrement())
+  ventaId          Int?
+  solicitanteId    Int
+  destinatarioId   Int
+  fechaSolicitud   DateTime                 @default(now())
+  fechaEntrega     DateTime?
+  cantidadUnidades Int?
+  ubicacionEntrega String?
+  notas            String?
+  estado           EstadoSolicitudLogistica @default(pendiente)
+  fechaRespuesta   DateTime?
+  notasRespuesta   String?
+
+  venta        Venta?  @relation(fields: [ventaId], references: [id])
+  solicitante  Usuario @relation("SolicitudSolicitante", fields: [solicitanteId], references: [id])
+  destinatario Usuario @relation("SolicitudDestinatario", fields: [destinatarioId], references: [id])
+
+  @@map("solicitudes_logistica")
+}
+
+enum EstadoSolicitudLogistica {
+  pendiente
+  aceptada
+  rechazada
 }

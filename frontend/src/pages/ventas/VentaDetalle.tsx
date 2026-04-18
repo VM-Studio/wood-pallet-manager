@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { X, Truck, Receipt, ChevronRight, Plus, AlertCircle } from 'lucide-react';
+import { X, Truck, Receipt, ChevronRight, Plus, AlertCircle, Send } from 'lucide-react';
 import { useVenta, useActualizarEstadoVenta, useRegistrarRetiro } from '../../hooks/useVentas';
+import { useAuthStore } from '../../store/auth.store';
 import EstadoBadge from '../../components/ui/EstadoBadge';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import SolicitudLogisticaModal from './SolicitudLogisticaModal';
 import { clsx } from 'clsx';
 
 interface VentaDetalleProps {
@@ -37,10 +39,13 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
   const { data: venta, isLoading } = useVenta(ventaId);
   const actualizarEstado = useActualizarEstadoVenta();
   const registrarRetiro = useRegistrarRetiro();
+  const { usuario } = useAuthStore();
+  const esJuan = usuario?.rol === 'propietario_juancruz';
   const [retiroDetalle, setRetiroDetalle] = useState<number | null>(null);
   const [cantidadRetiro, setCantidadRetiro] = useState(0);
   const [errorRetiro, setErrorRetiro] = useState('');
   const [tab, setTab] = useState<Tab>('detalle');
+  const [showSolicitudModal, setShowSolicitudModal] = useState(false);
 
   const handleRetiro = async (detalleId: number) => {
     setErrorRetiro('');
@@ -95,6 +100,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
   } as React.CSSProperties;
 
   return (
+    <>
     <div className="modal-overlay">
       <div className="modal max-w-3xl animate-slide-up" style={{ borderRadius: '0.25rem' }}>
 
@@ -323,6 +329,24 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
               {/* Tab: Logística */}
               {tab === 'logistica' && (
                 <div>
+                  {/* Botón solicitar logística para Juan Cruz */}
+                  {esJuan && (
+                    <div className="mb-4">
+                      <button
+                        onClick={() => setShowSolicitudModal(true)}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '6px',
+                          background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
+                          color: 'white', fontWeight: 500, fontSize: '0.875rem',
+                          padding: '0.5rem 1rem', borderRadius: '0.25rem', border: 'none',
+                          cursor: 'pointer', transition: 'all 0.2s',
+                        }}
+                      >
+                        <Send size={15} />
+                        Solicitar logística a Carlos
+                      </button>
+                    </div>
+                  )}
                   {venta.logistica ? (
                     <div className="space-y-4">
                       <div className="grid grid-cols-2 gap-3">
@@ -454,5 +478,13 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
         )}
       </div>
     </div>
+    {showSolicitudModal && venta && (
+      <SolicitudLogisticaModal
+        ventaId={ventaId}
+        clienteNombre={venta.cliente?.razonSocial}
+        onClose={() => setShowSolicitudModal(false)}
+      />
+    )}
+    </>
   );
 }

@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Plus, Search, Truck, Calendar, Clock, CheckCircle } from 'lucide-react';
+import { Plus, Search, Truck, Calendar, Clock, CheckCircle, Check, X } from 'lucide-react';
 import { useLogisticas, useEntregasHoy } from '../../hooks/useLogistica';
 import { useAuthStore } from '../../store/auth.store';
+import { useSolicitudesLogistica, useResponderSolicitudLogistica } from '../../hooks/useSolicitudesLogistica';
 import NuevaLogistica from './NuevaLogistica';
 import EntregaCard from './EntregaCard';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
+import type { SolicitudLogistica } from '../../types';
 
 interface LogisticaConVenta {
   id: number;
@@ -41,6 +43,11 @@ export default function LogisticaPage() {
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [showNueva, setShowNueva] = useState(false);
+  const [respuestaSolicitudId, setRespuestaSolicitudId] = useState<number | null>(null);
+  const [notasRespuesta, setNotasRespuesta] = useState('');
+
+  const { data: solicitudes } = useSolicitudesLogistica();
+  const responder = useResponderSolicitudLogistica();
 
   const estadoFiltros = [
     { key: 'todos',        label: 'Todas' },
@@ -101,6 +108,107 @@ export default function LogisticaPage() {
           {esCarlos ? 'Coordinar entrega' : 'Consultar entrega'}
         </button>
       </div>
+
+      {/* Solicitudes de logística */}
+      {solicitudes && solicitudes.length > 0 && (
+        <div className="bg-white border border-gray-200 overflow-hidden" style={{ borderRadius: '0.25rem' }}>
+          <div className="px-4 py-3 border-b border-gray-100" style={{ background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' }}>
+            <h2 className="text-sm font-semibold text-white">
+              {esCarlos ? 'Solicitudes de Juan Cruz' : 'Mis solicitudes a Carlos'}
+            </h2>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {(solicitudes as SolicitudLogistica[]).map((s) => (
+              <div key={s.id} className="p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {s.ventaId && (
+                        <span className="text-xs font-medium px-2 py-0.5 text-white" style={{ background: '#6B3A2A', borderRadius: '0.25rem' }}>
+                          Venta #{s.ventaId}
+                        </span>
+                      )}
+                      <span
+                        className="text-xs font-medium px-2 py-0.5"
+                        style={{
+                          borderRadius: '0.25rem',
+                          background: s.estado === 'pendiente' ? '#FEF3E2' : s.estado === 'aceptada' ? '#DCFCE7' : '#FEE2E2',
+                          color: s.estado === 'pendiente' ? '#C4895A' : s.estado === 'aceptada' ? '#15803D' : '#DC2626',
+                        }}
+                      >
+                        {s.estado === 'pendiente' ? 'Pendiente' : s.estado === 'aceptada' ? 'Aceptada' : 'Rechazada'}
+                      </span>
+                    </div>
+                    <div className="mt-2 space-y-0.5 text-sm text-gray-600">
+                      {s.ubicacionEntrega && <p><span className="font-medium">Ubicación:</span> {s.ubicacionEntrega}</p>}
+                      {s.fechaEntrega && <p><span className="font-medium">Fecha entrega:</span> {new Date(s.fechaEntrega).toLocaleDateString('es-AR')}</p>}
+                      {s.cantidadUnidades && <p><span className="font-medium">Unidades:</span> {s.cantidadUnidades}</p>}
+                      {s.notas && <p className="text-gray-500 text-xs mt-1">{s.notas}</p>}
+                    </div>
+                    {s.notasRespuesta && (
+                      <p className="mt-1 text-xs text-gray-500"><span className="font-medium">Resp:</span> {s.notasRespuesta}</p>
+                    )}
+                  </div>
+                  {esCarlos && s.estado === 'pendiente' && (
+                    <div className="flex gap-2 shrink-0">
+                      {respuestaSolicitudId === s.id ? (
+                        <div className="flex flex-col gap-2 w-52">
+                          <textarea
+                            value={notasRespuesta}
+                            onChange={(e) => setNotasRespuesta(e.target.value)}
+                            placeholder="Notas opcionales..."
+                            rows={2}
+                            className="text-xs border border-gray-200 px-2 py-1 resize-none focus:outline-none"
+                            style={{ borderRadius: '0.25rem' }}
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                responder.mutate({ id: s.id, estado: 'aceptada', notasRespuesta });
+                                setRespuestaSolicitudId(null);
+                                setNotasRespuesta('');
+                              }}
+                              className="flex-1 flex items-center justify-center gap-1 py-1 text-xs font-medium text-white"
+                              style={{ background: '#15803D', borderRadius: '0.25rem' }}
+                            >
+                              <Check size={12} /> Aceptar
+                            </button>
+                            <button
+                              onClick={() => {
+                                responder.mutate({ id: s.id, estado: 'rechazada', notasRespuesta });
+                                setRespuestaSolicitudId(null);
+                                setNotasRespuesta('');
+                              }}
+                              className="flex-1 flex items-center justify-center gap-1 py-1 text-xs font-medium text-white"
+                              style={{ background: '#DC2626', borderRadius: '0.25rem' }}
+                            >
+                              <X size={12} /> Rechazar
+                            </button>
+                          </div>
+                          <button
+                            onClick={() => { setRespuestaSolicitudId(null); setNotasRespuesta(''); }}
+                            className="text-xs text-gray-400 hover:text-gray-600"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setRespuestaSolicitudId(s.id)}
+                          className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white"
+                          style={{ background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', borderRadius: '0.25rem' }}
+                        >
+                          Responder
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

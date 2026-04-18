@@ -275,3 +275,22 @@ export interface DashboardData {
     }[];
   };
 }
+
+// Solicitud Logística
+export interface SolicitudLogistica {
+  id: number;
+  ventaId?: number;
+  solicitanteId: number;
+  destinatarioId: number;
+  fechaSolicitud: string;
+  fechaEntrega?: string;
+  cantidadUnidades?: number;
+  ubicacionEntrega?: string;
+  notas?: string;
+  estado: 'pendiente' | 'aceptada' | 'rechazada';
+  fechaRespuesta?: string;
+  notasRespuesta?: string;
+  venta?: { cliente?: { razonSocial: string } };
+  solicitante?: { id: number; nombre: string; apellido: string };
+  destinatario?: { id: number; nombre: string; apellido: string };
+}
