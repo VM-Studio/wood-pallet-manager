@@ -52,6 +52,7 @@ export const crearCotizacionService = async (
     detalles: {
       productoId: number;
       cantidad: number;
+      precioUnitario?: number;
       esAMedida?: boolean;
       especificacion?: {
         largoMm?: number;
@@ -69,12 +70,20 @@ export const crearCotizacionService = async (
   const detallesConPrecio = [];
 
   for (const detalle of datos.detalles) {
-    const precio = await calcularPrecioService(detalle.productoId, detalle.cantidad);
-    const subtotal = Number(precio.precioUnitario) * detalle.cantidad;
+    let precioUnit: number;
+    if (detalle.precioUnitario !== undefined && detalle.precioUnitario > 0) {
+      // Precio especial enviado desde el frontend
+      precioUnit = detalle.precioUnitario;
+    } else {
+      // Precio guardado en el módulo de productos
+      const precio = await calcularPrecioService(detalle.productoId, detalle.cantidad);
+      precioUnit = Number(precio.precioUnitario);
+    }
+    const subtotal = precioUnit * detalle.cantidad;
     totalSinIva += subtotal;
     detallesConPrecio.push({
       ...detalle,
-      precioUnitario: Number(precio.precioUnitario),
+      precioUnitario: precioUnit,
       subtotal,
     });
   }
