@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Calculator } from 'lucide-react';
 import { useCrearCotizacion } from '../../hooks/useCotizaciones';
 import { useClientes } from '../../hooks/useClientes';
+import { useAuthStore } from '../../store/auth.store';
 import api from '../../services/api';
 import { generarPresupuestoPDF } from '../../utils/generarPresupuestoPDF';
 
@@ -26,6 +27,7 @@ interface DetalleForm {
 export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionProps) {
   const crearCotizacion = useCrearCotizacion();
   const { data: clientes } = useClientes();
+  const { usuario } = useAuthStore();
   const [productos, setProductos] = useState<any[]>([]);
   const [error, setError] = useState('');
 
@@ -205,7 +207,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
                 required
               >
                 <option value={0}>Seleccioná un cliente...</option>
-                {clientes?.map(c => (
+                {clientes?.filter(c => c.usuarioAsignadoId === usuario?.id).map(c => (
                   <option key={c.id} value={c.id}>{c.razonSocial}</option>
                 ))}
               </select>
