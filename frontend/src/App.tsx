@@ -14,7 +14,8 @@ const InventarioPage  = lazy(() => import('./pages/inventario/InventarioPage'));
 const LogisticaPage   = lazy(() => import('./pages/logistica/LogisticaPage'));
 const FacturacionPage = lazy(() => import('./pages/facturacion/FacturacionPage'));
 const ReportesPage    = lazy(() => import('./pages/reportes/ReportesPage'));
-const AlertasPage     = lazy(() => import('./pages/alertas/AlertasPage'));
+const AlertasPage        = lazy(() => import('./pages/alertas/AlertasPage'));
+const ConfiguracionPage  = lazy(() => import('./pages/configuracion/ConfiguracionPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,6 +43,7 @@ export default function App() {
             <Route path="facturacion"   element={<FacturacionPage />} />
             <Route path="reportes"      element={<ReportesPage />} />
             <Route path="alertas"       element={<AlertasPage />} />
+            <Route path="configuracion" element={<ConfiguracionPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>

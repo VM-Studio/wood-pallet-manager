@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import { loginService, crearUsuarioService, getMeService, registerService } from '../services/auth.service';
+import { loginService, crearUsuarioService, getMeService, registerService, actualizarPerfilService, cambiarPasswordService } from '../services/auth.service';
 import { AuthRequest } from '../middlewares/auth.middleware';
 
 const loginSchema = z.object({
@@ -65,6 +65,45 @@ export const register = async (req: Request, res: Response) => {
     const datos = registerSchema.parse(req.body);
     const usuario = await registerService(datos.nombre, datos.apellido, datos.email, datos.password);
     res.status(201).json(usuario);
+  } catch (error: any) {
+    if (error.name === 'ZodError') {
+      return res.status(400).json({ error: error.errors[0].message });
+    }
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const actualizarPerfil = async (req: AuthRequest, res: Response) => {
+  try {
+    const datos = z.object({
+      nombre:   z.string().min(1),
+      apellido: z.string().min(1),
+      telefono: z.string().optional()
+    }).parse(req.body);
+
+    const usuario = await actualizarPerfilService(req.user!.userId, datos);
+    res.json(usuario);
+  } catch (error: any) {
+    if (error.name === 'ZodError') {
+      return res.status(400).json({ error: error.errors[0].message });
+    }
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const cambiarPassword = async (req: AuthRequest, res: Response) => {
+  try {
+    const datos = z.object({
+      passwordActual: z.string().min(1),
+      passwordNuevo:  z.string().min(6)
+    }).parse(req.body);
+
+    const resultado = await cambiarPasswordService(
+      req.user!.userId,
+      datos.passwordActual,
+      datos.passwordNuevo
+    );
+    res.json(resultado);
   } catch (error: any) {
     if (error.name === 'ZodError') {
       return res.status(400).json({ error: error.errors[0].message });

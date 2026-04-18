@@ -43,7 +43,40 @@ export const loginService = async (email: string, password: string) => {
   };
 };
 
-export const crearUsuarioService = async (datos: {
+export const actualizarPerfilService = async (
+  userId: number,
+  datos: { nombre: string; apellido: string; telefono?: string }
+) => {
+  const u = await prisma.usuario.update({
+    where: { id: userId },
+    data: datos,
+    select: {
+      id: true, nombre: true, apellido: true,
+      email: true, rol: true, telefono: true
+    }
+  });
+  return u;
+};
+
+export const cambiarPasswordService = async (
+  userId: number,
+  passwordActual: string,
+  passwordNuevo: string
+) => {
+  const u = await prisma.usuario.findUnique({ where: { id: userId } });
+  if (!u) throw new Error('Usuario no encontrado');
+
+  const valido = await bcrypt.compare(passwordActual, u.passwordHash);
+  if (!valido) throw new Error('La contraseña actual es incorrecta');
+
+  const nuevoHash = await bcrypt.hash(passwordNuevo, 10);
+  await prisma.usuario.update({
+    where: { id: userId },
+    data: { passwordHash: nuevoHash }
+  });
+
+  return { mensaje: 'Contraseña actualizada correctamente' };
+};export const crearUsuarioService = async (datos: {
   nombre: string;
   apellido: string;
   email: string;

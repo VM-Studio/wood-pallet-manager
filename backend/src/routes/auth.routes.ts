@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { login, crearUsuario, getMe, register } from '../controllers/auth.controller';
+import { login, crearUsuario, getMe, register, actualizarPerfil, cambiarPassword } from '../controllers/auth.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 
 const router = Router();
@@ -15,5 +15,11 @@ router.post('/registro', crearUsuario);
 
 // GET /api/auth/me (requiere token)
 router.get('/me', authenticate, getMe);
+
+// PUT /api/auth/perfil
+router.put('/perfil', authenticate, actualizarPerfil);
+
+// PUT /api/auth/password
+router.put('/password', authenticate, cambiarPassword);
 
 export default router;
