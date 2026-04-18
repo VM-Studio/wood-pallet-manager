@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { Plus, Search, DollarSign, AlertTriangle, Clock, CheckCircle, Receipt } from 'lucide-react';
-import { useFacturas, useFacturasVencidas, useCobrosPendientes } from '../../hooks/useFacturacion';
+import { Search, DollarSign, AlertTriangle, Clock, CheckCircle, Receipt, X } from 'lucide-react';
+import { useFacturas, useFacturasVencidas, useCobrosPendientes, useActualizarNroFactura } from '../../hooks/useFacturacion';
 import type { Factura } from '../../types';
-import NuevaFactura from './NuevaFactura';
 import RegistrarCobro from './RegistrarCobro';
 import EstadoBadge from '../../components/ui/EstadoBadge';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
@@ -46,8 +45,10 @@ export default function FacturacionPage() {
 
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('todos');
-  const [showNueva, setShowNueva] = useState(false);
   const [cobroData, setCobroData] = useState<CobroData | null>(null);
+  const [nroFacturaModal, setNroFacturaModal] = useState<{ id: number; clienteNombre: string } | null>(null);
+  const [nroFacturaInput, setNroFacturaInput] = useState('');
+  const actualizarNro = useActualizarNroFactura();
 
   const filtradas = facturas?.filter(f => {
     const matchBusqueda =
@@ -90,13 +91,6 @@ export default function FacturacionPage() {
           <h1 className="titulo-modulo">Facturación y Cobranzas</h1>
           <p className="text-sm text-gray-500 mt-1">{facturas?.length ?? 0} facturas registradas</p>
         </div>
-        <button
-          onClick={() => setShowNueva(true)}
-          style={{ background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', borderRadius: '0.25rem' }}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white"
-        >
-          <Plus size={16} /> Registrar factura
-        </button>
       </div>
 
       {/* KPIs */}
@@ -331,21 +325,41 @@ export default function FacturacionPage() {
                     </td>
                     <td><EstadoBadge estado={f.estadoCobro} /></td>
                     <td>
-                      {f.estadoCobro !== 'cobrada_total' && (
-                        <button
-                          onClick={() => setCobroData({
-                            facturaId: f.id,
-                            clienteNombre: f.cliente?.razonSocial ?? '',
-                            totalFactura: Number(f.totalConIva),
-                            totalCobrado
-                          })}
-                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white"
-                          style={{ background: 'linear-gradient(135deg, #16A34A 0%, #15803D 100%)', borderRadius: '0.25rem' }}
-                        >
-                          <CheckCircle size={13} />
-                          {f.estadoCobro === 'cobrada_parcial' ? `Pago restante (${formatPesos(saldo)})` : 'Pago aprobado'}
-                        </button>
-                      )}
+                      <div className="flex flex-col gap-1.5">
+                        {/* Botón pago aprobado */}
+                        {f.estadoCobro !== 'cobrada_total' && (
+                          <button
+                            onClick={() => setCobroData({
+                              facturaId: f.id,
+                              clienteNombre: f.cliente?.razonSocial ?? '',
+                              totalFactura: Number(f.totalConIva),
+                              totalCobrado
+                            })}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white"
+                            style={{ background: 'linear-gradient(135deg, #16A34A 0%, #15803D 100%)', borderRadius: '0.25rem' }}
+                          >
+                            <CheckCircle size={13} />
+                            {f.estadoCobro === 'cobrada_parcial' ? `Pago restante (${formatPesos(saldo)})` : 'Pago aprobado'}
+                          </button>
+                        )}
+                        {/* Botón cargar N° ARCA — solo si tiene IVA y aún no tiene nro */}
+                        {Number(f.iva) > 0 && !f.nroFactura && (
+                          <button
+                            onClick={() => {
+                              setNroFacturaModal({ id: f.id, clienteNombre: f.cliente?.razonSocial ?? '' });
+                              setNroFacturaInput('');
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium"
+                            style={{ background: '#EFF6FF', color: '#1D4ED8', borderRadius: '0.25rem', border: '1px solid #BFDBFE' }}
+                          >
+                            <Receipt size={13} /> Cargar N° ARCA
+                          </button>
+                        )}
+                        {/* Badge si ya tiene nro ARCA */}
+                        {f.nroFactura && (
+                          <span className="text-xs text-gray-500 font-mono">{f.nroFactura}</span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -355,8 +369,42 @@ export default function FacturacionPage() {
         </div>
       )}
 
-      {showNueva && (
-        <NuevaFactura onClose={() => setShowNueva(false)} onSuccess={() => setShowNueva(false)} />
+      {/* Modal N° ARCA */}
+      {nroFacturaModal && (
+        <div className="modal-overlay" onClick={() => setNroFacturaModal(null)}>
+          <div className="modal" style={{ maxWidth: '400px' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <span className="modal-title">Cargar N° de Factura ARCA</span>
+              <button onClick={() => setNroFacturaModal(null)} className="btn-icon"><X size={18} /></button>
+            </div>
+            <div className="modal-body space-y-3">
+              <p className="text-sm text-gray-500">Cliente: <strong>{nroFacturaModal.clienteNombre}</strong></p>
+              <div>
+                <label className="label">Número de comprobante ARCA</label>
+                <input
+                  className="input-field"
+                  placeholder="Ej: 00001-00000001"
+                  value={nroFacturaInput}
+                  onChange={e => setNroFacturaInput(e.target.value)}
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button onClick={() => setNroFacturaModal(null)} className="btn-secondary">Cancelar</button>
+              <button
+                disabled={!nroFacturaInput.trim() || actualizarNro.isPending}
+                onClick={async () => {
+                  await actualizarNro.mutateAsync({ id: nroFacturaModal.id, nroFactura: nroFacturaInput.trim() });
+                  setNroFacturaModal(null);
+                }}
+                className="btn-primary"
+              >
+                {actualizarNro.isPending ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {cobroData && (

@@ -106,3 +106,16 @@ export const useCrearNotaCredito = () => {
     }
   });
 };
+
+export const useActualizarNroFactura = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, nroFactura }: { id: number; nroFactura: string }) => {
+      const { data } = await api.patch(`/facturas/${id}/nro-factura`, { nroFactura });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['facturas'] });
+    }
+  });
+};

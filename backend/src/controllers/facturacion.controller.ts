@@ -96,3 +96,17 @@ export const getCobrosPendientes = async (req: AuthRequest, res: Response) => {
   const cobros = await getCobrosPendientesService(req.user!.userId, req.user!.rol);
   res.json(cobros);
 };
+
+export const actualizarNroFactura = async (req: AuthRequest, res: Response) => {
+  const id = parseId(req.params.id);
+  const { nroFactura } = req.body;
+  if (!nroFactura || typeof nroFactura !== 'string') {
+    res.status(400).json({ error: 'nroFactura es requerido' });
+    return;
+  }
+  const factura = await import('../utils/prisma').then(m => m.default.factura.update({
+    where: { id },
+    data: { nroFactura: nroFactura.trim() },
+  }));
+  res.json(factura);
+};

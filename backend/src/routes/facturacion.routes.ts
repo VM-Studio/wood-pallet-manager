@@ -8,6 +8,7 @@ import {
   getFacturasVencidas,
   crearNotaCredito,
   getCobrosPendientes,
+  actualizarNroFactura,
 } from '../controllers/facturacion.controller';
 
 const router = Router();
@@ -20,5 +21,6 @@ router.get('/:id', getFacturaById);
 router.post('/', crearFactura);
 router.post('/:id/cobro', registrarCobro);
 router.post('/nota-credito', crearNotaCredito);
+router.patch('/:id/nro-factura', actualizarNroFactura);
 
 export default router;
