@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Plus, History, Pencil, MapPin, Phone, MessageCircle } from 'lucide-react';
+import { Search, Plus, History, Pencil, MapPin, Phone, MessageCircle, Users } from 'lucide-react';
 import { useClientes } from '../../hooks/useClientes';
 import { useAuthStore } from '../../store/auth.store';
 import type { Cliente } from '../../types';
@@ -10,10 +10,10 @@ import ErrorMessage from '../../components/ui/ErrorMessage';
 import { clsx } from 'clsx';
 
 const canalLabel: Record<string, string> = {
-  whatsapp: '💬 WhatsApp',
-  formulario_web: '🌐 Web',
-  llamada: '📞 Llamada',
-  recomendacion: '🤝 Recomendación',
+  whatsapp: 'WhatsApp',
+  formulario_web: 'Web',
+  llamada: 'Llamada',
+  recomendacion: 'Recomendación',
   otro: 'Otro'
 };
 
@@ -32,11 +32,9 @@ export default function ClientesPage() {
       c.cuit?.includes(busqueda) ||
       c.nombreContacto?.toLowerCase().includes(busqueda.toLowerCase()) ||
       c.localidad?.toLowerCase().includes(busqueda.toLowerCase());
-
     const matchFiltro =
       filtro === 'todos' ||
       (filtro === 'mios' && c.usuarioAsignadoId === usuario?.id);
-
     return matchBusqueda && matchFiltro;
   });
 
@@ -46,21 +44,35 @@ export default function ClientesPage() {
   if (error) return <ErrorMessage message="No se pudieron cargar los clientes." />;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 animate-fade-in">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Clientes</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="titulo-modulo">Clientes</h1>
+          <p className="text-sm text-gray-600 mt-1">
             {clientes?.length || 0} clientes en total
           </p>
         </div>
         <button
           onClick={() => { setClienteEditar(null); setShowForm(true); }}
-          className="btn-primary"
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: '6px',
+            background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
+            color: 'white', fontWeight: 500, fontSize: '0.875rem',
+            padding: '0.5rem 1rem', borderRadius: '0.25rem',
+            border: 'none', cursor: 'pointer', transition: 'all 0.2s'
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, #5A3022 0%, #B07848 100%)';
+            (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)';
+            (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+          }}
         >
-          <Plus size={18} />
+          <Plus size={16} />
           Nuevo cliente
         </button>
       </div>
@@ -68,7 +80,7 @@ export default function ClientesPage() {
       {/* Filtros y búsqueda */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             placeholder="Buscar por razón social, CUIT, contacto o localidad..."
@@ -77,26 +89,38 @@ export default function ClientesPage() {
             className="input-field pl-9"
           />
         </div>
-        <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+        <div className="flex border border-gray-200 overflow-hidden" style={{ borderRadius: '0.25rem' }}>
           <button
             onClick={() => setFiltro('todos')}
-            className={clsx(
-              'px-4 py-2 text-sm font-medium transition-colors',
-              filtro === 'todos'
-                ? 'bg-primary-600 text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-50'
-            )}
+            style={{
+              padding: '0.5rem 1rem',
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              transition: 'all 0.15s',
+              background: filtro === 'todos'
+                ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)'
+                : '#fff',
+              color: filtro === 'todos' ? '#fff' : '#4B5563',
+              border: 'none',
+              cursor: 'pointer'
+            }}
           >
             Todos ({clientes?.length || 0})
           </button>
           <button
             onClick={() => setFiltro('mios')}
-            className={clsx(
-              'px-4 py-2 text-sm font-medium transition-colors border-l border-gray-200',
-              filtro === 'mios'
-                ? 'bg-primary-600 text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-50'
-            )}
+            style={{
+              padding: '0.5rem 1rem',
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              transition: 'all 0.15s',
+              background: filtro === 'mios'
+                ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)'
+                : '#fff',
+              color: filtro === 'mios' ? '#fff' : '#4B5563',
+              borderLeft: '1px solid #E5E7EB',
+              cursor: 'pointer'
+            }}
           >
             Mis clientes ({clientes?.filter(c => c.usuarioAsignadoId === usuario?.id).length || 0})
           </button>
@@ -105,12 +129,12 @@ export default function ClientesPage() {
 
       {/* Lista de clientes */}
       {!clientesFiltrados?.length ? (
-        <div className="text-center py-16">
-          <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Search size={24} className="text-gray-400" />
+        <div className="card-base flex flex-col items-center justify-center py-12 text-center">
+          <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center mx-auto mb-3">
+            <Users size={22} className="text-gray-400" />
           </div>
-          <p className="text-gray-500 font-medium">No se encontraron clientes</p>
-          <p className="text-gray-400 text-sm mt-1">
+          <p className="titulo-card">No se encontraron clientes</p>
+          <p className="text-xs text-gray-400 mt-1">
             {busqueda ? 'Probá con otro término de búsqueda' : 'Creá el primer cliente con el botón de arriba'}
           </p>
         </div>
@@ -120,14 +144,14 @@ export default function ClientesPage() {
             <div
               key={cliente.id}
               className={clsx(
-                'card hover:shadow-md transition-shadow',
-                esAsignado(cliente) && 'border-l-4 border-l-primary-500'
+                'card-base transition-all hover:shadow-md',
+                esAsignado(cliente) && 'border-l-4 border-l-[#C4895A]'
               )}
             >
-              {/* Header de la card */}
+              {/* Header */}
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-gray-900 truncate">{cliente.razonSocial}</h3>
+                  <h3 className="titulo-card truncate">{cliente.razonSocial}</h3>
                   {cliente.cuit && (
                     <p className="text-xs text-gray-400 mt-0.5">CUIT: {cliente.cuit}</p>
                   )}
@@ -141,19 +165,19 @@ export default function ClientesPage() {
               <div className="space-y-1.5 mb-4">
                 {cliente.nombreContacto && (
                   <p className="text-sm text-gray-600 flex items-center gap-1.5">
-                    <span className="text-gray-400">👤</span>
+                    <Users size={12} className="text-gray-400 shrink-0" />
                     {cliente.nombreContacto}
                   </p>
                 )}
                 {cliente.telefonoContacto && (
                   <p className="text-sm text-gray-600 flex items-center gap-1.5">
-                    <Phone size={12} className="text-gray-400" />
+                    <Phone size={12} className="text-gray-400 shrink-0" />
                     {cliente.telefonoContacto}
                   </p>
                 )}
                 {cliente.localidad && (
                   <p className="text-sm text-gray-600 flex items-center gap-1.5">
-                    <MapPin size={12} className="text-gray-400" />
+                    <MapPin size={12} className="text-gray-400 shrink-0" />
                     {cliente.localidad}
                   </p>
                 )}
@@ -167,10 +191,8 @@ export default function ClientesPage() {
               {/* Footer */}
               <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                 <div className="flex items-center gap-1.5">
-                  <div className={clsx(
-                    'w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold',
-                    esAsignado(cliente) ? 'bg-primary-600' : 'bg-teal-600'
-                  )}>
+                  <div className="w-5 h-5 rounded flex items-center justify-center text-white text-xs font-bold"
+                    style={{ background: esAsignado(cliente) ? '#C4895A' : '#6B3A2A' }}>
                     {cliente.usuarioAsignado?.nombre[0]}
                   </div>
                   <span className="text-xs text-gray-400">
@@ -180,18 +202,18 @@ export default function ClientesPage() {
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setClienteHistorial(cliente.id)}
-                    className="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                    className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
                     title="Ver historial"
                   >
-                    <History size={16} />
+                    <History size={15} />
                   </button>
                   {esAsignado(cliente) && (
                     <button
                       onClick={() => { setClienteEditar(cliente); setShowForm(true); }}
-                      className="p-1.5 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+                      className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
                       title="Editar cliente"
                     >
-                      <Pencil size={16} />
+                      <Pencil size={15} />
                     </button>
                   )}
                   {cliente.telefonoContacto && (
@@ -199,10 +221,10 @@ export default function ClientesPage() {
                       href={`https://wa.me/${cliente.telefonoContacto.replace(/\D/g, '')}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                      className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors"
                       title="Abrir WhatsApp"
                     >
-                      <MessageCircle size={16} />
+                      <MessageCircle size={15} />
                     </a>
                   )}
                 </div>
