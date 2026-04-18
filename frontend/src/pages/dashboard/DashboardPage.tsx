@@ -51,20 +51,20 @@ function KpiCard({ titulo, valor, variacion, subtitulo, icono, onClick }: KpiPro
       onClick={onClick}
     >
       {/* Título + ícono en la misma fila */}
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
           {icono}
         </div>
         <p className="titulo-card flex-1">{titulo}</p>
       </div>
 
       {/* Valor */}
-      <p className="text-3xl font-bold text-gray-900 leading-none mb-2">
+      <p className="text-2xl font-bold text-gray-900 leading-none mb-1">
         {valor}
       </p>
 
       {/* Subtítulo + variación */}
-      <div className="flex items-center justify-between mt-2">
+      <div className="flex items-center justify-between mt-1">
         {subtitulo && (
           <p className="text-xs text-gray-400">{subtitulo}</p>
         )}

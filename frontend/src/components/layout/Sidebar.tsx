@@ -51,7 +51,7 @@ export default function Sidebar() {
     : '??'
 
   return (
-    <aside className="fixed top-0 left-0 h-screen w-[260px] bg-[#1e3a5f] flex flex-col z-30">
+    <aside className="fixed top-0 left-0 h-screen w-[260px] bg-[#3c250f] flex flex-col z-30">
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 h-16 border-b border-white/10 flex-shrink-0">
         <div className="w-9 h-9 bg-green-500 rounded-xl flex items-center justify-center">
