@@ -45,6 +45,7 @@ export interface Producto {
   requiereSenasa: boolean;
   descripcion?: string;
   activo: boolean;
+  stockDisponible?: number;
   stocks?: Stock[];
   listaPrecios?: ListaPrecio[];
 }

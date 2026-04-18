@@ -15,28 +15,30 @@ export default function ProductoForm({ producto, onClose }: ProductoFormProps) {
   const [error, setError] = useState('');
 
   const [form, setForm] = useState({
-    nombre:         producto?.nombre         ?? '',
-    tipo:           producto?.tipo           ?? 'estandar',
-    condicion:      producto?.condicion      ?? 'seminuevo',
-    dimensionLargo: producto?.dimensionLargo != null ? String(producto.dimensionLargo) : '',
-    dimensionAncho: producto?.dimensionAncho != null ? String(producto.dimensionAncho) : '',
-    cargaMaximaKg:  producto?.cargaMaximaKg  != null ? String(producto.cargaMaximaKg)  : '',
-    requiereSenasa: producto?.requiereSenasa ?? false,
-    descripcion:    producto?.descripcion    ?? ''
+    nombre:           producto?.nombre         ?? '',
+    tipo:             producto?.tipo           ?? 'estandar',
+    condicion:        producto?.condicion      ?? 'seminuevo',
+    dimensionLargo:   producto?.dimensionLargo != null ? String(producto.dimensionLargo) : '',
+    dimensionAncho:   producto?.dimensionAncho != null ? String(producto.dimensionAncho) : '',
+    cargaMaximaKg:    producto?.cargaMaximaKg  != null ? String(producto.cargaMaximaKg)  : '',
+    stockDisponible:  producto?.stockDisponible != null ? String(producto.stockDisponible) : '',
+    requiereSenasa:   producto?.requiereSenasa ?? false,
+    descripcion:      producto?.descripcion    ?? ''
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     const datos: Partial<Producto> = {
-      nombre:         form.nombre,
-      tipo:           form.tipo,
-      condicion:      form.condicion,
-      requiereSenasa: form.requiereSenasa,
-      descripcion:    form.descripcion || undefined,
-      dimensionLargo: form.dimensionLargo ? parseInt(form.dimensionLargo) : undefined,
-      dimensionAncho: form.dimensionAncho ? parseInt(form.dimensionAncho) : undefined,
-      cargaMaximaKg:  form.cargaMaximaKg  ? parseInt(form.cargaMaximaKg)  : undefined,
+      nombre:           form.nombre,
+      tipo:             form.tipo,
+      condicion:        form.condicion,
+      requiereSenasa:   form.requiereSenasa,
+      descripcion:      form.descripcion || undefined,
+      dimensionLargo:   form.dimensionLargo ? parseInt(form.dimensionLargo) : undefined,
+      dimensionAncho:   form.dimensionAncho ? parseInt(form.dimensionAncho) : undefined,
+      cargaMaximaKg:    form.cargaMaximaKg  ? parseInt(form.cargaMaximaKg)  : undefined,
+      stockDisponible:  form.stockDisponible !== '' ? parseInt(form.stockDisponible) : 0,
     };
     try {
       if (esEdicion) {
@@ -138,6 +140,21 @@ export default function ProductoForm({ producto, onClose }: ProductoFormProps) {
               </div>
             </div>
             <div>
+              <label className="label">Stock disponible</label>
+              <input
+                type="number"
+                min="0"
+                value={form.stockDisponible}
+                onChange={e => setForm({ ...form, stockDisponible: e.target.value })}
+                className="input"
+                style={{ borderRadius: '0.25rem' }}
+                placeholder="Consultar con depósito"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                Dejá vacío si el stock se consulta con depósito
+              </p>
+            </div>
+            <div>
               <label className="label">Descripción</label>
               <textarea
                 value={form.descripcion}
@@ -162,8 +179,24 @@ export default function ProductoForm({ producto, onClose }: ProductoFormProps) {
             )}
           </div>
           <div className="modal-footer">
-            <button type="button" onClick={onClose} className="btn-secondary">Cancelar</button>
-            <button type="submit" disabled={loading} className="btn-primary">
+            <button type="button" onClick={onClose}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                background: '#fff', color: '#374151', border: '1px solid #E5E7EB',
+                fontWeight: 500, fontSize: '0.875rem', padding: '0.5rem 1rem',
+                borderRadius: '0.25rem', cursor: 'pointer', transition: 'all 0.2s'
+              }}
+            >Cancelar</button>
+            <button type="submit" disabled={loading}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
+                color: 'white', fontWeight: 500, fontSize: '0.875rem',
+                padding: '0.5rem 1rem', borderRadius: '0.25rem', border: 'none',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.6 : 1, transition: 'all 0.2s'
+              }}
+            >
               {loading ? 'Guardando...' : esEdicion ? 'Guardar cambios' : 'Crear producto'}
             </button>
           </div>
