@@ -13,8 +13,7 @@ const formatFecha = (f: string) =>
   new Date(f).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
 const ESTADOS = [
-  'todos', 'confirmado', 'en_preparacion', 'listo_para_envio',
-  'en_transito', 'entregado', 'entregado_parcial', 'cancelado'
+  'todos', 'entregado', 'cancelado'
 ];
 
 const estadoLabel: Record<string, string> = {
