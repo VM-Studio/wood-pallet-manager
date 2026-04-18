@@ -36,6 +36,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
     fleteIncluido: true,
     requiereSenasa: false,
     costoSenasa: 0,
+    incluyeIva: true,
     canalEnvio: 'whatsapp' as 'whatsapp' | 'email',
     observaciones: ''
   });
@@ -82,6 +83,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
     + (form.requiereSenasa ? form.costoSenasa : 0);
 
   const totalConIva = totalSinIva * 1.21;
+  const totalFinal = form.incluyeIva ? totalConIva : totalSinIva;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -430,13 +432,46 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
             {/* Total estimado */}
             {totalSinIva > 0 && (
               <div className="p-4 border border-[#C4895A]/30 bg-[#6B3A2A]/5" style={{ borderRadius: '0.25rem' }}>
+                {/* Toggle IVA */}
+                <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-[#C4895A]/20">
+                  <span className="text-sm font-medium text-gray-700">¿Incluir IVA? (21%)</span>
+                  <div className="flex" style={{ borderRadius: '0.25rem', overflow: 'hidden', border: '1px solid #E5E7EB' }}>
+                    <button
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, incluyeIva: true }))}
+                      style={{
+                        fontSize: '0.75rem', fontWeight: 600, padding: '0.3rem 0.875rem',
+                        cursor: 'pointer', border: 'none', transition: 'all 0.15s',
+                        background: form.incluyeIva ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' : '#fff',
+                        color: form.incluyeIva ? '#fff' : '#6B7280',
+                      }}
+                    >Sí</button>
+                    <button
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, incluyeIva: false }))}
+                      style={{
+                        fontSize: '0.75rem', fontWeight: 600, padding: '0.3rem 0.875rem',
+                        cursor: 'pointer', border: 'none', borderLeft: '1px solid #E5E7EB', transition: 'all 0.15s',
+                        background: !form.incluyeIva ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' : '#fff',
+                        color: !form.incluyeIva ? '#fff' : '#6B7280',
+                      }}
+                    >No</button>
+                  </div>
+                </div>
+                {/* Líneas de totales */}
                 <div className="flex justify-between text-sm text-gray-600 mb-1">
-                  <span>Subtotal sin IVA</span>
+                  <span>Subtotal neto</span>
                   <span>{formatPesos(totalSinIva)}</span>
                 </div>
-                <div className="flex justify-between font-bold text-gray-900">
-                  <span>Total con IVA (21%)</span>
-                  <span className="text-[#6B3A2A] text-lg">{formatPesos(totalConIva)}</span>
+                {form.incluyeIva && (
+                  <div className="flex justify-between text-sm text-gray-500 mb-1">
+                    <span>IVA (21%)</span>
+                    <span>{formatPesos(totalConIva - totalSinIva)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-bold text-gray-900 pt-1 border-t border-[#C4895A]/20 mt-1">
+                  <span>Total {form.incluyeIva ? 'con IVA' : 'sin IVA'}</span>
+                  <span className="text-[#6B3A2A] text-lg">{formatPesos(totalFinal)}</span>
                 </div>
               </div>
             )}
