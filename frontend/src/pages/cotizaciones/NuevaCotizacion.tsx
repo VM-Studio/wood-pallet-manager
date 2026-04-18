@@ -150,11 +150,24 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
         );
         setTimeout(() => window.open(`https://wa.me/${telConCodigo}?text=${mensaje}`, '_blank'), 500);
       } else if (form.canalEnvio === 'email' && cliente?.emailContacto) {
-        const asunto = encodeURIComponent(`Presupuesto Wood Pallet #${String(resultado.id).padStart(4, '0')}`);
-        const cuerpo = encodeURIComponent(
-          `Estimado/a,\n\nTe enviamos el presupuesto que consultaste.\n\nNúmero: #${String(resultado.id).padStart(4, '0')}\nFecha: ${fechaStr}\n\nEl PDF del presupuesto se descargó automáticamente. Por favor adjuntalo a este correo o reenvíalo.\n\nQuedamos a tu disposición.\n\nSaludos,\nWood Pallet`
-        );
-        setTimeout(() => window.open(`mailto:${cliente.emailContacto}?subject=${asunto}&body=${cuerpo}`, '_blank'), 500);
+        // Convertir el PDF blob a base64 y enviarlo via el backend
+        const pdfArrayBuffer = await pdfBlob.arrayBuffer();
+        const pdfUint8 = new Uint8Array(pdfArrayBuffer);
+        let binary = '';
+        pdfUint8.forEach(b => { binary += String.fromCharCode(b); });
+        const pdfBase64 = btoa(binary);
+
+        try {
+          await api.post(`/cotizaciones/${resultado.id}/enviar-email`, {
+            pdfBase64,
+            filename,
+            razonSocial: cliente.razonSocial,
+            emailDestino: cliente.emailContacto,
+            fecha: fechaStr,
+          });
+        } catch {
+          // Si falla el envío, no bloquea el cierre — el PDF ya se descargó
+        }
       }
 
       onSuccess(resultado.id);

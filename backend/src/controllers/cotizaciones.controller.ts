@@ -11,6 +11,7 @@ import {
   generarTextoWhatsAppService,
   getCotizacionesPendientesService,
 } from '../services/cotizaciones.service';
+import { enviarPresupuestoPorEmail } from '../utils/mailer';
 
 const detalleSchema = z.object({
   productoId: z.number(),
@@ -154,5 +155,29 @@ export const getCotizacionesPendientes = async (req: AuthRequest, res: Response)
     res.json(pendientes);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+export const enviarEmailCotizacion = async (req: AuthRequest, res: Response) => {
+  try {
+    const id = parseId(req.params.id);
+    const { pdfBase64, filename, razonSocial, emailDestino, fecha } = req.body;
+
+    if (!pdfBase64 || !emailDestino) {
+      return res.status(400).json({ error: 'Faltan datos para enviar el email' });
+    }
+
+    await enviarPresupuestoPorEmail({
+      destinatario: emailDestino,
+      razonSocial:  razonSocial ?? '',
+      numeroCotizacion: id,
+      fecha:   fecha ?? new Date().toLocaleDateString('es-AR'),
+      pdfBase64,
+      filename: filename ?? `presupuesto-${id}.pdf`,
+    });
+
+    res.json({ ok: true, message: 'Email enviado correctamente' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Error al enviar el email' });
   }
 };
