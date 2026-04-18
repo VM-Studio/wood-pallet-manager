@@ -253,6 +253,7 @@ export default function FacturacionPage() {
                 <th>Cliente</th>
                 <th>Comprobante</th>
                 <th>Total</th>
+                <th>Método / Cuándo</th>
                 <th>Vencimiento</th>
                 <th>Estado</th>
                 <th>Acciones</th>
@@ -295,6 +296,26 @@ export default function FacturacionPage() {
                       {saldo > 0 && saldo < Number(f.totalConIva) && (
                         <p className="text-xs text-amber-600">Saldo: {formatPesos(saldo)}</p>
                       )}
+                    </td>
+                    <td>
+                      {(() => {
+                        const medio = f.medioPago ?? f.pagos?.[0]?.medioPago;
+                        const labelMedio = medio === 'transferencia' ? 'Transferencia'
+                          : medio === 'e_check' ? 'E-check'
+                          : medio === 'efectivo' ? 'Efectivo'
+                          : null;
+                        const labelModalidad = f.modalidadPago === 'completo_anticipado' ? 'Anticipado completo'
+                          : f.modalidadPago === 'mitad_adelanto_mitad_entrega' ? '50% adelanto'
+                          : f.modalidadPago === 'completo_entrega' ? 'Al entregar'
+                          : null;
+                        if (!labelMedio && !labelModalidad) return <span className="text-gray-400 text-sm">—</span>;
+                        return (
+                          <div>
+                            {labelMedio && <p className="text-sm font-medium text-gray-800">{labelMedio}</p>}
+                            {labelModalidad && <p className="text-xs text-gray-500">{labelModalidad}</p>}
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td>
                       {f.fechaVencimiento ? (

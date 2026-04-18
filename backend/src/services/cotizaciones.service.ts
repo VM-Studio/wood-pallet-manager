@@ -235,6 +235,8 @@ export const convertirCotizacionAVentaService = async (
         iva,
         totalConIva,
         estadoCobro: 'pendiente',
+        modalidadPago: datos.modalidadPago,
+        medioPago: datos.medioPago,
         observaciones: `Generada automáticamente al convertir cotización #${cotizacionId}`,
       },
     });

@@ -212,6 +212,8 @@ export interface Factura {
   iva: number;
   totalConIva: number;
   estadoCobro: 'pendiente' | 'cobrada_parcial' | 'cobrada_total' | 'vencida' | 'incobrable';
+  modalidadPago?: string;
+  medioPago?: string;
   observaciones?: string;
   cliente?: { razonSocial: string; cuit?: string };
   pagos?: PagoCobro[];

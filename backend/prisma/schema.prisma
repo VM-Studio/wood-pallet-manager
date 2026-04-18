@@ -525,6 +525,8 @@ model Factura {
   iva              Decimal     @db.Decimal(12, 2)
   totalConIva      Decimal     @db.Decimal(12, 2)
   estadoCobro      EstadoCobro @default(pendiente)
+  modalidadPago    String?
+  medioPago        String?
   observaciones    String?
 
   venta        Venta         @relation(fields: [ventaId], references: [id])
