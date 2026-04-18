@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Plus, Search, DollarSign, Pencil, Package, Layers, Ruler, Weight, AlertTriangle, Leaf } from 'lucide-react';
-import { useProductos } from '../../hooks/useProductos';
+import { Plus, Search, DollarSign, Pencil, Package, Layers, Ruler, Weight, AlertTriangle, Leaf, Trash2 } from 'lucide-react';
+import { useProductos, useEliminarProducto } from '../../hooks/useProductos';
 import type { Producto } from '../../types';
 import ProductoForm from './ProductoForm';
 import PreciosModal from './PreciosModal';
@@ -31,6 +31,7 @@ const condicionLabel: Record<string, string> = {
 
 export default function ProductosPage() {
   const { data: productos, isLoading, isError } = useProductos();
+  const eliminarProducto = useEliminarProducto();
   const [busqueda, setBusqueda] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [productoEditar, setProductoEditar] = useState<Producto | null>(null);
@@ -271,6 +272,32 @@ export default function ProductosPage() {
                     }}
                   >
                     <Pencil size={13} /> Editar
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (window.confirm(`¿Eliminar "${p.nombre}"? Esta acción no se puede deshacer.`)) {
+                        eliminarProducto.mutate(p.id);
+                      }
+                    }}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      width: '2rem', height: '2rem', borderRadius: '0.25rem',
+                      border: '1px solid #E5E7EB', background: '#fff',
+                      color: '#9CA3AF', cursor: 'pointer', transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={e => {
+                      (e.currentTarget as HTMLElement).style.background = '#FEF2F2';
+                      (e.currentTarget as HTMLElement).style.color = '#DC2626';
+                      (e.currentTarget as HTMLElement).style.borderColor = '#FECACA';
+                    }}
+                    onMouseLeave={e => {
+                      (e.currentTarget as HTMLElement).style.background = '#fff';
+                      (e.currentTarget as HTMLElement).style.color = '#9CA3AF';
+                      (e.currentTarget as HTMLElement).style.borderColor = '#E5E7EB';
+                    }}
+                    title="Eliminar producto"
+                  >
+                    <Trash2 size={13} />
                   </button>
                 </div>
               </div>

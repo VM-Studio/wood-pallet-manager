@@ -116,3 +116,15 @@ export const useActualizarPrecioProveedor = () => {
     }
   });
 };
+
+export const useEliminarProducto = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await api.delete(`/productos/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['productos'] });
+    }
+  });
+};
