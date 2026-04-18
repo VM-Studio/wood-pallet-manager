@@ -22,6 +22,8 @@ const groups = [
       { to: '/productos',    icon: Package,        label: 'Productos' },
       { to: '/cotizaciones', icon: FileText,       label: 'Cotizaciones' },
       { to: '/ventas',       icon: DollarSign,     label: 'Ventas' },
+      { to: '/facturacion',  icon: Receipt,        label: 'Facturación' },
+      { to: '/logistica',    icon: Truck,          label: 'Logística' },
     ],
   },
   {
@@ -29,13 +31,11 @@ const groups = [
     items: [
       { to: '/compras',    icon: ShoppingCart, label: 'Compras' },
       { to: '/inventario', icon: Warehouse,    label: 'Inventario' },
-      { to: '/logistica',  icon: Truck,        label: 'Logística' },
     ],
   },
   {
     label: 'Finanzas',
     items: [
-      { to: '/facturacion', icon: Receipt,    label: 'Facturación' },
       { to: '/reportes',    icon: BarChart3,  label: 'Reportes' },
     ],
   },
