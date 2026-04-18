@@ -71,3 +71,15 @@ export const useActualizarCliente = () => {
     }
   });
 };
+
+export const useEliminarCliente = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await api.delete(`/clientes/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clientes'] });
+    }
+  });
+};

@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Search, Plus, History, Pencil, MapPin, Phone, MessageCircle, Users } from 'lucide-react';
+import { Search, Plus, History, Pencil, MapPin, Phone, MessageCircle, Users, Trash2 } from 'lucide-react';
 import { useClientes } from '../../hooks/useClientes';
+import { useEliminarCliente } from '../../hooks/useClientes';
 import { useAuthStore } from '../../store/auth.store';
 import type { Cliente } from '../../types';
 import ClienteForm from './ClienteForm';
@@ -20,6 +21,7 @@ const canalLabel: Record<string, string> = {
 export default function ClientesPage() {
   const { usuario } = useAuthStore();
   const { data: clientes, isLoading, error } = useClientes();
+  const eliminarCliente = useEliminarCliente();
   const [busqueda, setBusqueda] = useState('');
   const [filtro, setFiltro] = useState<'todos' | 'mios'>('todos');
   const [showForm, setShowForm] = useState(false);
@@ -216,6 +218,17 @@ export default function ClientesPage() {
                       <Pencil size={15} />
                     </button>
                   )}
+                  <button
+                    onClick={() => {
+                      if (window.confirm(`¿Eliminar a "${cliente.razonSocial}"? Esta acción no se puede deshacer.`)) {
+                        eliminarCliente.mutate(cliente.id);
+                      }
+                    }}
+                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                    title="Eliminar cliente"
+                  >
+                    <Trash2 size={15} />
+                  </button>
                   {cliente.telefonoContacto && (
                     <a
                       href={`https://wa.me/${cliente.telefonoContacto.replace(/\D/g, '')}`}
