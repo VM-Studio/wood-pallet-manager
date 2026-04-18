@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import {
   Plus, MessageCircle, ArrowRight, CheckCircle,
-  XCircle, Search, FileText
+  XCircle, Search, FileText, Truck, Leaf
 } from 'lucide-react';
-import { clsx } from 'clsx';
 import { useCotizaciones, useActualizarEstadoCotizacion } from '../../hooks/useCotizaciones';
 import NuevaCotizacion from './NuevaCotizacion';
 import WhatsAppModal from './WhatsAppModal';
@@ -48,16 +47,33 @@ export default function CotizacionesPage() {
   if (error) return <ErrorMessage message="No se pudieron cargar las cotizaciones." />;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 animate-fade-in">
 
       {/* Header */}
-      <div className="page-header">
+      <div className="flex items-start justify-between">
         <div>
-          <h1 className="page-title">Cotizaciones</h1>
-          <p className="page-subtitle">{cotizaciones?.length || 0} cotizaciones en total</p>
+          <h1 className="titulo-modulo">Cotizaciones</h1>
+          <p className="text-sm text-gray-600 mt-1">{cotizaciones?.length || 0} cotizaciones en total</p>
         </div>
-        <button onClick={() => setShowNueva(true)} className="btn-primary">
-          <Plus size={18} /> Nueva cotización
+        <button
+          onClick={() => setShowNueva(true)}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: '6px',
+            background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
+            color: 'white', fontWeight: 500, fontSize: '0.875rem',
+            padding: '0.5rem 1rem', borderRadius: '0.25rem',
+            border: 'none', cursor: 'pointer', transition: 'all 0.2s'
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, #5A3022 0%, #B07848 100%)';
+            (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)';
+            (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+          }}
+        >
+          <Plus size={16} /> Nueva cotización
         </button>
       </div>
 
@@ -70,20 +86,28 @@ export default function CotizacionesPage() {
             placeholder="Buscar por cliente o número..."
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
-            className="input pl-10"
+            className="input-field pl-10"
           />
         </div>
-        <div className="flex gap-1 bg-white border border-gray-200 rounded-xl p-1 overflow-x-auto">
-          {estadoFiltros.map(f => (
+        <div className="flex border border-gray-200 overflow-hidden" style={{ borderRadius: '0.25rem' }}>
+          {estadoFiltros.map((f, i) => (
             <button
               key={f.key}
               onClick={() => setFiltroEstado(f.key)}
-              className={clsx(
-                'px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all',
-                filtroEstado === f.key
-                  ? 'bg-[#16A34A] text-white shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              )}
+              style={{
+                padding: '0.5rem 0.75rem',
+                fontSize: '0.75rem',
+                fontWeight: 500,
+                whiteSpace: 'nowrap',
+                transition: 'all 0.15s',
+                background: filtroEstado === f.key
+                  ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)'
+                  : '#fff',
+                color: filtroEstado === f.key ? '#fff' : '#6B7280',
+                border: 'none',
+                borderLeft: i > 0 ? '1px solid #E5E7EB' : 'none',
+                cursor: 'pointer'
+              }}
             >
               {f.label}
             </button>
@@ -93,13 +117,18 @@ export default function CotizacionesPage() {
 
       {/* Tabla o empty state */}
       {!filtradas?.length ? (
-        <div className="empty-state">
-          <div className="empty-icon"><FileText size={24} /></div>
-          <p className="text-sm font-semibold text-gray-700">Sin cotizaciones</p>
-          <p className="text-sm text-gray-400 mt-1">Creá la primera con el botón de arriba</p>
+        <div className="card-base flex flex-col items-center justify-center py-12 text-center">
+          <div className="w-12 h-12 bg-gray-100 flex items-center justify-center mx-auto mb-3"
+            style={{ borderRadius: '0.25rem' }}>
+            <FileText size={22} className="text-gray-400" />
+          </div>
+          <p className="titulo-card">Sin cotizaciones</p>
+          <p className="text-xs text-gray-400 mt-1">
+            {busqueda ? 'Probá con otro término de búsqueda' : 'Creá la primera con el botón de arriba'}
+          </p>
         </div>
       ) : (
-        <div className="table-container">
+        <div className="card-base" style={{ padding: 0, overflow: 'hidden' }}>
           <table className="table">
             <thead>
               <tr>
@@ -115,11 +144,21 @@ export default function CotizacionesPage() {
             <tbody>
               {filtradas.map(c => (
                 <tr key={c.id}>
-                  <td className="font-semibold text-gray-500 text-xs">#{c.id}</td>
+                  <td className="font-semibold text-gray-400 text-xs">#{c.id}</td>
                   <td>
                     <p className="font-semibold text-gray-900 text-sm">{c.cliente?.razonSocial}</p>
-                    {c.incluyeFlete && <p className="text-xs text-gray-400">🚛 Con flete</p>}
-                    {c.requiereSenasa && <p className="text-xs text-gray-400">🌿 SENASA</p>}
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      {c.incluyeFlete && (
+                        <span className="flex items-center gap-1 text-xs text-gray-400">
+                          <Truck size={11} /> Con flete
+                        </span>
+                      )}
+                      {c.requiereSenasa && (
+                        <span className="flex items-center gap-1 text-xs text-gray-400">
+                          <Leaf size={11} /> SENASA
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td>
                     <div className="space-y-0.5">
@@ -140,7 +179,7 @@ export default function CotizacionesPage() {
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => setWhatsappId(c.id)}
-                        className="btn-icon w-8 h-8 text-green-500 hover:bg-green-50"
+                        className="p-1.5 text-green-500 hover:text-green-700 hover:bg-green-50 rounded transition-colors"
                         title="Texto WhatsApp"
                       >
                         <MessageCircle size={15} />
@@ -148,7 +187,8 @@ export default function CotizacionesPage() {
                       {(c.estado === 'enviada' || c.estado === 'en_seguimiento') && (
                         <button
                           onClick={() => actualizarEstado.mutate({ id: c.id, estado: 'aceptada' })}
-                          className="btn-icon w-8 h-8 text-[#16A34A] hover:bg-green-50"
+                          className="p-1.5 hover:bg-green-50 rounded transition-colors"
+                          style={{ color: '#6B3A2A' }}
                           title="Marcar aceptada"
                         >
                           <CheckCircle size={15} />
@@ -157,7 +197,7 @@ export default function CotizacionesPage() {
                       {c.estado === 'aceptada' && (
                         <button
                           onClick={() => setConvertirId(c.id)}
-                          className="btn-icon w-8 h-8 text-blue-500 hover:bg-blue-50"
+                          className="p-1.5 text-blue-500 hover:bg-blue-50 rounded transition-colors"
                           title="Convertir a venta"
                         >
                           <ArrowRight size={15} />
@@ -166,7 +206,7 @@ export default function CotizacionesPage() {
                       {(c.estado === 'enviada' || c.estado === 'en_seguimiento') && (
                         <button
                           onClick={() => actualizarEstado.mutate({ id: c.id, estado: 'rechazada' })}
-                          className="btn-icon w-8 h-8 text-red-400 hover:bg-red-50"
+                          className="p-1.5 text-red-400 hover:bg-red-50 rounded transition-colors"
                           title="Marcar rechazada"
                         >
                           <XCircle size={15} />
