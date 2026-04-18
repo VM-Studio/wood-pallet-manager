@@ -12,6 +12,16 @@ export const useProductos = () => {
   });
 };
 
+export const useProductosOtro = () => {
+  return useQuery<Producto[]>({
+    queryKey: ['productos-otro'],
+    queryFn: async () => {
+      const { data } = await api.get('/productos/otro');
+      return data;
+    }
+  });
+};
+
 export const useProducto = (id: number) => {
   return useQuery({
     queryKey: ['producto', id],

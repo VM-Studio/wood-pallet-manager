@@ -1,7 +1,8 @@
 import prisma from '../utils/prisma';
 
-export const getStockService = async () => {
+export const getStockService = async (propietarioId?: number) => {
   const stock = await prisma.stock.findMany({
+    where: propietarioId ? { producto: { propietarioId } } : {},
     include: {
       producto: { select: { id: true, nombre: true, tipo: true, condicion: true } },
       proveedor: { select: { id: true, nombreEmpresa: true } },
@@ -15,9 +16,12 @@ export const getStockService = async () => {
   }));
 };
 
-export const getAlertasStockService = async () => {
+export const getAlertasStockService = async (propietarioId?: number) => {
   const stock = await prisma.stock.findMany({
-    where: { cantidadMinima: { not: null } },
+    where: {
+      cantidadMinima: { not: null },
+      ...(propietarioId ? { producto: { propietarioId } } : {}),
+    },
     include: {
       producto: { select: { id: true, nombre: true, tipo: true } },
       proveedor: { select: { id: true, nombreEmpresa: true } },

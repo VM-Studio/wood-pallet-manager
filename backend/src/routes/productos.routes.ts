@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   getProductos,
+  getProductosOtro,
   getProductoById,
   crearProducto,
   actualizarProducto,
@@ -27,6 +28,7 @@ router.put('/precios/proveedor', actualizarPrecioProveedor);
 
 // Productos CRUD
 router.get('/', getProductos);
+router.get('/otro', getProductosOtro);
 router.post('/', crearProducto);
 router.get('/:id', getProductoById);
 router.put('/:id', actualizarProducto);

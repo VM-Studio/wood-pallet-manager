@@ -23,6 +23,7 @@ model Usuario {
   cotizaciones         Cotizacion[]
   ventas               Venta[]
   compras              Compra[]
+  productos            Producto[]              @relation("ProductosPropietario")
   listaPrecios         ListaPrecio[]
   historialPrecios     HistorialPrecio[]
   movimientosStock     MovimientoStock[]
@@ -87,6 +88,7 @@ model Producto {
   nombre         String
   tipo           TipoPallet
   condicion      CondicionPallet
+  propietarioId  Int
   dimensionLargo Int?
   dimensionAncho Int?
   cargaMaximaKg  Int?
@@ -95,6 +97,7 @@ model Producto {
   activo         Boolean         @default(true)
 
   // Relaciones
+  propietario        Usuario             @relation("ProductosPropietario", fields: [propietarioId], references: [id])
   prodProveedores    ProductoProveedor[]
   listaPrecios       ListaPrecio[]
   historialPrecios   HistorialPrecio[]

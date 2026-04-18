@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Plus, Search, DollarSign, Pencil, Package, Layers, Ruler, Weight, AlertTriangle, Leaf, Trash2 } from 'lucide-react';
-import { useProductos, useEliminarProducto } from '../../hooks/useProductos';
+import { Plus, Search, DollarSign, Pencil, Package, Layers, Ruler, Weight, AlertTriangle, Leaf, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { useProductos, useEliminarProducto, useProductosOtro } from '../../hooks/useProductos';
+import { useAuthStore } from '../../store/auth.store';
 import type { Producto } from '../../types';
 import ProductoForm from './ProductoForm';
 import PreciosModal from './PreciosModal';
@@ -30,12 +31,17 @@ const condicionLabel: Record<string, string> = {
 };
 
 export default function ProductosPage() {
+  const { usuario } = useAuthStore();
   const { data: productos, isLoading, isError } = useProductos();
+  const { data: productosOtro } = useProductosOtro();
   const eliminarProducto = useEliminarProducto();
   const [busqueda, setBusqueda] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [productoEditar, setProductoEditar] = useState<Producto | null>(null);
   const [preciosProducto, setPreciosProducto] = useState<Producto | null>(null);
+  const [showOtro, setShowOtro] = useState(false);
+
+  const otroNombre = usuario?.rol === 'propietario_carlos' ? 'Juan Cruz' : 'Carlos';
 
   const filtrados = productos?.filter(p =>
     p.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -303,6 +309,95 @@ export default function ProductosPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Sección solo lectura del otro propietario */}
+      {productosOtro && productosOtro.length > 0 && (
+        <div className="mt-4">
+          <button
+            onClick={() => setShowOtro(v => !v)}
+            className="w-full flex items-center justify-between px-4 py-3 card-base hover:shadow-md transition-all"
+          >
+            <span className="font-semibold text-gray-700 text-sm">
+              Productos de {otroNombre} ({productosOtro.length})
+              <span className="ml-2 text-xs font-normal text-gray-400">— solo lectura</span>
+            </span>
+            {showOtro ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+          </button>
+
+          {showOtro && (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-3">
+              {productosOtro.map(p => {
+                const stock = stockTotal(p);
+                const precio = precioBase(p);
+
+                return (
+                  <div key={p.id} className="card-base opacity-80 relative">
+                    {/* Badge solo lectura */}
+                    <div className="absolute top-2 right-2">
+                      <span className="badge-gray text-[10px]">Solo lectura</span>
+                    </div>
+
+                    {/* Header */}
+                    <div className="flex-1 min-w-0 mb-3 pr-20">
+                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                        <span className={condicionBadge[p.condicion] ?? 'badge-gray'}>
+                          {condicionLabel[p.condicion] ?? p.condicion}
+                        </span>
+                        {p.requiereSenasa && (
+                          <span className="badge-teal flex items-center gap-1">
+                            <Leaf size={10} /> SENASA
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="titulo-card">{p.nombre}</h3>
+                      <p className="text-xs text-gray-400 mt-0.5">{tipoLabel[p.tipo] ?? p.tipo}</p>
+                    </div>
+
+                    {/* Dimensiones */}
+                    {(p.dimensionLargo || p.dimensionAncho || p.cargaMaximaKg) && (
+                      <div className="flex items-center gap-3 mb-3 text-xs text-gray-500">
+                        {p.dimensionLargo && p.dimensionAncho && (
+                          <span className="flex items-center gap-1">
+                            <Ruler size={11} className="text-gray-400" />
+                            {p.dimensionLargo} × {p.dimensionAncho} mm
+                          </span>
+                        )}
+                        {p.cargaMaximaKg && (
+                          <span className="flex items-center gap-1">
+                            <Weight size={11} className="text-gray-400" />
+                            {p.cargaMaximaKg} kg máx.
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Stock */}
+                    <div className="flex items-center justify-between px-3 py-2 mb-3 text-sm bg-gray-50 border border-gray-100"
+                      style={{ borderRadius: '0.25rem' }}>
+                      <span className="text-gray-500 text-xs">Stock disponible</span>
+                      <span className="font-bold text-gray-900">{stock} unidades</span>
+                    </div>
+
+                    {/* Precio base */}
+                    {precio != null ? (
+                      <p className="text-lg font-bold" style={{ color: '#6B3A2A' }}>
+                        ${new Intl.NumberFormat('es-AR').format(precio)}
+                        <span className="text-xs font-normal text-gray-400 ml-1">+ IVA / u</span>
+                      </p>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1.5"
+                        style={{ borderRadius: '0.25rem' }}>
+                        <AlertTriangle size={12} />
+                        Sin precio configurado
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

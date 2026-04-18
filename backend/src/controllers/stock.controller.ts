@@ -20,9 +20,11 @@ const ajustarStockSchema = z.object({
 export const getStock = async (req: AuthRequest, res: Response) => {
   try {
     const { productoId, proveedorId } = req.query as any;
+    const propietarioId = req.user!.userId;
     const stock = await getStockService({
       productoId: productoId ? parseInt(productoId) : undefined,
       proveedorId: proveedorId ? parseInt(proveedorId) : undefined,
+      propietarioId,
     });
     res.json(stock);
   } catch (error: any) {

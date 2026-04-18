@@ -9,13 +9,15 @@ import {
   getStockConsolidadoService,
 } from '../services/inventario.service';
 
-export const getStock = async (_req: Request, res: Response) => {
-  const stock = await getStockService();
+export const getStock = async (req: AuthRequest, res: Response) => {
+  const propietarioId = req.user?.userId;
+  const stock = await getStockService(propietarioId);
   res.json(stock);
 };
 
-export const getAlertas = async (_req: Request, res: Response) => {
-  const alertas = await getAlertasStockService();
+export const getAlertas = async (req: AuthRequest, res: Response) => {
+  const propietarioId = req.user?.userId;
+  const alertas = await getAlertasStockService(propietarioId);
   res.json(alertas);
 };
 

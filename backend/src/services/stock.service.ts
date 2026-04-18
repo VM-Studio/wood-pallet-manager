@@ -4,11 +4,13 @@ import { TipoMovimiento, MotivoMovimiento } from '@prisma/client';
 export const getStockService = async (filtros?: {
   productoId?: number;
   proveedorId?: number;
+  propietarioId?: number;
 }) => {
   return prisma.stock.findMany({
     where: {
       ...(filtros?.productoId && { productoId: filtros.productoId }),
       ...(filtros?.proveedorId && { proveedorId: filtros.proveedorId }),
+      ...(filtros?.propietarioId && { producto: { propietarioId: filtros.propietarioId } }),
     },
     include: {
       producto: { select: { id: true, nombre: true, tipo: true, condicion: true } },
