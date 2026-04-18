@@ -18,6 +18,8 @@ interface DetalleForm {
     bonificaFlete: boolean;
     escalon: string;
   };
+  usarPrecioEspecial?: boolean;
+  precioEspecial?: number;
 }
 
 export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionProps) {
@@ -67,9 +69,13 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
     });
   };
 
+  const getPrecioEfectivo = (d: DetalleForm): number => {
+    if (d.usarPrecioEspecial && d.precioEspecial) return d.precioEspecial;
+    return d.precioCalculado ? d.precioCalculado.precioUnitario : 0;
+  };
+
   const totalSinIva = detalles.reduce((acc, d) => {
-    const sub = d.precioCalculado ? d.precioCalculado.precioUnitario * d.cantidad : 0;
-    return acc + sub;
+    return acc + getPrecioEfectivo(d) * d.cantidad;
   }, 0)
     + (form.incluyeFlete && form.fleteIncluido ? form.costoFlete : 0)
     + (form.requiereSenasa ? form.costoSenasa : 0);
@@ -86,7 +92,11 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
     try {
       const resultado = await crearCotizacion.mutateAsync({
         ...form,
-        detalles: detalles.map(d => ({ productoId: d.productoId, cantidad: d.cantidad }))
+        detalles: detalles.map(d => ({
+          productoId: d.productoId,
+          cantidad: d.cantidad,
+          ...(d.usarPrecioEspecial && d.precioEspecial ? { precioUnitario: d.precioEspecial } : {})
+        }))
       });
       onSuccess(resultado.id);
       onClose();
@@ -175,7 +185,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
                         />
                       </div>
                       <div className="col-span-2 text-right">
-                        {d.precioCalculado && (
+                        {d.precioCalculado && !d.usarPrecioEspecial && (
                           <div>
                             <p className="text-xs font-semibold text-gray-900">
                               {formatPesos(d.precioCalculado.precioUnitario)}
@@ -185,6 +195,11 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
                             )}
                           </div>
                         )}
+                        {d.usarPrecioEspecial && d.precioEspecial ? (
+                          <p className="text-xs font-semibold text-[#6B3A2A]">
+                            {formatPesos(d.precioEspecial)}
+                          </p>
+                        ) : null}
                       </div>
                       <div className="col-span-1 flex justify-end">
                         {detalles.length > 1 && (
@@ -198,10 +213,61 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
                         )}
                       </div>
                     </div>
-                    {d.precioCalculado && (
-                      <p className="text-xs text-gray-400 mt-1.5 pl-1">
-                        Escalón: {d.precioCalculado.escalon} · Subtotal: {formatPesos(d.precioCalculado.subtotal)}
-                      </p>
+                    {/* Selector de precio por unidad */}
+                    {d.productoId > 0 && (
+                      <div className="mt-2.5 pt-2.5 border-t border-gray-200">
+                        <p className="text-xs font-medium text-gray-500 mb-1.5">Precio por unidad</p>
+                        <div className="flex items-center gap-2">
+                          {/* Toggle Guardado / Precio especial */}
+                          <div className="flex" style={{ borderRadius: '0.25rem', overflow: 'hidden', border: '1px solid #E5E7EB' }}>
+                            <button
+                              type="button"
+                              onClick={() => setDetalles(prev => prev.map((x, i) => i === idx ? { ...x, usarPrecioEspecial: false } : x))}
+                              style={{
+                                fontSize: '0.7rem', fontWeight: 600, padding: '0.25rem 0.625rem',
+                                cursor: 'pointer', transition: 'all 0.15s', border: 'none',
+                                background: !d.usarPrecioEspecial ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' : '#fff',
+                                color: !d.usarPrecioEspecial ? '#fff' : '#6B7280',
+                              }}
+                            >
+                              Guardado
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDetalles(prev => prev.map((x, i) => i === idx ? { ...x, usarPrecioEspecial: true } : x))}
+                              style={{
+                                fontSize: '0.7rem', fontWeight: 600, padding: '0.25rem 0.625rem',
+                                cursor: 'pointer', transition: 'all 0.15s', border: 'none', borderLeft: '1px solid #E5E7EB',
+                                background: d.usarPrecioEspecial ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' : '#fff',
+                                color: d.usarPrecioEspecial ? '#fff' : '#6B7280',
+                              }}
+                            >
+                              Precio especial
+                            </button>
+                          </div>
+                          {/* Input precio especial */}
+                          {d.usarPrecioEspecial && (
+                            <input
+                              type="number"
+                              min={0}
+                              placeholder="$ por unidad"
+                              value={d.precioEspecial || ''}
+                              onChange={e => setDetalles(prev => prev.map((x, i) => i === idx ? { ...x, precioEspecial: parseFloat(e.target.value) || 0 } : x))}
+                              className="input text-xs py-1"
+                              style={{ borderRadius: '0.25rem', maxWidth: '140px' }}
+                            />
+                          )}
+                          {/* Precio guardado info */}
+                          {!d.usarPrecioEspecial && d.precioCalculado && (
+                            <span className="text-xs text-gray-500">
+                              {formatPesos(d.precioCalculado.precioUnitario)} · Escalón: {d.precioCalculado.escalon}
+                            </span>
+                          )}
+                          {!d.usarPrecioEspecial && !d.precioCalculado && (
+                            <span className="text-xs text-gray-400 italic">Sin precio configurado</span>
+                          )}
+                        </div>
+                      </div>
                     )}
                   </div>
                 ))}
