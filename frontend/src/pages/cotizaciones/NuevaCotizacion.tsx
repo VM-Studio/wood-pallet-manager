@@ -3,6 +3,7 @@ import { X, Plus, Trash2, Calculator } from 'lucide-react';
 import { useCrearCotizacion } from '../../hooks/useCotizaciones';
 import { useClientes } from '../../hooks/useClientes';
 import api from '../../services/api';
+import { generarPresupuestoPDF } from '../../utils/generarPresupuestoPDF';
 
 interface NuevaCotizacionProps {
   onClose: () => void;
@@ -98,6 +99,62 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
           ...(d.usarPrecioEspecial && d.precioEspecial ? { precioUnitario: d.precioEspecial } : {})
         }))
       });
+
+      // ── Generar PDF ──────────────────────────────────────────────────────
+      const cliente = clientes?.find(c => c.id === form.clienteId);
+      const fechaStr = new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+      const detallesPDF = detalles
+        .filter(d => d.productoId > 0)
+        .map(d => {
+          const prod = productos.find(p => p.id === d.productoId);
+          const precioUnit = getPrecioEfectivo(d);
+          return {
+            nombreProducto: prod?.nombre ?? `Producto #${d.productoId}`,
+            condicion: prod?.condicion ?? '',
+            cantidad: d.cantidad,
+            precioUnitario: precioUnit,
+            subtotal: precioUnit * d.cantidad,
+          };
+        });
+
+      const pdfBlob = await generarPresupuestoPDF({
+        numeroCotizacion: resultado.id,
+        fechaCotizacion: fechaStr,
+        razonSocialCliente: cliente?.razonSocial ?? '',
+        detalles: detallesPDF,
+        costoFlete: form.incluyeFlete ? form.costoFlete : undefined,
+        costoSenasa: form.requiereSenasa ? form.costoSenasa : undefined,
+        observaciones: form.observaciones || undefined,
+      });
+
+      // ── Descargar PDF ────────────────────────────────────────────────────
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      const filename = `presupuesto-${String(resultado.id).padStart(4, '0')}-${cliente?.razonSocial?.replace(/\s+/g, '-') ?? 'cliente'}.pdf`;
+      const a = document.createElement('a');
+      a.href = pdfUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(pdfUrl), 5000);
+
+      // ── Abrir canal de envío ─────────────────────────────────────────────
+      if (form.canalEnvio === 'whatsapp' && cliente?.telefonoContacto) {
+        const tel = cliente.telefonoContacto.replace(/\D/g, '');
+        const telConCodigo = tel.startsWith('54') ? tel : `54${tel}`;
+        const mensaje = encodeURIComponent(
+          `Hola! Te envío el presupuesto que consultaste 📋\n\nNúmero: #${String(resultado.id).padStart(4, '0')}\n\nPor favor revisá el PDF adjunto. Ante cualquier consulta, estamos a disposición. ¡Saludos!`
+        );
+        setTimeout(() => window.open(`https://wa.me/${telConCodigo}?text=${mensaje}`, '_blank'), 500);
+      } else if (form.canalEnvio === 'email' && cliente?.emailContacto) {
+        const asunto = encodeURIComponent(`Presupuesto Wood Pallet #${String(resultado.id).padStart(4, '0')}`);
+        const cuerpo = encodeURIComponent(
+          `Estimado/a,\n\nTe enviamos el presupuesto que consultaste.\n\nNúmero: #${String(resultado.id).padStart(4, '0')}\nFecha: ${fechaStr}\n\nEl PDF del presupuesto se descargó automáticamente. Por favor adjuntalo a este correo o reenvíalo.\n\nQuedamos a tu disposición.\n\nSaludos,\nWood Pallet`
+        );
+        setTimeout(() => window.open(`mailto:${cliente.emailContacto}?subject=${asunto}&body=${cuerpo}`, '_blank'), 500);
+      }
+
       onSuccess(resultado.id);
       onClose();
     } catch (err: any) {
