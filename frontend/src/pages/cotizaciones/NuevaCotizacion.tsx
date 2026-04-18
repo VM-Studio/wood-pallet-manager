@@ -119,6 +119,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
                 value={form.clienteId}
                 onChange={e => setForm({ ...form, clienteId: parseInt(e.target.value) })}
                 className="select"
+                style={{ borderRadius: '0.25rem' }}
                 required
               >
                 <option value={0}>Seleccioná un cliente...</option>
@@ -132,19 +133,29 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="label mb-0">Productos <span className="text-red-500">*</span></label>
-                <button type="button" onClick={addDetalle} className="btn-ghost text-xs gap-1 py-1.5">
+                <button
+                  type="button"
+                  onClick={addDetalle}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '4px',
+                    fontSize: '0.75rem', fontWeight: 500, padding: '0.375rem 0.75rem',
+                    borderRadius: '0.25rem', border: '1px solid #E5E7EB',
+                    background: '#fff', color: '#4B5563', cursor: 'pointer', transition: 'all 0.2s'
+                  }}
+                >
                   <Plus size={14} /> Agregar producto
                 </button>
               </div>
               <div className="space-y-2">
                 {detalles.map((d, idx) => (
-                  <div key={idx} className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                  <div key={idx} className="p-3 bg-gray-50 border border-gray-100" style={{ borderRadius: '0.25rem' }}>
                     <div className="grid grid-cols-12 gap-2 items-center">
                       <div className="col-span-6">
                         <select
                           value={d.productoId}
                           onChange={e => updateDetalle(idx, 'productoId', parseInt(e.target.value))}
                           className="select text-xs py-2"
+                          style={{ borderRadius: '0.25rem' }}
                         >
                           <option value={0}>Seleccioná un producto...</option>
                           {productos.map((p: any) => (
@@ -159,6 +170,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
                           value={d.cantidad}
                           onChange={e => updateDetalle(idx, 'cantidad', parseInt(e.target.value))}
                           className="input text-xs py-2"
+                          style={{ borderRadius: '0.25rem' }}
                           placeholder="Cantidad"
                         />
                       </div>
@@ -198,7 +210,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
 
             {/* Opciones flete / SENASA */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+              <div className="p-4 bg-gray-50 border border-gray-100" style={{ borderRadius: '0.25rem' }}>
                 <label className="flex items-center gap-2 cursor-pointer mb-3">
                   <input
                     type="checkbox"
@@ -206,7 +218,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
                     onChange={e => setForm({ ...form, incluyeFlete: e.target.checked })}
                     className="w-4 h-4 rounded"
                   />
-                  <span className="text-sm font-medium text-gray-700">🚛 Incluye flete</span>
+                  <span className="text-sm font-medium text-gray-700">Incluye flete</span>
                 </label>
                 {form.incluyeFlete && (
                   <div className="space-y-2">
@@ -216,6 +228,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
                       value={form.costoFlete || ''}
                       onChange={e => setForm({ ...form, costoFlete: parseInt(e.target.value) || 0 })}
                       className="input text-sm"
+                      style={{ borderRadius: '0.25rem' }}
                     />
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
@@ -229,7 +242,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
                   </div>
                 )}
               </div>
-              <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+              <div className="p-4 bg-gray-50 border border-gray-100" style={{ borderRadius: '0.25rem' }}>
                 <label className="flex items-center gap-2 cursor-pointer mb-3">
                   <input
                     type="checkbox"
@@ -237,7 +250,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
                     onChange={e => setForm({ ...form, requiereSenasa: e.target.checked })}
                     className="w-4 h-4 rounded"
                   />
-                  <span className="text-sm font-medium text-gray-700">🌿 Requiere SENASA</span>
+                  <span className="text-sm font-medium text-gray-700">Requiere SENASA</span>
                 </label>
                 {form.requiereSenasa && (
                   <input
@@ -246,6 +259,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
                     value={form.costoSenasa || ''}
                     onChange={e => setForm({ ...form, costoSenasa: parseInt(e.target.value) || 0 })}
                     className="input text-sm"
+                    style={{ borderRadius: '0.25rem' }}
                   />
                 )}
               </div>
@@ -260,13 +274,18 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
                     key={canal}
                     type="button"
                     onClick={() => setForm({ ...form, canalEnvio: canal })}
-                    className={`flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all ${
-                      form.canalEnvio === canal
-                        ? 'bg-[#16A34A] text-white border-[#16A34A]'
-                        : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
-                    }`}
+                    style={{
+                      flex: 1, padding: '0.625rem', fontSize: '0.875rem', fontWeight: 500,
+                      borderRadius: '0.25rem', border: '1px solid',
+                      cursor: 'pointer', transition: 'all 0.15s',
+                      background: form.canalEnvio === canal
+                        ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)'
+                        : '#fff',
+                      color: form.canalEnvio === canal ? '#fff' : '#4B5563',
+                      borderColor: form.canalEnvio === canal ? '#6B3A2A' : '#E5E7EB'
+                    }}
                   >
-                    {canal === 'whatsapp' ? '💬 WhatsApp' : '📧 Email'}
+                    {canal === 'whatsapp' ? 'WhatsApp' : 'Email'}
                   </button>
                 ))}
               </div>
@@ -279,6 +298,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
                 value={form.observaciones}
                 onChange={e => setForm({ ...form, observaciones: e.target.value })}
                 className="input resize-none"
+                style={{ borderRadius: '0.25rem' }}
                 rows={2}
                 placeholder="Notas internas..."
               />
@@ -286,14 +306,14 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
 
             {/* Total estimado */}
             {totalSinIva > 0 && (
-              <div className="p-4 bg-[#16A34A]/5 rounded-xl border border-[#16A34A]/20">
+              <div className="p-4 border border-[#C4895A]/30 bg-[#6B3A2A]/5" style={{ borderRadius: '0.25rem' }}>
                 <div className="flex justify-between text-sm text-gray-600 mb-1">
                   <span>Subtotal sin IVA</span>
                   <span>{formatPesos(totalSinIva)}</span>
                 </div>
                 <div className="flex justify-between font-bold text-gray-900">
                   <span>Total con IVA (21%)</span>
-                  <span className="text-[#16A34A] text-lg">{formatPesos(totalConIva)}</span>
+                  <span className="text-[#6B3A2A] text-lg">{formatPesos(totalConIva)}</span>
                 </div>
               </div>
             )}
@@ -306,8 +326,24 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
           </div>
 
           <div className="modal-footer">
-            <button type="button" onClick={onClose} className="btn-secondary">Cancelar</button>
-            <button type="submit" disabled={crearCotizacion.isPending} className="btn-primary">
+            <button type="button" onClick={onClose}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                background: '#fff', color: '#374151', border: '1px solid #E5E7EB',
+                fontWeight: 500, fontSize: '0.875rem', padding: '0.5rem 1rem',
+                borderRadius: '0.25rem', cursor: 'pointer', transition: 'all 0.2s'
+              }}
+            >Cancelar</button>
+            <button type="submit" disabled={crearCotizacion.isPending}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
+                color: 'white', fontWeight: 500, fontSize: '0.875rem',
+                padding: '0.5rem 1rem', borderRadius: '0.25rem', border: 'none',
+                cursor: crearCotizacion.isPending ? 'not-allowed' : 'pointer',
+                opacity: crearCotizacion.isPending ? 0.6 : 1, transition: 'all 0.2s'
+              }}
+            >
               {crearCotizacion.isPending ? 'Creando...' : 'Crear cotización'}
             </button>
           </div>
