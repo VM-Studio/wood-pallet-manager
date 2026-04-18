@@ -153,7 +153,7 @@ export default function ClientesPage() {
               {/* Header */}
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1 min-w-0">
-                  <h3 className="titulo-card truncate">{cliente.razonSocial}</h3>
+                  <h3 className="titulo-card truncate" style={{ fontSize: '1.05rem', fontWeight: 700 }}>{cliente.razonSocial}</h3>
                   {cliente.cuit && (
                     <p className="text-xs text-gray-400 mt-0.5">CUIT: {cliente.cuit}</p>
                   )}
