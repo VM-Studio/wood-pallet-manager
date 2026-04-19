@@ -41,6 +41,7 @@ export default function LogisticaPage() {
   const { usuario } = useAuthStore();
   const esCarlos = usuario?.rol === 'propietario_carlos';
   const [busqueda, setBusqueda] = useState('');
+  const [vista, setVista] = useState<'mi' | 'juan'>('mi');
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [showNueva, setShowNueva] = useState(false);
   const [respuestaSolicitudId, setRespuestaSolicitudId] = useState<number | null>(null);
@@ -62,7 +63,14 @@ export default function LogisticaPage() {
       l.venta?.cliente?.razonSocial?.toLowerCase().includes(busqueda.toLowerCase()) ||
       `#${l.ventaId}`.includes(busqueda);
     const matchEstado = filtroEstado === 'todos' || l.estadoEntrega === filtroEstado;
-    return matchBusqueda && matchEstado;
+    // Vista: 'mi' => solo las logisticas del usuario; 'juan' => las de Juan Cruz; 'todas' => todas (solo Carlos)
+    let matchVista = true;
+    if (vista === 'mi') {
+      matchVista = (l.venta?.usuario?.nombre === usuario?.nombre) && (l.venta?.usuario?.apellido === usuario?.apellido);
+    } else if (vista === 'juan') {
+      matchVista = l.venta?.usuario?.rol === 'propietario_juancruz';
+    }
+    return matchBusqueda && matchEstado && matchVista;
   });
 
   const pendientes  = logisticas?.filter(l => l.estadoEntrega === 'pendiente').length ?? 0;
@@ -109,8 +117,134 @@ export default function LogisticaPage() {
         </button>
       </div>
 
-      {/* Solicitudes de logística */}
-      {solicitudes && solicitudes.length > 0 && (
+      {/* KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="card-kpi">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ background: '#FEF3E2', borderRadius: '0.25rem' }}>
+              <Clock size={18} style={{ color: '#C4895A' }} />
+            </div>
+            <div>
+              <p className="text-2xl font-bold" style={{ color: '#6B3A2A' }}>{pendientes}</p>
+              <p className="text-xs text-gray-500">Pendientes</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="card-kpi">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ background: '#F3EDE8', borderRadius: '0.25rem' }}>
+              <Truck size={18} style={{ color: '#6B3A2A' }} />
+            </div>
+            <div>
+              <p className="text-2xl font-bold" style={{ color: '#6B3A2A' }}>{enCamino}</p>
+              <p className="text-xs text-gray-500">En camino</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="card-kpi">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ background: '#FEF3E2', borderRadius: '0.25rem' }}>
+              <CheckCircle size={18} style={{ color: '#C4895A' }} />
+            </div>
+            <div>
+              <p className="text-2xl font-bold" style={{ color: '#6B3A2A' }}>{entregadas}</p>
+              <p className="text-xs text-gray-500">Entregadas</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="card-kpi">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ background: '#F3EDE8', borderRadius: '0.25rem' }}>
+              <Calendar size={18} style={{ color: '#6B3A2A' }} />
+            </div>
+            <div>
+              <p className="text-2xl font-bold" style={{ color: '#6B3A2A' }}>{entregasHoy?.length ?? 0}</p>
+              <p className="text-xs text-gray-500">Hoy</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Entregas del día */}
+      {entregasHoy && entregasHoy.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <Calendar size={16} style={{ color: '#6B3A2A' }} />
+            <h2 className="text-sm font-semibold" style={{ color: '#6B3A2A' }}>
+              Entregas programadas para hoy ({entregasHoy.length})
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {entregasHoy.map(l => (
+              <EntregaCard key={l.id} logistica={l} compact />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Filtros */}
+      <div className="space-y-2">
+        {/* Fila 1: buscador + vista */}
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Buscar por cliente o número de venta..."
+              value={busqueda}
+              onChange={e => setBusqueda(e.target.value)}
+              className="input-field pl-10"
+            />
+          </div>
+          <div className="flex gap-1 p-1" style={{ background: '#fff', borderRadius: '0.25rem', border: '1px solid #e5e7eb' }}>
+            <button
+              onClick={() => { setVista('mi'); setFiltroEstado('todos'); }}
+              className="px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-all"
+              style={vista === 'mi'
+                ? { background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', color: '#fff', borderRadius: '0.25rem' }
+                : { borderRadius: '0.25rem', color: '#4B5563' }
+              }
+            >
+              Mi logística
+            </button>
+            {esCarlos && (
+              <button
+                onClick={() => { setVista('juan'); setFiltroEstado('todos'); }}
+                className="px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-all"
+                style={vista === 'juan'
+                  ? { background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', color: '#fff', borderRadius: '0.25rem' }
+                  : { borderRadius: '0.25rem', color: '#4B5563' }
+                }
+              >
+                Juan
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Fila 2: filtro de estado (aplica sobre la vista activa) */}
+        <div className="flex gap-1 p-1 overflow-x-auto" style={{ background: '#fff', borderRadius: '0.25rem', border: '1px solid #e5e7eb' }}>
+          {estadoFiltros.map(f => (
+            <button
+              key={f.key}
+              onClick={() => setFiltroEstado(f.key)}
+              className="px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-all"
+              style={filtroEstado === f.key
+                ? { background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', color: '#fff', borderRadius: '0.25rem' }
+                : { borderRadius: '0.25rem', color: '#6B7280' }
+              }
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Lista de entregas */}
+      {vista === 'juan' && solicitudes && solicitudes.length > 0 && (
         <div className="bg-white border border-gray-200 overflow-hidden" style={{ borderRadius: '0.25rem' }}>
           <div className="px-4 py-3 border-b border-gray-100" style={{ background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' }}>
             <h2 className="text-sm font-semibold text-white">
@@ -210,105 +344,7 @@ export default function LogisticaPage() {
         </div>
       )}
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="card-kpi">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ background: '#FEF3E2', borderRadius: '0.25rem' }}>
-              <Clock size={18} style={{ color: '#C4895A' }} />
-            </div>
-            <div>
-              <p className="text-2xl font-bold" style={{ color: '#6B3A2A' }}>{pendientes}</p>
-              <p className="text-xs text-gray-500">Pendientes</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="card-kpi">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ background: '#F3EDE8', borderRadius: '0.25rem' }}>
-              <Truck size={18} style={{ color: '#6B3A2A' }} />
-            </div>
-            <div>
-              <p className="text-2xl font-bold" style={{ color: '#6B3A2A' }}>{enCamino}</p>
-              <p className="text-xs text-gray-500">En camino</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="card-kpi">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ background: '#FEF3E2', borderRadius: '0.25rem' }}>
-              <CheckCircle size={18} style={{ color: '#C4895A' }} />
-            </div>
-            <div>
-              <p className="text-2xl font-bold" style={{ color: '#6B3A2A' }}>{entregadas}</p>
-              <p className="text-xs text-gray-500">Entregadas</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="card-kpi">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ background: '#F3EDE8', borderRadius: '0.25rem' }}>
-              <Calendar size={18} style={{ color: '#6B3A2A' }} />
-            </div>
-            <div>
-              <p className="text-2xl font-bold" style={{ color: '#6B3A2A' }}>{entregasHoy?.length ?? 0}</p>
-              <p className="text-xs text-gray-500">Hoy</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Entregas del día */}
-      {entregasHoy && entregasHoy.length > 0 && (
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <Calendar size={16} style={{ color: '#6B3A2A' }} />
-            <h2 className="text-sm font-semibold" style={{ color: '#6B3A2A' }}>
-              Entregas programadas para hoy ({entregasHoy.length})
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {entregasHoy.map(l => (
-              <EntregaCard key={l.id} logistica={l} compact />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Filtros */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Buscar por cliente o número de venta..."
-            value={busqueda}
-            onChange={e => setBusqueda(e.target.value)}
-            className="input-field pl-10"
-          />
-        </div>
-        <div className="flex gap-1 p-1 overflow-x-auto" style={{ background: '#fff', borderRadius: '0.25rem', border: '1px solid #e5e7eb' }}>
-          {estadoFiltros.map(f => (
-            <button
-              key={f.key}
-              onClick={() => setFiltroEstado(f.key)}
-              style={filtroEstado === f.key
-                ? { background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', color: '#fff', borderRadius: '0.25rem' }
-                : { borderRadius: '0.25rem' }
-              }
-              className="px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-all text-gray-500 hover:bg-gray-50"
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Lista de entregas */}
-      {!filtradas?.length ? (
+      {!filtradas?.length && !(vista === 'juan' && solicitudes && solicitudes.length > 0) ? (
         <div className="card-base flex flex-col items-center justify-center py-16 text-center">
           <div className="w-14 h-14 flex items-center justify-center mb-4" style={{ background: '#F3EDE8', borderRadius: '0.25rem' }}>
             <Truck size={24} style={{ color: '#6B3A2A' }} />

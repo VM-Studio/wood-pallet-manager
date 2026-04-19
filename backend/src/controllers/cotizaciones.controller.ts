@@ -186,7 +186,34 @@ export const enviarEmailCotizacion = async (req: AuthRequest, res: Response) => 
 };
 
 export const eliminarCotizacion = async (req: AuthRequest, res: Response) => {
-  const id = parseId(req.params.id);
-  await prisma.cotizacion.delete({ where: { id } });
-  res.json({ ok: true });
+  try {
+    const id = parseId(req.params.id);
+
+    // 1. Desvincular venta que referencia a esta cotización (FK opcional)
+    await prisma.venta.updateMany({
+      where: { cotizacionId: id },
+      data: { cotizacionId: null },
+    });
+
+    // 2. Borrar EspecificacionMedida (FK a DetalleCotizacion)
+    const detalles = await prisma.detalleCotizacion.findMany({ where: { cotizacionId: id }, select: { id: true } });
+    const detalleIds = detalles.map(d => d.id);
+    if (detalleIds.length) {
+      await prisma.especificacionMedida.deleteMany({ where: { detalleCotizacionId: { in: detalleIds } } });
+    }
+
+    // 3. Borrar detalles
+    await prisma.detalleCotizacion.deleteMany({ where: { cotizacionId: id } });
+
+    // 4. Borrar seguimientos
+    await prisma.seguimientoCotizacion.deleteMany({ where: { cotizacionId: id } });
+
+    // 5. Borrar la cotización
+    await prisma.cotizacion.delete({ where: { id } });
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Error al eliminar cotización:', err);
+    res.status(500).json({ error: 'No se pudo eliminar la cotización' });
+  }
 };

@@ -67,6 +67,24 @@ export default function EntregaCard({ logistica, compact = false }: EntregaCardP
   const propietarioVenta = logistica.venta?.usuario;
   const next = siguienteEstado(logistica.estadoEntrega);
 
+  // Derived status based on estimated delivery date
+  const deliveryDateStr = logistica.horaEstimadaEntrega ?? logistica.fechaRetiroGalpon ?? null;
+  const deliveryDate = deliveryDateStr ? new Date(deliveryDateStr) : null;
+  const hoy = new Date();
+  const isSameDay = (d1: Date, d2: Date) => d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
+  let derivedState: 'Activa' | 'Entrega hoy' | 'Vencida' | null = null;
+  if (logistica.estadoEntrega !== 'entregado') {
+    if (deliveryDate) {
+      if (isSameDay(deliveryDate, hoy)) derivedState = 'Entrega hoy';
+      else if (deliveryDate > hoy) derivedState = 'Activa';
+      else {
+        // si la fecha pasó y la venta no está entregada -> Vencida
+        const ventaEntregada = (logistica.venta as any)?.estadoPedido === 'entregado';
+        if (!ventaEntregada) derivedState = 'Vencida';
+      }
+    }
+  }
+
   return (
     <div className={clsx(
       'card-p',
@@ -84,7 +102,10 @@ export default function EntregaCard({ logistica, compact = false }: EntregaCardP
         <div>
           <div className="flex items-center gap-2 mb-1">
             <p className="font-bold text-gray-900">#{logistica.ventaId}</p>
-            <EstadoBadge estado={logistica.estadoEntrega} />
+                <EstadoBadge estado={logistica.estadoEntrega} />
+                {derivedState && (
+                  <span className="text-xs px-2 py-0.5 rounded-lg font-medium text-gray-700 bg-gray-100">{derivedState}</span>
+                )}
             {propietarioVenta && (
               <span className={clsx(
                 'text-xs px-2 py-0.5 rounded-lg font-medium',
@@ -180,11 +201,12 @@ export default function EntregaCard({ logistica, compact = false }: EntregaCardP
           {next && (
             <button
               onClick={() => actualizarEstado.mutate({ ventaId: logistica.ventaId, estado: next })}
-              disabled={actualizarEstado.isPending}
+              disabled={actualizarEstado.isPending || (next === 'entregado' && !(deliveryDate && isSameDay(deliveryDate, hoy)))}
               className={clsx(
                 'flex-1 justify-center text-sm',
                 logistica.estadoEntrega === 'en_camino' ? 'btn-primary' : 'btn-secondary'
               )}
+              title={next === 'entregado' && !(deliveryDate && isSameDay(deliveryDate, hoy)) ? 'El botón Entregado sólo se habilita el día de entrega' : undefined}
             >
               {estadoLabel[next]}
             </button>

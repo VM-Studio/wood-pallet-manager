@@ -76,6 +76,50 @@ export async function responderSolicitudService(
   if (!solicitud) throw new Error('Solicitud no encontrada');
   if (solicitud.destinatarioId !== usuarioId) throw new Error('No tenés permiso para responder esta solicitud');
 
+  // Si la solicitud es aceptada, además creamos la logística correspondiente y actualizamos la venta
+  if (estado === 'aceptada') {
+    const updated = await prisma.$transaction(async (tx) => {
+      const s = await tx.solicitudLogistica.update({
+        where: { id },
+        data: {
+          estado,
+          fechaRespuesta: new Date(),
+          notasRespuesta: notasRespuesta ?? null,
+        },
+        include: {
+          venta: { include: { cliente: true, detalles: { include: { producto: true } } } },
+          solicitante: { select: { id: true, nombre: true, apellido: true } },
+        },
+      });
+
+      // Crear logística si no existe
+      const existente = await tx.logistica.findUnique({ where: { ventaId: s.ventaId ?? 0 } });
+      if (!existente && s.ventaId) {
+        await tx.logistica.create({
+          data: {
+            ventaId: s.ventaId,
+            nombreTransportista: '',
+            telefonoTransp: null,
+            fechaRetiroGalpon: s.fechaEntrega ?? null,
+            horaEstimadaEntrega: s.fechaEntrega ?? null,
+            estadoEntrega: 'pendiente',
+            confTransportista: true, // Carlos confirmó coordinación telefónica
+            confCliente: false,
+            registradoPorId: usuarioId,
+            observaciones: s.notas ?? undefined,
+          },
+        });
+
+        // Actualizar estado de la venta a en_transito
+        await tx.venta.update({ where: { id: s.ventaId! }, data: { estadoPedido: 'en_transito' } });
+      }
+
+      return s;
+    });
+
+    return updated;
+  }
+
   return prisma.solicitudLogistica.update({
     where: { id },
     data: {

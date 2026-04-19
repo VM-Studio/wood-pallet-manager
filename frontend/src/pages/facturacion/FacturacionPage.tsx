@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Search, DollarSign, AlertTriangle, Clock, CheckCircle, Receipt, X } from 'lucide-react';
+import { Search, DollarSign, AlertTriangle, Clock, CheckCircle, Receipt, X, Plus } from 'lucide-react';
 import { useFacturas, useFacturasVencidas, useCobrosPendientes, useActualizarNroFactura } from '../../hooks/useFacturacion';
 import type { Factura } from '../../types';
 import RegistrarCobro from './RegistrarCobro';
+import NuevaFactura from './NuevaFactura';
 import EstadoBadge from '../../components/ui/EstadoBadge';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
@@ -48,6 +49,7 @@ export default function FacturacionPage() {
   const [cobroData, setCobroData] = useState<CobroData | null>(null);
   const [nroFacturaModal, setNroFacturaModal] = useState<{ id: number; clienteNombre: string } | null>(null);
   const [nroFacturaInput, setNroFacturaInput] = useState('');
+  const [showNuevaFactura, setShowNuevaFactura] = useState(false);
   const actualizarNro = useActualizarNroFactura();
 
   const filtradas = facturas?.filter(f => {
@@ -90,6 +92,15 @@ export default function FacturacionPage() {
         <div>
           <h1 className="titulo-modulo">Facturación y Cobranzas</h1>
           <p className="text-sm text-gray-500 mt-1">{facturas?.length ?? 0} facturas registradas</p>
+        </div>
+        <div>
+          <button
+            onClick={() => setShowNuevaFactura(true)}
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white"
+            style={{ background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', borderRadius: '0.375rem' }}
+          >
+            <Plus size={14} /> Agregar facturación
+          </button>
         </div>
       </div>
 
@@ -326,21 +337,36 @@ export default function FacturacionPage() {
                     <td><EstadoBadge estado={f.estadoCobro} /></td>
                     <td>
                       <div className="flex flex-col gap-1.5">
-                        {/* Botón pago aprobado */}
+                        {/* Botón pago aprobado / pago manual */}
                         {f.estadoCobro !== 'cobrada_total' && (
-                          <button
-                            onClick={() => setCobroData({
-                              facturaId: f.id,
-                              clienteNombre: f.cliente?.razonSocial ?? '',
-                              totalFactura: Number(f.totalConIva),
-                              totalCobrado
-                            })}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white"
-                            style={{ background: 'linear-gradient(135deg, #16A34A 0%, #15803D 100%)', borderRadius: '0.25rem' }}
-                          >
-                            <CheckCircle size={13} />
-                            {f.estadoCobro === 'cobrada_parcial' ? `Pago restante (${formatPesos(saldo)})` : 'Pago aprobado'}
-                          </button>
+                          <>
+                            <button
+                              onClick={() => setCobroData({
+                                facturaId: f.id,
+                                clienteNombre: f.cliente?.razonSocial ?? '',
+                                totalFactura: Number(f.totalConIva),
+                                totalCobrado
+                              })}
+                              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white"
+                              style={{ background: 'linear-gradient(135deg, #16A34A 0%, #15803D 100%)', borderRadius: '0.25rem' }}
+                            >
+                              <CheckCircle size={13} />
+                              {f.estadoCobro === 'cobrada_parcial' ? `Pago restante (${formatPesos(saldo)})` : 'Pago aprobado'}
+                            </button>
+
+                            <button
+                              onClick={() => setCobroData({
+                                facturaId: f.id,
+                                clienteNombre: f.cliente?.razonSocial ?? '',
+                                totalFactura: Number(f.totalConIva),
+                                totalCobrado
+                              })}
+                              className="px-3 py-1.5 text-xs font-medium border rounded"
+                              style={{ borderColor: '#E5E7EB', background: '#fff' }}
+                            >
+                              Pago
+                            </button>
+                          </>
                         )}
                         {/* Botón cargar N° ARCA — solo si tiene IVA y aún no tiene nro */}
                         {Number(f.iva) > 0 && !f.nroFactura && (
@@ -406,7 +432,12 @@ export default function FacturacionPage() {
           </div>
         </div>
       )}
-
+      {showNuevaFactura && (
+        <NuevaFactura
+          onClose={() => setShowNuevaFactura(false)}
+          onSuccess={() => setShowNuevaFactura(false)}
+        />
+      )}
       {cobroData && (
         <RegistrarCobro
           facturaId={cobroData.facturaId}

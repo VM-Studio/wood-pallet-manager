@@ -116,13 +116,39 @@ export const getVentasPorPeriodo = async (req: AuthRequest, res: Response) => {
 };
 
 export const eliminarVenta = async (req: AuthRequest, res: Response) => {
-  const id = parseId(req.params.id);
-  // Eliminar en cascada: detalles, retiros, logísticas, facturas con sus pagos
-  await prisma.retiroParcial.deleteMany({ where: { detalleVenta: { ventaId: id } } });
-  await prisma.detalleVenta.deleteMany({ where: { ventaId: id } });
-  await prisma.pagoCobro.deleteMany({ where: { factura: { ventaId: id } } });
-  await prisma.factura.deleteMany({ where: { ventaId: id } });
-  await prisma.logistica.deleteMany({ where: { ventaId: id } });
-  await prisma.venta.delete({ where: { id } });
-  res.json({ ok: true });
+  try {
+    const id = parseId(req.params.id);
+
+    // 1. Desvincular Compras que referencian esta venta (FK opcional)
+    await prisma.compra.updateMany({ where: { ventaId: id }, data: { ventaId: null } });
+
+    // 2. Desvincular SolicitudLogistica (FK opcional)
+    await prisma.solicitudLogistica.updateMany({ where: { ventaId: id }, data: { ventaId: null } });
+
+    // 3. EspecificacionMedida vinculada a DetalleVenta
+    const detalles = await prisma.detalleVenta.findMany({ where: { ventaId: id }, select: { id: true } });
+    const detalleIds = detalles.map(d => d.id);
+    if (detalleIds.length) {
+      await prisma.especificacionMedida.deleteMany({ where: { detalleVentaId: { in: detalleIds } } });
+      await prisma.retiroParcial.deleteMany({ where: { detalleVentaId: { in: detalleIds } } });
+    }
+
+    // 4. Detalles de venta
+    await prisma.detalleVenta.deleteMany({ where: { ventaId: id } });
+
+    // 5. Pagos y facturas
+    await prisma.pagoCobro.deleteMany({ where: { factura: { ventaId: id } } });
+    await prisma.factura.deleteMany({ where: { ventaId: id } });
+
+    // 6. Logística
+    await prisma.logistica.deleteMany({ where: { ventaId: id } });
+
+    // 7. Venta
+    await prisma.venta.delete({ where: { id } });
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Error al eliminar venta:', err);
+    res.status(500).json({ error: 'No se pudo eliminar la venta' });
+  }
 };

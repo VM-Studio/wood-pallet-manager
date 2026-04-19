@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Receipt, AlertCircle } from 'lucide-react';
+import { X, Receipt } from 'lucide-react';
 import { useCrearFactura } from '../../hooks/useFacturacion';
 import api from '../../services/api';
 
@@ -10,6 +10,7 @@ interface NuevaFacturaProps {
 
 interface VentaSinFactura {
   id: number;
+  totalSinIva?: number;
   totalConIva?: number;
   cliente?: { razonSocial: string };
   detalles?: { id: number; cantidadPedida: number; producto?: { nombre: string } }[];
@@ -42,11 +43,27 @@ export default function NuevaFactura({ onClose, onSuccess }: NuevaFacturaProps) 
     });
   }, []);
 
-  const calcularIva = (neto: string) => {
-    const n = parseFloat(neto) || 0;
-    const iva = Math.round(n * 0.21);
-    const total = n + iva;
-    setForm(f => ({ ...f, totalNeto: neto, iva: String(iva), totalConIva: String(total) }));
+  // Cuando se selecciona una venta, auto-calcula los montos y detecta si tiene IVA
+  const handleVentaChange = (ventaId: number) => {
+    const v = ventas.find(x => x.id === ventaId);
+    if (v && v.totalConIva) {
+      const total = Number(v.totalConIva);
+      const neto = Number(v.totalSinIva ?? 0);
+      // Si totalSinIva === totalConIva → sin IVA; sino → con IVA (Factura A)
+      const sinIva = neto > 0 && Math.abs(total - neto) < 1;
+      const ivaCalc = sinIva ? 0 : (neto > 0 ? total - neto : Math.round(total - total / 1.21));
+      const netoFinal = sinIva ? total : (neto > 0 ? neto : Math.round(total / 1.21));
+      setForm(f => ({
+        ...f,
+        ventaId,
+        esSinFactura: sinIva,
+        totalConIva: String(total),
+        totalNeto: String(netoFinal),
+        iva: String(ivaCalc),
+      }));
+    } else {
+      setForm(f => ({ ...f, ventaId, totalConIva: '', totalNeto: '', iva: '' }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -76,57 +93,60 @@ export default function NuevaFactura({ onClose, onSuccess }: NuevaFacturaProps) 
   const ventaSeleccionada = ventas.find(v => v.id === form.ventaId);
 
   return (
-    <div className="modal-overlay">
-      <div className="modal max-w-xl animate-slide-up">
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal max-w-lg animate-slide-up" onClick={e => e.stopPropagation()}>
+
+        {/* Header */}
         <div className="modal-header">
-          <h2 className="modal-title flex items-center gap-2">
-            <Receipt size={18} className="text-[#16A34A]" />
-            Registrar factura
-          </h2>
+          <div className="flex items-center gap-2">
+            <div
+              className="w-8 h-8 flex items-center justify-center shrink-0"
+              style={{ background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', borderRadius: '0.375rem' }}
+            >
+              <Receipt size={15} style={{ color: '#fff' }} />
+            </div>
+            <h2 className="modal-title">Registrar factura</h2>
+          </div>
           <button onClick={onClose} className="btn-icon"><X size={18} /></button>
         </div>
 
         <form onSubmit={handleSubmit}>
           <div className="modal-body space-y-4">
 
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-2">
-              <AlertCircle size={15} className="text-blue-600 shrink-0 mt-0.5" />
-              <p className="text-xs text-blue-700">
-                La factura A se emite desde ARCA. Acá registrás los datos
-                de la factura ya emitida para el seguimiento del cobro.
-              </p>
-            </div>
-
-            {/* Venta */}
+            {/* Selector de venta */}
             <div>
               <label className="label">Venta asociada <span className="text-red-500">*</span></label>
               {!ventas.length ? (
-                <div className="p-3 bg-gray-50 rounded-xl text-center">
-                  <p className="text-sm text-gray-500">No hay ventas sin factura</p>
+                <div
+                  className="flex items-center gap-2 p-3 text-sm text-gray-500"
+                  style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.375rem' }}
+                >
+                  No hay ventas sin factura pendiente
                 </div>
               ) : (
                 <select
                   value={form.ventaId}
-                  onChange={e => setForm({ ...form, ventaId: parseInt(e.target.value) })}
-                  className="select"
+                  onChange={e => handleVentaChange(parseInt(e.target.value))}
+                  className="input-field"
                   required
                 >
                   <option value={0}>Seleccioná una venta...</option>
                   {ventas.map(v => (
                     <option key={v.id} value={v.id}>
-                      #{v.id} — {v.cliente?.razonSocial} — {formatPesos(v.totalConIva ?? 0)}
+                      #{v.id} — {v.cliente?.razonSocial} — {formatPesos(Number(v.totalConIva ?? 0))}
                     </option>
                   ))}
                 </select>
               )}
             </div>
 
-            {/* Venta seleccionada info */}
+            {/* Info venta seleccionada */}
             {ventaSeleccionada && (
-              <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                <p className="text-xs font-semibold text-gray-700 mb-1">
-                  {ventaSeleccionada.cliente?.razonSocial}
-                </p>
+              <div
+                className="p-3 space-y-0.5"
+                style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.375rem' }}
+              >
+                <p className="text-sm font-semibold text-gray-800">{ventaSeleccionada.cliente?.razonSocial}</p>
                 <p className="text-xs text-gray-500">
                   {ventaSeleccionada.detalles?.map(d =>
                     `${d.producto?.nombre} (${d.cantidadPedida}u)`
@@ -135,94 +155,127 @@ export default function NuevaFactura({ onClose, onSuccess }: NuevaFacturaProps) 
               </div>
             )}
 
-            {/* Tipo de comprobante */}
-            <div className="flex gap-3">
-              <button type="button"
-                onClick={() => setForm({ ...form, esSinFactura: false })}
-                className={`flex-1 p-3 rounded-xl border text-sm font-medium transition-all ${
-                  !form.esSinFactura
-                    ? 'border-[#16A34A] bg-green-50 text-[#16A34A]'
-                    : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                }`}>
-                🧾 Factura A
-              </button>
-              <button type="button"
-                onClick={() => setForm({ ...form, esSinFactura: true, nroFactura: '' })}
-                className={`flex-1 p-3 rounded-xl border text-sm font-medium transition-all ${
-                  form.esSinFactura
-                    ? 'border-amber-400 bg-amber-50 text-amber-700'
-                    : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                }`}>
-                📋 Sin factura (SN)
-              </button>
-            </div>
+            {/* Tipo de comprobante — solo lectura, viene de cotización */}
+            {form.ventaId > 0 && (
+              <div
+                className="flex items-center gap-3 p-3"
+                style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.375rem' }}
+              >
+                <span className="text-xl">{form.esSinFactura ? '📋' : '🧾'}</span>
+                <div>
+                  <p className="text-sm font-semibold text-gray-800">
+                    {form.esSinFactura ? 'Sin factura (SN)' : 'Factura A'}
+                  </p>
+                  <p className="text-xs text-gray-400">Definido en la cotización · no editable</p>
+                </div>
+              </div>
+            )}
 
-            {/* Número de factura */}
-            {!form.esSinFactura && (
+            {/* N° ARCA — solo si es Factura A */}
+            {form.ventaId > 0 && !form.esSinFactura && (
               <div>
-                <label className="label">Número de factura (ARCA)</label>
-                <input type="text" value={form.nroFactura}
+                <label className="label">N° de factura ARCA</label>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="Ej: 00001-00000001"
+                  value={form.nroFactura}
                   onChange={e => setForm({ ...form, nroFactura: e.target.value })}
-                  className="input" placeholder="A-0001-00000001" />
+                />
+                <p className="text-xs text-gray-400 mt-1">Opcional — podés cargarlo después desde la tabla.</p>
               </div>
             )}
 
-            {/* Importe neto */}
-            <div>
-              <label className="label">
-                Total neto (sin IVA) <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number" min={0} value={form.totalNeto}
-                onChange={e => calcularIva(e.target.value)}
-                className="input"
-                placeholder="Ingresá el importe neto y el IVA se calcula solo"
-                required
-              />
-            </div>
-
-            {form.totalNeto && (
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 bg-gray-50 rounded-xl">
+            {/* Importes — auto-calculados, solo lectura */}
+            {form.ventaId > 0 && (
+              <div className="grid grid-cols-3 gap-3">
+                <div
+                  className="p-3"
+                  style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.375rem' }}
+                >
+                  <p className="text-xs text-gray-500 mb-1">Neto (sin IVA)</p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {formatPesos(parseFloat(form.totalNeto) || 0)}
+                  </p>
+                </div>
+                <div
+                  className="p-3"
+                  style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.375rem' }}
+                >
                   <p className="text-xs text-gray-500 mb-1">IVA 21%</p>
-                  <p className="font-semibold text-gray-900">{formatPesos(parseFloat(form.iva) || 0)}</p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {formatPesos(parseFloat(form.iva) || 0)}
+                  </p>
                 </div>
-                <div className="p-3 bg-[#16A34A]/10 rounded-xl">
+                <div
+                  className="p-3"
+                  style={{ background: '#F3EDE8', border: '1px solid #D4B49A', borderRadius: '0.375rem' }}
+                >
                   <p className="text-xs text-gray-500 mb-1">Total con IVA</p>
-                  <p className="font-bold text-[#16A34A] text-lg">{formatPesos(parseFloat(form.totalConIva) || 0)}</p>
+                  <p className="text-sm font-bold" style={{ color: '#6B3A2A' }}>
+                    {formatPesos(parseFloat(form.totalConIva) || 0)}
+                  </p>
                 </div>
               </div>
             )}
 
-            {/* Vencimiento */}
+            {/* Fecha de vencimiento */}
             <div>
               <label className="label">Fecha de vencimiento</label>
-              <input type="date" value={form.fechaVencimiento}
+              <input
+                type="date"
+                className="input-field"
+                value={form.fechaVencimiento}
                 onChange={e => setForm({ ...form, fechaVencimiento: e.target.value })}
-                className="input" />
+              />
               <p className="text-xs text-gray-400 mt-1">
-                Para pallets nuevos: 7 días desde la entrega. Para semi-nuevos: contra-entrega.
+                Pallets nuevos: 7 días desde entrega · Semi-nuevos: contra-entrega
               </p>
             </div>
 
             {/* Observaciones */}
             <div>
               <label className="label">Observaciones</label>
-              <textarea value={form.observaciones}
+              <textarea
+                className="input-field resize-none"
+                rows={2}
+                placeholder="Notas internas sobre esta factura..."
+                value={form.observaciones}
                 onChange={e => setForm({ ...form, observaciones: e.target.value })}
-                className="input resize-none" rows={2} />
+              />
             </div>
 
+            {/* Error */}
             {error && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-200 px-3 py-2.5 rounded-xl">
+              <div
+                className="px-3 py-2.5 text-sm text-red-700"
+                style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: '0.375rem' }}
+              >
                 {error}
-              </p>
+              </div>
             )}
           </div>
 
+          {/* Footer */}
           <div className="modal-footer">
-            <button type="button" onClick={onClose} className="btn-secondary">Cancelar</button>
-            <button type="submit" disabled={crearFactura.isPending} className="btn-primary">
+            <button type="button" onClick={onClose} className="btn-secondary">
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={crearFactura.isPending || !form.ventaId}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                background: form.ventaId
+                  ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)'
+                  : '#D1D5DB',
+                color: 'white', fontWeight: 500, fontSize: '0.875rem',
+                padding: '0.5rem 1.25rem', borderRadius: '0.375rem',
+                border: 'none', cursor: form.ventaId ? 'pointer' : 'not-allowed',
+                opacity: crearFactura.isPending ? 0.7 : 1,
+              }}
+            >
+              <Receipt size={14} />
               {crearFactura.isPending ? 'Registrando...' : 'Registrar factura'}
             </button>
           </div>
