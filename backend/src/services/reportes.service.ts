@@ -4,9 +4,9 @@ export const getVentasUltimos12MesesService = async (usuarioId?: number) => {
   const meses = [];
   const ahora = new Date();
 
-  for (let i = 11; i >= 0; i--) {
-    const inicio = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
-    const fin = new Date(ahora.getFullYear(), ahora.getMonth() - i + 1, 0);
+  for (let i = 0; i < 12; i++) {
+    const inicio = new Date(ahora.getFullYear(), ahora.getMonth() + i, 1);
+    const fin = new Date(ahora.getFullYear(), ahora.getMonth() + i + 1, 0);
 
     const where: any = { fechaVenta: { gte: inicio, lte: fin } };
     if (usuarioId !== undefined) where.usuarioId = usuarioId;

@@ -288,7 +288,7 @@ export default function DashboardPage() {
             <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
               <TrendingUp size={18} />
             </div>
-            <h2 className="titulo-seccion">Ventas — Últimos 12 meses · <span className="font-normal text-gray-400">{labelVista}</span></h2>
+            <h2 className="titulo-seccion">Ventas — Próximos 12 meses · <span className="font-normal text-gray-400">{labelVista}</span></h2>
           </div>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={grafico} margin={{ top: 0, right: 0, left: -15, bottom: 0 }}>
