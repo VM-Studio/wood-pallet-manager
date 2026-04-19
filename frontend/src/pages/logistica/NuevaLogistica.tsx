@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { X, Truck, AlertCircle, User } from 'lucide-react';
+import { X, Truck, User } from 'lucide-react';
 import { useCrearLogistica } from '../../hooks/useLogistica';
+import { useSolicitudesLogistica, useCrearSolicitudLogistica } from '../../hooks/useSolicitudesLogistica';
 import { useAuthStore } from '../../store/auth.store';
 import api from '../../services/api';
 
@@ -17,6 +18,7 @@ interface VentaActiva {
   cliente?: { razonSocial: string };
   detalles?: { id: number; cantidadPedida: number; producto?: { nombre: string } }[];
   usuario?: { nombre: string; apellido: string; rol: string };
+  cotizacion?: { costoFlete?: number | string | null };
 }
 
 const formatFecha = (f: string) =>
@@ -26,6 +28,7 @@ export default function NuevaLogistica({ onClose, onSuccess }: NuevaLogisticaPro
   const crearLogistica = useCrearLogistica();
   const { usuario } = useAuthStore();
   const esCarlos = usuario?.rol === 'propietario_carlos';
+  const { data: solicitudes } = useSolicitudesLogistica();
 
   const [ventas, setVentas] = useState<VentaActiva[]>([]);
   const [error, setError] = useState('');
@@ -33,8 +36,6 @@ export default function NuevaLogistica({ onClose, onSuccess }: NuevaLogisticaPro
 
   const [form, setForm] = useState({
     ventaId: 0,
-    nombreTransportista: 'Transportes Rápido',
-    telefonoTransp: '',
     fechaRetiroGalpon: '',
     horaRetiro: '',
     horaEstimadaEntrega: '',
@@ -51,10 +52,17 @@ export default function NuevaLogistica({ onClose, onSuccess }: NuevaLogisticaPro
     });
   }, []);
 
+  // IDs de ventas de Juan Cruz con solicitud aceptada por Carlos
+  const ventasJuanAceptadas = new Set(
+    (solicitudes ?? [])
+      .filter(s => s.estado === 'aceptada' && s.ventaId)
+      .map(s => s.ventaId!)
+  );
+
   const ventasFiltradas = ventas.filter(v =>
     origenFiltro === 'carlos'
       ? v.usuario?.rol === 'propietario_carlos'
-      : v.usuario?.rol === 'propietario_juancruz'
+      : v.usuario?.rol === 'propietario_juancruz' && ventasJuanAceptadas.has(v.id)
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -64,8 +72,6 @@ export default function NuevaLogistica({ onClose, onSuccess }: NuevaLogisticaPro
     try {
       await crearLogistica.mutateAsync({
         ventaId: form.ventaId,
-        nombreTransportista: form.nombreTransportista,
-        telefonoTransp: form.telefonoTransp || undefined,
         fechaRetiroGalpon: form.fechaRetiroGalpon || undefined,
         costoFlete: form.costoFlete ? parseFloat(form.costoFlete) : undefined,
         observaciones: form.observaciones || undefined,
@@ -84,38 +90,197 @@ export default function NuevaLogistica({ onClose, onSuccess }: NuevaLogisticaPro
     }
   };
 
-  // Juan Cruz no puede coordinar, solo enviar solicitudes
+  const crearSolicitud = useCrearSolicitudLogistica();
+
+  const [solicForm, setSolicForm] = useState({
+    ventaId: 0,
+    ubicacionEntrega: '',
+    fechaEntrega: '',
+    notas: '',
+  });
+  const [solicError, setSolicError] = useState('');
+
+  const ventasJuan = ventas.filter(v => v.usuario?.rol === 'propietario_juancruz');
+  const ventaSeleccionada = ventasJuan.find(v => v.id === solicForm.ventaId);
+
+  const handleSolicitud = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSolicError('');
+    if (!solicForm.ventaId) { setSolicError('Seleccioná una venta'); return; }
+    if (!solicForm.ubicacionEntrega.trim()) { setSolicError('Ingresá la dirección de entrega'); return; }
+    if (!solicForm.fechaEntrega) { setSolicError('Ingresá la fecha de entrega'); return; }
+    try {
+      await crearSolicitud.mutateAsync({
+        ventaId: solicForm.ventaId,
+        ubicacionEntrega: solicForm.ubicacionEntrega,
+        fechaEntrega: solicForm.fechaEntrega,
+        cantidadUnidades: ventaSeleccionada?.detalles?.reduce((a, d) => a + d.cantidadPedida, 0),
+        notas: solicForm.notas || undefined,
+      });
+      onSuccess();
+      onClose();
+    } catch (err) {
+      const e = err as { response?: { data?: { error?: string } } };
+      setSolicError(e.response?.data?.error ?? 'Error al enviar la solicitud');
+    }
+  };
+
+  // Juan Cruz: modal para pedir entrega (solicitud a Carlos)
   if (!esCarlos) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-        <div className="bg-white w-full max-w-md mx-4" style={{ borderRadius: '0.375rem', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <div className="bg-white w-full max-w-lg mx-4" style={{ borderRadius: '0.375rem', boxShadow: '0 20px 60px rgba(0,0,0,0.15)', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
             <div className="flex items-center gap-2">
               <Truck size={18} style={{ color: '#6B3A2A' }} />
-              <h2 className="font-semibold text-gray-900">Coordinar entrega</h2>
+              <h2 className="font-semibold text-gray-900">Pedir entrega</h2>
             </div>
             <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors">
               <X size={18} />
             </button>
           </div>
-          <div className="px-5 py-8 flex flex-col items-center text-center gap-4">
-            <div className="w-14 h-14 flex items-center justify-center" style={{ background: '#FEF3E2', borderRadius: '0.375rem' }}>
-              <AlertCircle size={24} style={{ color: '#C4895A' }} />
+
+          <form onSubmit={handleSolicitud} style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', flex: 1 }}>
+            <div className="px-5 py-4 space-y-4 flex-1">
+
+              {/* Selección de venta */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                  Venta confirmada <span className="text-red-400">*</span>
+                </label>
+                {!ventasJuan.length ? (
+                  <div className="py-6 flex flex-col items-center text-center" style={{ background: '#F9FAFB', borderRadius: '0.25rem', border: '1px solid #E5E7EB' }}>
+                    <Truck size={20} className="text-gray-300 mb-2" />
+                    <p className="text-sm text-gray-500">No tenés ventas pendientes de entrega</p>
+                    <p className="text-xs text-gray-400 mt-1">Solo aparecen ventas con envío sin logística asignada</p>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
+                    {ventasJuan.map(v => (
+                      <button
+                        key={v.id}
+                        type="button"
+                        onClick={() => setSolicForm(f => ({ ...f, ventaId: v.id }))}
+                        className="w-full text-left px-3 py-2.5 transition-all"
+                        style={{
+                          borderRadius: '0.25rem',
+                          border: solicForm.ventaId === v.id ? '1.5px solid #C4895A' : '1.5px solid #E5E7EB',
+                          background: solicForm.ventaId === v.id ? '#FEF3E2' : '#fff',
+                        }}
+                      >
+                        <p className="text-sm font-semibold text-gray-900">
+                          #{v.id} — {v.cliente?.razonSocial}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {v.detalles?.map(d => `${d.producto?.nombre} (${d.cantidadPedida}u)`).join(' · ')}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Info auto-llenada de la venta seleccionada */}
+              {ventaSeleccionada && (
+                <div className="px-3 py-3 space-y-2" style={{ background: '#F9FAFB', borderRadius: '0.375rem', border: '1px solid #E5E7EB' }}>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Detalle de la venta</p>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <p className="text-xs text-gray-400">Productos</p>
+                      <p className="font-medium text-gray-800">
+                        {ventaSeleccionada.detalles?.map(d => d.producto?.nombre).join(', ')}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400">Cantidad total</p>
+                      <p className="font-medium text-gray-800">
+                        {ventaSeleccionada.detalles?.reduce((a, d) => a + d.cantidadPedida, 0)} unidades
+                      </p>
+                    </div>
+                    {ventaSeleccionada.cotizacion?.costoFlete != null && (
+                      <div>
+                        <p className="text-xs text-gray-400">Precio del flete</p>
+                        <p className="font-medium text-gray-800">
+                          ${Number(ventaSeleccionada.cotizacion.costoFlete).toLocaleString('es-AR')}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div style={{ height: '1px', background: '#F3F4F6' }} />
+
+              {/* Dirección de entrega */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                  Dirección de entrega <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={solicForm.ubicacionEntrega}
+                  onChange={e => setSolicForm({ ...solicForm, ubicacionEntrega: e.target.value })}
+                  className="input-field"
+                  placeholder="Ej: Av. Corrientes 1234, Buenos Aires"
+                />
+              </div>
+
+              {/* Fecha de entrega */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                  Fecha de entrega <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="date"
+                  value={solicForm.fechaEntrega}
+                  onChange={e => setSolicForm({ ...solicForm, fechaEntrega: e.target.value })}
+                  className="input-field"
+                />
+              </div>
+
+              {/* Notas */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                  Notas adicionales
+                </label>
+                <textarea
+                  value={solicForm.notas}
+                  onChange={e => setSolicForm({ ...solicForm, notas: e.target.value })}
+                  className="input-field resize-none"
+                  rows={2}
+                  placeholder="Instrucciones especiales, horarios, contacto..."
+                />
+              </div>
+
+              {solicError && (
+                <div className="px-3 py-2.5 text-sm text-red-600" style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: '0.25rem' }}>
+                  {solicError}
+                </div>
+              )}
             </div>
-            <div>
-              <p className="font-semibold text-gray-900 mb-1">Solo Carlos coordina entregas</p>
-              <p className="text-sm text-gray-500">
-                Toda la logística está centralizada en Carlos. Enviále una solicitud y él la coordinará con el transportista.
-              </p>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-gray-100 shrink-0">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors"
+                style={{ borderRadius: '0.25rem' }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={crearSolicitud.isPending || !solicForm.ventaId}
+                className="px-4 py-2 text-sm font-medium text-white transition-all disabled:opacity-50"
+                style={{ background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', borderRadius: '0.25rem' }}
+              >
+                {crearSolicitud.isPending ? 'Enviando...' : 'Pedir entrega'}
+              </button>
             </div>
-            <button
-              onClick={onClose}
-              className="px-5 py-2 text-sm font-medium text-white"
-              style={{ background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', borderRadius: '0.25rem' }}
-            >
-              Entendido
-            </button>
-          </div>
+          </form>
         </div>
       </div>
     );
@@ -189,7 +354,11 @@ export default function NuevaLogistica({ onClose, onSuccess }: NuevaLogisticaPro
                     <button
                       key={v.id}
                       type="button"
-                      onClick={() => setForm(f => ({ ...f, ventaId: v.id }))}
+                      onClick={() => setForm(f => ({
+                        ...f,
+                        ventaId: v.id,
+                        costoFlete: v.cotizacion?.costoFlete != null ? String(v.cotizacion.costoFlete) : f.costoFlete,
+                      }))}
                       className="w-full text-left px-3 py-2.5 transition-all"
                       style={{
                         borderRadius: '0.25rem',
@@ -219,30 +388,6 @@ export default function NuevaLogistica({ onClose, onSuccess }: NuevaLogisticaPro
             </div>
 
             <div style={{ height: '1px', background: '#F3F4F6' }} />
-
-            {/* Transportista */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Transportista</label>
-                <input
-                  type="text"
-                  value={form.nombreTransportista}
-                  onChange={e => setForm({ ...form, nombreTransportista: e.target.value })}
-                  className="input-field"
-                  placeholder="Nombre del transportista"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Teléfono</label>
-                <input
-                  type="text"
-                  value={form.telefonoTransp}
-                  onChange={e => setForm({ ...form, telefonoTransp: e.target.value })}
-                  className="input-field"
-                  placeholder="11 1234 5678"
-                />
-              </div>
-            </div>
 
             {/* Fecha y horas */}
             <div>

@@ -197,6 +197,7 @@ export const getVentasActivasService = async () => {
     include: {
       cliente: { select: { id: true, razonSocial: true } },
       usuario: { select: { id: true, nombre: true, apellido: true, rol: true } },
+      cotizacion: { select: { costoFlete: true } },
       detalles: {
         include: {
           producto: { select: { nombre: true } },

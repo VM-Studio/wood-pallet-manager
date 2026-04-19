@@ -35,7 +35,8 @@ export const crearLogisticaService = async (
     ventaId: number;
     nombreTransportista?: string;
     telefonoTransp?: string;
-    fechaRetiroGalpon: Date;
+    fechaRetiroGalpon?: Date;
+    horaRetiro?: Date;
     horaEstimadaEntrega?: Date;
     observaciones?: string;
     costoFlete?: number;
@@ -43,7 +44,7 @@ export const crearLogisticaService = async (
   usuarioId: number,
   rol: string
 ) => {
-  if (rol !== 'admin' && rol !== 'carlos') {
+  if (rol !== 'admin' && rol !== 'propietario_carlos') {
     throw new Error('Solo Carlos o un administrador puede crear logística');
   }
 
@@ -60,6 +61,7 @@ export const crearLogisticaService = async (
         nombreTransportista: data.nombreTransportista ?? '',
         telefonoTransp: data.telefonoTransp,
         fechaRetiroGalpon: data.fechaRetiroGalpon,
+        horaRetiro: data.horaRetiro,
         horaEstimadaEntrega: data.horaEstimadaEntrega,
         costoFlete: data.costoFlete,
         observaciones: data.observaciones,
@@ -82,7 +84,7 @@ export const actualizarEstadoEntregaService = async (
   estado: string,
   rol: string
 ) => {
-  if (rol !== 'admin' && rol !== 'carlos') {
+  if (rol !== 'admin' && rol !== 'propietario_carlos') {
     throw new Error('Solo Carlos o un administrador puede actualizar el estado');
   }
 
@@ -124,12 +126,17 @@ export const confirmarEntregaClienteService = async (ventaId: number) => {
 
 export const getEntregasDelDiaService = async () => {
   const hoy = new Date();
-  const inicio = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 0, 0, 0);
-  const fin = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 1, 0, 0, 0);
+  // Usar UTC para evitar problemas de timezone
+  const inicio = new Date(Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), hoy.getUTCDate(), 0, 0, 0));
+  const fin = new Date(Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), hoy.getUTCDate() + 1, 0, 0, 0));
 
   return prisma.logistica.findMany({
     where: {
-      fechaRetiroGalpon: { gte: inicio, lt: fin },
+      fechaRetiroGalpon: {
+        not: null,
+        gte: inicio,
+        lt: fin,
+      },
     },
     include: {
       venta: {

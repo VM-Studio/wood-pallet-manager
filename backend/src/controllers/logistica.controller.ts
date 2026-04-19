@@ -26,8 +26,9 @@ export const crearLogistica = async (req: AuthRequest, res: Response) => {
     ventaId: z.number().int().positive(),
     nombreTransportista: z.string().optional(),
     telefonoTransp: z.string().optional(),
-    fechaRetiroGalpon: z.coerce.date(),
-    horaEstimadaEntrega: z.coerce.date().optional(),
+    fechaRetiroGalpon: z.string().optional().transform(v => v ? new Date(v) : undefined),
+    horaRetiro: z.string().optional().transform(v => v ? new Date(v) : undefined),
+    horaEstimadaEntrega: z.string().optional().transform(v => v ? new Date(v) : undefined),
     costoFlete: z.number().optional(),
     observaciones: z.string().optional(),
   });

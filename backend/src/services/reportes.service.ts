@@ -51,6 +51,9 @@ export const getDashboardService = async () => {
     pedidosActivos,
     entregasHoy,
     stockRaw,
+    cotizacionesPendientesJuanCruz,
+    pedidosActivosJuanCruz,
+    cobrosPendientesJuanCruz,
   ] = await Promise.all([
     prisma.venta.findMany({
       where: { fechaVenta: { gte: inicioMes } },
@@ -93,6 +96,19 @@ export const getDashboardService = async () => {
       },
     }),
     prisma.stock.findMany({ where: { cantidadMinima: { not: null } } }),
+    prisma.cotizacion.count({
+      where: { estado: { in: ['enviada', 'en_seguimiento'] }, usuarioId: 2 },
+    }),
+    prisma.venta.count({
+      where: {
+        usuarioId: 2,
+        estadoPedido: { in: ['confirmado', 'en_preparacion', 'listo_para_envio', 'en_transito'] },
+      },
+    }),
+    prisma.factura.findMany({
+      where: { estadoCobro: { in: ['pendiente', 'cobrada_parcial'] }, venta: { usuarioId: 2 } },
+      include: { pagos: true },
+    }),
   ]);
 
   const alertasStock = stockRaw.filter(
@@ -120,6 +136,15 @@ export const getDashboardService = async () => {
     const cobrado = f.pagos.reduce((a, p) => a + Number(p.monto), 0);
     return acc + (Number(f.totalConIva) - cobrado);
   }, 0);
+
+  const totalCobrosPendientesJuanCruz = cobrosPendientesJuanCruz.reduce((acc, f) => {
+    const cobrado = f.pagos.reduce((a, p) => a + Number(p.monto), 0);
+    return acc + (Number(f.totalConIva) - cobrado);
+  }, 0);
+
+  const facturasVencidasJuanCruz = cobrosPendientesJuanCruz.filter(
+    f => f.fechaVencimiento && f.fechaVencimiento < hoy
+  ).length;
 
   const ventasCarlos = ventasMesActual.filter(
     (v) => v.usuario.rol === 'propietario_carlos'
@@ -199,6 +224,10 @@ export const getDashboardService = async () => {
           0
         ),
         grafico12Meses: grafico12MesesJuanCruz,
+        cobrosPendientes: totalCobrosPendientesJuanCruz,
+        facturasVencidas: facturasVencidasJuanCruz,
+        cotizacionesPendientes: cotizacionesPendientesJuanCruz,
+        pedidosActivos: pedidosActivosJuanCruz,
       },
     },
     graficos: { ventasUltimos12Meses },

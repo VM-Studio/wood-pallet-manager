@@ -280,6 +280,10 @@ export interface DashboardData {
       palletsMesAnterior: number;
       facturacionMesAnterior: number;
       grafico12Meses: { mes: string; ventas: number; pallets: number; facturacion: number }[];
+      cobrosPendientes: number;
+      facturasVencidas: number;
+      cotizacionesPendientes: number;
+      pedidosActivos: number;
     };
   };
   graficos: {

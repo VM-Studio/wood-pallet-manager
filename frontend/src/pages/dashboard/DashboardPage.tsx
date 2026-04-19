@@ -115,7 +115,7 @@ function AlertaItem({ urgencia, titulo, detalle, onClick }: {
   );
 }
 
-type Vista = 'yo' | 'carlos' | 'juancruz' | 'total';
+type Vista = 'yo' | 'carlos' | 'juanCruz' | 'total';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -134,30 +134,45 @@ export default function DashboardPage() {
   const alertasData = alertas?.alertas.slice(0, 5) || [];
 
   // ── Resolver qué datos mostrar según la vista seleccionada ──
-  const rolPropio: 'carlos' | 'juancruz' = esCarlos ? 'carlos' : 'juancruz';
-  const rolOtro:   'carlos' | 'juancruz' = esCarlos ? 'juancruz' : 'carlos';
-  const nombreOtro = esCarlos ? 'Juan Cruz' : 'Carlos';
+  const rolPropio: 'carlos' | 'juanCruz' = esCarlos ? 'carlos' : 'juanCruz';
 
-  const vistaKey: 'carlos' | 'juancruz' | null =
-    vista === 'yo'       ? rolPropio :
-    vista === 'carlos'   ? 'carlos' :
-    vista === 'juancruz' ? 'juancruz' :
+  const vistaKey: 'carlos' | 'juanCruz' | null =
+    vista === 'yo'      ? rolPropio :
+    vista === 'carlos'  ? 'carlos'  :
+    vista === 'juanCruz'? 'juanCruz':
     null; // total
 
   const datosPropietario = vistaKey ? porPropietario?.[vistaKey] : null;
 
-  const palletsMes        = datosPropietario ? datosPropietario.pallets      : (kpis?.palletsMesActual || 0);
-  const facturacionMes    = datosPropietario ? datosPropietario.facturacion   : (kpis?.facturacionMesActual || 0);
-  const palletsMesAnt     = datosPropietario ? datosPropietario.palletsMesAnterior    : (kpis?.palletsMesAnterior || 0);
-  const facturacionMesAnt = datosPropietario ? datosPropietario.facturacionMesAnterior : (kpis?.facturacionMesAnterior || 0);
+  // Pallets y facturación — siempre desde porPropietario cuando hay vistaKey
+  const palletsMes        = datosPropietario?.pallets               ?? (kpis?.palletsMesActual    || 0);
+  const facturacionMes    = datosPropietario?.facturacion           ?? (kpis?.facturacionMesActual || 0);
+  const palletsMesAnt     = datosPropietario?.palletsMesAnterior    ?? (kpis?.palletsMesAnterior   || 0);
+  const facturacionMesAnt = datosPropietario?.facturacionMesAnterior ?? (kpis?.facturacionMesAnterior || 0);
   const variacionPallets  = palletsMesAnt > 0 ? Math.round(((palletsMes - palletsMesAnt) / palletsMesAnt) * 100) : 0;
   const variacionFact     = facturacionMesAnt > 0 ? Math.round(((facturacionMes - facturacionMesAnt) / facturacionMesAnt) * 100) : 0;
-  const grafico           = datosPropietario ? datosPropietario.grafico12Meses : (dashboard?.graficos.ventasUltimos12Meses || []);
+  const grafico           = datosPropietario?.grafico12Meses ?? (dashboard?.graficos.ventasUltimos12Meses || []);
 
+  // KPIs secundarios — Juan Cruz usa sus propios conteos del backend
+  const jcKpis = porPropietario?.juanCruz;
+  const cobrosPendientesVal = vistaKey === 'juanCruz'
+    ? (jcKpis?.cobrosPendientes  ?? 0)
+    : (kpis?.totalCobrosPendientes || 0);
+  const facturasVencidasVal = vistaKey === 'juanCruz'
+    ? (jcKpis?.facturasVencidas  ?? 0)
+    : (kpis?.facturasVencidas    || 0);
+  const cotizacionesVal = vistaKey === 'juanCruz'
+    ? (jcKpis?.cotizacionesPendientes ?? 0)
+    : (kpis?.cotizacionesPendientes   || 0);
+  const pedidosActivosVal = vistaKey === 'juanCruz'
+    ? (jcKpis?.pedidosActivos ?? 0)
+    : (kpis?.pedidosActivos   || 0);
+
+  // Dropdown: ambos usuarios pueden ver todas las vistas
   const opcionesVista: { key: Vista; label: string }[] = [
-    { key: 'yo',         label: `Mi vista (${esCarlos ? 'Carlos' : 'Juan Cruz'})` },
-    { key: rolOtro,      label: nombreOtro },
-    { key: 'total',      label: 'Total consolidado' },
+    { key: 'yo',        label: esCarlos ? 'Mi vista (Carlos)' : 'Mi vista (Juan Cruz)' },
+    { key: esCarlos ? 'juanCruz' : 'carlos', label: esCarlos ? 'Juan Cruz' : 'Carlos' },
+    { key: 'total',     label: 'Total consolidado' },
   ];
   const labelVista = opcionesVista.find(o => o.key === vista)?.label ?? 'Mi vista';
 
@@ -178,7 +193,7 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {/* Dropdown de vista */}
+          {/* Dropdown de vista — ambos usuarios */}
           <div className="relative">
             <button
               onClick={() => setDropdownOpen(o => !o)}
@@ -236,10 +251,10 @@ export default function DashboardPage() {
         />
         <KpiCard
           titulo="Cobros pendientes"
-          valor={formatPesos(kpis?.totalCobrosPendientes || 0)}
+          valor={formatPesos(cobrosPendientesVal)}
           subtitulo={
-            kpis?.facturasVencidas
-              ? `${kpis.facturasVencidas} factura${kpis.facturasVencidas > 1 ? 's' : ''} vencida${kpis.facturasVencidas > 1 ? 's' : ''}`
+            facturasVencidasVal
+              ? `${facturasVencidasVal} factura${facturasVencidasVal > 1 ? 's' : ''} vencida${facturasVencidasVal > 1 ? 's' : ''}`
               : 'Sin facturas vencidas'
           }
           icono={<Clock size={18} />}
@@ -247,8 +262,8 @@ export default function DashboardPage() {
         />
         <KpiCard
           titulo="Cotizaciones activas"
-          valor={kpis?.cotizacionesPendientes || 0}
-          subtitulo={`${kpis?.pedidosActivos || 0} pedido${(kpis?.pedidosActivos || 0) !== 1 ? 's' : ''} en curso`}
+          valor={cotizacionesVal}
+          subtitulo={`${pedidosActivosVal} pedido${pedidosActivosVal !== 1 ? 's' : ''} en curso`}
           icono={<FileText size={18} />}
           onClick={() => navigate('/cotizaciones')}
         />
@@ -258,7 +273,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-3 gap-4">
         <KpiCard
           titulo="Pedidos activos"
-          valor={kpis?.pedidosActivos || 0}
+          valor={pedidosActivosVal}
           subtitulo="Confirmados o en preparación"
           icono={<ShoppingCart size={18} />}
           onClick={() => navigate('/ventas')}
@@ -335,7 +350,8 @@ export default function DashboardPage() {
           </div>
 
           <div className="space-y-3">
-            {/* Carlos */}
+            {/* Carlos — solo visible para Carlos */}
+            {esCarlos && (
             <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-7 h-7 rounded-lg bg-gray-200 flex items-center justify-center text-gray-600 font-semibold text-xs shrink-0">
@@ -361,6 +377,7 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
+            )} {/* fin esCarlos */}
 
             {/* Juan Cruz */}
             <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
@@ -389,7 +406,8 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Total */}
+            {/* Total — solo Carlos */}
+            {esCarlos && (
             <div className="p-4 rounded-xl border border-gray-200 bg-white">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
@@ -410,6 +428,7 @@ export default function DashboardPage() {
                 )} pallets vendidos en total
               </p>
             </div>
+            )}
           </div>
         </div>
       </div>

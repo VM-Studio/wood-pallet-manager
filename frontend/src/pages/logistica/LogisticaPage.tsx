@@ -113,7 +113,7 @@ export default function LogisticaPage() {
           className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white"
         >
           <Plus size={16} />
-          {esCarlos ? 'Coordinar entrega' : 'Consultar entrega'}
+          {esCarlos ? 'Registrar logística' : 'Pedir entrega'}
         </button>
       </div>
 
@@ -169,21 +169,26 @@ export default function LogisticaPage() {
       </div>
 
       {/* Entregas del día */}
-      {entregasHoy && entregasHoy.length > 0 && (
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <Calendar size={16} style={{ color: '#6B3A2A' }} />
-            <h2 className="text-sm font-semibold" style={{ color: '#6B3A2A' }}>
-              Entregas programadas para hoy ({entregasHoy.length})
-            </h2>
-          </div>
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <Calendar size={16} style={{ color: '#6B3A2A' }} />
+          <h2 className="text-sm font-semibold" style={{ color: '#6B3A2A' }}>
+            Entregas programadas para hoy {entregasHoy && entregasHoy.length > 0 ? `(${entregasHoy.length})` : ''}
+          </h2>
+        </div>
+        {entregasHoy && entregasHoy.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {entregasHoy.map(l => (
               <EntregaCard key={l.id} logistica={l} compact />
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="py-6 flex flex-col items-center justify-center text-center" style={{ background: '#F9FAFB', borderRadius: '0.25rem', border: '1px solid #E5E7EB' }}>
+            <Calendar size={20} className="text-gray-300 mb-2" />
+            <p className="text-sm text-gray-500">Sin entregas registradas para hoy</p>
+          </div>
+        )}
+      </div>
 
       {/* Filtros */}
       <div className="space-y-2">
@@ -244,7 +249,7 @@ export default function LogisticaPage() {
       </div>
 
       {/* Lista de entregas */}
-      {vista === 'juan' && solicitudes && solicitudes.length > 0 && (
+      {((vista === 'juan' && esCarlos) || (!esCarlos)) && solicitudes && solicitudes.length > 0 && (
         <div className="bg-white border border-gray-200 overflow-hidden" style={{ borderRadius: '0.25rem' }}>
           <div className="px-4 py-3 border-b border-gray-100" style={{ background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' }}>
             <h2 className="text-sm font-semibold text-white">
@@ -344,7 +349,7 @@ export default function LogisticaPage() {
         </div>
       )}
 
-      {!filtradas?.length && !(vista === 'juan' && solicitudes && solicitudes.length > 0) ? (
+      {!filtradas?.length && !(((vista === 'juan' && esCarlos) || (!esCarlos)) && solicitudes && solicitudes.length > 0) ? (
         <div className="card-base flex flex-col items-center justify-center py-16 text-center">
           <div className="w-14 h-14 flex items-center justify-center mb-4" style={{ background: '#F3EDE8', borderRadius: '0.25rem' }}>
             <Truck size={24} style={{ color: '#6B3A2A' }} />
