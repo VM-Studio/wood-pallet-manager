@@ -7,6 +7,7 @@ import {
   getResumenRetiro,
   getVentasActivas,
   getVentasPorPeriodo,
+  eliminarVenta,
 } from '../controllers/ventas.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 
@@ -24,5 +25,6 @@ router.get('/:id', getVentaById);
 router.get('/:id/retiros', getResumenRetiro);
 router.put('/:id/estado', actualizarEstadoVenta);
 router.post('/:id/retiro', registrarRetiro);
+router.delete('/:id', eliminarVenta);
 
 export default router;

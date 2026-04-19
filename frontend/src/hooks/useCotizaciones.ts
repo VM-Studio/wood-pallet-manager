@@ -101,3 +101,17 @@ export const useConvertirAVenta = () => {
     }
   });
 };
+
+export const useEliminarCotizacion = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const { data } = await api.delete(`/cotizaciones/${id}`);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cotizaciones'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    }
+  });
+};

@@ -11,6 +11,7 @@ import {
   generarTextoWhatsAppService,
   getCotizacionesPendientesService,
 } from '../services/cotizaciones.service';
+import prisma from '../utils/prisma';
 import { enviarPresupuestoPorEmail } from '../utils/mailer';
 
 const detalleSchema = z.object({
@@ -182,4 +183,10 @@ export const enviarEmailCotizacion = async (req: AuthRequest, res: Response) => 
   } catch (error: any) {
     res.status(500).json({ error: error.message || 'Error al enviar el email' });
   }
+};
+
+export const eliminarCotizacion = async (req: AuthRequest, res: Response) => {
+  const id = parseId(req.params.id);
+  await prisma.cotizacion.delete({ where: { id } });
+  res.json({ ok: true });
 };

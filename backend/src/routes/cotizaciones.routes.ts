@@ -9,6 +9,7 @@ import {
   getTextoWhatsApp,
   getCotizacionesPendientes,
   enviarEmailCotizacion,
+  eliminarCotizacion,
 } from '../controllers/cotizaciones.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 
@@ -28,5 +29,6 @@ router.put('/:id/estado', actualizarEstado);
 router.post('/:id/seguimiento', registrarSeguimiento);
 router.post('/:id/convertir', convertirAVenta);
 router.post('/:id/enviar-email', enviarEmailCotizacion);
+router.delete('/:id', eliminarCotizacion);
 
 export default router;

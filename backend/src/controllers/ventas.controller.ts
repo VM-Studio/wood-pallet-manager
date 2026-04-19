@@ -10,6 +10,7 @@ import {
   getVentasActivasService,
   getVentasPorPeriodoService,
 } from '../services/ventas.service';
+import prisma from '../utils/prisma';
 
 const actualizarEstadoSchema = z.object({
   estado: z.enum([
@@ -112,4 +113,16 @@ export const getVentasPorPeriodo = async (req: AuthRequest, res: Response) => {
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
+};
+
+export const eliminarVenta = async (req: AuthRequest, res: Response) => {
+  const id = parseId(req.params.id);
+  // Eliminar en cascada: detalles, retiros, logísticas, facturas con sus pagos
+  await prisma.retiroParcial.deleteMany({ where: { detalleVenta: { ventaId: id } } });
+  await prisma.detalleVenta.deleteMany({ where: { ventaId: id } });
+  await prisma.pagoCobro.deleteMany({ where: { factura: { ventaId: id } } });
+  await prisma.factura.deleteMany({ where: { ventaId: id } });
+  await prisma.logistica.deleteMany({ where: { ventaId: id } });
+  await prisma.venta.delete({ where: { id } });
+  res.json({ ok: true });
 };

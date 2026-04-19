@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import {
   Plus, MessageCircle,
-  CheckCircle, XCircle, Search, FileText, Truck, Leaf
+  CheckCircle, XCircle, Search, FileText, Truck, Leaf, Trash2
 } from 'lucide-react';
-import { useCotizaciones, useActualizarEstadoCotizacion } from '../../hooks/useCotizaciones';
+import { useCotizaciones, useActualizarEstadoCotizacion, useEliminarCotizacion } from '../../hooks/useCotizaciones';
 import NuevaCotizacion from './NuevaCotizacion';
 import WhatsAppModal from './WhatsAppModal';
 import ConvertirVentaModal from './ConvertirVentaModal';
@@ -28,11 +28,13 @@ const estadoFiltros = [
 export default function CotizacionesPage() {
   const { data: cotizaciones, isLoading, error } = useCotizaciones();
   const actualizarEstado = useActualizarEstadoCotizacion();
+  const eliminarCotizacion = useEliminarCotizacion();
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [showNueva, setShowNueva] = useState(false);
   const [whatsappId, setWhatsappId] = useState<number | null>(null);
   const [convertirId, setConvertirId] = useState<number | null>(null);
+  const [confirmEliminar, setConfirmEliminar] = useState<number | null>(null);
 
   const filtradas = cotizaciones?.filter(c => {
     const matchBusqueda =
@@ -219,6 +221,13 @@ export default function CotizacionesPage() {
                           </button>
                         </>
                       )}
+                      <button
+                        onClick={() => setConfirmEliminar(c.id)}
+                        className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                        title="Eliminar cotización"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -247,6 +256,40 @@ export default function CotizacionesPage() {
           onClose={() => setConvertirId(null)}
           onSuccess={() => setConvertirId(null)}
         />
+      )}
+
+      {/* Modal confirmar eliminación */}
+      {confirmEliminar !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-80 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                <Trash2 size={18} className="text-red-500" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">Eliminar cotización</p>
+                <p className="text-sm text-gray-500">¿Seguro que querés eliminar la cotización #{confirmEliminar}? Esta acción no se puede deshacer.</p>
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setConfirmEliminar(null)}
+                className="px-4 py-2 text-sm rounded border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  eliminarCotizacion.mutate(confirmEliminar);
+                  setConfirmEliminar(null);
+                }}
+                className="px-4 py-2 text-sm rounded bg-red-500 text-white hover:bg-red-600 transition-colors"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
