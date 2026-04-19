@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -7,7 +8,7 @@ import {
   Package, DollarSign, Clock, FileText,
   ShoppingCart, Truck, AlertTriangle,
   Plus, Users, ClipboardList,
-  TrendingUp, TrendingDown, Minus, ArrowRight
+  TrendingUp, TrendingDown, Minus, ArrowRight, ChevronDown
 } from 'lucide-react';
 import { useDashboard, useAlertas } from '../../hooks/useDashboard';
 import { useAuthStore } from '../../store/auth.store';
@@ -114,20 +115,51 @@ function AlertaItem({ urgencia, titulo, detalle, onClick }: {
   );
 }
 
+type Vista = 'yo' | 'carlos' | 'juancruz' | 'total';
+
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { usuario } = useAuthStore();
   const { data: dashboard, isLoading: loadingDash, error: errorDash } = useDashboard();
   const { data: alertas, isLoading: loadingAlertas } = useAlertas();
   const esCarlos = usuario?.rol === 'propietario_carlos';
+  const [vista, setVista] = useState<Vista>('yo');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   if (loadingDash) return <LoadingSpinner text="Cargando dashboard..." />;
   if (errorDash) return <ErrorMessage message="No se pudo cargar el dashboard." />;
 
   const kpis = dashboard?.kpis;
   const porPropietario = dashboard?.porPropietario;
-  const grafico = dashboard?.graficos.ventasUltimos12Meses || [];
   const alertasData = alertas?.alertas.slice(0, 5) || [];
+
+  // ── Resolver qué datos mostrar según la vista seleccionada ──
+  const rolPropio: 'carlos' | 'juancruz' = esCarlos ? 'carlos' : 'juancruz';
+  const rolOtro:   'carlos' | 'juancruz' = esCarlos ? 'juancruz' : 'carlos';
+  const nombreOtro = esCarlos ? 'Juan Cruz' : 'Carlos';
+
+  const vistaKey: 'carlos' | 'juancruz' | null =
+    vista === 'yo'       ? rolPropio :
+    vista === 'carlos'   ? 'carlos' :
+    vista === 'juancruz' ? 'juancruz' :
+    null; // total
+
+  const datosPropietario = vistaKey ? porPropietario?.[vistaKey] : null;
+
+  const palletsMes        = datosPropietario ? datosPropietario.pallets      : (kpis?.palletsMesActual || 0);
+  const facturacionMes    = datosPropietario ? datosPropietario.facturacion   : (kpis?.facturacionMesActual || 0);
+  const palletsMesAnt     = datosPropietario ? datosPropietario.palletsMesAnterior    : (kpis?.palletsMesAnterior || 0);
+  const facturacionMesAnt = datosPropietario ? datosPropietario.facturacionMesAnterior : (kpis?.facturacionMesAnterior || 0);
+  const variacionPallets  = palletsMesAnt > 0 ? Math.round(((palletsMes - palletsMesAnt) / palletsMesAnt) * 100) : 0;
+  const variacionFact     = facturacionMesAnt > 0 ? Math.round(((facturacionMes - facturacionMesAnt) / facturacionMesAnt) * 100) : 0;
+  const grafico           = datosPropietario ? datosPropietario.grafico12Meses : (dashboard?.graficos.ventasUltimos12Meses || []);
+
+  const opcionesVista: { key: Vista; label: string }[] = [
+    { key: 'yo',         label: `Mi vista (${esCarlos ? 'Carlos' : 'Juan Cruz'})` },
+    { key: rolOtro,      label: nombreOtro },
+    { key: 'total',      label: 'Total consolidado' },
+  ];
+  const labelVista = opcionesVista.find(o => o.key === vista)?.label ?? 'Mi vista';
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -145,29 +177,60 @@ export default function DashboardPage() {
             })}
           </p>
         </div>
-        {alertas && alertas.alta > 0 && (
-          <button onClick={() => navigate('/alertas')} className="btn-brand-sm">
-            <AlertTriangle size={13} />
-            {alertas.alta} alerta{alertas.alta > 1 ? 's' : ''} urgente{alertas.alta > 1 ? 's' : ''}
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {/* Dropdown de vista */}
+          <div className="relative">
+            <button
+              onClick={() => setDropdownOpen(o => !o)}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-all"
+            >
+              <Users size={14} className="text-gray-400" />
+              {labelVista}
+              <ChevronDown size={14} className={clsx('text-gray-400 transition-transform', dropdownOpen && 'rotate-180')} />
+            </button>
+            {dropdownOpen && (
+              <div className="absolute right-0 mt-1 w-52 bg-white border border-gray-100 rounded-xl shadow-lg z-20 py-1 animate-fade-in">
+                {opcionesVista.map(op => (
+                  <button
+                    key={op.key}
+                    onClick={() => { setVista(op.key); setDropdownOpen(false); }}
+                    className={clsx(
+                      'w-full text-left px-4 py-2.5 text-sm transition-colors',
+                      vista === op.key
+                        ? 'font-semibold text-gray-900 bg-gray-50'
+                        : 'text-gray-600 hover:bg-gray-50'
+                    )}
+                  >
+                    {op.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          {alertas && alertas.alta > 0 && (
+            <button onClick={() => navigate('/alertas')} className="btn-brand-sm">
+              <AlertTriangle size={13} />
+              {alertas.alta} alerta{alertas.alta > 1 ? 's' : ''} urgente{alertas.alta > 1 ? 's' : ''}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* KPIs fila 1 */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         <KpiCard
           titulo="Pallets este mes"
-          valor={formatNumero(kpis?.palletsMesActual || 0)}
-          variacion={kpis?.variacionPallets}
-          subtitulo={`${formatNumero(kpis?.palletsMesAnterior || 0)} el mes pasado`}
+          valor={formatNumero(palletsMes)}
+          variacion={variacionPallets}
+          subtitulo={`${formatNumero(palletsMesAnt)} el mes pasado`}
           icono={<Package size={18} />}
           onClick={() => navigate('/ventas')}
         />
         <KpiCard
           titulo="Facturación del mes"
-          valor={formatPesos(kpis?.facturacionMesActual || 0)}
-          variacion={kpis?.variacionFacturacion}
-          subtitulo={`${formatPesos(kpis?.facturacionMesAnterior || 0)} el mes pasado`}
+          valor={formatPesos(facturacionMes)}
+          variacion={variacionFact}
+          subtitulo={`${formatPesos(facturacionMesAnt)} el mes pasado`}
           icono={<DollarSign size={18} />}
           onClick={() => navigate('/reportes')}
         />
@@ -225,7 +288,7 @@ export default function DashboardPage() {
             <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
               <TrendingUp size={18} />
             </div>
-            <h2 className="titulo-seccion">Ventas — Últimos 12 meses</h2>
+            <h2 className="titulo-seccion">Ventas — Últimos 12 meses · <span className="font-normal text-gray-400">{labelVista}</span></h2>
           </div>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={grafico} margin={{ top: 0, right: 0, left: -15, bottom: 0 }}>

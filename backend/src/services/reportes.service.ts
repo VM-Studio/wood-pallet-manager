@@ -1,6 +1,6 @@
 import prisma from '../utils/prisma';
 
-export const getVentasUltimos12MesesService = async () => {
+export const getVentasUltimos12MesesService = async (usuarioId?: number) => {
   const meses = [];
   const ahora = new Date();
 
@@ -8,8 +8,11 @@ export const getVentasUltimos12MesesService = async () => {
     const inicio = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
     const fin = new Date(ahora.getFullYear(), ahora.getMonth() - i + 1, 0);
 
+    const where: any = { fechaVenta: { gte: inicio, lte: fin } };
+    if (usuarioId !== undefined) where.usuarioId = usuarioId;
+
     const ventas = await prisma.venta.findMany({
-      where: { fechaVenta: { gte: inicio, lte: fin } },
+      where,
       include: { detalles: true },
     });
 
@@ -59,6 +62,7 @@ export const getDashboardService = async () => {
     prisma.venta.findMany({
       where: { fechaVenta: { gte: inicioMesAnterior, lte: finMesAnterior } },
       include: { detalles: true },
+      // usuarioId ya está en el modelo, se incluye por defecto
     }),
     prisma.factura.findMany({
       where: { estadoCobro: { in: ['pendiente', 'cobrada_parcial'] } },
@@ -125,6 +129,12 @@ export const getDashboardService = async () => {
   );
 
   const ventasUltimos12Meses = await getVentasUltimos12MesesService();
+  const grafico12MesesCarlos = await getVentasUltimos12MesesService(1);
+  const grafico12MesesJuanCruz = await getVentasUltimos12MesesService(2);
+
+  // Mes anterior por propietario
+  const ventasMesAnteriorCarlos = ventasMesAnterior.filter(v => (v as any).usuarioId === 1);
+  const ventasMesAnteriorJuanCruz = ventasMesAnterior.filter(v => (v as any).usuarioId === 2);
 
   return {
     kpis: {
@@ -160,6 +170,15 @@ export const getDashboardService = async () => {
           (acc, v) => acc + Number(v.totalConIva || 0),
           0
         ),
+        palletsMesAnterior: ventasMesAnteriorCarlos.reduce(
+          (acc, v) => acc + v.detalles.reduce((a, d) => a + d.cantidadPedida, 0),
+          0
+        ),
+        facturacionMesAnterior: ventasMesAnteriorCarlos.reduce(
+          (acc, v) => acc + Number(v.totalConIva || 0),
+          0
+        ),
+        grafico12Meses: grafico12MesesCarlos,
       },
       juanCruz: {
         ventas: ventasJuanCruz.length,
@@ -171,6 +190,15 @@ export const getDashboardService = async () => {
           (acc, v) => acc + Number(v.totalConIva || 0),
           0
         ),
+        palletsMesAnterior: ventasMesAnteriorJuanCruz.reduce(
+          (acc, v) => acc + v.detalles.reduce((a, d) => a + d.cantidadPedida, 0),
+          0
+        ),
+        facturacionMesAnterior: ventasMesAnteriorJuanCruz.reduce(
+          (acc, v) => acc + Number(v.totalConIva || 0),
+          0
+        ),
+        grafico12Meses: grafico12MesesJuanCruz,
       },
     },
     graficos: { ventasUltimos12Meses },

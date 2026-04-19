@@ -265,8 +265,22 @@ export interface DashboardData {
     entregasHoy: number;
   };
   porPropietario: {
-    carlos: { ventas: number; pallets: number; facturacion: number };
-    juanCruz: { ventas: number; pallets: number; facturacion: number };
+    carlos: {
+      ventas: number;
+      pallets: number;
+      facturacion: number;
+      palletsMesAnterior: number;
+      facturacionMesAnterior: number;
+      grafico12Meses: { mes: string; ventas: number; pallets: number; facturacion: number }[];
+    };
+    juanCruz: {
+      ventas: number;
+      pallets: number;
+      facturacion: number;
+      palletsMesAnterior: number;
+      facturacionMesAnterior: number;
+      grafico12Meses: { mes: string; ventas: number; pallets: number; facturacion: number }[];
+    };
   };
   graficos: {
     ventasUltimos12Meses: {
