@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, Package } from 'lucide-react';
 import { useCrearProducto, useActualizarProducto } from '../../hooks/useProductos';
+import { useSetStockProducto } from '../../hooks/useInventario';
 import type { Producto } from '../../types';
 
 interface ProductoFormProps {
@@ -12,7 +13,11 @@ export default function ProductoForm({ producto, onClose }: ProductoFormProps) {
   const esEdicion = !!producto;
   const crear = useCrearProducto();
   const actualizar = useActualizarProducto();
+  const setStockProducto = useSetStockProducto();
   const [error, setError] = useState('');
+
+  // Stock actual sumando todos los registros
+  const stockActual = producto?.stocks?.reduce((acc, s) => acc + s.cantidadDisponible, 0) ?? 0;
 
   const [form, setForm] = useState({
     nombre:           producto?.nombre         ?? '',
@@ -21,7 +26,7 @@ export default function ProductoForm({ producto, onClose }: ProductoFormProps) {
     dimensionLargo:   producto?.dimensionLargo != null ? String(producto.dimensionLargo) : '',
     dimensionAncho:   producto?.dimensionAncho != null ? String(producto.dimensionAncho) : '',
     cargaMaximaKg:    producto?.cargaMaximaKg  != null ? String(producto.cargaMaximaKg)  : '',
-    stockDisponible:  producto?.stockDisponible != null ? String(producto.stockDisponible) : '',
+    stockDisponible:  esEdicion ? String(stockActual) : '',
     descripcion:      producto?.descripcion    ?? ''
   });
 
@@ -36,11 +41,15 @@ export default function ProductoForm({ producto, onClose }: ProductoFormProps) {
       dimensionLargo:   form.dimensionLargo ? parseInt(form.dimensionLargo) : undefined,
       dimensionAncho:   form.dimensionAncho ? parseInt(form.dimensionAncho) : undefined,
       cargaMaximaKg:    form.cargaMaximaKg  ? parseInt(form.cargaMaximaKg)  : undefined,
-      stockDisponible:  form.stockDisponible !== '' ? parseInt(form.stockDisponible) : 0,
     };
     try {
       if (esEdicion) {
         await actualizar.mutateAsync({ id: producto.id, datos });
+        // Si el stock cambió, actualizar vía endpoint dedicado
+        const nuevoStock = form.stockDisponible !== '' ? parseInt(form.stockDisponible) : stockActual;
+        if (nuevoStock !== stockActual) {
+          await setStockProducto.mutateAsync({ productoId: producto.id, cantidad: nuevoStock });
+        }
       } else {
         await crear.mutateAsync(datos);
       }
@@ -51,7 +60,7 @@ export default function ProductoForm({ producto, onClose }: ProductoFormProps) {
     }
   };
 
-  const loading = crear.isPending || actualizar.isPending;
+  const loading = crear.isPending || actualizar.isPending || setStockProducto.isPending;
 
   return (
     <div className="modal-overlay">
@@ -146,11 +155,8 @@ export default function ProductoForm({ producto, onClose }: ProductoFormProps) {
                 onChange={e => setForm({ ...form, stockDisponible: e.target.value })}
                 className="input"
                 style={{ borderRadius: '0.25rem' }}
-                placeholder="Consultar con depósito"
+                placeholder="0"
               />
-              <p className="text-xs text-gray-400 mt-1">
-                Dejá vacío si el stock se consulta con depósito
-              </p>
             </div>
             <div>
               <label className="label">Descripción</label>

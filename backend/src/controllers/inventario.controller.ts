@@ -7,6 +7,7 @@ import {
   getMovimientosStockService,
   ajustarStockService,
   getStockConsolidadoService,
+  setStockProductoService,
 } from '../services/inventario.service';
 
 export const getStock = async (req: AuthRequest, res: Response) => {
@@ -53,4 +54,18 @@ export const ajustarStock = async (req: AuthRequest, res: Response) => {
 export const getConsolidado = async (_req: Request, res: Response) => {
   const consolidado = await getStockConsolidadoService();
   res.json(consolidado);
+};
+
+export const setStockProducto = async (req: AuthRequest, res: Response) => {
+  try {
+    const productoId = parseInt(req.params.productoId as string);
+    const { cantidad } = req.body;
+    if (isNaN(productoId) || cantidad == null || isNaN(parseInt(cantidad))) {
+      return res.status(400).json({ error: 'Datos inválidos' });
+    }
+    const result = await setStockProductoService(productoId, parseInt(cantidad), req.user!.userId);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
 };

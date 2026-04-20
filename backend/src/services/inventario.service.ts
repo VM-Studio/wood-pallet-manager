@@ -102,6 +102,52 @@ export const ajustarStockService = async (
   };
 };
 
+export const setStockProductoService = async (
+  productoId: number,
+  nuevaCantidad: number,
+  usuarioId: number
+) => {
+  // Buscar registro de stock existente para este producto
+  const stockExistente = await prisma.stock.findFirst({ where: { productoId } });
+
+  if (stockExistente) {
+    const diferencia = nuevaCantidad - stockExistente.cantidadDisponible;
+    await prisma.stock.update({
+      where: { id: stockExistente.id },
+      data: { cantidadDisponible: nuevaCantidad },
+    });
+    await prisma.movimientoStock.create({
+      data: {
+        stockId: stockExistente.id,
+        tipoMovimiento: 'ajuste',
+        cantidad: Math.abs(diferencia),
+        motivo: 'ajuste_manual',
+        registradoPorId: usuarioId,
+      },
+    });
+    return { mensaje: 'Stock actualizado', cantidadNueva: nuevaCantidad };
+  }
+
+  // No hay registro de stock — usar el primer proveedor asociado al producto
+  const prodProv = await prisma.productoProveedor.findFirst({ where: { productoId } });
+  if (!prodProv) {
+    throw new Error('No hay proveedor asociado al producto para registrar stock');
+  }
+  const nuevoStock = await prisma.stock.create({
+    data: { productoId, proveedorId: prodProv.proveedorId, cantidadDisponible: nuevaCantidad },
+  });
+  await prisma.movimientoStock.create({
+    data: {
+      stockId: nuevoStock.id,
+      tipoMovimiento: 'entrada',
+      cantidad: nuevaCantidad,
+      motivo: 'ajuste_manual',
+      registradoPorId: usuarioId,
+    },
+  });
+  return { mensaje: 'Stock creado', cantidadNueva: nuevaCantidad };
+};
+
 export const getStockConsolidadoService = async () => {
   const stock = await prisma.stock.findMany({
     include: {

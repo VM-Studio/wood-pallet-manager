@@ -46,6 +46,23 @@ export const useMovimientosStock = (productoId?: number, proveedorId?: number) =
   });
 };
 
+export const useSetStockProducto = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ productoId, cantidad }: { productoId: number; cantidad: number }) => {
+      const { data } = await api.patch(`/inventario/producto/${productoId}`, { cantidad });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['productos'] });
+      queryClient.invalidateQueries({ queryKey: ['inventario'] });
+      queryClient.invalidateQueries({ queryKey: ['inventario-consolidado'] });
+      queryClient.invalidateQueries({ queryKey: ['alertas-stock'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    },
+  });
+};
+
 export const useAjustarStock = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -59,6 +76,7 @@ export const useAjustarStock = () => {
       queryClient.invalidateQueries({ queryKey: ['alertas-stock'] });
       queryClient.invalidateQueries({ queryKey: ['movimientos-stock'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['productos'] });
     }
   });
 };

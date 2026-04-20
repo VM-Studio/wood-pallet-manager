@@ -22,7 +22,6 @@ export default function ClienteForm({ cliente, onClose, onSuccess }: ClienteForm
     emailContacto: cliente?.emailContacto || '',
     canalEntrada: cliente?.canalEntrada || 'whatsapp',
     direccionEntrega: cliente?.direccionEntrega || '',
-    localidad: cliente?.localidad || '',
     esExportador: cliente?.esExportador || false,
     observaciones: cliente?.observaciones || ''
   });
@@ -156,17 +155,7 @@ export default function ClienteForm({ cliente, onClose, onSuccess }: ClienteForm
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Localidad</label>
-              <input
-                type="text"
-                value={form.localidad}
-                onChange={(e) => setForm({ ...form, localidad: e.target.value })}
-                className="input-field"
-                style={{ borderRadius: '0.25rem' }}
-                placeholder="Ciudad / partido"
-              />
-            </div>
+            {/* Localidad field removed as requested */}
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>

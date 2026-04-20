@@ -6,6 +6,7 @@ import {
   getMovimientos,
   ajustarStock,
   getConsolidado,
+  setStockProducto,
 } from '../controllers/inventario.controller';
 
 const router = Router();
@@ -17,5 +18,6 @@ router.get('/consolidado', getConsolidado);
 router.get('/movimientos', getMovimientos);
 router.get('/', getStock);
 router.post('/ajuste', ajustarStock);
+router.patch('/producto/:productoId', setStockProducto);
 
 export default router;

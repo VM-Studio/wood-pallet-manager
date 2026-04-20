@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { z } from 'zod';
 import { loginService, crearUsuarioService, getMeService, registerService, actualizarPerfilService, cambiarPasswordService } from '../services/auth.service';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import prisma from '../utils/prisma';
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -39,6 +40,12 @@ export const login = async (req: Request, res: Response) => {
 
 export const crearUsuario = async (req: Request, res: Response) => {
   try {
+    const cantidadUsuarios = await prisma.usuario.count();
+    if (cantidadUsuarios >= 2) {
+      return res.status(403).json({
+        error: 'El sistema ya tiene los dos usuarios configurados. Contactá al administrador.'
+      });
+    }
     const datos = crearUsuarioSchema.parse(req.body);
     const usuario = await crearUsuarioService(datos);
     res.status(201).json(usuario);
@@ -62,6 +69,12 @@ export const getMe = async (req: AuthRequest, res: Response) => {
 
 export const register = async (req: Request, res: Response) => {
   try {
+    const cantidadUsuarios = await prisma.usuario.count();
+    if (cantidadUsuarios >= 2) {
+      return res.status(403).json({
+        error: 'El sistema ya tiene los dos usuarios configurados. Contactá al administrador.'
+      });
+    }
     const datos = registerSchema.parse(req.body);
     const usuario = await registerService(datos.nombre, datos.apellido, datos.email, datos.password);
     res.status(201).json(usuario);
