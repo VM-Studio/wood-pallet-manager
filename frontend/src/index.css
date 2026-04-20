@@ -25,6 +25,9 @@
 }
 
 @layer base {
+  :root {
+    --sidebar-width: 260px;
+  }
   *, *::before, *::after { box-sizing: border-box; }
   html {
     font-family: var(--font-sans);

@@ -19,7 +19,12 @@ const ConfiguracionPage  = lazy(() => import('./pages/configuracion/Configuracio
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { retry: 1, staleTime: 0 }
+    queries: {
+      retry: 1,
+      staleTime: 0,
+      gcTime: 1000 * 30,
+      refetchOnWindowFocus: true,
+    }
   }
 });
 
