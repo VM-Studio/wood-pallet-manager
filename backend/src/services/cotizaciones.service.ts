@@ -12,6 +12,7 @@ export const getCotizacionesService = async (usuarioId: number, rol: string) => 
       detalles: {
         include: {
           producto: { select: { id: true, nombre: true, tipo: true, condicion: true } },
+          especificacion: true,
         },
       },
     },
@@ -69,10 +70,31 @@ export const crearCotizacionService = async (
   let totalSinIva = 0;
   const detallesConPrecio = [];
 
+  // Obtener (o crear) el producto genérico "a_medida" que actúa como placeholder
+  let productoMedidaId: number | null = null;
+  const getProductoMedidaId = async (): Promise<number> => {
+    if (productoMedidaId !== null) return productoMedidaId;
+    const existing = await prisma.producto.findFirst({ where: { tipo: 'a_medida' } });
+    if (existing) { productoMedidaId = existing.id; return existing.id; }
+    const created = await prisma.producto.create({
+      data: {
+        nombre: 'Pallet a medida',
+        tipo: 'a_medida',
+        condicion: 'nuevo',
+        propietarioId: usuarioId,
+        descripcion: 'Producto genérico para cotizaciones con medidas personalizadas',
+      },
+    });
+    productoMedidaId = created.id;
+    return created.id;
+  };
+
   for (const detalle of datos.detalles) {
     let precioUnit: number;
+    const productoIdReal = detalle.esAMedida ? await getProductoMedidaId() : detalle.productoId;
+
     if (detalle.precioUnitario !== undefined && detalle.precioUnitario > 0) {
-      // Precio especial enviado desde el frontend
+      // Precio especial enviado desde el frontend (incluye pallets a medida)
       precioUnit = detalle.precioUnitario;
     } else {
       // Precio guardado en el módulo de productos
@@ -83,6 +105,7 @@ export const crearCotizacionService = async (
     totalSinIva += subtotal;
     detallesConPrecio.push({
       ...detalle,
+      productoId: productoIdReal,
       precioUnitario: precioUnit,
       subtotal,
     });
@@ -173,10 +196,13 @@ export const convertirCotizacionAVentaService = async (
   cotizacionId: number,
   datos: {
     tipoEntrega: 'retira_cliente' | 'envio_woodpallet';
-    fechaEstimEntrega?: Date;
+    metodoPago: 'transferencia' | 'e_check' | 'efectivo';
+    cuentaDestino?: string;
+    modalidadPago: 'adelantado' | 'contra_entrega' | 'por_partes';
+    fechaRetiro?: Date;
+    lugarEntrega?: string;
+    fechaEntrega?: Date;
     observaciones?: string;
-    medioPago: 'transferencia' | 'e_check' | 'efectivo';
-    modalidadPago: 'completo_anticipado' | 'completo_entrega' | 'mitad_adelanto_mitad_entrega';
   },
   usuarioId: number
 ) => {
@@ -186,12 +212,8 @@ export const convertirCotizacionAVentaService = async (
   });
 
   if (!cotizacion) throw new Error('Cotización no encontrada');
-  if (cotizacion.estado !== 'aceptada') {
-    throw new Error('Solo se pueden convertir cotizaciones aceptadas');
-  }
-  if (cotizacion.venta) {
-    throw new Error('Esta cotización ya fue convertida en venta');
-  }
+  if (cotizacion.estado !== 'aceptada') throw new Error('Solo se pueden convertir cotizaciones aceptadas');
+  if (cotizacion.venta) throw new Error('Esta cotización ya fue convertida en venta');
 
   const venta = await prisma.venta.create({
     data: {
@@ -200,7 +222,12 @@ export const convertirCotizacionAVentaService = async (
       usuarioId,
       tipoEntrega: datos.tipoEntrega,
       requiereSenasa: cotizacion.requiereSenasa,
-      fechaEstimEntrega: datos.fechaEstimEntrega,
+      metodoPago: datos.metodoPago as any,
+      cuentaDestino: datos.cuentaDestino,
+      modalidadPago: datos.modalidadPago as any,
+      fechaRetiro: datos.fechaRetiro,
+      lugarEntrega: datos.lugarEntrega,
+      fechaEstimEntrega: datos.fechaEntrega,
       totalSinIva: cotizacion.totalSinIva,
       totalConIva: cotizacion.totalConIva,
       costoFlete: cotizacion.costoFlete,
@@ -220,65 +247,51 @@ export const convertirCotizacionAVentaService = async (
     },
   });
 
-  // ── Auto-crear factura según modalidad de pago ──────────────────────────
+  // ── Auto-crear factura en estado pendiente ──────────────────────────────
   const totalConIva = Number(cotizacion.totalConIva ?? 0);
   const totalNeto = Number(cotizacion.totalSinIva ?? totalConIva / 1.21);
   const iva = totalConIva - totalNeto;
 
-  if (totalConIva > 0) {
-    const factura = await prisma.factura.create({
+  await prisma.factura.create({
+    data: {
+      ventaId: venta.id,
+      clienteId: cotizacion.clienteId,
+      usuarioId,
+      totalNeto,
+      iva,
+      totalConIva,
+      estadoCobro: 'pendiente',
+      metodoPago: datos.metodoPago as any,
+      cuentaDestino: datos.cuentaDestino,
+      modalidadPago: datos.modalidadPago,
+      observaciones: `Generada automáticamente al convertir cotización #${cotizacionId}`,
+    },
+  });
+
+  // ── Auto-crear logística si incluye flete con envío ────────────────────
+  if (cotizacion.incluyeFlete && datos.tipoEntrega === 'envio_woodpallet') {
+    const usuarioVenta = await prisma.usuario.findUnique({ where: { id: usuarioId } });
+    const esJuanCruz = usuarioVenta?.rol === 'propietario_juancruz';
+
+    await prisma.logistica.create({
       data: {
         ventaId: venta.id,
-        clienteId: cotizacion.clienteId,
-        usuarioId,
-        totalNeto,
-        iva,
-        totalConIva,
-        estadoCobro: 'pendiente',
-        modalidadPago: datos.modalidadPago,
-        medioPago: datos.medioPago,
-        observaciones: `Generada automáticamente al convertir cotización #${cotizacionId}`,
+        nombreTransportista: '',
+        costoFlete: cotizacion.costoFlete ? Number(cotizacion.costoFlete) : undefined,
+        horaEstimadaEntrega: datos.fechaEntrega,
+        estadoEntrega: 'pendiente',
+        estadoConsulta: esJuanCruz ? 'pendiente_consulta' : 'no_aplica',
+        registradoPorId: usuarioId,
+        lugarEntrega: datos.lugarEntrega,
       },
     });
-
-    if (datos.modalidadPago === 'completo_anticipado') {
-      // Pago completo ya realizado → registrar cobro por el total
-      await prisma.pagoCobro.create({
-        data: {
-          facturaId: factura.id,
-          clienteId: cotizacion.clienteId,
-          monto: totalConIva,
-          medioPago: datos.medioPago,
-          esAdelanto: true,
-          registradoPorId: usuarioId,
-          observaciones: 'Pago completo anticipado',
-        },
-      });
-      await prisma.factura.update({
-        where: { id: factura.id },
-        data: { estadoCobro: 'cobrada_total' },
-      });
-    } else if (datos.modalidadPago === 'mitad_adelanto_mitad_entrega') {
-      // 50% ya fue pagado → registrar cobro parcial
-      const mitad = Math.round((totalConIva / 2) * 100) / 100;
-      await prisma.pagoCobro.create({
-        data: {
-          facturaId: factura.id,
-          clienteId: cotizacion.clienteId,
-          monto: mitad,
-          medioPago: datos.medioPago,
-          esAdelanto: true,
-          registradoPorId: usuarioId,
-          observaciones: '50% adelantado — saldo restante al entregar',
-        },
-      });
-      await prisma.factura.update({
-        where: { id: factura.id },
-        data: { estadoCobro: 'cobrada_parcial' },
-      });
-    }
-    // completo_entrega → factura queda en pendiente, sin pago registrado
   }
+
+  // Mantener estado 'aceptada' en la cotización
+  await prisma.cotizacion.update({
+    where: { id: cotizacionId },
+    data: { estado: 'aceptada' },
+  });
 
   return venta;
 };

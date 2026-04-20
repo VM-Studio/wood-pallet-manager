@@ -91,3 +91,61 @@ export const useConfirmarEntregaCliente = () => {
     }
   });
 };
+
+export const useLogisticasPorRol = () => {
+  return useQuery({
+    queryKey: ['logistica-por-rol'],
+    queryFn: async () => {
+      const { data } = await api.get('/logistica/por-rol');
+      return data as Logistica[];
+    },
+    refetchInterval: 1000 * 60 * 2
+  });
+};
+
+export const useConsultarLogistica = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (ventaId: number) => {
+      const { data } = await api.put(`/logistica/venta/${ventaId}/consultar`);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['logistica-por-rol'] });
+      queryClient.invalidateQueries({ queryKey: ['logisticas'] });
+    }
+  });
+};
+
+export const useResponderConsultaLogistica = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ventaId, respuesta, datos }: {
+      ventaId: number;
+      respuesta: 'aceptada' | 'rechazada';
+      datos?: Record<string, unknown>;
+    }) => {
+      const { data } = await api.put(`/logistica/venta/${ventaId}/responder-consulta`, { respuesta, ...datos });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['logistica-por-rol'] });
+      queryClient.invalidateQueries({ queryKey: ['logisticas'] });
+    }
+  });
+};
+
+export const useConfirmarLogisticaCarlos = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ventaId, datos }: { ventaId: number; datos?: Record<string, unknown> }) => {
+      const { data } = await api.put(`/logistica/venta/${ventaId}/confirmar-carlos`, datos ?? {});
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['logistica-por-rol'] });
+      queryClient.invalidateQueries({ queryKey: ['logisticas'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    }
+  });
+};

@@ -9,6 +9,7 @@ import {
   getFacturasVencidasService,
   crearNotaCreditoService,
   getCobrosPendientesService,
+  cargarNroFacturaArcaService,
 } from '../services/facturacion.service';
 
 const crearFacturaSchema = z.object({
@@ -109,4 +110,19 @@ export const actualizarNroFactura = async (req: AuthRequest, res: Response) => {
     data: { nroFactura: nroFactura.trim() },
   }));
   res.json(factura);
+};
+
+export const cargarNroArca = async (req: AuthRequest, res: Response) => {
+  try {
+    const id = parseId(req.params.id);
+    const { nroFacturaArca } = req.body;
+    if (!nroFacturaArca?.trim()) {
+      res.status(400).json({ error: 'El número de factura ARCA es requerido' });
+      return;
+    }
+    const factura = await cargarNroFacturaArcaService(id, nroFacturaArca.trim());
+    res.json(factura);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
 };

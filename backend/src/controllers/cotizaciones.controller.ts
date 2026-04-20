@@ -15,8 +15,9 @@ import prisma from '../utils/prisma';
 import { enviarPresupuestoPorEmail } from '../utils/mailer';
 
 const detalleSchema = z.object({
-  productoId: z.number(),
+  productoId: z.number().min(0), // 0 = a medida (el backend lo resuelve)
   cantidad: z.number().int().min(1, 'La cantidad debe ser al menos 1'),
+  precioUnitario: z.number().optional(),
   esAMedida: z.boolean().optional(),
   especificacion: z
     .object({
@@ -26,6 +27,7 @@ const detalleSchema = z.object({
       cargaMaximaKg: z.number().optional(),
       tipoMadera: z.string().optional(),
       observacionesCliente: z.string().optional(),
+      medidas: z.array(z.any()).optional(),
     })
     .optional(),
 });
@@ -51,10 +53,13 @@ const seguimientoSchema = z.object({
 
 const convertirSchema = z.object({
   tipoEntrega: z.enum(['retira_cliente', 'envio_woodpallet']),
-  fechaEstimEntrega: z.string().optional(),
+  metodoPago: z.enum(['transferencia', 'e_check', 'efectivo']),
+  cuentaDestino: z.string().optional(),
+  modalidadPago: z.enum(['adelantado', 'contra_entrega', 'por_partes']),
+  fechaRetiro: z.string().optional().transform(v => v ? new Date(v) : undefined),
+  lugarEntrega: z.string().optional(),
+  fechaEntrega: z.string().optional().transform(v => v ? new Date(v) : undefined),
   observaciones: z.string().optional(),
-  medioPago: z.enum(['transferencia', 'e_check', 'efectivo']),
-  modalidadPago: z.enum(['completo_anticipado', 'completo_entrega', 'mitad_adelanto_mitad_entrega']),
 });
 
 export const getCotizaciones = async (req: AuthRequest, res: Response) => {
@@ -125,14 +130,7 @@ export const convertirAVenta = async (req: AuthRequest, res: Response) => {
   try {
     const id = parseId(req.params.id);
     const datos = convertirSchema.parse(req.body);
-    const venta = await convertirCotizacionAVentaService(
-      id,
-      {
-        ...datos,
-        fechaEstimEntrega: datos.fechaEstimEntrega ? new Date(datos.fechaEstimEntrega) : undefined,
-      },
-      req.user!.userId
-    );
+    const venta = await convertirCotizacionAVentaService(id, datos, req.user!.userId);
     res.status(201).json(venta);
   } catch (error: any) {
     if (error.name === 'ZodError') {

@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Search, DollarSign, AlertTriangle, Clock, CheckCircle, Receipt, X, Plus } from 'lucide-react';
-import { useFacturas, useFacturasVencidas, useCobrosPendientes, useActualizarNroFactura } from '../../hooks/useFacturacion';
+import { useFacturas, useFacturasVencidas, useCobrosPendientes, useActualizarNroFactura, useCargarNroArca } from '../../hooks/useFacturacion';
 import type { Factura } from '../../types';
 import RegistrarCobro from './RegistrarCobro';
 import NuevaFactura from './NuevaFactura';
@@ -45,12 +46,18 @@ export default function FacturacionPage() {
   const { data: pendientes } = useCobrosPendientes() as { data: Factura[] | undefined };
 
   const [busqueda, setBusqueda] = useState('');
-  const [filtroEstado, setFiltroEstado] = useState('todos');
+  const [searchParams] = useSearchParams();
+  const [filtroEstado, setFiltroEstado] = useState(() =>
+    searchParams.get('cobro') === 'true' ? 'pendiente' : 'todos'
+  );
   const [cobroData, setCobroData] = useState<CobroData | null>(null);
   const [nroFacturaModal, setNroFacturaModal] = useState<{ id: number; clienteNombre: string } | null>(null);
   const [nroFacturaInput, setNroFacturaInput] = useState('');
   const [showNuevaFactura, setShowNuevaFactura] = useState(false);
   const actualizarNro = useActualizarNroFactura();
+  const cargarArca = useCargarNroArca();
+  const [arcaModal, setArcaModal] = useState<{ id: number; clienteNombre: string } | null>(null);
+  const [arcaInput, setArcaInput] = useState('');
 
   const filtradas = facturas?.filter(f => {
     const matchBusqueda =
@@ -368,6 +375,19 @@ export default function FacturacionPage() {
                             </button>
                           </>
                         )}
+                        {/* Botón cargar N° ARCA oficial */}
+                        {!f.esSinFactura && (
+                          <button
+                            onClick={() => {
+                              setArcaModal({ id: f.id, clienteNombre: f.cliente?.razonSocial ?? '' });
+                              setArcaInput('');
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium"
+                            style={{ background: '#F0FDF4', color: '#15803D', borderRadius: '0.25rem', border: '1px solid #BBF7D0' }}
+                          >
+                            <Receipt size={13} /> N° ARCA
+                          </button>
+                        )}
                         {/* Botón cargar N° ARCA — solo si tiene IVA y aún no tiene nro */}
                         {Number(f.iva) > 0 && !f.nroFactura && (
                           <button
@@ -395,6 +415,38 @@ export default function FacturacionPage() {
         </div>
       )}
 
+      {/* Modal N° ARCA oficial */}
+      {arcaModal && (
+        <div className="modal-overlay" onClick={() => setArcaModal(null)}>
+          <div className="modal" style={{ maxWidth: '400px' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <span className="modal-title">N° de Factura ARCA</span>
+              <button onClick={() => setArcaModal(null)} className="btn-icon"><X size={18} /></button>
+            </div>
+            <div className="modal-body space-y-3">
+              <p className="text-sm text-gray-500">Cliente: <strong>{arcaModal.clienteNombre}</strong></p>
+              <div>
+                <label className="label">Número oficial ARCA</label>
+                <input className="input-field" placeholder="Ej: 00001-00000001"
+                  value={arcaInput} onChange={e => setArcaInput(e.target.value)} autoFocus />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button onClick={() => setArcaModal(null)} className="btn-secondary">Cancelar</button>
+              <button
+                disabled={!arcaInput.trim() || cargarArca.isPending}
+                onClick={async () => {
+                  await cargarArca.mutateAsync({ id: arcaModal.id, nroFacturaArca: arcaInput.trim() });
+                  setArcaModal(null);
+                }}
+                className="btn-primary"
+              >
+                {cargarArca.isPending ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Modal N° ARCA */}
       {nroFacturaModal && (
         <div className="modal-overlay" onClick={() => setNroFacturaModal(null)}>

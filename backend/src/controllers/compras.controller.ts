@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { AuthRequest, parseId } from '../types';
+import prisma from '../utils/prisma';
 import {
   getComprasService,
   getCompraByIdService,
@@ -11,8 +12,28 @@ import {
 } from '../services/compras.service';
 
 export const getCompras = async (req: AuthRequest, res: Response) => {
-  const compras = await getComprasService(req.user!.userId, req.user!.rol);
-  res.json(compras);
+  try {
+    const vista = req.query.vista as string | undefined;
+
+    let usuarioId = req.user!.userId;
+    let rol = req.user!.rol;
+
+    if (vista === 'carlos') {
+      const carlos = await prisma.usuario.findFirst({ where: { rol: 'propietario_carlos' } });
+      if (carlos) { usuarioId = carlos.id; rol = carlos.rol; }
+    } else if (vista === 'juancruz') {
+      const juancruz = await prisma.usuario.findFirst({ where: { rol: 'propietario_juancruz' } });
+      if (juancruz) { usuarioId = juancruz.id; rol = juancruz.rol; }
+    } else if (vista === 'todos') {
+      rol = 'admin'; // devuelve todas
+    }
+    // 'mis_datos' o sin vista → usa el usuario del token (default)
+
+    const compras = await getComprasService(usuarioId, rol);
+    res.json(compras);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
 };
 
 export const getCompraById = async (req: AuthRequest, res: Response) => {

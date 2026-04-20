@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
-  Plus, MessageCircle,
-  CheckCircle, XCircle, Search, FileText, Truck, Leaf, Trash2
+  Plus, MoreHorizontal,
+  CheckCircle, XCircle, Search, FileText, Truck, Leaf, Trash2, MessageCircle
 } from 'lucide-react';
 import { useCotizaciones, useActualizarEstadoCotizacion, useEliminarCotizacion } from '../../hooks/useCotizaciones';
 import NuevaCotizacion from './NuevaCotizacion';
@@ -10,6 +11,9 @@ import ConvertirVentaModal from './ConvertirVentaModal';
 import EstadoBadge from '../../components/ui/EstadoBadge';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
+import { generarPresupuestoPDF } from '../../utils/generarPresupuestoPDF';
+import { useAuthStore } from '../../store/auth.store';
+import type { Cotizacion } from '../../types';
 
 const formatPesos = (v: number) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(v);
@@ -22,19 +26,62 @@ const estadoFiltros = [
   { key: 'en_seguimiento', label: 'Seguimiento' },
   { key: 'aceptada',       label: 'Aceptadas' },
   { key: 'rechazada',      label: 'Rechazadas' },
-  { key: 'perdida',        label: 'Perdidas' },
 ];
 
 export default function CotizacionesPage() {
   const { data: cotizaciones, isLoading, error } = useCotizaciones();
   const actualizarEstado = useActualizarEstadoCotizacion();
   const eliminarCotizacion = useEliminarCotizacion();
+  const { usuario } = useAuthStore();
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('todos');
-  const [showNueva, setShowNueva] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [showNueva, setShowNueva] = useState(() => searchParams.get('nueva') === 'true');
   const [whatsappId, setWhatsappId] = useState<number | null>(null);
   const [convertirId, setConvertirId] = useState<number | null>(null);
   const [confirmEliminar, setConfirmEliminar] = useState<number | null>(null);
+  const [dropdownAbierto, setDropdownAbierto] = useState<number | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownAbierto(null);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const verPDF = async (c: Cotizacion) => {
+    const fechaStr = new Date(c.fechaCotizacion).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    // Detectar si incluía IVA comparando totalConIva vs totalSinIva
+    const incluyeIva = c.totalConIva != null && c.totalSinIva != null
+      ? Math.abs(c.totalConIva - c.totalSinIva) > 1
+      : true;
+    const detallesPDF = (c.detalles ?? []).map(d => ({
+      nombreProducto: d.producto?.nombre ?? `Producto #${d.productoId}`,
+      condicion: d.producto?.condicion ?? '',
+      cantidad: d.cantidad,
+      precioUnitario: d.precioUnitario,
+      subtotal: d.subtotal,
+      medidasPallet: d.especificacion?.medidas as { label: string; tablas?: number; largo?: number; ancho?: number; espesor?: number; pies: number }[] | undefined,
+    }));
+    const blob = await generarPresupuestoPDF({
+      numeroCotizacion: c.id,
+      fechaCotizacion: fechaStr,
+      razonSocialCliente: c.cliente?.razonSocial ?? '',
+      detalles: detallesPDF,
+      costoFlete: c.incluyeFlete ? c.costoFlete : undefined,
+      costoSenasa: c.requiereSenasa ? c.costoSenasa : undefined,
+      observaciones: c.observaciones || undefined,
+      incluyeIva,
+      cuitEmpresa: usuario?.cuit,
+    });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  };
 
   const filtradas = cotizaciones?.filter(c => {
     const matchBusqueda =
@@ -182,13 +229,6 @@ export default function CotizacionesPage() {
                   <td className="text-xs text-gray-400">{formatFecha(c.fechaCotizacion)}</td>
                   <td>
                     <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => setWhatsappId(c.id)}
-                        className="p-1.5 text-green-500 hover:text-green-700 hover:bg-green-50 rounded transition-colors"
-                        title="Texto WhatsApp"
-                      >
-                        <MessageCircle size={15} />
-                      </button>
                       {(c.estado === 'enviada' || c.estado === 'en_seguimiento') && (
                         <>
                           <button
@@ -222,12 +262,47 @@ export default function CotizacionesPage() {
                         </>
                       )}
                       <button
+                        onClick={() => verPDF(c)}
+                        title="Ver PDF del presupuesto"
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          width: '1.875rem', height: '1.875rem', borderRadius: '0.25rem',
+                          background: '#EFF6FF', border: '1.5px solid #93C5FD',
+                          color: '#2563EB', cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0
+                        }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#DBEAFE'; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#EFF6FF'; }}
+                      >
+                        <FileText size={14} />
+                      </button>
+                      <button
                         onClick={() => setConfirmEliminar(c.id)}
                         className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
                         title="Eliminar cotización"
                       >
                         <Trash2 size={14} />
                       </button>
+                      {/* 3 puntitos */}
+                      <div className="relative" ref={dropdownAbierto === c.id ? dropdownRef : undefined}>
+                        <button
+                          onClick={() => setDropdownAbierto(dropdownAbierto === c.id ? null : c.id)}
+                          className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+                          title="Más opciones"
+                        >
+                          <MoreHorizontal size={15} />
+                        </button>
+                        {dropdownAbierto === c.id && (
+                          <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-50 overflow-hidden">
+                            <button
+                              onClick={() => { setWhatsappId(c.id); setDropdownAbierto(null); }}
+                              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors text-left"
+                            >
+                              <MessageCircle size={14} className="text-green-500" />
+                              Ver mensaje predeterminado
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -253,6 +328,7 @@ export default function CotizacionesPage() {
       {convertirId !== null && (
         <ConvertirVentaModal
           cotizacionId={convertirId}
+          incluyeFlete={cotizaciones?.find(c => c.id === convertirId)?.incluyeFlete ?? false}
           onClose={() => setConvertirId(null)}
           onSuccess={() => setConvertirId(null)}
         />

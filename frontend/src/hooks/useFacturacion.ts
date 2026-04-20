@@ -121,3 +121,16 @@ export const useActualizarNroFactura = () => {
     }
   });
 };
+
+export const useCargarNroArca = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, nroFacturaArca }: { id: number; nroFacturaArca: string }) => {
+      const { data } = await api.put(`/facturas/${id}/nro-arca`, { nroFacturaArca });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['facturas'] });
+    }
+  });
+};

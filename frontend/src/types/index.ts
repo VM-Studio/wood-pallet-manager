@@ -6,6 +6,7 @@ export interface Usuario {
   email: string;
   rol: 'propietario_carlos' | 'propietario_juancruz' | 'admin';
   telefono?: string;
+  cuit?: string;
 }
 
 export interface AuthState {
@@ -114,6 +115,9 @@ export interface DetalleCotizacion {
   subtotal: number;
   esAMedida: boolean;
   producto?: { nombre: string; tipo: string; condicion: string };
+  especificacion?: {
+    medidas?: { label: string; tablas?: number; largo?: number; ancho?: number; espesor?: number; pies: number }[];
+  };
 }
 
 // Venta

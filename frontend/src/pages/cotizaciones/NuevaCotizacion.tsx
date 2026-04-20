@@ -11,8 +11,26 @@ interface NuevaCotizacionProps {
   onSuccess: (cotizacionId: number) => void;
 }
 
+interface ComponenteMedida {
+  tablas: number | '';
+  largo: number | '';
+  ancho: number | '';
+  espesor: number | '';
+}
+
+interface PalletMedida {
+  baseSuperior: ComponenteMedida;
+  transversales: ComponenteMedida;
+  tirantes: ComponenteMedida;
+  tacos: ComponenteMedida;
+  baseInferior: ComponenteMedida;
+  costoPorPie: number | '';
+  gananciaPorPalet: number | '';
+  cantidadUnidades: number | '';
+}
+
 interface DetalleForm {
-  productoId: number;
+  productoId: number; // -1 = pallet a medida
   cantidad: number;
   precioCalculado?: {
     precioUnitario: number;
@@ -22,13 +40,44 @@ interface DetalleForm {
   };
   usarPrecioEspecial?: boolean;
   precioEspecial?: number;
+  medida?: PalletMedida;
 }
+
+const COMPONENTES_MADERA = [
+  { key: 'baseSuperior' as const,  label: 'Base superior'  },
+  { key: 'transversales' as const, label: 'Transversales'  },
+  { key: 'tirantes' as const,      label: 'Tirantes'       },
+  { key: 'tacos' as const,         label: 'Tacos'          },
+  { key: 'baseInferior' as const,  label: 'Base inferior'  },
+];
+type ComponenteKey = typeof COMPONENTES_MADERA[number]['key'];
+
+const emptyComponente = (): ComponenteMedida => ({ tablas: '', largo: '', ancho: '', espesor: '' });
+const defaultMedida = (): PalletMedida => ({
+  baseSuperior: emptyComponente(),
+  transversales: emptyComponente(),
+  tirantes: emptyComponente(),
+  tacos: emptyComponente(),
+  baseInferior: emptyComponente(),
+  costoPorPie: '',
+  gananciaPorPalet: '',
+  cantidadUnidades: '',
+});
+
+const calcularPiesComponente = (c: ComponenteMedida): number => {
+  const t = typeof c.tablas  === 'number' ? c.tablas  : 0;
+  const l = typeof c.largo   === 'number' ? c.largo   : 0; // mm → m (÷1000)
+  const a = typeof c.ancho   === 'number' ? c.ancho   : 0; // mm → m (÷1000)
+  const e = typeof c.espesor === 'number' ? c.espesor : 0; // mm → cm (÷10)
+  if (!t || !l || !a || !e) return 0;
+  return t * (l / 1000) * (a / 1000) * (e / 10) * 4.24;
+};
 
 export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionProps) {
   const crearCotizacion = useCrearCotizacion();
   const { data: clientes } = useClientes();
   const { usuario } = useAuthStore();
-  const [productos, setProductos] = useState<any[]>([]);
+  const [productos, setProductos] = useState<{ id: number; nombre: string; condicion: string; tipo: string }[]>([]);
   const [error, setError] = useState('');
 
   const [form, setForm] = useState({
@@ -64,13 +113,40 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
 
   const updateDetalle = (idx: number, key: keyof DetalleForm, value: number) => {
     setDetalles(prev => {
-      const nuevo = prev.map((d, i) => i === idx ? { ...d, [key]: value } : d);
+      const nuevo = prev.map((d, i) => {
+        if (i !== idx) return d;
+        const updated = { ...d, [key]: value };
+        if (key === 'productoId' && value === -1 && !updated.medida) {
+          updated.medida = defaultMedida();
+        }
+        return updated;
+      });
       const d = nuevo[idx];
-      if (d.productoId && d.cantidad) {
+      if (d.productoId > 0 && d.cantidad) {
         calcularPrecio(idx, d.productoId, d.cantidad);
       }
       return nuevo;
     });
+  };
+
+  const updateMedidaComponente = (idx: number, compKey: ComponenteKey, field: keyof ComponenteMedida, value: number | '') => {
+    setDetalles(prev => prev.map((d, i) => {
+      if (i !== idx || !d.medida) return d;
+      return {
+        ...d,
+        medida: {
+          ...d.medida,
+          [compKey]: { ...d.medida[compKey], [field]: value },
+        },
+      };
+    }));
+  };
+
+  const updateMedidaGlobal = (idx: number, field: 'costoPorPie' | 'gananciaPorPalet' | 'cantidadUnidades', value: number | '') => {
+    setDetalles(prev => prev.map((d, i) => {
+      if (i !== idx || !d.medida) return d;
+      return { ...d, medida: { ...d.medida, [field]: value } };
+    }));
   };
 
   const getPrecioEfectivo = (d: DetalleForm): number => {
@@ -79,6 +155,19 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
   };
 
   const totalSinIva = detalles.reduce((acc, d) => {
+    if (d.productoId === -1 && d.medida) {
+      // costoUnitario + ganancia = precio por unidad × cantidad
+      // (se calcula en el render pero necesitamos el mismo valor aquí)
+      // No podemos usar totalPies aquí directamente, lo recalculamos inline
+      const piesTotal = COMPONENTES_MADERA.reduce(
+        (s, comp) => s + calcularPiesComponente(d.medida![comp.key]), 0
+      );
+      const costoUnit = typeof d.medida.costoPorPie === 'number' ? piesTotal * d.medida.costoPorPie : 0;
+      const ganancia  = typeof d.medida.gananciaPorPalet === 'number' ? d.medida.gananciaPorPalet : 0;
+      const precioUnit = costoUnit + ganancia;
+      const cantidad   = typeof d.medida.cantidadUnidades === 'number' && d.medida.cantidadUnidades > 0 ? d.medida.cantidadUnidades : 1;
+      return acc + precioUnit * cantidad;
+    }
     return acc + getPrecioEfectivo(d) * d.cantidad;
   }, 0)
     + (form.incluyeFlete && form.fleteIncluido ? form.costoFlete : 0)
@@ -91,17 +180,55 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
     e.preventDefault();
     setError('');
     if (!form.clienteId) { setError('Seleccioná un cliente'); return; }
-    if (detalles.some(d => !d.productoId || !d.cantidad)) {
+    const detalleInvalido = detalles.some(d => {
+      if (d.productoId === -1) {
+        return !d.medida || typeof d.medida.cantidadUnidades !== 'number' || d.medida.cantidadUnidades <= 0;
+      }
+      return !d.productoId || !d.cantidad;
+    });
+    if (detalleInvalido) {
       setError('Completá todos los productos'); return;
     }
     try {
       const resultado = await crearCotizacion.mutateAsync({
         ...form,
-        detalles: detalles.map(d => ({
-          productoId: d.productoId,
-          cantidad: d.cantidad,
-          ...(d.usarPrecioEspecial && d.precioEspecial ? { precioUnitario: d.precioEspecial } : {})
-        }))
+        detalles: detalles
+          .map(d => {
+            if (d.productoId === -1) {
+              const piesTotal = COMPONENTES_MADERA.reduce(
+                (s, comp) => s + calcularPiesComponente(d.medida![comp.key]), 0
+              );
+              const costoUnit  = typeof d.medida!.costoPorPie === 'number' ? piesTotal * d.medida!.costoPorPie : 0;
+              const ganancia   = typeof d.medida!.gananciaPorPalet === 'number' ? d.medida!.gananciaPorPalet : 0;
+              const precioUnit = costoUnit + ganancia;
+              const cantidad   = typeof d.medida!.cantidadUnidades === 'number' && d.medida!.cantidadUnidades > 0 ? d.medida!.cantidadUnidades : 1;
+              return {
+                productoId: 0,       // el backend lo resuelve al ver esAMedida: true
+                cantidad,
+                precioUnitario: precioUnit,
+                esAMedida: true,
+                especificacion: {
+                  medidas: COMPONENTES_MADERA.map(comp => {
+                    const c = d.medida![comp.key];
+                    return {
+                      label:   comp.label,
+                      tablas:  typeof c.tablas  === 'number' ? c.tablas  : undefined,
+                      largo:   typeof c.largo   === 'number' ? c.largo   : undefined,
+                      ancho:   typeof c.ancho   === 'number' ? c.ancho   : undefined,
+                      espesor: typeof c.espesor === 'number' ? c.espesor : undefined,
+                      pies:    calcularPiesComponente(c),
+                    };
+                  }).filter(m => m.pies > 0),
+                },
+              };
+            }
+            return {
+              productoId: d.productoId,
+              cantidad: d.cantidad,
+              ...(d.usarPrecioEspecial && d.precioEspecial ? { precioUnitario: d.precioEspecial } : {})
+            };
+          })
+          .filter(Boolean) as object[]
       });
 
       // ── Generar PDF ──────────────────────────────────────────────────────
@@ -109,13 +236,39 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
       const fechaStr = new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
       const detallesPDF = detalles
-        .filter(d => d.productoId > 0)
+        .filter(d => d.productoId > 0 || (d.productoId === -1 && d.medida))
         .map(d => {
-          const prod = productos.find(p => p.id === d.productoId);
+          if (d.productoId === -1 && d.medida) {
+            const piesTotal = COMPONENTES_MADERA.reduce(
+              (s, comp) => s + calcularPiesComponente(d.medida![comp.key]), 0
+            );
+            const costoUnit  = typeof d.medida.costoPorPie === 'number' ? piesTotal * d.medida.costoPorPie : 0;
+            const ganancia   = typeof d.medida.gananciaPorPalet === 'number' ? d.medida.gananciaPorPalet : 0;
+            const precioUnit = costoUnit + ganancia;
+            const cantidad   = typeof d.medida.cantidadUnidades === 'number' && d.medida.cantidadUnidades > 0 ? d.medida.cantidadUnidades : 1;
+            // Armar medidas para el PDF
+            const medidasPallet = COMPONENTES_MADERA
+              .map(comp => {
+                const cData = d.medida![comp.key];
+                const pies = calcularPiesComponente(cData);
+                if (pies <= 0) return null;
+                return {
+                  label: comp.label,
+                  tablas:  typeof cData.tablas  === 'number' ? cData.tablas  : undefined,
+                  largo:   typeof cData.largo   === 'number' ? cData.largo   : undefined,
+                  ancho:   typeof cData.ancho   === 'number' ? cData.ancho   : undefined,
+                  espesor: typeof cData.espesor === 'number' ? cData.espesor : undefined,
+                  pies,
+                };
+              })
+              .filter(Boolean) as { label: string; tablas?: number; largo?: number; ancho?: number; espesor?: number; pies: number }[];
+            return { nombreProducto: 'Pallet a medida', condicion: 'A medida', cantidad, precioUnitario: precioUnit, subtotal: precioUnit * cantidad, medidasPallet };
+          }
+          const prod = productos.find((p: { id: number }) => p.id === d.productoId);
           const precioUnit = getPrecioEfectivo(d);
           return {
-            nombreProducto: prod?.nombre ?? `Producto #${d.productoId}`,
-            condicion: prod?.condicion ?? '',
+            nombreProducto: (prod as { nombre: string } | undefined)?.nombre ?? `Producto #${d.productoId}`,
+            condicion: (prod as { condicion: string } | undefined)?.condicion ?? '',
             cantidad: d.cantidad,
             precioUnitario: precioUnit,
             subtotal: precioUnit * d.cantidad,
@@ -126,10 +279,12 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
         numeroCotizacion: resultado.id,
         fechaCotizacion: fechaStr,
         razonSocialCliente: cliente?.razonSocial ?? '',
+        cuitEmpresa: usuario?.cuit,
         detalles: detallesPDF,
         costoFlete: form.incluyeFlete ? form.costoFlete : undefined,
         costoSenasa: form.requiereSenasa ? form.costoSenasa : undefined,
         observaciones: form.observaciones || undefined,
+        incluyeIva: form.incluyeIva,
       });
 
       // ── Descargar PDF ────────────────────────────────────────────────────
@@ -174,8 +329,8 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
 
       onSuccess(resultado.id);
       onClose();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Error al crear la cotización');
+    } catch (err: unknown) {
+      setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Error al crear la cotización');
     }
   };
 
@@ -184,7 +339,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
 
   return (
     <div className="modal-overlay">
-      <div className="modal max-w-2xl animate-slide-up">
+      <div className="modal max-w-5xl animate-slide-up">
         <div className="modal-header">
           <h2 className="modal-title flex items-center gap-2">
             <Calculator size={20} className="text-[#16A34A]" />
@@ -233,8 +388,9 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
               <div className="space-y-2">
                 {detalles.map((d, idx) => (
                   <div key={idx} className="p-3 bg-gray-50 border border-gray-100" style={{ borderRadius: '0.25rem' }}>
-                    <div className="grid grid-cols-12 gap-2 items-center">
-                      <div className="col-span-6">
+                    {/* Selector de producto — siempre visible */}
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="flex-1">
                         <select
                           value={d.productoId}
                           onChange={e => updateDetalle(idx, 'productoId', parseInt(e.target.value))}
@@ -242,107 +398,266 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
                           style={{ borderRadius: '0.25rem' }}
                         >
                           <option value={0}>Seleccioná un producto...</option>
-                          {productos.map((p: any) => (
+                          <option value={-1}>📐 Pallet a medida (calculadora)</option>
+                          {productos.map((p: { id: number; nombre: string; condicion: string }) => (
                             <option key={p.id} value={p.id}>{p.nombre} — {p.condicion}</option>
                           ))}
                         </select>
                       </div>
-                      <div className="col-span-3">
-                        <input
-                          type="number"
-                          min={1}
-                          value={d.cantidad}
-                          onChange={e => updateDetalle(idx, 'cantidad', parseInt(e.target.value))}
-                          className="input text-xs py-2"
-                          style={{ borderRadius: '0.25rem' }}
-                          placeholder="Cantidad"
-                        />
-                      </div>
-                      <div className="col-span-2 text-right">
-                        {d.precioCalculado && !d.usarPrecioEspecial && (
-                          <div>
-                            <p className="text-xs font-semibold text-gray-900">
-                              {formatPesos(d.precioCalculado.precioUnitario)}
-                            </p>
-                            {d.precioCalculado.bonificaFlete && (
-                              <p className="text-[10px] text-green-600 font-medium">Flete bonificado</p>
-                            )}
-                          </div>
-                        )}
-                        {d.usarPrecioEspecial && d.precioEspecial ? (
-                          <p className="text-xs font-semibold text-[#6B3A2A]">
-                            {formatPesos(d.precioEspecial)}
-                          </p>
-                        ) : null}
-                      </div>
-                      <div className="col-span-1 flex justify-end">
-                        {detalles.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeDetalle(idx)}
-                            className="btn-icon w-7 h-7 text-red-400 hover:bg-red-50"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        )}
-                      </div>
+                      {detalles.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeDetalle(idx)}
+                          className="btn-icon w-7 h-7 text-red-400 hover:bg-red-50 shrink-0"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
                     </div>
-                    {/* Selector de precio por unidad */}
-                    {d.productoId > 0 && (
-                      <div className="mt-2.5 pt-2.5 border-t border-gray-200">
-                        <p className="text-xs font-medium text-gray-500 mb-1.5">Precio por unidad</p>
-                        <div className="flex items-center gap-2">
-                          {/* Toggle Guardado / Precio especial */}
-                          <div className="flex" style={{ borderRadius: '0.25rem', overflow: 'hidden', border: '1px solid #E5E7EB' }}>
-                            <button
-                              type="button"
-                              onClick={() => setDetalles(prev => prev.map((x, i) => i === idx ? { ...x, usarPrecioEspecial: false } : x))}
-                              style={{
-                                fontSize: '0.7rem', fontWeight: 600, padding: '0.25rem 0.625rem',
-                                cursor: 'pointer', transition: 'all 0.15s', border: 'none',
-                                background: !d.usarPrecioEspecial ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' : '#fff',
-                                color: !d.usarPrecioEspecial ? '#fff' : '#6B7280',
-                              }}
-                            >
-                              Guardado
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setDetalles(prev => prev.map((x, i) => i === idx ? { ...x, usarPrecioEspecial: true } : x))}
-                              style={{
-                                fontSize: '0.7rem', fontWeight: 600, padding: '0.25rem 0.625rem',
-                                cursor: 'pointer', transition: 'all 0.15s', border: 'none', borderLeft: '1px solid #E5E7EB',
-                                background: d.usarPrecioEspecial ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' : '#fff',
-                                color: d.usarPrecioEspecial ? '#fff' : '#6B7280',
-                              }}
-                            >
-                              Precio especial
-                            </button>
+
+                    {/* ── Modo A MEDIDA ── */}
+                    {d.productoId === -1 && d.medida && (() => {
+                      const totalPies = COMPONENTES_MADERA.reduce(
+                        (acc, comp) => acc + calcularPiesComponente(d.medida![comp.key]), 0
+                      );
+                      const costoTotal = typeof d.medida.costoPorPie === 'number' ? totalPies * d.medida.costoPorPie : 0;
+                      return (
+                        <div>
+                          <p className="text-sm font-semibold text-[#6B3A2A] mb-2 flex items-center gap-1">
+                            📐 Calculadora de pies de madera
+                            <span className="text-xs font-normal text-gray-400 ml-1">tablas × (largo mm→m) × (ancho mm→m) × (espesor mm→m) × 4,24</span>
+                          </p>
+                          {/* Tabla de componentes */}
+                          <div className="overflow-x-auto">
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+                              <thead>
+                                <tr style={{ background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' }}>
+                                  {['Componente', 'Tablas', 'Largo (mm)', 'Ancho (mm)', 'Espesor (mm)', 'Pies', 'Importe'].map(h => (
+                                    <th key={h} style={{ padding: '0.5rem 0.6rem', color: '#fff', fontWeight: 600, textAlign: h === 'Componente' ? 'left' : 'center', whiteSpace: 'nowrap' }}>{h}</th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {COMPONENTES_MADERA.map((comp, ci) => {
+                                  const cData = d.medida![comp.key];
+                                  const pies = calcularPiesComponente(cData);
+                                  return (
+                                    <tr key={comp.key} style={{ background: ci % 2 === 0 ? '#FDFAF7' : '#fff', borderBottom: '1px solid #F3F4F6' }}>
+                                      <td style={{ padding: '0.45rem 0.6rem', fontWeight: 600, color: '#374151', whiteSpace: 'nowrap' }}>{comp.label}</td>
+                                      {(['tablas', 'largo', 'ancho', 'espesor'] as const).map(field => (
+                                        <td key={field} style={{ padding: '0.3rem 0.3rem' }}>
+                                          <input
+                                            type="number"
+                                            min={0}
+                                            step="0.01"
+                                            placeholder="—"
+                                            value={cData[field] === '' ? '' : cData[field]}
+                                            onChange={e => updateMedidaComponente(idx, comp.key, field, e.target.value === '' ? '' : parseFloat(e.target.value))}
+                                            style={{
+                                              width: '100%', textAlign: 'center', fontSize: '0.82rem',
+                                              padding: '0.35rem 0.4rem', border: '1px solid #E5E7EB',
+                                              borderRadius: '0.25rem', background: '#fff', outline: 'none',
+                                              minWidth: '64px',
+                                            }}
+                                          />
+                                        </td>
+                                      ))}
+                                      <td style={{ padding: '0.45rem 0.6rem', textAlign: 'right', fontWeight: 700, color: pies > 0 ? '#6B3A2A' : '#D1D5DB', whiteSpace: 'nowrap' }}>
+                                        {pies > 0 ? pies.toFixed(4) : '—'}
+                                      </td>
+                                      <td style={{ padding: '0.45rem 0.6rem', textAlign: 'right', fontWeight: 600, color: '#374151', whiteSpace: 'nowrap' }}>
+                                        {pies > 0 && typeof d.medida!.costoPorPie === 'number' && d.medida!.costoPorPie > 0
+                                          ? formatPesos(pies * d.medida!.costoPorPie)
+                                          : '—'}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                              <tfoot>
+                                <tr style={{ background: '#FDF6EE', borderTop: '2px solid #C4895A' }}>
+                                  <td colSpan={5} style={{ padding: '0.45rem 0.6rem', fontWeight: 700, fontSize: '0.85rem', color: '#6B3A2A' }}>
+                                    Total pies
+                                  </td>
+                                  <td style={{ padding: '0.45rem 0.6rem', textAlign: 'right', fontWeight: 800, fontSize: '0.9rem', color: '#6B3A2A' }}>
+                                    {totalPies > 0 ? totalPies.toFixed(4) : '—'}
+                                  </td>
+                                  <td style={{ padding: '0.45rem 0.6rem', textAlign: 'right', fontWeight: 800, fontSize: '0.9rem', color: '#374151' }}>
+                                    {totalPies > 0 && typeof d.medida.costoPorPie === 'number' && d.medida.costoPorPie > 0
+                                      ? formatPesos(totalPies * d.medida.costoPorPie)
+                                      : '—'}
+                                  </td>
+                                </tr>
+                              </tfoot>
+                            </table>
                           </div>
-                          {/* Input precio especial */}
-                          {d.usarPrecioEspecial && (
+
+                          {/* Campos de precio y cantidad */}
+                          <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-gray-200">
+                            {/* Costo por pie */}
+                            <div>
+                              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#4B5563', display: 'block', marginBottom: '0.25rem' }}>
+                                Costo por pie ($ que comprás)
+                              </label>
+                              <input
+                                type="number"
+                                min={0}
+                                step="0.01"
+                                placeholder="$ por pie"
+                                value={d.medida.costoPorPie === '' ? '' : d.medida.costoPorPie}
+                                onChange={e => updateMedidaGlobal(idx, 'costoPorPie', e.target.value === '' ? '' : parseFloat(e.target.value))}
+                                className="input py-2"
+                                style={{ borderRadius: '0.25rem' }}
+                              />
+                              {costoTotal > 0 && (
+                                <p style={{ fontSize: '0.8rem', color: '#6B7280', marginTop: '0.25rem' }}>
+                                  Costo unitario madera: <strong>{formatPesos(costoTotal)}</strong>
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Cantidad de unidades */}
+                            <div>
+                              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#4B5563', display: 'block', marginBottom: '0.25rem' }}>
+                                Cantidad de unidades
+                              </label>
+                              <input
+                                type="number"
+                                min={1}
+                                step={1}
+                                placeholder="Cantidad"
+                                value={d.medida.cantidadUnidades === '' ? '' : d.medida.cantidadUnidades}
+                                onChange={e => updateMedidaGlobal(idx, 'cantidadUnidades', e.target.value === '' ? '' : parseInt(e.target.value))}
+                                className="input py-2"
+                                style={{ borderRadius: '0.25rem' }}
+                              />
+                            </div>
+
+                            {/* Ganancia por palet */}
+                            <div>
+                              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#4B5563', display: 'block', marginBottom: '0.25rem' }}>
+                                Ganancia por palet
+                              </label>
+                              <input
+                                type="number"
+                                min={0}
+                                step="0.01"
+                                placeholder="$ ganancia"
+                                value={d.medida.gananciaPorPalet === '' ? '' : d.medida.gananciaPorPalet}
+                                onChange={e => updateMedidaGlobal(idx, 'gananciaPorPalet', e.target.value === '' ? '' : parseFloat(e.target.value))}
+                                className="input py-2"
+                                style={{ borderRadius: '0.25rem' }}
+                              />
+                            </div>
+
+                            {/* Resumen de precio */}
+                            {(() => {
+                              const ganancia = typeof d.medida.gananciaPorPalet === 'number' ? d.medida.gananciaPorPalet : 0;
+                              const precioUnit = costoTotal + ganancia;
+                              const cantidad = typeof d.medida.cantidadUnidades === 'number' && d.medida.cantidadUnidades > 0 ? d.medida.cantidadUnidades : 0;
+                              const totalMedida = precioUnit * cantidad;
+                              if (precioUnit <= 0 || cantidad <= 0) return null;
+                              return (
+                                <div style={{ background: '#FDF6EE', border: '1px solid #C4895A', borderRadius: '0.25rem', padding: '0.625rem 0.875rem' }}>
+                                  <p style={{ fontSize: '0.8rem', color: '#6B7280', marginBottom: '0.3rem' }}>
+                                    Precio por unidad: <strong style={{ color: '#6B3A2A' }}>{formatPesos(precioUnit)}</strong>
+                                    <span style={{ color: '#9CA3AF', marginLeft: '0.4rem' }}>
+                                      ({formatPesos(costoTotal)} costo + {formatPesos(ganancia)} ganancia)
+                                    </span>
+                                  </p>
+                                  <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#6B3A2A' }}>
+                                    Total ({cantidad} u.): {formatPesos(totalMedida)}
+                                  </p>
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* ── Modo PRODUCTO NORMAL ── */}
+                    {d.productoId > 0 && (() => (
+                      <>
+                        <div className="grid grid-cols-12 gap-2 items-center">
+                          <div className="col-span-5">
                             <input
                               type="number"
-                              min={0}
-                              placeholder="$ por unidad"
-                              value={d.precioEspecial || ''}
-                              onChange={e => setDetalles(prev => prev.map((x, i) => i === idx ? { ...x, precioEspecial: parseFloat(e.target.value) || 0 } : x))}
-                              className="input text-xs py-1"
-                              style={{ borderRadius: '0.25rem', maxWidth: '140px' }}
+                              min={1}
+                              value={d.cantidad}
+                              onChange={e => updateDetalle(idx, 'cantidad', parseInt(e.target.value))}
+                              className="input text-xs py-2"
+                              style={{ borderRadius: '0.25rem' }}
+                              placeholder="Cantidad"
                             />
-                          )}
-                          {/* Precio guardado info */}
-                          {!d.usarPrecioEspecial && d.precioCalculado && (
-                            <span className="text-xs text-gray-500">
-                              {formatPesos(d.precioCalculado.precioUnitario)} · Escalón: {d.precioCalculado.escalon}
-                            </span>
-                          )}
-                          {!d.usarPrecioEspecial && !d.precioCalculado && (
-                            <span className="text-xs text-gray-400 italic">Sin precio configurado</span>
-                          )}
+                          </div>
+                          <div className="col-span-7 text-right">
+                            {d.precioCalculado && !d.usarPrecioEspecial && (
+                              <div>
+                                <p className="text-xs font-semibold text-gray-900">
+                                  {formatPesos(d.precioCalculado.precioUnitario)}
+                                </p>
+                                {d.precioCalculado.bonificaFlete && (
+                                  <p className="text-[10px] text-green-600 font-medium">Flete bonificado</p>
+                                )}
+                              </div>
+                            )}
+                            {d.usarPrecioEspecial && d.precioEspecial ? (
+                              <p className="text-xs font-semibold text-[#6B3A2A]">
+                                {formatPesos(d.precioEspecial)}
+                              </p>
+                            ) : null}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                        {/* Selector de precio por unidad */}
+                        <div className="mt-2.5 pt-2.5 border-t border-gray-200">
+                          <p className="text-xs font-medium text-gray-500 mb-1.5">Precio por unidad</p>
+                          <div className="flex items-center gap-2">
+                            <div className="flex" style={{ borderRadius: '0.25rem', overflow: 'hidden', border: '1px solid #E5E7EB' }}>
+                              <button
+                                type="button"
+                                onClick={() => setDetalles(prev => prev.map((x, i) => i === idx ? { ...x, usarPrecioEspecial: false } : x))}
+                                style={{
+                                  fontSize: '0.7rem', fontWeight: 600, padding: '0.25rem 0.625rem',
+                                  cursor: 'pointer', transition: 'all 0.15s', border: 'none',
+                                  background: !d.usarPrecioEspecial ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' : '#fff',
+                                  color: !d.usarPrecioEspecial ? '#fff' : '#6B7280',
+                                }}
+                              >Guardado</button>
+                              <button
+                                type="button"
+                                onClick={() => setDetalles(prev => prev.map((x, i) => i === idx ? { ...x, usarPrecioEspecial: true } : x))}
+                                style={{
+                                  fontSize: '0.7rem', fontWeight: 600, padding: '0.25rem 0.625rem',
+                                  cursor: 'pointer', transition: 'all 0.15s', border: 'none', borderLeft: '1px solid #E5E7EB',
+                                  background: d.usarPrecioEspecial ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' : '#fff',
+                                  color: d.usarPrecioEspecial ? '#fff' : '#6B7280',
+                                }}
+                              >Precio especial</button>
+                            </div>
+                            {d.usarPrecioEspecial && (
+                              <input
+                                type="number"
+                                min={0}
+                                placeholder="$ por unidad"
+                                value={d.precioEspecial || ''}
+                                onChange={e => setDetalles(prev => prev.map((x, i) => i === idx ? { ...x, precioEspecial: parseFloat(e.target.value) || 0 } : x))}
+                                className="input text-xs py-1"
+                                style={{ borderRadius: '0.25rem', maxWidth: '140px' }}
+                              />
+                            )}
+                            {!d.usarPrecioEspecial && d.precioCalculado && (
+                              <span className="text-xs text-gray-500">
+                                {formatPesos(d.precioCalculado.precioUnitario)} · Escalón: {d.precioCalculado.escalon}
+                              </span>
+                            )}
+                            {!d.usarPrecioEspecial && !d.precioCalculado && (
+                              <span className="text-xs text-gray-400 italic">Sin precio configurado</span>
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    ))()}
                   </div>
                 ))}
               </div>

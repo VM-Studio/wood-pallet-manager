@@ -14,6 +14,7 @@ model Usuario {
   email         String     @unique
   passwordHash  String
   telefono      String?
+  cuit          String?
   rol           RolUsuario
   activo        Boolean    @default(true)
   fechaCreacion DateTime   @default(now())
@@ -36,6 +37,7 @@ model Usuario {
   seguimientos         SeguimientoCotizacion[]
   solicitudesEnviadas  SolicitudLogistica[]    @relation("SolicitudSolicitante")
   solicitudesRecibidas SolicitudLogistica[]    @relation("SolicitudDestinatario")
+  consultasLogistica   Logistica[]             @relation("ConsultasLogistica")
 
   @@map("usuarios")
 }
@@ -320,6 +322,7 @@ model EspecificacionMedida {
   cargaMaximaKg        Int?
   tipoMadera           String?
   observacionesCliente String?
+  medidas              Json?
 
   detalleCotizacion DetalleCotizacion? @relation(fields: [detalleCotizacionId], references: [id])
   detalleVenta      DetalleVenta?      @relation(fields: [detalleVentaId], references: [id])
@@ -361,19 +364,24 @@ enum ResultadoSeguimiento {
 
 // ─── VENTAS ──────────────────────────────────────────────
 model Venta {
-  id                Int          @id @default(autoincrement())
-  cotizacionId      Int?         @unique
+  id                Int            @id @default(autoincrement())
+  cotizacionId      Int?           @unique
   clienteId         Int
   usuarioId         Int
-  fechaVenta        DateTime     @default(now())
-  estadoPedido      EstadoPedido @default(confirmado)
+  fechaVenta        DateTime       @default(now())
+  estadoPedido      EstadoPedido   @default(confirmado)
   tipoEntrega       TipoEntrega
-  requiereSenasa    Boolean      @default(false)
+  requiereSenasa    Boolean        @default(false)
   fechaEstimEntrega DateTime?
   fechaEntregaReal  DateTime?
-  totalSinIva       Decimal?     @db.Decimal(12, 2)
-  totalConIva       Decimal?     @db.Decimal(12, 2)
-  costoFlete        Decimal?     @db.Decimal(12, 2)
+  fechaRetiro       DateTime?
+  lugarEntrega      String?
+  totalSinIva       Decimal?       @db.Decimal(12, 2)
+  totalConIva       Decimal?       @db.Decimal(12, 2)
+  costoFlete        Decimal?       @db.Decimal(12, 2)
+  metodoPago        MetodoPago?
+  cuentaDestino     String?
+  modalidadPago     ModalidadPago?
   observaciones     String?
 
   cotizacion           Cotizacion?          @relation(fields: [cotizacionId], references: [id])
@@ -482,23 +490,28 @@ model DetalleCompra {
 
 // ─── LOGISTICA ───────────────────────────────────────────
 model Logistica {
-  id                  Int           @id @default(autoincrement())
-  ventaId             Int           @unique
+  id                  Int            @id @default(autoincrement())
+  ventaId             Int            @unique
   nombreTransportista String
   telefonoTransp      String?
   fechaRetiroGalpon   DateTime?
   horaRetiro          DateTime?
   horaEstimadaEntrega DateTime?
   horaEntregaReal     DateTime?
-  estadoEntrega       EstadoEntrega @default(pendiente)
-  confTransportista   Boolean       @default(false)
-  confCliente         Boolean       @default(false)
-  costoFlete          Decimal?      @db.Decimal(12, 2)
+  estadoEntrega       EstadoEntrega  @default(pendiente)
+  confTransportista   Boolean        @default(false)
+  confCliente         Boolean        @default(false)
+  costoFlete          Decimal?       @db.Decimal(12, 2)
   registradoPorId     Int
   observaciones       String?
+  lugarEntrega        String?
+  estadoConsulta      EstadoConsulta @default(no_aplica)
+  fechaConsulta       DateTime?
+  consultadaPorId     Int?
 
-  venta         Venta   @relation(fields: [ventaId], references: [id])
-  registradoPor Usuario @relation(fields: [registradoPorId], references: [id])
+  venta         Venta    @relation(fields: [ventaId], references: [id])
+  registradoPor Usuario  @relation(fields: [registradoPorId], references: [id])
+  consultadaPor Usuario? @relation("ConsultasLogistica", fields: [consultadaPorId], references: [id])
 
   @@map("logistica")
 }
@@ -527,6 +540,8 @@ model Factura {
   estadoCobro      EstadoCobro @default(pendiente)
   modalidadPago    String?
   medioPago        String?
+  metodoPago       MetodoPago?
+  cuentaDestino    String?
   observaciones    String?
 
   venta        Venta         @relation(fields: [ventaId], references: [id])
@@ -637,6 +652,26 @@ model SolicitudLogistica {
 
 enum EstadoSolicitudLogistica {
   pendiente
+  aceptada
+  rechazada
+}
+
+enum MetodoPago {
+  transferencia
+  e_check
+  efectivo
+}
+
+enum ModalidadPago {
+  adelantado
+  contra_entrega
+  por_partes
+}
+
+enum EstadoConsulta {
+  no_aplica
+  pendiente_consulta
+  consultada
   aceptada
   rechazada
 }

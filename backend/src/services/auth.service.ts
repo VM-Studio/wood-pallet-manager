@@ -39,6 +39,7 @@ export const loginService = async (email: string, password: string) => {
       apellido: usuario.apellido,
       email: usuario.email,
       rol: usuario.rol,
+      cuit: usuario.cuit ?? undefined,
     },
   };
 };

@@ -1,22 +1,34 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
+interface MedidaComponentePDF {
+  label: string;
+  tablas?: number;
+  largo?: number;   // mm
+  ancho?: number;   // mm
+  espesor?: number; // mm
+  pies: number;
+}
+
 interface DetallePresupuesto {
   nombreProducto: string;
   condicion: string;
   cantidad: number;
   precioUnitario: number;
   subtotal: number;
+  medidasPallet?: MedidaComponentePDF[];
 }
 
 interface DatosPresupuesto {
   numeroCotizacion: number;
   fechaCotizacion: string;
   razonSocialCliente: string;
+  cuitEmpresa?: string;
   detalles: DetallePresupuesto[];
   costoFlete?: number;
   costoSenasa?: number;
   observaciones?: string;
+  incluyeIva?: boolean;
 }
 
 const BROWN_DARK  = '#6B3A2A';
@@ -74,13 +86,17 @@ export async function generarPresupuestoPDF(datos: DatosPresupuesto): Promise<Bl
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bolditalic');
   doc.setFontSize(15);
-  doc.text('Wood Pallet', pageW / 2, 31, { align: 'center' });
+  doc.text('Wood Pallet', pageW / 2, 29, { align: 'center' });
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.text(`CUIT: ${datos.cuitEmpresa ?? '—'}`, pageW / 2, 35, { align: 'center' });
 
   // ── Título PRESUPUESTO y número ───────────────────────────────────────────
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.setTextColor(255, 255, 255);
-  doc.text(`PRESUPUESTO N° ${String(datos.numeroCotizacion).padStart(4, '0')}`, pageW / 2, 38, { align: 'center' });
+  doc.text(`PRESUPUESTO N° ${String(datos.numeroCotizacion).padStart(4, '0')}`, pageW / 2, 41, { align: 'center' });
 
   // ── Info debajo del header ────────────────────────────────────────────────
   let y = headerH + 10;
@@ -159,13 +175,57 @@ export async function generarPresupuestoPDF(datos: DatosPresupuesto): Promise<Bl
 
   // ── Totales ───────────────────────────────────────────────────────────────
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const finalY = (doc as any).lastAutoTable.finalY + 6;
+  let finalY = (doc as any).lastAutoTable.finalY + 6;
 
+  // ── Sección medidas para pallets a medida ─────────────────────────────────
+  const detallesConMedidas = datos.detalles.filter(d => d.medidasPallet && d.medidasPallet.length > 0);
+  if (detallesConMedidas.length > 0) {
+    const medY = finalY - 2;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(...hexToRgb(BROWN_DARK));
+    doc.text('Especificación de medidas (pallets a medida):', 10, medY);
+
+    for (const det of detallesConMedidas) {
+      const rowsMedidas = (det.medidasPallet ?? [])
+        .filter(m => m.pies > 0)
+        .map(m => [
+          m.label,
+          m.tablas !== undefined ? String(m.tablas) : '—',
+          m.largo  !== undefined ? `${m.largo} mm`  : '—',
+          m.ancho  !== undefined ? `${m.ancho} mm`  : '—',
+          m.espesor !== undefined ? `${m.espesor} mm` : '—',
+        ]);
+
+      autoTable(doc, {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        startY: (doc as any).lastAutoTable ? (doc as any).lastAutoTable.finalY + 5 : medY + 4,
+        head: [['Componente', 'Tablas', 'Largo', 'Ancho', 'Espesor']],
+        body: rowsMedidas,
+        margin: { left: 10, right: 10 },
+        styles: { font: 'helvetica', fontSize: 7.5, cellPadding: 2, textColor: hexToRgb(GRAY_TEXT) },
+        headStyles: { fillColor: hexToRgb(BROWN_DARK), textColor: [255, 255, 255] as [number,number,number], fontStyle: 'bold', fontSize: 7.5 },
+        columnStyles: {
+          0: { cellWidth: 'auto' },
+          1: { halign: 'center', cellWidth: 18 },
+          2: { halign: 'center', cellWidth: 26 },
+          3: { halign: 'center', cellWidth: 26 },
+          4: { halign: 'center', cellWidth: 26 },
+        },
+        alternateRowStyles: { fillColor: hexToRgb(GRAY_LIGHT) },
+      });
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    finalY = (doc as any).lastAutoTable.finalY + 8;
+  }
+
+  const incluyeIva = datos.incluyeIva !== false; // default true si no se pasa
   let subtotal = datos.detalles.reduce((acc, d) => acc + d.subtotal, 0);
   if (datos.costoFlete)   subtotal += datos.costoFlete;
   if (datos.costoSenasa)  subtotal += datos.costoSenasa;
   const iva   = subtotal * 0.21;
-  const total = subtotal + iva;
+  const total = incluyeIva ? subtotal + iva : subtotal;
 
   const totalesX = pageW - 10 - 75;
   let ty = finalY;
@@ -186,7 +246,8 @@ export async function generarPresupuestoPDF(datos: DatosPresupuesto): Promise<Bl
   };
 
   // Borde alrededor de totales
-  const totalBoxH = datos.costoFlete || datos.costoSenasa ? 38 : 30;
+  const numLineas = (datos.costoFlete ? 1 : 0) + (datos.costoSenasa ? 1 : 0) + (incluyeIva ? 3 : 2);
+  const totalBoxH = numLineas * 7 + 8;
   doc.setDrawColor(...hexToRgb(BROWN_LIGHT));
   doc.setLineWidth(0.4);
   doc.roundedRect(totalesX, finalY - 6, 75, totalBoxH, 1, 1);
@@ -199,8 +260,12 @@ export async function generarPresupuestoPDF(datos: DatosPresupuesto): Promise<Bl
     drawLineTotales('SENASA:', formatPesos(datos.costoSenasa));
   }
   drawLineTotales('Subtotal s/IVA:', formatPesos(subtotal));
-  drawLineTotales('IVA (21%):', formatPesos(iva));
-  drawLineTotales('TOTAL:', formatPesos(total), true, true);
+  if (incluyeIva) {
+    drawLineTotales('IVA (21%):', formatPesos(iva));
+    drawLineTotales('TOTAL:', formatPesos(total), true, true);
+  } else {
+    drawLineTotales('TOTAL (sin IVA):', formatPesos(total), true, true);
+  }
 
   // ── Observaciones ─────────────────────────────────────────────────────────
   if (datos.observaciones) {

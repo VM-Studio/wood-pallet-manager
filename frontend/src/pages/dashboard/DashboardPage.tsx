@@ -1,17 +1,16 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer
 } from 'recharts';
 import {
-  Package, DollarSign, Clock, FileText,
-  ShoppingCart, Truck, AlertTriangle,
-  Plus, Users, ClipboardList,
-  TrendingUp, TrendingDown, Minus, ArrowRight, ChevronDown
+  Package, DollarSign, FileText,
+  TrendingUp, TrendingDown, Minus, ArrowRight,
+  Users, Plus, AlertTriangle
 } from 'lucide-react';
-import { useDashboard, useAlertas } from '../../hooks/useDashboard';
+import { useDashboard, useAlertas, useEstacionalidad, useGanancias } from '../../hooks/useDashboard';
 import { useAuthStore } from '../../store/auth.store';
+import { useVistaParams } from '../../hooks/useVista';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
 import { clsx } from 'clsx';
@@ -20,11 +19,6 @@ const formatPesos = (valor: number) =>
   new Intl.NumberFormat('es-AR', {
     style: 'currency', currency: 'ARS',
     notation: 'compact', maximumFractionDigits: 1
-  }).format(valor);
-
-const formatPesosCompleto = (valor: number) =>
-  new Intl.NumberFormat('es-AR', {
-    style: 'currency', currency: 'ARS', maximumFractionDigits: 0
   }).format(valor);
 
 const formatNumero = (valor: number) =>
@@ -115,66 +109,34 @@ function AlertaItem({ urgencia, titulo, detalle, onClick }: {
   );
 }
 
-type Vista = 'yo' | 'carlos' | 'juanCruz' | 'total';
-
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { usuario } = useAuthStore();
+  const { vistaLabel } = useVistaParams();
   const { data: dashboard, isLoading: loadingDash, error: errorDash } = useDashboard();
-  const { data: alertas, isLoading: loadingAlertas } = useAlertas();
-  const esCarlos = usuario?.rol === 'propietario_carlos';
-  const [vista, setVista] = useState<Vista>('yo');
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-
+  const { data: alertasData, isLoading: loadingAlertas } = useAlertas();
+  const { data: graficoData } = useEstacionalidad();
+  const { data: gananciasData } = useGanancias();
   if (loadingDash) return <LoadingSpinner text="Cargando dashboard..." />;
   if (errorDash) return <ErrorMessage message="No se pudo cargar el dashboard." />;
 
   const kpis = dashboard?.kpis;
-  const porPropietario = dashboard?.porPropietario;
-  const alertasData = alertas?.alertas.slice(0, 5) || [];
+  const alertasList = alertasData?.alertas?.slice(0, 6) || [];
 
-  // ── Resolver qué datos mostrar según la vista seleccionada ──
-  const rolPropio: 'carlos' | 'juanCruz' = esCarlos ? 'carlos' : 'juanCruz';
-
-  const vistaKey: 'carlos' | 'juanCruz' | null =
-    vista === 'yo'      ? rolPropio :
-    vista === 'carlos'  ? 'carlos'  :
-    vista === 'juanCruz'? 'juanCruz':
-    null; // total
-
-  const datosPropietario = vistaKey ? porPropietario?.[vistaKey] : null;
-
-  // Pallets y facturación — siempre desde porPropietario cuando hay vistaKey
-  const palletsMes        = datosPropietario?.pallets               ?? (kpis?.palletsMesActual    || 0);
-  const facturacionMes    = datosPropietario?.facturacion           ?? (kpis?.facturacionMesActual || 0);
-  const palletsMesAnt     = datosPropietario?.palletsMesAnterior    ?? (kpis?.palletsMesAnterior   || 0);
-  const facturacionMesAnt = datosPropietario?.facturacionMesAnterior ?? (kpis?.facturacionMesAnterior || 0);
+  // Pallets y facturación desde porPropietario según el store global de vista
+  // El hook useDashboard ya recibe vistaParam, pero el backend devuelve siempre
+  // toda la estructura porPropietario. Usamos vistaLabel para mostrar a qué corresponde.
+  // Los KPIs directos los tomamos de kpis (total del mes) como fallback,
+  // porPropietario.carlos/juanCruz para vistas individuales.
+  const palletsMes        = kpis?.palletsMesActual    || 0;
+  const facturacionMes    = kpis?.facturacionMesActual || 0;
+  const palletsMesAnt     = kpis?.palletsMesAnterior   || 0;
+  const facturacionMesAnt = kpis?.facturacionMesAnterior || 0;
   const variacionPallets  = palletsMesAnt > 0 ? Math.round(((palletsMes - palletsMesAnt) / palletsMesAnt) * 100) : 0;
   const variacionFact     = facturacionMesAnt > 0 ? Math.round(((facturacionMes - facturacionMesAnt) / facturacionMesAnt) * 100) : 0;
-  const grafico           = datosPropietario?.grafico12Meses ?? (dashboard?.graficos.ventasUltimos12Meses || []);
-
-  // KPIs secundarios — Juan Cruz usa sus propios conteos del backend
-  const jcKpis = porPropietario?.juanCruz;
-  const cobrosPendientesVal = vistaKey === 'juanCruz'
-    ? (jcKpis?.cobrosPendientes  ?? 0)
-    : (kpis?.totalCobrosPendientes || 0);
-  const facturasVencidasVal = vistaKey === 'juanCruz'
-    ? (jcKpis?.facturasVencidas  ?? 0)
-    : (kpis?.facturasVencidas    || 0);
-  const cotizacionesVal = vistaKey === 'juanCruz'
-    ? (jcKpis?.cotizacionesPendientes ?? 0)
-    : (kpis?.cotizacionesPendientes   || 0);
-  const pedidosActivosVal = vistaKey === 'juanCruz'
-    ? (jcKpis?.pedidosActivos ?? 0)
-    : (kpis?.pedidosActivos   || 0);
-
-  // Dropdown: ambos usuarios pueden ver todas las vistas
-  const opcionesVista: { key: Vista; label: string }[] = [
-    { key: 'yo',        label: esCarlos ? 'Mi vista (Carlos)' : 'Mi vista (Juan Cruz)' },
-    { key: esCarlos ? 'juanCruz' : 'carlos', label: esCarlos ? 'Juan Cruz' : 'Carlos' },
-    { key: 'total',     label: 'Total consolidado' },
-  ];
-  const labelVista = opcionesVista.find(o => o.key === vista)?.label ?? 'Mi vista';
+  const cotizacionesVal   = kpis?.cotizacionesPendientes || 0;
+  const ganancias         = gananciasData?.ganancias ?? 0;
+  const grafico           = graficoData ?? dashboard?.graficos?.ventasUltimos12Meses ?? [];
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -192,46 +154,15 @@ export default function DashboardPage() {
             })}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          {/* Dropdown de vista — ambos usuarios */}
-          <div className="relative">
-            <button
-              onClick={() => setDropdownOpen(o => !o)}
-              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-all"
-            >
-              <Users size={14} className="text-gray-400" />
-              {labelVista}
-              <ChevronDown size={14} className={clsx('text-gray-400 transition-transform', dropdownOpen && 'rotate-180')} />
-            </button>
-            {dropdownOpen && (
-              <div className="absolute right-0 mt-1 w-52 bg-white border border-gray-100 rounded-xl shadow-lg z-20 py-1 animate-fade-in">
-                {opcionesVista.map(op => (
-                  <button
-                    key={op.key}
-                    onClick={() => { setVista(op.key); setDropdownOpen(false); }}
-                    className={clsx(
-                      'w-full text-left px-4 py-2.5 text-sm transition-colors',
-                      vista === op.key
-                        ? 'font-semibold text-gray-900 bg-gray-50'
-                        : 'text-gray-600 hover:bg-gray-50'
-                    )}
-                  >
-                    {op.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-          {alertas && alertas.alta > 0 && (
-            <button onClick={() => navigate('/alertas')} className="btn-brand-sm">
-              <AlertTriangle size={13} />
-              {alertas.alta} alerta{alertas.alta > 1 ? 's' : ''} urgente{alertas.alta > 1 ? 's' : ''}
-            </button>
-          )}
-        </div>
+        {alertasData && alertasData.alta > 0 && (
+          <button onClick={() => navigate('/alertas')} className="btn-brand-sm">
+            <AlertTriangle size={13} />
+            {alertasData.alta} alerta{alertasData.alta > 1 ? 's' : ''} urgente{alertasData.alta > 1 ? 's' : ''}
+          </button>
+        )}
       </div>
 
-      {/* KPIs fila 1 */}
+      {/* KPIs fila 1 — 4 tarjetas */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         <KpiCard
           titulo="Pallets este mes"
@@ -250,60 +181,87 @@ export default function DashboardPage() {
           onClick={() => navigate('/reportes')}
         />
         <KpiCard
-          titulo="Cobros pendientes"
-          valor={formatPesos(cobrosPendientesVal)}
-          subtitulo={
-            facturasVencidasVal
-              ? `${facturasVencidasVal} factura${facturasVencidasVal > 1 ? 's' : ''} vencida${facturasVencidasVal > 1 ? 's' : ''}`
-              : 'Sin facturas vencidas'
-          }
-          icono={<Clock size={18} />}
-          onClick={() => navigate('/facturacion')}
+          titulo="Ganancias del mes"
+          valor={formatPesos(ganancias)}
+          subtitulo={gananciasData ? `Compras: ${formatPesos(gananciasData.costoCompras)}` : 'Calculando...'}
+          icono={<TrendingUp size={18} />}
+          onClick={() => navigate('/reportes')}
         />
         <KpiCard
           titulo="Cotizaciones activas"
           valor={cotizacionesVal}
-          subtitulo={`${pedidosActivosVal} pedido${pedidosActivosVal !== 1 ? 's' : ''} en curso`}
+          subtitulo="Enviadas o en seguimiento"
           icono={<FileText size={18} />}
           onClick={() => navigate('/cotizaciones')}
         />
       </div>
 
-      {/* KPIs fila 2 */}
+      {/* Accesos rápidos — 3 tarjetas */}
       <div className="grid grid-cols-3 gap-4">
-        <KpiCard
-          titulo="Pedidos activos"
-          valor={pedidosActivosVal}
-          subtitulo="Confirmados o en preparación"
-          icono={<ShoppingCart size={18} />}
-          onClick={() => navigate('/ventas')}
-        />
-        <KpiCard
-          titulo="Entregas hoy"
-          valor={kpis?.entregasHoy || 0}
-          subtitulo={esCarlos ? 'Coordinadas por vos' : 'Coordinadas por Carlos'}
-          icono={<Truck size={18} />}
-          onClick={() => navigate('/logistica')}
-        />
-        <KpiCard
-          titulo="Alertas activas"
-          valor={alertas?.total || 0}
-          subtitulo={alertas?.alta ? `${alertas.alta} urgente${alertas.alta > 1 ? 's' : ''}` : 'Sin alertas urgentes'}
-          icono={<AlertTriangle size={18} />}
-          onClick={() => navigate('/alertas')}
-        />
+        <button
+          onClick={() => navigate('/clientes?nuevo=true')}
+          className="text-left hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-pointer p-4"
+          style={{ background: 'linear-gradient(135deg, #6B3A2A, #C4895A)', borderRadius: 0 }}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 bg-white/20 flex items-center justify-center text-white shrink-0">
+              <Users size={15} />
+            </div>
+            <p className="flex-1 text-white font-semibold" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '17px', fontStyle: 'italic' }}>Nuevo cliente</p>
+          </div>
+          <p className="text-sm text-white/70">Alta de cliente y asignación de contacto</p>
+          <div className="flex items-center gap-1 mt-3 text-xs font-medium text-white/90">
+            <Plus size={12} /> Crear ahora
+          </div>
+        </button>
+
+        <button
+          onClick={() => navigate('/cotizaciones?nueva=true')}
+          className="text-left hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-pointer p-4"
+          style={{ background: 'linear-gradient(135deg, #6B3A2A, #C4895A)', borderRadius: 0 }}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 bg-white/20 flex items-center justify-center text-white shrink-0">
+              <FileText size={15} />
+            </div>
+            <p className="flex-1 text-white font-semibold" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '17px', fontStyle: 'italic' }}>Nueva cotización</p>
+          </div>
+          <p className="text-sm text-white/70">Generá un presupuesto para un cliente</p>
+          <div className="flex items-center gap-1 mt-3 text-xs font-medium text-white/90">
+            <Plus size={12} /> Crear ahora
+          </div>
+        </button>
+
+        <button
+          onClick={() => navigate('/facturacion?cobro=true')}
+          className="text-left hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-pointer p-4"
+          style={{ background: 'linear-gradient(135deg, #6B3A2A, #C4895A)', borderRadius: 0 }}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 bg-white/20 flex items-center justify-center text-white shrink-0">
+              <DollarSign size={15} />
+            </div>
+            <p className="flex-1 text-white font-semibold" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '17px', fontStyle: 'italic' }}>Registrar cobro</p>
+          </div>
+          <p className="text-sm text-white/70">Marcá facturas como cobradas o parciales</p>
+          <div className="flex items-center gap-1 mt-3 text-xs font-medium text-white/90">
+            <ArrowRight size={12} /> Ver pendientes
+          </div>
+        </button>
       </div>
 
-      {/* Gráfico + Panel propietario */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      {/* Gráfico (70%) + Alertas (30%) */}
+      <div className="grid grid-cols-1 xl:grid-cols-10 gap-6">
 
-        {/* Gráfico */}
-        <div className="xl:col-span-2 card-base">
+        {/* Gráfico 12 meses */}
+        <div className="xl:col-span-7 card-base">
           <div className="flex items-center gap-3 mb-5">
             <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
               <TrendingUp size={18} />
             </div>
-            <h2 className="titulo-seccion">Ventas — Próximos 12 meses · <span className="font-normal text-gray-400">{labelVista}</span></h2>
+            <h2 className="titulo-seccion">
+              Ventas — Últimos 12 meses · <span className="font-normal text-gray-400">{vistaLabel}</span>
+            </h2>
           </div>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={grafico} margin={{ top: 0, right: 0, left: -15, bottom: 0 }}>
@@ -327,12 +285,7 @@ export default function DashboardPage() {
               />
               <Tooltip
                 formatter={(value: number) => [`${formatNumero(value)} u`, 'Pallets']}
-                contentStyle={{
-                  fontSize: 12,
-                  borderRadius: 8,
-                  border: '1px solid #E5E7EB',
-                  fontFamily: 'Inter'
-                }}
+                contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #E5E7EB', fontFamily: 'Inter' }}
                 cursor={{ fill: '#F9FAFB' }}
               />
               <Bar dataKey="pallets" radius={[4, 4, 0, 0]} fill="url(#colorBrand)" />
@@ -340,104 +293,8 @@ export default function DashboardPage() {
           </ResponsiveContainer>
         </div>
 
-        {/* Panel propietarios */}
-        <div className="card-base">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
-              <Users size={18} />
-            </div>
-            <h2 className="titulo-seccion">Este mes</h2>
-          </div>
-
-          <div className="space-y-3">
-            {/* Carlos — solo visible para Carlos */}
-            {esCarlos && (
-            <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-7 h-7 rounded-lg bg-gray-200 flex items-center justify-center text-gray-600 font-semibold text-xs shrink-0">
-                  CH
-                </div>
-                <div className="flex items-center justify-between flex-1">
-                  <p className="text-sm font-semibold text-gray-900">Carlos</p>
-                  <p className="text-xs text-gray-400">Propietario</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div>
-                  <p className="text-xl font-bold text-gray-900">{porPropietario?.carlos.ventas || 0}</p>
-                  <p className="text-xs text-gray-400">Ventas</p>
-                </div>
-                <div>
-                  <p className="text-xl font-bold text-gray-900">{formatNumero(porPropietario?.carlos.pallets || 0)}</p>
-                  <p className="text-xs text-gray-400">Pallets</p>
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-gray-900">{formatPesos(porPropietario?.carlos.facturacion || 0)}</p>
-                  <p className="text-xs text-gray-400">Facturado</p>
-                </div>
-              </div>
-            </div>
-            )} {/* fin esCarlos */}
-
-            {/* Juan Cruz */}
-            <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-7 h-7 rounded-lg bg-gray-200 flex items-center justify-center text-gray-600 font-semibold text-xs shrink-0">
-                  JC
-                </div>
-                <div className="flex items-center justify-between flex-1">
-                  <p className="text-sm font-semibold text-gray-900">Juan Cruz</p>
-                  <p className="text-xs text-gray-400">Propietario Digital</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div>
-                  <p className="text-xl font-bold text-gray-900">{porPropietario?.juanCruz.ventas || 0}</p>
-                  <p className="text-xs text-gray-400">Ventas</p>
-                </div>
-                <div>
-                  <p className="text-xl font-bold text-gray-900">{formatNumero(porPropietario?.juanCruz.pallets || 0)}</p>
-                  <p className="text-xs text-gray-400">Pallets</p>
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-gray-900">{formatPesos(porPropietario?.juanCruz.facturacion || 0)}</p>
-                  <p className="text-xs text-gray-400">Facturado</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Total — solo Carlos */}
-            {esCarlos && (
-            <div className="p-4 rounded-xl border border-gray-200 bg-white">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
-                  <TrendingUp size={14} />
-                </div>
-                <p className="titulo-card">Total consolidado</p>
-              </div>
-              <p className="text-2xl font-bold text-gray-900">
-                {formatPesosCompleto(
-                  (porPropietario?.carlos.facturacion || 0) +
-                  (porPropietario?.juanCruz.facturacion || 0)
-                )}
-              </p>
-              <p className="text-xs text-gray-400 mt-1">
-                {formatNumero(
-                  (porPropietario?.carlos.pallets || 0) +
-                  (porPropietario?.juanCruz.pallets || 0)
-                )} pallets vendidos en total
-              </p>
-            </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Alertas + Accesos rápidos */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-
-        {/* Alertas */}
-        <div className="card-base">
+        {/* Alertas activas */}
+        <div className="xl:col-span-3 card-base flex flex-col">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
@@ -445,86 +302,42 @@ export default function DashboardPage() {
               </div>
               <h2 className="titulo-seccion">Alertas activas</h2>
             </div>
-            <button onClick={() => navigate('/alertas')} className="btn-brand-outline text-xs px-3 py-1.5">
-              Ver todas
-            </button>
           </div>
-          {loadingAlertas ? (
-            <LoadingSpinner text="Cargando..." />
-          ) : alertasData.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="titulo-card" style={{ color: '#9CA3AF' }}>Sin alertas activas</p>
-              <p className="text-xs mt-1" style={{ color: '#D1D5DB' }}>El sistema está funcionando correctamente</p>
-            </div>
-          ) : (
-            <div>
-              {alertasData.map((alerta, i) => (
+
+          <div className="flex-1 overflow-y-auto" style={{ maxHeight: '260px' }}>
+            {loadingAlertas ? (
+              <LoadingSpinner text="Cargando..." />
+            ) : alertasList.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="titulo-card" style={{ color: '#9CA3AF' }}>Sin alertas activas</p>
+                <p className="text-xs mt-1" style={{ color: '#D1D5DB' }}>El sistema está funcionando correctamente</p>
+              </div>
+            ) : (
+              alertasList.map((alerta, i) => (
                 <AlertaItem
                   key={i}
                   urgencia={alerta.urgencia}
                   titulo={alerta.titulo}
                   detalle={alerta.detalle}
                   onClick={() => navigate(
-                    alerta.referencia.tipo === 'factura'    ? '/facturacion' :
-                    alerta.referencia.tipo === 'cotizacion' ? '/cotizaciones' :
-                    alerta.referencia.tipo === 'venta'      ? '/ventas' :
+                    alerta.referencia?.tipo === 'factura'    ? '/facturacion' :
+                    alerta.referencia?.tipo === 'cotizacion' ? '/cotizaciones' :
+                    alerta.referencia?.tipo === 'venta'      ? '/ventas' :
                     '/inventario'
                   )}
                 />
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Accesos rápidos */}
-        <div className="card-base">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
-              <Plus size={18} />
-            </div>
-            <h2 className="titulo-seccion">Accesos rápidos</h2>
+              ))
+            )}
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { label: 'Nueva cotización', ruta: '/cotizaciones', icono: <Plus size={16} /> },
-              { label: 'Nuevo cliente',    ruta: '/clientes',     icono: <Users size={16} /> },
-              { label: 'Registrar cobro',  ruta: '/facturacion',  icono: <DollarSign size={16} /> },
-              { label: 'Nueva compra',     ruta: '/compras',      icono: <ClipboardList size={16} /> },
-            ].map((item) => (
-              <button
-                key={item.label}
-                onClick={() => navigate(item.ruta)}
-                style={{
-                  background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '20px 16px',
-                  borderRadius: '12px',
-                  color: 'white',
-                  fontWeight: 500,
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  border: 'none',
-                  transition: 'all 0.2s',
-                  width: '100%'
-                }}
-                onMouseEnter={e => {
-                  (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, #5A3022 0%, #B07848 100%)';
-                  (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
-                  (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(107, 58, 42, 0.35)';
-                }}
-                onMouseLeave={e => {
-                  (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)';
-                  (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-                  (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-                }}
-              >
-                {item.icono}
-                <span>{item.label}</span>
-              </button>
-            ))}
+
+          <div className="pt-3 mt-auto border-t border-gray-50">
+            <button
+              onClick={() => navigate('/alertas')}
+              className="w-full text-center text-xs font-medium py-2 rounded-lg hover:bg-gray-50 transition-colors"
+              style={{ color: '#6B3A2A' }}
+            >
+          Ver todas las alertas →
+            </button>
           </div>
         </div>
       </div>

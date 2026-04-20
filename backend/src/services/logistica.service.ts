@@ -149,3 +149,89 @@ export const getEntregasDelDiaService = async () => {
     orderBy: { horaEstimadaEntrega: 'asc' },
   });
 };
+
+const ventaLogisticaInclude = {
+  venta: {
+    include: {
+      cliente: { select: { razonSocial: true, direccionEntrega: true, localidad: true } },
+      usuario: { select: { nombre: true, apellido: true, rol: true } },
+      detalles: { include: { producto: { select: { nombre: true } } } },
+    },
+  },
+  registradoPor: { select: { nombre: true, apellido: true, rol: true } },
+  consultadaPor: { select: { nombre: true, apellido: true } },
+} as const;
+
+export const getLogisticasPorRolService = async (usuarioId: number, rol: string) => {
+  if (rol === 'propietario_carlos' || rol === 'admin') {
+    return prisma.logistica.findMany({
+      include: ventaLogisticaInclude,
+      orderBy: { id: 'desc' },
+    });
+  }
+  return prisma.logistica.findMany({
+    where: { venta: { usuarioId } },
+    include: ventaLogisticaInclude,
+    orderBy: { id: 'desc' },
+  });
+};
+
+export const consultarLogisticaService = async (ventaId: number, usuarioId: number) => {
+  const logistica = await prisma.logistica.findUnique({ where: { ventaId } });
+  if (!logistica) throw new Error('Logística no encontrada');
+  return prisma.logistica.update({
+    where: { ventaId },
+    data: { estadoConsulta: 'consultada', fechaConsulta: new Date(), consultadaPorId: usuarioId },
+  });
+};
+
+export const responderConsultaLogisticaService = async (
+  ventaId: number,
+  respuesta: 'aceptada' | 'rechazada',
+  usuarioId: number,
+  rol: string,
+  datos?: {
+    nombreTransportista?: string;
+    telefonoTransp?: string;
+    fechaRetiroGalpon?: Date;
+    costoFlete?: number;
+    observaciones?: string;
+  }
+) => {
+  if (rol !== 'propietario_carlos' && rol !== 'admin') {
+    throw new Error('Solo Carlos puede aceptar o rechazar consultas de logística');
+  }
+  const logistica = await prisma.logistica.findUnique({ where: { ventaId } });
+  if (!logistica) throw new Error('Logística no encontrada');
+  return prisma.logistica.update({
+    where: { ventaId },
+    data: {
+      estadoConsulta: respuesta,
+      nombreTransportista: datos?.nombreTransportista ?? logistica.nombreTransportista,
+      telefonoTransp: datos?.telefonoTransp,
+      fechaRetiroGalpon: datos?.fechaRetiroGalpon,
+      costoFlete: datos?.costoFlete,
+      observaciones: datos?.observaciones,
+    },
+  });
+};
+
+export const confirmarLogisticaCarlosService = async (
+  ventaId: number,
+  rol: string,
+  datos: {
+    nombreTransportista?: string;
+    telefonoTransp?: string;
+    fechaRetiroGalpon?: Date;
+    costoFlete?: number;
+    observaciones?: string;
+  }
+) => {
+  if (rol !== 'propietario_carlos' && rol !== 'admin') {
+    throw new Error('Solo Carlos puede confirmar logística');
+  }
+  return prisma.logistica.update({
+    where: { ventaId },
+    data: { ...datos, estadoConsulta: 'aceptada', estadoEntrega: 'pendiente' },
+  });
+};

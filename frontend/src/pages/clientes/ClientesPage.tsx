@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Search, Plus, History, Pencil, MapPin, Phone, MessageCircle, Users, Trash2 } from 'lucide-react';
 import { useClientes } from '../../hooks/useClientes';
 import { useEliminarCliente } from '../../hooks/useClientes';
@@ -24,7 +25,8 @@ export default function ClientesPage() {
   const eliminarCliente = useEliminarCliente();
   const [busqueda, setBusqueda] = useState('');
   const [filtro, setFiltro] = useState<'todos' | 'mios'>('mios');
-  const [showForm, setShowForm] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [showForm, setShowForm] = useState(() => searchParams.get('nuevo') === 'true');
   const [clienteEditar, setClienteEditar] = useState<Cliente | null>(null);
   const [clienteHistorial, setClienteHistorial] = useState<number | null>(null);
 

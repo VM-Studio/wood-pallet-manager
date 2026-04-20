@@ -8,6 +8,10 @@ import {
   actualizarEstadoEntregaService,
   confirmarEntregaClienteService,
   getEntregasDelDiaService,
+  getLogisticasPorRolService,
+  consultarLogisticaService,
+  responderConsultaLogisticaService,
+  confirmarLogisticaCarlosService,
 } from '../services/logistica.service';
 
 export const getLogisticas = async (_req: Request, res: Response) => {
@@ -65,4 +69,48 @@ export const confirmarEntregaCliente = async (req: Request, res: Response) => {
 export const getEntregasHoy = async (_req: Request, res: Response) => {
   const data = await getEntregasDelDiaService();
   res.json(data);
+};
+
+export const getLogisticasPorRol = async (req: AuthRequest, res: Response) => {
+  try {
+    const data = await getLogisticasPorRolService(req.user!.userId, req.user!.rol);
+    res.json(data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const consultarLogistica = async (req: AuthRequest, res: Response) => {
+  try {
+    const ventaId = parseId(req.params.ventaId);
+    const data = await consultarLogisticaService(ventaId, req.user!.userId);
+    res.json(data);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const responderConsultaLogistica = async (req: AuthRequest, res: Response) => {
+  try {
+    const ventaId = parseId(req.params.ventaId);
+    const { respuesta, ...datos } = req.body;
+    if (!['aceptada', 'rechazada'].includes(respuesta)) {
+      res.status(400).json({ error: 'Respuesta debe ser "aceptada" o "rechazada"' });
+      return;
+    }
+    const data = await responderConsultaLogisticaService(ventaId, respuesta, req.user!.userId, req.user!.rol, datos);
+    res.json(data);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const confirmarLogisticaCarlos = async (req: AuthRequest, res: Response) => {
+  try {
+    const ventaId = parseId(req.params.ventaId);
+    const data = await confirmarLogisticaCarlosService(ventaId, req.user!.rol, req.body);
+    res.json(data);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
 };

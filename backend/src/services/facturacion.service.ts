@@ -8,7 +8,7 @@ export const getFacturasService = async (usuarioId: number, rol: string) => {
     include: {
       cliente: { select: { id: true, razonSocial: true, cuit: true } },
       usuario: { select: { id: true, nombre: true, apellido: true, rol: true } },
-      venta: { select: { id: true, estadoPedido: true } },
+      venta: { select: { id: true, estadoPedido: true, tipoEntrega: true } },
       pagos: true,
     },
     orderBy: { fechaEmision: 'desc' },
@@ -219,5 +219,14 @@ export const getCobrosPendientesService = async (usuarioId: number, rol: string)
       totalCobrado,
       saldoPendiente: Number(f.totalConIva) - totalCobrado,
     };
+  });
+};
+
+export const cargarNroFacturaArcaService = async (facturaId: number, nroFacturaArca: string) => {
+  const factura = await prisma.factura.findUnique({ where: { id: facturaId } });
+  if (!factura) throw new Error('Factura no encontrada');
+  return prisma.factura.update({
+    where: { id: facturaId },
+    data: { nroFactura: nroFacturaArca },
   });
 };

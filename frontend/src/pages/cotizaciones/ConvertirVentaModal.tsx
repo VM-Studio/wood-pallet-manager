@@ -1,36 +1,70 @@
 import { useState } from 'react';
-import { X, ShoppingCart, Check, Truck, Warehouse, CreditCard } from 'lucide-react';
+import { X, ArrowRight } from 'lucide-react';
 import { useConvertirAVenta } from '../../hooks/useCotizaciones';
-import api from '../../services/api';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface ConvertirVentaModalProps {
   cotizacionId: number;
+  incluyeFlete: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-type MedioPago = 'transferencia' | 'e_check' | 'efectivo';
-type ModalidadPago = 'completo_anticipado' | 'completo_entrega' | 'mitad_adelanto_mitad_entrega';
-
-export default function ConvertirVentaModal({ cotizacionId, onClose, onSuccess }: ConvertirVentaModalProps) {
+export default function ConvertirVentaModal({
+  cotizacionId,
+  incluyeFlete,
+  onClose,
+  onSuccess,
+}: ConvertirVentaModalProps) {
   const convertir = useConvertirAVenta();
-  const [form, setForm] = useState({
-    tipoEntrega: 'envio_woodpallet' as 'retira_cliente' | 'envio_woodpallet',
-    fechaEstimEntrega: '',
-    observaciones: '',
-    medioPago: 'transferencia' as MedioPago,
-    modalidadPago: 'completo_entrega' as ModalidadPago,
-  });
+  const queryClient = useQueryClient();
   const [error, setError] = useState('');
+
+  const [form, setForm] = useState({
+    tipoEntrega: '' as 'retira_cliente' | 'envio_woodpallet' | '',
+    metodoPago: '' as 'transferencia' | 'e_check' | 'efectivo' | '',
+    cuentaDestino: '',
+    modalidadPago: '' as 'adelantado' | 'contra_entrega' | 'por_partes' | '',
+    lugarEntrega: '',
+    fechaEntrega: '',
+    fechaRetiro: '',
+    observaciones: '',
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!form.tipoEntrega) { setError('Seleccioná el tipo de entrega'); return; }
+    if (!form.metodoPago)  { setError('Seleccioná el método de pago'); return; }
+    if (!form.modalidadPago) { setError('Seleccioná la modalidad de pago'); return; }
+    if (form.tipoEntrega === 'envio_woodpallet' && !form.lugarEntrega) {
+      setError('Ingresá el lugar de entrega'); return;
+    }
+
     try {
-      // Primero marcar como aceptada (requerido por el backend)
-      await api.put(`/cotizaciones/${cotizacionId}/estado`, { estado: 'aceptada' });
-      // Luego convertir a venta
-      await convertir.mutateAsync({ id: cotizacionId, datos: form });
+      await convertir.mutateAsync({
+        id: cotizacionId,
+        datos: {
+          tipoEntrega: form.tipoEntrega as 'retira_cliente' | 'envio_woodpallet',
+          metodoPago: form.metodoPago as 'transferencia' | 'e_check' | 'efectivo',
+          cuentaDestino: form.cuentaDestino || undefined,
+          modalidadPago: form.modalidadPago as 'adelantado' | 'contra_entrega' | 'por_partes',
+          lugarEntrega: form.lugarEntrega || undefined,
+          fechaEntrega: form.fechaEntrega || undefined,
+          fechaRetiro: form.fechaRetiro || undefined,
+          observaciones: form.observaciones || undefined,
+        },
+      });
+
+      await queryClient.invalidateQueries({ queryKey: ['cotizaciones'] });
+      await queryClient.invalidateQueries({ queryKey: ['ventas'] });
+      await queryClient.invalidateQueries({ queryKey: ['logisticas'] });
+      await queryClient.invalidateQueries({ queryKey: ['logistica-por-rol'] });
+      await queryClient.invalidateQueries({ queryKey: ['facturas'] });
+      await queryClient.invalidateQueries({ queryKey: ['cobros-pendientes'] });
+      await queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+
       onSuccess();
       onClose();
     } catch (err: unknown) {
@@ -39,228 +73,171 @@ export default function ConvertirVentaModal({ cotizacionId, onClose, onSuccess }
     }
   };
 
-  const opcionesEntrega = [
-    {
-      value: 'envio_woodpallet',
-      label: 'Envío',
-      sub: 'Wood Pallet coordina la entrega',
-      icon: <Truck size={18} />,
-    },
-    {
-      value: 'retira_cliente',
-      label: 'Retiro en galpón',
-      sub: 'El cliente retira personalmente',
-      icon: <Warehouse size={18} />,
-    },
-  ];
-
-  const accionEntrega = form.tipoEntrega === 'retira_cliente' ? 'retirar' : 'entregar';
-
-  const opcionesModalidad: { value: ModalidadPago; label: string; sub: string }[] = [
-    {
-      value: 'completo_anticipado',
-      label: 'Pago completo anticipado',
-      sub: 'El cliente pagó el total antes de la entrega',
-    },
-    {
-      value: 'completo_entrega',
-      label: `Pago completo al ${accionEntrega}`,
-      sub: `El cliente paga el total cuando ${form.tipoEntrega === 'retira_cliente' ? 'retira' : 'recibe'} la mercadería`,
-    },
-    {
-      value: 'mitad_adelanto_mitad_entrega',
-      label: `50% adelantado, 50% al ${accionEntrega}`,
-      sub: `Mitad ya abonada, el resto al ${form.tipoEntrega === 'retira_cliente' ? 'retiro' : 'momento de entrega'}`,
-    },
-  ];
-
   return (
     <div className="modal-overlay">
-      <div className="modal max-w-md animate-slide-up">
-
-        {/* Header */}
+      <div className="modal max-w-lg animate-slide-up">
         <div className="modal-header">
-          <h2 className="modal-title flex items-center gap-2">
-            <ShoppingCart size={18} style={{ color: '#6B3A2A' }} />
-            Convertir a venta
-          </h2>
+          <h2 className="modal-title">Convertir a venta</h2>
           <button onClick={onClose} className="btn-icon"><X size={18} /></button>
         </div>
 
         <form onSubmit={handleSubmit}>
           <div className="modal-body space-y-5">
 
-            {/* Aviso */}
-            <div
-              className="flex items-start gap-2.5 p-3.5"
-              style={{ background: '#FDF6EE', border: '1px solid #C4895A', borderRadius: '0.25rem' }}
-            >
-              <Check size={16} style={{ color: '#6B3A2A', marginTop: 1, flexShrink: 0 }} />
-              <p className="text-sm font-medium" style={{ color: '#6B3A2A' }}>
-                Cotización aceptada. Completá los datos para generar la venta.
-              </p>
-            </div>
-
-            {/* Tipo de entrega */}
             <div>
               <label className="label">Tipo de entrega</label>
               <div className="grid grid-cols-2 gap-2">
-                {opcionesEntrega.map(op => {
-                  const activo = form.tipoEntrega === op.value;
-                  return (
-                    <button
-                      key={op.value}
-                      type="button"
-                      onClick={() => setForm({ ...form, tipoEntrega: op.value as 'retira_cliente' | 'envio_woodpallet' })}
-                      style={{
-                        padding: '0.875rem',
-                        textAlign: 'left',
-                        border: `1.5px solid ${activo ? '#6B3A2A' : '#E5E7EB'}`,
-                        borderRadius: '0.25rem',
-                        background: activo ? '#FDF6EE' : '#fff',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s',
-                      }}
-                    >
-                      <div className="flex items-center gap-2 mb-1" style={{ color: activo ? '#6B3A2A' : '#9CA3AF' }}>
-                        {op.icon}
-                        <p className="text-sm font-semibold" style={{ color: activo ? '#6B3A2A' : '#111827' }}>
-                          {op.label}
-                        </p>
-                      </div>
-                      <p className="text-xs text-gray-400">{op.sub}</p>
-                    </button>
-                  );
-                })}
+                {[
+                  { value: 'envio_woodpallet', label: 'Envío' },
+                  { value: 'retira_cliente',   label: 'Retiro en galpón' },
+                ].map(op => (
+                  <button key={op.value} type="button"
+                    onClick={() => setForm({ ...form, tipoEntrega: op.value as 'retira_cliente' | 'envio_woodpallet', lugarEntrega: '', fechaEntrega: '', fechaRetiro: '' })}
+                    className={`p-3 rounded-xl border text-left transition-all text-sm font-medium ${
+                      form.tipoEntrega === op.value
+                        ? 'border-[#6B3A2A] bg-orange-50 text-[#6B3A2A]'
+                        : 'border-gray-200 bg-white hover:border-gray-300 text-gray-700'
+                    }`}>
+                    {op.label}
+                  </button>
+                ))}
+              </div>
+
+              {form.tipoEntrega === 'envio_woodpallet' && (
+                <div className="mt-3 space-y-3">
+                  <div>
+                    <label className="label">Lugar de entrega</label>
+                    <input type="text" value={form.lugarEntrega}
+                      onChange={e => setForm({ ...form, lugarEntrega: e.target.value })}
+                      className="input" placeholder="Dirección completa de entrega" />
+                  </div>
+                  <div>
+                    <label className="label">Fecha estimada de entrega</label>
+                    <input type="date" value={form.fechaEntrega}
+                      onChange={e => setForm({ ...form, fechaEntrega: e.target.value })}
+                      className="input" />
+                  </div>
+                </div>
+              )}
+
+              {form.tipoEntrega === 'retira_cliente' && (
+                <div className="mt-3">
+                  <label className="label">Fecha de retiro</label>
+                  <input type="date" value={form.fechaRetiro}
+                    onChange={e => setForm({ ...form, fechaRetiro: e.target.value })}
+                    className="input" />
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="label">Método de pago</label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { value: 'transferencia', label: 'Transferencia' },
+                  { value: 'e_check',       label: 'E-check' },
+                  { value: 'efectivo',      label: 'Efectivo' },
+                ].map(op => (
+                  <button key={op.value} type="button"
+                    onClick={() => setForm({
+                      ...form,
+                      metodoPago: op.value as 'transferencia' | 'e_check' | 'efectivo',
+                      cuentaDestino: op.value === 'e_check' ? 'banco_provincia' : '',
+                    })}
+                    className={`p-2.5 rounded-xl border text-sm font-medium transition-all ${
+                      form.metodoPago === op.value
+                        ? 'border-[#6B3A2A] bg-orange-50 text-[#6B3A2A]'
+                        : 'border-gray-200 bg-white hover:border-gray-300 text-gray-700'
+                    }`}>
+                    {op.label}
+                  </button>
+                ))}
+              </div>
+
+              {form.metodoPago === 'transferencia' && (
+                <div className="mt-3 space-y-1">
+                  <label className="label">Cuenta destino</label>
+                  {[
+                    { value: 'cuenta_personal',     label: 'Mi cuenta personal' },
+                    { value: 'mercado_pago_empresa', label: 'Mercado Pago empresa' },
+                    { value: 'banco_provincia',     label: 'Banco Provincia' },
+                  ].map(op => (
+                    <label key={op.value} className="flex items-center gap-3 cursor-pointer p-2.5 rounded-lg hover:bg-gray-50 border border-transparent hover:border-gray-100">
+                      <input type="radio" name="cuentaDestino" value={op.value}
+                        checked={form.cuentaDestino === op.value}
+                        onChange={() => setForm({ ...form, cuentaDestino: op.value })}
+                        className="w-4 h-4" />
+                      <span className="text-sm text-gray-700">{op.label}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+
+              {form.metodoPago === 'e_check' && (
+                <div className="mt-3 p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-center gap-2">
+                  <input type="checkbox" checked readOnly className="w-4 h-4" />
+                  <span className="text-sm text-gray-700 font-medium">Banco Provincia</span>
+                  <span className="text-xs text-gray-400 ml-1">(automático para e-check)</span>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="label">Modalidad de pago</label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { value: 'adelantado',     label: 'Adelantado' },
+                  { value: 'contra_entrega', label: 'Contra entrega' },
+                  { value: 'por_partes',     label: 'Por partes' },
+                ].map(op => (
+                  <button key={op.value} type="button"
+                    onClick={() => setForm({ ...form, modalidadPago: op.value as 'adelantado' | 'contra_entrega' | 'por_partes' })}
+                    className={`p-2.5 rounded-xl border text-sm font-medium transition-all ${
+                      form.modalidadPago === op.value
+                        ? 'border-[#6B3A2A] bg-orange-50 text-[#6B3A2A]'
+                        : 'border-gray-200 bg-white hover:border-gray-300 text-gray-700'
+                    }`}>
+                    {op.label}
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Fecha estimada */}
             <div>
-              <label className="label">Fecha estimada de entrega</label>
-              <input
-                type="date"
-                value={form.fechaEstimEntrega}
-                onChange={e => setForm({ ...form, fechaEstimEntrega: e.target.value })}
-                className="input"
-                style={{ borderRadius: '0.25rem' }}
-              />
-            </div>
-
-            {/* Método de pago */}
-            <div>
-              <label className="label flex items-center gap-1.5">
-                <CreditCard size={14} />
-                Método de pago <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={form.medioPago}
-                onChange={e => setForm({ ...form, medioPago: e.target.value as MedioPago })}
-                className="select"
-                style={{ borderRadius: '0.25rem' }}
-                required
-              >
-                <option value="transferencia">Transferencia bancaria</option>
-                <option value="e_check">E-check</option>
-                <option value="efectivo">Efectivo</option>
-              </select>
-            </div>
-
-            {/* Modalidad de pago */}
-            <div>
-              <label className="label">Modalidad de pago <span className="text-red-500">*</span></label>
-              <div className="space-y-2">
-                {opcionesModalidad.map(op => {
-                  const activo = form.modalidadPago === op.value;
-                  return (
-                    <button
-                      key={op.value}
-                      type="button"
-                      onClick={() => setForm({ ...form, modalidadPago: op.value })}
-                      style={{
-                        width: '100%',
-                        padding: '0.75rem 1rem',
-                        textAlign: 'left',
-                        border: `1.5px solid ${activo ? '#16A34A' : '#E5E7EB'}`,
-                        borderRadius: '0.25rem',
-                        background: activo ? '#F0FDF4' : '#fff',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.75rem',
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: 16, height: 16, borderRadius: '50%',
-                          border: `2px solid ${activo ? '#16A34A' : '#D1D5DB'}`,
-                          background: activo ? '#16A34A' : '#fff',
-                          flexShrink: 0,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        }}
-                      >
-                        {activo && <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff' }} />}
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold" style={{ color: activo ? '#15803D' : '#111827' }}>
-                          {op.label}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-0.5">{op.sub}</p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Observaciones */}
-            <div>
-              <label className="label">Observaciones <span className="text-gray-400 font-normal">(opcional)</span></label>
-              <textarea
-                value={form.observaciones}
+              <label className="label">Observaciones</label>
+              <textarea value={form.observaciones}
                 onChange={e => setForm({ ...form, observaciones: e.target.value })}
-                className="input resize-none"
-                style={{ borderRadius: '0.25rem' }}
-                rows={2}
-                placeholder="Aclaraciones sobre la entrega..."
-              />
+                className="input resize-none" rows={2}
+                placeholder="Notas adicionales sobre la venta..." />
+            </div>
+
+            {incluyeFlete && form.tipoEntrega === 'envio_woodpallet' && (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl">
+                <p className="text-xs text-blue-700 font-medium">
+                  Esta venta se agregará automáticamente al módulo de Logística porque incluye flete.
+                </p>
+              </div>
+            )}
+
+            <div className="p-3 bg-green-50 border border-green-200 rounded-xl">
+              <p className="text-xs text-green-700 font-medium">
+                Se creará automáticamente una factura en estado pendiente en el módulo de Facturación.
+              </p>
             </div>
 
             {error && (
-              <p
-                className="text-sm px-3 py-2.5"
-                style={{ color: '#B91C1C', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '0.25rem' }}
-              >
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 px-3 py-2.5 rounded-xl">
                 {error}
               </p>
             )}
           </div>
 
           <div className="modal-footer">
-            <button
-              type="button"
-              onClick={onClose}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: '6px',
-                background: '#fff', color: '#374151', border: '1px solid #E5E7EB',
-                fontWeight: 500, fontSize: '0.875rem', padding: '0.5rem 1rem',
-                borderRadius: '0.25rem', cursor: 'pointer'
-              }}
-            >Cancelar</button>
-            <button
-              type="submit"
-              disabled={convertir.isPending}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: '6px',
-                background: convertir.isPending ? '#9CA3AF' : 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
-                color: 'white', fontWeight: 500, fontSize: '0.875rem',
-                padding: '0.5rem 1rem', borderRadius: '0.25rem', border: 'none',
-                cursor: convertir.isPending ? 'not-allowed' : 'pointer', transition: 'all 0.2s'
-              }}
-            >
-              <ShoppingCart size={15} />
-              {convertir.isPending ? 'Creando venta...' : 'Crear venta'}
+            <button type="button" onClick={onClose} className="btn-secondary">Cancelar</button>
+            <button type="submit" disabled={convertir.isPending} className="btn-primary">
+              {convertir.isPending
+                ? 'Convirtiendo...'
+                : <><span>Convertir a venta</span><ArrowRight size={16} /></>}
             </button>
           </div>
         </form>
@@ -268,4 +245,3 @@ export default function ConvertirVentaModal({ cotizacionId, onClose, onSuccess }
     </div>
   );
 }
-
