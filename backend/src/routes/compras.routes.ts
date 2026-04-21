@@ -1,23 +1,20 @@
 import { Router } from 'express';
-import { authenticate } from '../middlewares/auth.middleware';
 import {
   getCompras,
-  getCompraById,
   crearCompra,
-  actualizarEstadoCompra,
-  registrarPago,
-  getDeudaProveedores,
+  registrarPagoCompra,
+  cancelarCompra,
+  getDeudaProveedores
 } from '../controllers/compras.controller';
+import { authenticate } from '../middlewares/auth.middleware';
 
 const router = Router();
-
 router.use(authenticate);
 
-router.get('/deuda-proveedores', getDeudaProveedores);
 router.get('/', getCompras);
-router.get('/:id', getCompraById);
+router.get('/deuda-proveedores', getDeudaProveedores);
 router.post('/', crearCompra);
-router.put('/:id/estado', actualizarEstadoCompra);
-router.post('/:id/pago', registrarPago);
+router.put('/:id/pagar', registrarPagoCompra);
+router.put('/:id/cancelar', cancelarCompra);
 
 export default router;

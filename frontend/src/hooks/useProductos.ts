@@ -105,10 +105,12 @@ export const useCrearPrecio = () => {
       const { data } = await api.post('/productos/precios', datos);
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['lista-precios'] });
-      queryClient.invalidateQueries({ queryKey: ['escalones'] });
+      queryClient.invalidateQueries({ queryKey: ['escalones', variables.productoId] });
+      queryClient.invalidateQueries({ queryKey: ['historial-precios', variables.productoId] });
       queryClient.invalidateQueries({ queryKey: ['productos'] });
+      queryClient.invalidateQueries({ queryKey: ['productos-otro'] });
     }
   });
 };

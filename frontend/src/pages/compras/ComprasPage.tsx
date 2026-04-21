@@ -1,18 +1,9 @@
 import { useState } from 'react';
-import { Plus, Search, Eye, AlertTriangle, TrendingDown } from 'lucide-react';
-import { useCompras, useDeudaProveedores } from '../../hooks/useCompras';
-import { useAuthStore } from '../../store/auth.store';
+import { Plus, Search, Check, X, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
+import { useCompras, useDeudaProveedores, useRegistrarPagoCompra, useCancelarCompra } from '../../hooks/useCompras';
 import NuevaCompra from './NuevaCompra';
-import CompraDetalle from './CompraDetalle';
-import EstadoBadge from '../../components/ui/EstadoBadge';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
-
-interface DeudaItem {
-  proveedor: { id: number; nombreEmpresa: string };
-  deudaTotal: number;
-  comprasPendientes: number;
-}
 
 const formatPesos = (v: number) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(v);
@@ -20,227 +11,194 @@ const formatPesos = (v: number) =>
 const formatFecha = (f: string) =>
   new Date(f).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' });
 
-const estadoFiltros = [
-  { key: 'todos',      label: 'Todas' },
-  { key: 'solicitada', label: 'Solicitadas' },
-  { key: 'confirmada', label: 'Confirmadas' },
-  { key: 'recibida',   label: 'Recibidas' },
-  { key: 'pagada',     label: 'Pagadas' },
-];
+const tipoCompraLabel: Record<string, string> = {
+  reventa_inmediata: 'Reventa inmediata',
+  stock_propio:      'Stock propio',
+};
 
 export default function ComprasPage() {
-  const { data: compras, isLoading, isError } = useCompras();
-  const { data: deuda } = useDeudaProveedores() as { data: DeudaItem[] | undefined };
-  const { usuario } = useAuthStore();
-  const esCarlos = usuario?.rol === 'propietario_carlos';
+  const { data: compras, isLoading, error } = useCompras();
+  const { data: deuda } = useDeudaProveedores();
+  const registrarPago = useRegistrarPagoCompra();
+  const cancelarCompra = useCancelarCompra();
   const [busqueda, setBusqueda] = useState('');
-  const [filtroEstado, setFiltroEstado] = useState('todos');
   const [showNueva, setShowNueva] = useState(false);
-  const [compraDetalle, setCompraDetalle] = useState<number | null>(null);
-
-  const filtradas = compras?.filter(c => {
-    const matchBusqueda =
-      c.proveedor?.nombreEmpresa.toLowerCase().includes(busqueda.toLowerCase()) ||
-      `#${c.id}`.includes(busqueda);
-    const matchEstado = filtroEstado === 'todos' || c.estado === filtroEstado;
-    return matchBusqueda && matchEstado;
+  const [expandido, setExpandido] = useState<number | null>(null);
+  const [pagoModal, setPagoModal] = useState<number | null>(null);
+  const [pagoForm, setPagoForm] = useState({
+    metodoPago: '' as 'transferencia' | 'e_check' | 'efectivo' | '',
+    cuentaDestino: '',
+    nroComprobante: '',
   });
+  const [errorPago, setErrorPago] = useState('');
 
-  const deudaTotal = deuda?.reduce((acc, d) => acc + d.deudaTotal, 0) ?? 0;
+  const filtradas = compras?.filter(c =>
+    c.proveedor?.nombreEmpresa.toLowerCase().includes(busqueda.toLowerCase()) ||
+    `#${c.id}`.includes(busqueda)
+  );
 
-  if (isLoading) return <LoadingSpinner text="Cargando compras..." />;
-  if (isError)  return <ErrorMessage message="No se pudieron cargar las compras." />;
+  const deudaTotal = deuda?.reduce((acc: number, d: any) => acc + d.deudaTotal, 0) || 0;
+
+  const handlePago = async (compraId: number) => {
+    setErrorPago('');
+    if (!pagoForm.metodoPago) { setErrorPago('Seleccioná el método de pago'); return; }
+    if (pagoForm.metodoPago === 'transferencia' && !pagoForm.cuentaDestino) {
+      setErrorPago('Seleccioná la cuenta destino'); return;
+    }
+    try {
+      await registrarPago.mutateAsync({ id: compraId, datos: pagoForm });
+      setPagoModal(null);
+      setPagoForm({ metodoPago: '', cuentaDestino: '', nroComprobante: '' });
+    } catch (err: any) {
+      setErrorPago(err.response?.data?.error || 'Error al registrar el pago');
+    }
+  };
+
+  if (isLoading) return <LoadingSpinner texto="Cargando compras..." />;
+  if (error) return <ErrorMessage mensaje="No se pudieron cargar las compras." />;
 
   return (
-    <div className="animate-fade-in space-y-5">
+    <div className="space-y-6">
 
-      {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="page-header">
         <div>
           <h1 className="titulo-modulo">Compras</h1>
-          <p className="text-sm text-gray-600 mt-1">{compras?.length ?? 0} compras registradas</p>
+          <p className="text-sm text-gray-500 mt-1">{compras?.length || 0} compras registradas</p>
         </div>
-        <button
-          onClick={() => setShowNueva(true)}
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: '6px',
-            background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
-            color: 'white', fontWeight: 500, fontSize: '0.875rem',
-            padding: '0.5rem 1rem', borderRadius: '0.25rem',
-            border: 'none', cursor: 'pointer', transition: 'all 0.2s'
-          }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, #5A3022 0%, #B07848 100%)';
-            (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)';
-            (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-          }}
-        >
+        <button onClick={() => setShowNueva(true)} className="btn-brand">
           <Plus size={16} /> Nueva compra
         </button>
       </div>
 
-      {/* Deuda con proveedores */}
-      {deuda && deuda.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {deuda.map(d => (
-            <div
-              key={d.proveedor.id}
-              className="card-base flex items-center gap-4"
-              style={d.deudaTotal > 0 ? { borderLeft: '4px solid #F59E0B' } : undefined}
-            >
-              <div className="w-10 h-10 flex items-center justify-center shrink-0"
-                style={{ background: '#FFFBEB', borderRadius: '0.25rem' }}>
-                <TrendingDown size={18} className="text-amber-600" />
-              </div>
-              <div className="flex-1">
-                <p className="font-semibold text-gray-900 text-sm">{d.proveedor.nombreEmpresa}</p>
-                <p className="text-xs text-gray-400">
-                  {d.comprasPendientes} compra{d.comprasPendientes > 1 ? 's' : ''} pendiente{d.comprasPendientes > 1 ? 's' : ''}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-lg font-bold text-amber-600">{formatPesos(d.deudaTotal)}</p>
-                <p className="text-xs text-gray-400">deuda actual</p>
+      {/* Deuda total */}
+      {deudaTotal > 0 && (
+        <div className="card-base border-l-4 border-l-amber-400">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <AlertTriangle size={18} className="text-amber-600" />
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Saldo deudor total con proveedores</p>
+                <p className="text-xs text-gray-400">Compras registradas pendientes de pago</p>
               </div>
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* Total deuda */}
-      {deudaTotal > 0 && (
-        <div className="flex items-center justify-between px-4 py-3 bg-amber-50 border border-amber-200"
-          style={{ borderRadius: '0.25rem' }}>
-          <div className="flex items-center gap-2">
-            <AlertTriangle size={16} className="text-amber-600" />
-            <p className="text-sm font-semibold text-amber-700">Deuda total con proveedores</p>
+            <p className="text-xl font-bold text-amber-600">{formatPesos(deudaTotal)}</p>
           </div>
-          <p className="text-lg font-bold text-amber-700">{formatPesos(deudaTotal)}</p>
         </div>
       )}
 
-      {/* Nota de rol */}
-      {!esCarlos && (
-        <div className="flex items-start gap-2 px-3 py-2.5 bg-blue-50 border border-blue-200"
-          style={{ borderRadius: '0.25rem' }}>
-          <AlertTriangle size={14} className="text-blue-600 shrink-0 mt-0.5" />
-          <p className="text-xs text-blue-700">
-            Las compras a Todo Pallets solo las puede crear Carlos. Podés registrar compras al Galpón Familiar.
-          </p>
-        </div>
-      )}
-
-      {/* Filtros */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Buscar por proveedor o número..."
-            value={busqueda}
-            onChange={e => setBusqueda(e.target.value)}
-            className="input-field pl-10"
-          />
-        </div>
-        <div className="flex border border-gray-200 overflow-hidden" style={{ borderRadius: '0.25rem' }}>
-          {estadoFiltros.map((f, i) => (
-            <button
-              key={f.key}
-              onClick={() => setFiltroEstado(f.key)}
-              style={{
-                padding: '0.5rem 0.75rem',
-                fontSize: '0.75rem',
-                fontWeight: 500,
-                whiteSpace: 'nowrap',
-                transition: 'all 0.15s',
-                background: filtroEstado === f.key
-                  ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)'
-                  : '#fff',
-                color: filtroEstado === f.key ? '#fff' : '#6B7280',
-                border: 'none',
-                borderLeft: i > 0 ? '1px solid #E5E7EB' : 'none',
-                cursor: 'pointer'
-              }}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
+      {/* Buscador */}
+      <div className="relative">
+        <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input type="text" placeholder="Buscar por proveedor o número..."
+          value={busqueda} onChange={e => setBusqueda(e.target.value)}
+          className="input pl-10" />
       </div>
 
-      {/* Tabla */}
+      {/* Lista de compras */}
       {!filtradas?.length ? (
-        <div className="card-base flex flex-col items-center justify-center py-12 text-center">
-          <div className="w-12 h-12 bg-gray-100 flex items-center justify-center mx-auto mb-3"
-            style={{ borderRadius: '0.25rem' }}>
-            <TrendingDown size={22} className="text-gray-400" />
-          </div>
-          <p className="titulo-card">Sin compras registradas</p>
-          <p className="text-xs text-gray-400 mt-1">
-            {busqueda ? 'Probá con otro término de búsqueda' : 'Registrá la primera con el botón de arriba'}
-          </p>
+        <div className="empty-state">
+          <p className="text-sm font-semibold text-gray-700">Sin compras registradas</p>
+          <p className="text-sm text-gray-400 mt-1">Registrá la primera con el botón de arriba</p>
         </div>
       ) : (
-        <div className="card-base" style={{ padding: 0, overflow: 'hidden' }}>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Proveedor</th>
-                <th>Productos</th>
-                <th>Total</th>
-                <th>Estado</th>
-                <th>Tipo</th>
-                <th>Fecha</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtradas.map(c => (
-                <tr key={c.id}>
-                  <td className="font-semibold text-gray-400 text-xs">#{c.id}</td>
-                  <td>
-                    <p className="font-semibold text-gray-900 text-sm">{c.proveedor?.nombreEmpresa}</p>
-                    <p className="text-xs text-gray-400">{c.proveedor?.nombreContacto}</p>
-                  </td>
-                  <td>
-                    <div className="space-y-0.5">
-                      {c.detalles?.slice(0, 2).map(d => (
-                        <p key={d.id} className="text-xs text-gray-600">
-                          {d.producto?.nombre} — {d.cantidad} u
-                        </p>
-                      ))}
-                      {(c.detalles?.length ?? 0) > 2 && (
-                        <p className="text-xs text-gray-400">+{(c.detalles?.length ?? 0) - 2} más</p>
+        <div className="space-y-3">
+          {filtradas.map(c => (
+            <div key={c.id} className="card-base">
+              {/* Header de la compra */}
+              <div
+                className="flex items-center justify-between cursor-pointer"
+                onClick={() => setExpandido(expandido === c.id ? null : c.id)}
+              >
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-semibold text-gray-900 text-sm">
+                        #{c.id} — {c.proveedor?.nombreEmpresa}
+                      </p>
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-lg bg-gray-100 text-gray-600">
+                        {tipoCompraLabel[c.tipoCompra] || c.tipoCompra}
+                      </span>
+                      {c.saldoDeudor && (
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-lg bg-amber-100 text-amber-700">
+                          Saldo deudor
+                        </span>
+                      )}
+                      {c.estado === 'pagada' && (
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-lg bg-green-100 text-green-700">
+                          Pagada
+                        </span>
+                      )}
+                      {c.estado === 'cancelada' && (
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-lg bg-red-100 text-red-700">
+                          Cancelada
+                        </span>
                       )}
                     </div>
-                  </td>
-                  <td>
-                    <p className="font-semibold text-gray-900 text-sm">{formatPesos(c.total ?? 0)}</p>
-                  </td>
-                  <td><EstadoBadge estado={c.estado} /></td>
-                  <td>
-                    <span className="text-xs text-gray-600">
-                      {c.esAnticipado ? 'Anticipada' : 'A pedido'}
-                    </span>
-                  </td>
-                  <td className="text-xs text-gray-400">{formatFecha(c.fechaCompra)}</td>
-                  <td>
-                    <button
-                      onClick={() => setCompraDetalle(c.id)}
-                      className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
-                      title="Ver detalle"
-                    >
-                      <Eye size={15} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {formatFecha(c.fechaCompra)} · {formatPesos(Number(c.total || 0))}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+                  {c.estado === 'pendiente_pago' && (
+                    <>
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          setPagoModal(c.id);
+                          setPagoForm({ metodoPago: '', cuentaDestino: '', nroComprobante: '' });
+                          setErrorPago('');
+                        }}
+                        className="w-9 h-9 rounded-xl bg-green-50 border border-green-200 flex items-center justify-center text-green-600 hover:bg-green-100 transition-colors"
+                        title="Registrar pago"
+                      >
+                        <Check size={16} />
+                      </button>
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          if (confirm('¿Cancelar esta compra? El galpón no tiene stock disponible.')) {
+                            cancelarCompra.mutate(c.id);
+                          }
+                        }}
+                        className="w-9 h-9 rounded-xl bg-red-50 border border-red-200 flex items-center justify-center text-red-500 hover:bg-red-100 transition-colors"
+                        title="Cancelar compra — sin stock"
+                      >
+                        <X size={16} />
+                      </button>
+                    </>
+                  )}
+                  {expandido === c.id ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+                </div>
+              </div>
+
+              {/* Detalle expandido */}
+              {expandido === c.id && (
+                <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
+                  <div className="space-y-1.5">
+                    {c.detalles?.map((d: any) => (
+                      <div key={d.id} className="flex items-center justify-between text-sm bg-gray-50 rounded-lg px-3 py-2">
+                        <span className="text-gray-700">{d.producto?.nombre}</span>
+                        <span className="text-gray-500 text-xs">{d.cantidad} u × {formatPesos(d.precioCostoUnit)}</span>
+                        <span className="font-semibold text-gray-900">{formatPesos(d.subtotal)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {c.estado === 'pagada' && c.metodoPago && (
+                    <div className="p-3 bg-green-50 rounded-xl border border-green-100">
+                      <p className="text-xs text-green-700 font-medium">
+                        Pagado con {c.metodoPago}
+                        {c.cuentaDestino && ` — ${c.cuentaDestino.replace(/_/g, ' ')}`}
+                        {c.nroComprobante && ` — Comp: ${c.nroComprobante}`}
+                        {c.fechaPago && ` — ${formatFecha(c.fechaPago)}`}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
 
@@ -251,11 +209,97 @@ export default function ComprasPage() {
         />
       )}
 
-      {compraDetalle && (
-        <CompraDetalle
-          compraId={compraDetalle}
-          onClose={() => setCompraDetalle(null)}
-        />
+      {/* Modal de pago */}
+      {pagoModal !== null && (
+        <div className="modal-overlay">
+          <div className="modal max-w-md animate-slide-up">
+            <div className="modal-header">
+              <h2 className="modal-title">Registrar pago al proveedor</h2>
+              <button onClick={() => setPagoModal(null)} className="btn-icon"><X size={18} /></button>
+            </div>
+            <div className="modal-body space-y-4">
+              <p className="text-sm text-gray-500">
+                Seleccioná cómo pagaste esta compra al proveedor.
+              </p>
+
+              <div>
+                <label className="label">Método de pago</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { value: 'transferencia', label: 'Transferencia' },
+                    { value: 'e_check',       label: 'E-check' },
+                    { value: 'efectivo',      label: 'Efectivo' },
+                  ].map(op => (
+                    <button key={op.value} type="button"
+                      onClick={() => setPagoForm(prev => ({
+                        ...prev,
+                        metodoPago: op.value as any,
+                        cuentaDestino: op.value === 'e_check' ? 'banco_provincia' : ''
+                      }))}
+                      className={`p-2.5 rounded-xl border text-sm font-medium transition-all ${
+                        pagoForm.metodoPago === op.value
+                          ? 'border-[#6B3A2A] bg-orange-50 text-[#6B3A2A]'
+                          : 'border-gray-200 bg-white hover:border-gray-300 text-gray-700'
+                      }`}>
+                      {op.label}
+                    </button>
+                  ))}
+                </div>
+
+                {pagoForm.metodoPago === 'transferencia' && (
+                  <div className="mt-3 space-y-2">
+                    <label className="label">Cuenta desde la que transferiste</label>
+                    {[
+                      { value: 'cuenta_personal',     label: 'Mi cuenta personal' },
+                      { value: 'mercado_pago_empresa', label: 'Mercado Pago cuenta empresa' },
+                      { value: 'banco_provincia',      label: 'Banco Provincia' },
+                    ].map(op => (
+                      <label key={op.value} className="flex items-center gap-3 cursor-pointer p-2.5 rounded-lg hover:bg-gray-50 border border-transparent hover:border-gray-100">
+                        <input type="radio" name="cuentaDestinoPago" value={op.value}
+                          checked={pagoForm.cuentaDestino === op.value}
+                          onChange={() => setPagoForm(prev => ({ ...prev, cuentaDestino: op.value }))}
+                          className="w-4 h-4" />
+                        <span className="text-sm text-gray-700">{op.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {pagoForm.metodoPago === 'e_check' && (
+                  <div className="mt-3 p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-center gap-2">
+                    <input type="checkbox" checked readOnly className="w-4 h-4" />
+                    <span className="text-sm text-gray-700 font-medium">Banco Provincia</span>
+                    <span className="text-xs text-gray-400">(seleccionado automáticamente)</span>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="label">N° de comprobante (opcional)</label>
+                <input type="text"
+                  value={pagoForm.nroComprobante}
+                  onChange={e => setPagoForm(prev => ({ ...prev, nroComprobante: e.target.value }))}
+                  className="input" placeholder="Número de transferencia o cheque" />
+              </div>
+
+              {errorPago && (
+                <p className="text-sm text-red-600 bg-red-50 border border-red-200 px-3 py-2.5 rounded-xl">
+                  {errorPago}
+                </p>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button onClick={() => setPagoModal(null)} className="btn-secondary">Cancelar</button>
+              <button
+                onClick={() => handlePago(pagoModal)}
+                disabled={registrarPago.isPending}
+                className="btn-primary"
+              >
+                {registrarPago.isPending ? 'Registrando...' : 'Confirmar pago'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -212,6 +212,7 @@ model Stock {
   proveedorId         Int
   cantidadDisponible  Int      @default(0)
   cantidadMinima      Int?
+  cantidadDeudora     Int      @default(0)
   ultimaActualizacion DateTime @updatedAt
   observaciones       String?
 
@@ -446,16 +447,21 @@ model RetiroParcial {
 
 // ─── COMPRAS ─────────────────────────────────────────────
 model Compra {
-  id            Int          @id @default(autoincrement())
-  proveedorId   Int
-  usuarioId     Int
-  ventaId       Int?
-  fechaCompra   DateTime     @default(now())
-  estado        EstadoCompra @default(solicitada)
-  esAnticipado  Boolean      @default(false)
-  total         Decimal?     @db.Decimal(12, 2)
-  nroRemito     String?
-  observaciones String?
+  id             Int          @id @default(autoincrement())
+  proveedorId    Int
+  usuarioId      Int
+  ventaId        Int?
+  fechaCompra    DateTime     @default(now())
+  estado         EstadoCompra @default(pendiente_pago)
+  tipoCompra     TipoCompra   @default(reventa_inmediata)
+  total          Decimal?     @db.Decimal(12, 2)
+  nroRemito      String?
+  observaciones  String?
+  saldoDeudor    Boolean      @default(true)
+  fechaPago      DateTime?
+  metodoPago     MetodoPago?
+  cuentaDestino  String?
+  nroComprobante String?
 
   proveedor Proveedor       @relation(fields: [proveedorId], references: [id])
   usuario   Usuario         @relation(fields: [usuarioId], references: [id])
@@ -467,10 +473,14 @@ model Compra {
 }
 
 enum EstadoCompra {
-  solicitada
-  confirmada
-  recibida
+  pendiente_pago
   pagada
+  cancelada
+}
+
+enum TipoCompra {
+  reventa_inmediata
+  stock_propio
 }
 
 // ─── DETALLE COMPRA ──────────────────────────────────────

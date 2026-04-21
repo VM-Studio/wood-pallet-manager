@@ -5,8 +5,8 @@ export const getVentasUltimos12MesesService = async (usuarioId?: number) => {
   const ahora = new Date();
 
   for (let i = 0; i < 12; i++) {
-    const inicio = new Date(ahora.getFullYear(), ahora.getMonth() + i, 1);
-    const fin = new Date(ahora.getFullYear(), ahora.getMonth() + i + 1, 0);
+    const inicio = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
+    const fin = new Date(ahora.getFullYear(), ahora.getMonth() - i + 1, 0);
 
     const where: any = { fechaVenta: { gte: inicio, lte: fin } };
     if (usuarioId !== undefined) where.usuarioId = usuarioId;
@@ -157,6 +157,20 @@ export const getDashboardService = async () => {
   const grafico12MesesCarlos = await getVentasUltimos12MesesService(1);
   const grafico12MesesJuanCruz = await getVentasUltimos12MesesService(2);
 
+  // Compras pagadas del mes actual (para calcular ganancias)
+  const comprasMesActual = await prisma.compra.findMany({
+    where: {
+      fechaCompra: { gte: inicioMes },
+      estado: 'pagada',
+    }
+  });
+
+  const costoComprasMes = comprasMesActual.reduce(
+    (acc, c) => acc + Number(c.total || 0), 0
+  );
+
+  const gananciasMes = facturacionMesActual - costoComprasMes;
+
   // Mes anterior por propietario
   const ventasMesAnteriorCarlos = ventasMesAnterior.filter(v => (v as any).usuarioId === 1);
   const ventasMesAnteriorJuanCruz = ventasMesAnterior.filter(v => (v as any).usuarioId === 2);
@@ -183,6 +197,8 @@ export const getDashboardService = async () => {
       pedidosActivos,
       alertasStock,
       entregasHoy,
+      gananciasMes,
+      costoComprasMes,
     },
     porPropietario: {
       carlos: {

@@ -19,6 +19,7 @@ export default function ConvertirVentaModal({
   const convertir = useConvertirAVenta();
   const queryClient = useQueryClient();
   const [error, setError] = useState('');
+  const [usaStockPropio, setUsaStockPropio] = useState(false);
 
   const [form, setForm] = useState({
     tipoEntrega: '' as 'retira_cliente' | 'envio_woodpallet' | '',
@@ -54,6 +55,7 @@ export default function ConvertirVentaModal({
           fechaEntrega: form.fechaEntrega || undefined,
           fechaRetiro: form.fechaRetiro || undefined,
           observaciones: form.observaciones || undefined,
+          usaStockPropio,
         },
       });
 
@@ -95,7 +97,7 @@ export default function ConvertirVentaModal({
                     onClick={() => setForm({ ...form, tipoEntrega: op.value as 'retira_cliente' | 'envio_woodpallet', lugarEntrega: '', fechaEntrega: '', fechaRetiro: '' })}
                     className={`p-3 rounded-xl border text-left transition-all text-sm font-medium ${
                       form.tipoEntrega === op.value
-                        ? 'border-[#6B3A2A] bg-orange-50 text-[#6B3A2A]'
+                        ? 'border-[#16A34A] bg-green-50 text-[#16A34A]'
                         : 'border-gray-200 bg-white hover:border-gray-300 text-gray-700'
                     }`}>
                     {op.label}
@@ -131,6 +133,26 @@ export default function ConvertirVentaModal({
             </div>
 
             <div>
+              <label className="label">Origen del stock</label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { value: true,  label: 'Stock propio' },
+                  { value: false, label: 'Compra directa' },
+                ].map(op => (
+                  <button key={String(op.value)} type="button"
+                    onClick={() => setUsaStockPropio(op.value)}
+                    className={`p-3 rounded-xl border text-left transition-all text-sm font-medium ${
+                      usaStockPropio === op.value
+                        ? 'border-[#16A34A] bg-green-50 text-[#16A34A]'
+                        : 'border-gray-200 bg-white hover:border-gray-300 text-gray-700'
+                    }`}>
+                    {op.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
               <label className="label">Método de pago</label>
               <div className="grid grid-cols-3 gap-2">
                 {[
@@ -146,7 +168,7 @@ export default function ConvertirVentaModal({
                     })}
                     className={`p-2.5 rounded-xl border text-sm font-medium transition-all ${
                       form.metodoPago === op.value
-                        ? 'border-[#6B3A2A] bg-orange-50 text-[#6B3A2A]'
+                        ? 'border-[#16A34A] bg-green-50 text-[#16A34A]'
                         : 'border-gray-200 bg-white hover:border-gray-300 text-gray-700'
                     }`}>
                     {op.label}
@@ -194,7 +216,7 @@ export default function ConvertirVentaModal({
                     onClick={() => setForm({ ...form, modalidadPago: op.value as 'adelantado' | 'contra_entrega' | 'por_partes' })}
                     className={`p-2.5 rounded-xl border text-sm font-medium transition-all ${
                       form.modalidadPago === op.value
-                        ? 'border-[#6B3A2A] bg-orange-50 text-[#6B3A2A]'
+                        ? 'border-[#16A34A] bg-green-50 text-[#16A34A]'
                         : 'border-gray-200 bg-white hover:border-gray-300 text-gray-700'
                     }`}>
                     {op.label}

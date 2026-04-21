@@ -1,101 +1,86 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { z } from 'zod';
-import { AuthRequest, parseId } from '../types';
-import prisma from '../utils/prisma';
+import { AuthRequest } from '../middlewares/auth.middleware';
 import {
   getComprasService,
-  getCompraByIdService,
   crearCompraService,
-  actualizarEstadoCompraService,
-  registrarPagoProveedorService,
-  getDeudaProveedoresService,
+  registrarPagoCompraService,
+  cancelarCompraService,
+  getDeudaProveedoresService
 } from '../services/compras.service';
+
+const detalleSchema = z.object({
+  productoId: z.number(),
+  cantidad: z.number().int().min(1),
+  precioCostoUnit: z.number().positive()
+});
+
+const crearCompraSchema = z.object({
+  proveedorId: z.number(),
+  tipoCompra: z.enum(['reventa_inmediata', 'stock_propio']),
+  nroRemito: z.string().optional(),
+  observaciones: z.string().optional(),
+  detalles: z.array(detalleSchema).min(1, 'Debe haber al menos un producto')
+});
+
+const pagoSchema = z.object({
+  metodoPago: z.enum(['transferencia', 'e_check', 'efectivo']),
+  cuentaDestino: z.string().optional(),
+  nroComprobante: z.string().optional(),
+  observaciones: z.string().optional()
+});
 
 export const getCompras = async (req: AuthRequest, res: Response) => {
   try {
-    const vista = req.query.vista as string | undefined;
-
-    let usuarioId = req.user!.userId;
-    let rol = req.user!.rol;
-
-    if (vista === 'carlos') {
-      const carlos = await prisma.usuario.findFirst({ where: { rol: 'propietario_carlos' } });
-      if (carlos) { usuarioId = carlos.id; rol = carlos.rol; }
-    } else if (vista === 'juancruz') {
-      const juancruz = await prisma.usuario.findFirst({ where: { rol: 'propietario_juancruz' } });
-      if (juancruz) { usuarioId = juancruz.id; rol = juancruz.rol; }
-    } else if (vista === 'todos') {
-      rol = 'admin'; // devuelve todas
-    }
-    // 'mis_datos' o sin vista → usa el usuario del token (default)
-
-    const compras = await getComprasService(usuarioId, rol);
+    const compras = await getComprasService(req.user!.userId, req.user!.rol);
     res.json(compras);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 };
 
-export const getCompraById = async (req: AuthRequest, res: Response) => {
-  const id = parseId(req.params.id);
-  const compra = await getCompraByIdService(id);
-  res.json(compra);
-};
-
 export const crearCompra = async (req: AuthRequest, res: Response) => {
-  const schema = z.object({
-    proveedorId: z.number().int().positive(),
-    detalles: z.array(z.object({
-      productoId: z.number().int().positive(),
-      cantidad: z.number().int().positive(),
-      precioCostoUnit: z.number().positive(),
-    })).min(1),
-    observaciones: z.string().optional(),
-  });
-
-  const parsed = schema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.flatten() });
-    return;
+  try {
+    const datos = crearCompraSchema.parse(req.body);
+    const compra = await crearCompraService(datos, req.user!.userId, req.user!.rol);
+    res.status(201).json(compra);
+  } catch (error: any) {
+    if (error.name === 'ZodError') {
+      return res.status(400).json({ error: error.errors[0].message });
+    }
+    res.status(400).json({ error: error.message });
   }
-
-  const compra = await crearCompraService(parsed.data, req.user!.userId, req.user!.rol);
-  res.status(201).json(compra);
 };
 
-export const actualizarEstadoCompra = async (req: AuthRequest, res: Response) => {
-  const id = parseId(req.params.id);
-  const schema = z.object({ estado: z.string() });
-  const parsed = schema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.flatten() });
-    return;
+export const registrarPagoCompra = async (req: AuthRequest, res: Response) => {
+  try {
+    const id = parseInt(req.params.id);
+    const datos = pagoSchema.parse(req.body);
+    const compra = await registrarPagoCompraService(id, datos, req.user!.userId);
+    res.json(compra);
+  } catch (error: any) {
+    if (error.name === 'ZodError') {
+      return res.status(400).json({ error: error.errors[0].message });
+    }
+    res.status(400).json({ error: error.message });
   }
-
-  const compra = await actualizarEstadoCompraService(id, parsed.data.estado as any);
-  res.json(compra);
 };
 
-export const registrarPago = async (req: AuthRequest, res: Response) => {
-  const id = parseId(req.params.id);
-  const schema = z.object({
-    monto: z.number().positive(),
-    medioPago: z.enum(['transferencia', 'e_check', 'efectivo']),
-    nroComprobante: z.string().optional(),
-    observaciones: z.string().optional(),
-  });
-
-  const parsed = schema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.flatten() });
-    return;
+export const cancelarCompra = async (req: AuthRequest, res: Response) => {
+  try {
+    const id = parseInt(req.params.id);
+    const resultado = await cancelarCompraService(id, req.user!.userId);
+    res.json(resultado);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
   }
-
-  const pago = await registrarPagoProveedorService(id, parsed.data, req.user!.userId);
-  res.status(201).json(pago);
 };
 
-export const getDeudaProveedores = async (_req: Request, res: Response) => {
-  const deuda = await getDeudaProveedoresService();
-  res.json(deuda);
+export const getDeudaProveedores = async (req: AuthRequest, res: Response) => {
+  try {
+    const deuda = await getDeudaProveedoresService();
+    res.json(deuda);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
 };

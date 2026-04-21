@@ -316,7 +316,7 @@ export default function CotizacionesPage() {
       {showNueva && (
         <NuevaCotizacion
           onClose={() => setShowNueva(false)}
-          onSuccess={(id) => { setWhatsappId(id); }}
+          onSuccess={() => { setShowNueva(false); }}
         />
       )}
       {whatsappId !== null && (

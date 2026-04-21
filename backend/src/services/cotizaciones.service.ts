@@ -212,8 +212,13 @@ export const convertirCotizacionAVentaService = async (
   });
 
   if (!cotizacion) throw new Error('Cotización no encontrada');
-  if (cotizacion.estado !== 'aceptada') throw new Error('Solo se pueden convertir cotizaciones aceptadas');
+  if (cotizacion.estado === 'rechazada') throw new Error('No se puede convertir una cotización rechazada');
   if (cotizacion.venta) throw new Error('Esta cotización ya fue convertida en venta');
+
+  // Si aún no estaba aceptada, la marcamos como aceptada automáticamente al convertir
+  if (cotizacion.estado !== 'aceptada') {
+    await prisma.cotizacion.update({ where: { id: cotizacionId }, data: { estado: 'aceptada' } });
+  }
 
   const venta = await prisma.venta.create({
     data: {

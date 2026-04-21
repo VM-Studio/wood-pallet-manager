@@ -50,8 +50,11 @@ export default function ProductosPage() {
     p.tipo.toLowerCase().includes(busqueda.toLowerCase())
   );
 
-  const stockTotal = (p: Producto) =>
-    p.stocks?.reduce((acc, s) => acc + s.cantidadDisponible, 0) ?? 0;
+  const stockPropio = (p: Producto) =>
+    (p as any).stockTotalPropio ?? p.stocks?.reduce((acc, s) => acc + s.cantidadDisponible, 0) ?? 0;
+
+  const stockDeudor = (p: Producto) =>
+    (p as any).stockTotalDeudor ?? 0;
 
   const precioBase = (p: Producto): number | null => {
     if (!p.listaPrecios?.length) return null;
@@ -62,7 +65,7 @@ export default function ProductosPage() {
   if (isLoading) return <LoadingSpinner text="Cargando productos..." />;
   if (isError)   return <ErrorMessage message="No se pudieron cargar los productos." />;
 
-  const stockTotalMios = productos?.reduce((acc, p) => acc + stockTotal(p), 0) ?? 0;
+  const stockTotalMios = productos?.reduce((acc, p) => acc + stockPropio(p), 0) ?? 0;
   const conPrecios = productos?.filter(p => p.listaPrecios?.length).length ?? 0;
 
   return (
@@ -203,7 +206,8 @@ export default function ProductosPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filtrados.map(p => {
-            const stock = stockTotal(p);
+            const stock = stockPropio(p);
+            const deudor = stockDeudor(p);
             const precio = precioBase(p);
             const tieneEscalones = (p.listaPrecios?.length ?? 0) > 1;
             const bajoMinimo = p.stocks?.some(s => s.cantidadDisponible <= (s.cantidadMinima ?? 0));
@@ -256,15 +260,23 @@ export default function ProductosPage() {
                 )}
 
                 {/* Stock */}
-                <div className={clsx(
-                  'flex items-center justify-between px-3 py-2 mb-3 text-sm',
-                  bajoMinimo && esMio ? 'bg-red-50 border border-red-200' : 'bg-gray-50 border border-gray-100'
-                )} style={{ borderRadius: '0.25rem' }}>
-                  <span className="text-gray-500 text-xs">Stock disponible</span>
-                  <span className={clsx('font-bold flex items-center gap-1', bajoMinimo && esMio ? 'text-red-600' : 'text-gray-900')}>
-                    {bajoMinimo && esMio && <AlertTriangle size={12} />}
-                    {stock} unidades
-                  </span>
+                <div className="mb-3 space-y-1.5">
+                  <div className={clsx(
+                    'flex items-center justify-between px-3 py-2 text-sm',
+                    bajoMinimo && esMio ? 'bg-red-50 border border-red-200' : 'bg-gray-50 border border-gray-100'
+                  )} style={{ borderRadius: '0.25rem' }}>
+                    <span className="text-gray-500 text-xs">Stock propio</span>
+                    <span className={clsx('font-bold flex items-center gap-1', bajoMinimo && esMio ? 'text-red-600' : 'text-gray-900')}>
+                      {bajoMinimo && esMio && <AlertTriangle size={12} />}
+                      {stock} unidades
+                    </span>
+                  </div>
+                  {deudor > 0 && (
+                    <div className="flex items-center justify-between px-3 py-1.5 text-xs bg-amber-50 border border-amber-200" style={{ borderRadius: '0.25rem' }}>
+                      <span className="text-amber-700 font-medium">Saldo deudor</span>
+                      <span className="font-bold text-amber-700">{deudor} u pendientes de pago</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Precio base */}

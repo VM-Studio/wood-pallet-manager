@@ -1,6 +1,6 @@
 import prisma from '../utils/prisma';
 
-const includeProducto = {
+const getIncludeProducto = () => ({
   prodProveedores: {
     include: {
       proveedor: {
@@ -20,23 +20,37 @@ const includeProducto = {
     orderBy: { cantMinima: 'asc' as const },
   },
   propietario: { select: { id: true, nombre: true, apellido: true, rol: true } },
-};
+});
 
 export const getProductosService = async (propietarioId: number) => {
-  return prisma.producto.findMany({
+  const productos = await prisma.producto.findMany({
     where: { activo: true, propietarioId },
-    include: includeProducto,
+    include: getIncludeProducto(),
     orderBy: { nombre: 'asc' },
   });
+
+  return productos.map(p => ({
+    ...p,
+    stockTotalPropio: p.stocks.reduce((acc, s) => acc + s.cantidadDisponible, 0),
+    stockTotalDeudor: p.stocks.reduce((acc, s) => acc + (s.cantidadDeudora || 0), 0),
+    tieneSaldoDeudor: p.stocks.some(s => (s.cantidadDeudora || 0) > 0)
+  }));
 };
 
 export const getProductosOtroService = async (propietarioId: number) => {
   // Devuelve productos del otro usuario (cross-user, solo lectura)
-  return prisma.producto.findMany({
+  const productos = await prisma.producto.findMany({
     where: { activo: true, propietarioId: { not: propietarioId } },
-    include: includeProducto,
+    include: getIncludeProducto(),
     orderBy: { nombre: 'asc' },
   });
+
+  return productos.map(p => ({
+    ...p,
+    stockTotalPropio: p.stocks.reduce((acc, s) => acc + s.cantidadDisponible, 0),
+    stockTotalDeudor: p.stocks.reduce((acc, s) => acc + (s.cantidadDeudora || 0), 0),
+    tieneSaldoDeudor: p.stocks.some(s => (s.cantidadDeudora || 0) > 0)
+  }));
 };
 
 export const getProductoByIdService = async (id: number) => {

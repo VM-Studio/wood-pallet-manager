@@ -388,19 +388,7 @@ export default function FacturacionPage() {
                             <Receipt size={13} /> N° ARCA
                           </button>
                         )}
-                        {/* Botón cargar N° ARCA — solo si tiene IVA y aún no tiene nro */}
-                        {Number(f.iva) > 0 && !f.nroFactura && (
-                          <button
-                            onClick={() => {
-                              setNroFacturaModal({ id: f.id, clienteNombre: f.cliente?.razonSocial ?? '' });
-                              setNroFacturaInput('');
-                            }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium"
-                            style={{ background: '#EFF6FF', color: '#1D4ED8', borderRadius: '0.25rem', border: '1px solid #BFDBFE' }}
-                          >
-                            <Receipt size={13} /> Cargar N° ARCA
-                          </button>
-                        )}
+
                         {/* Badge si ya tiene nro ARCA */}
                         {f.nroFactura && (
                           <span className="text-xs text-gray-500 font-mono">{f.nroFactura}</span>

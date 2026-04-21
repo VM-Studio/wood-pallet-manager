@@ -1,284 +1,252 @@
 import { useState } from 'react';
-import {
-  Package, AlertTriangle, BarChart2, RefreshCw,
-  TrendingDown, Search, Filter
-} from 'lucide-react';
+import { Search, AlertTriangle, History, Settings, Warehouse } from 'lucide-react';
 import { useStockConsolidado, useAlertasStock } from '../../hooks/useInventario';
-import LoadingSpinner from '../../components/ui/LoadingSpinner';
-import ErrorMessage from '../../components/ui/ErrorMessage';
 import AjusteStockModal from './AjusteStockModal';
 import MovimientosModal from './MovimientosModal';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import ErrorMessage from '../../components/ui/ErrorMessage';
+import { clsx } from 'clsx';
 
-interface StockConsolidado {
-  productoId: number;
-  proveedorId: number;
-  productoNombre: string;
-  proveedorNombre: string;
-  cantidadDisponible: number;
-  cantidadMinima?: number;
-  bajoMinimo?: boolean;
-  stockId: number;
-}
-
-interface AlertaStock {
-  stockId: number;
-  productoId: number;
-  productoNombre: string;
-  proveedorNombre: string;
-  cantidadDisponible: number;
-  cantidadMinima: number;
-}
-
-interface AjusteData {
-  stockId: number;
-  productoNombre: string;
-  proveedorNombre: string;
-  cantidadActual: number;
-}
-
-interface MovimientosData {
-  productoId: number;
-  productoNombre: string;
-}
+const formatNumero = (v: number) => new Intl.NumberFormat('es-AR').format(v);
 
 export default function InventarioPage() {
-  const { data: stocks, isLoading, isError } = useStockConsolidado() as {
-    data: StockConsolidado[] | undefined;
-    isLoading: boolean;
-    isError: boolean;
-  };
-  const { data: alertas } = useAlertasStock() as {
-    data: AlertaStock[] | undefined;
-  };
+  const { data: consolidado, isLoading, error } = useStockConsolidado();
+  const { data: alertas } = useAlertasStock();
+  const [busqueda, setBusqueda] = useState('');
+  const [ajusteData, setAjusteData] = useState<any>(null);
+  const [movimientosData, setMovimientosData] = useState<any>(null);
+  const [vistaAlertasOnly, setVistaAlertasOnly] = useState(false);
 
-  const [search, setSearch] = useState('');
-  const [filterAlerta, setFilterAlerta] = useState(false);
-  const [ajuste, setAjuste] = useState<AjusteData | null>(null);
-  const [movimientos, setMovimientos] = useState<MovimientosData | null>(null);
+  const filtrado = consolidado?.filter((item: any) =>
+    item.producto.nombre.toLowerCase().includes(busqueda.toLowerCase())
+  ).filter((item: any) =>
+    !vistaAlertasOnly || item.porGalpon.some((g: any) => g.bajoMinimo)
+  );
 
-  if (isLoading) return <LoadingSpinner text="Cargando inventario..." />;
-  if (isError)   return <ErrorMessage message="No se pudo cargar el inventario." />;
+  const totalUnidades = consolidado?.reduce((acc: number, item: any) => acc + item.stockTotalPropio, 0) || 0;
+  const totalDeudor = consolidado?.reduce((acc: number, item: any) => acc + (item.stockTotalDeudor || 0), 0) || 0;
+  const productosConAlerta = alertas?.length || 0;
 
-  const totalUnidades = stocks?.reduce((s, i) => s + i.cantidadDisponible, 0) ?? 0;
-  const totalAlertas = alertas?.length ?? 0;
-  const totalProductos = new Set(stocks?.map(s => s.productoId)).size;
-  const bajosMinimo = stocks?.filter(s => s.bajoMinimo).length ?? 0;
-
-  const filtered = stocks?.filter(s => {
-    const matchSearch =
-      s.productoNombre.toLowerCase().includes(search.toLowerCase()) ||
-      s.proveedorNombre.toLowerCase().includes(search.toLowerCase());
-    const matchAlerta = filterAlerta ? s.bajoMinimo : true;
-    return matchSearch && matchAlerta;
-  }) ?? [];
+  if (isLoading) return <LoadingSpinner texto="Cargando inventario..." />;
+  if (error) return <ErrorMessage mensaje="No se pudo cargar el inventario." />;
 
   return (
-    <div className="animate-fade-in space-y-5">
+    <div className="space-y-6">
 
-      {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="page-header">
         <div>
           <h1 className="titulo-modulo">Inventario</h1>
-          <p className="text-sm text-gray-600 mt-1">Stock disponible por producto y proveedor</p>
+          <p className="text-sm text-gray-500 mt-1">Stock en tiempo real por galpón</p>
         </div>
+        <button
+          onClick={() => setMovimientosData({ id: 0, nombre: 'Todos los productos' })}
+          className="btn-brand-outline"
+        >
+          <History size={16} /> Ver movimientos
+        </button>
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="card-kpi flex items-center gap-3">
-          <div className="w-10 h-10 flex items-center justify-center shrink-0"
-            style={{ background: '#F3EDE8', borderRadius: '0.25rem' }}>
-            <Package size={18} style={{ color: '#6B3A2A' }} />
+      <div className="grid grid-cols-3 gap-4">
+        <div className="card-kpi">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500">
+              <Warehouse size={18} />
+            </div>
+            <p className="titulo-card">Stock propio</p>
           </div>
-          <div>
-            <p className="text-xs text-gray-500">Productos distintos</p>
-            <p className="text-2xl font-bold text-gray-900">{totalProductos}</p>
-          </div>
+          <p className="text-3xl font-bold text-gray-900">{formatNumero(totalUnidades)}</p>
+          <p className="text-xs text-gray-400 mt-1">unidades disponibles</p>
         </div>
-
-        <div className="card-kpi flex items-center gap-3">
-          <div className="w-10 h-10 flex items-center justify-center shrink-0"
-            style={{ background: '#FEF3E2', borderRadius: '0.25rem' }}>
-            <BarChart2 size={18} style={{ color: '#C4895A' }} />
+        <div className={clsx('card-kpi', totalDeudor > 0 && 'border-l-4 border-l-amber-400')}>
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center text-amber-500">
+              <AlertTriangle size={18} />
+            </div>
+            <p className="titulo-card">Saldo deudor</p>
           </div>
-          <div>
-            <p className="text-xs text-gray-500">Unidades totales</p>
-            <p className="text-2xl font-bold text-gray-900">{totalUnidades.toLocaleString('es-AR')}</p>
-          </div>
+          <p className={clsx('text-3xl font-bold', totalDeudor > 0 ? 'text-amber-600' : 'text-gray-900')}>
+            {formatNumero(totalDeudor)}
+          </p>
+          <p className="text-xs text-gray-400 mt-1">unidades pendientes de pago</p>
         </div>
-
-        <div className="card-kpi flex items-center gap-3">
-          <div className="w-10 h-10 flex items-center justify-center shrink-0"
-            style={{ background: '#FFFBEB', borderRadius: '0.25rem' }}>
-            <TrendingDown size={18} className="text-amber-600" />
+        <div className={clsx('card-kpi', productosConAlerta > 0 && 'border-l-4 border-l-red-400')}>
+          <div className="flex items-center gap-3 mb-3">
+            <div className={clsx('w-9 h-9 rounded-lg flex items-center justify-center', productosConAlerta > 0 ? 'bg-red-50 text-red-500' : 'bg-gray-100 text-gray-500')}>
+              <AlertTriangle size={18} />
+            </div>
+            <p className="titulo-card">Bajo mínimo</p>
           </div>
-          <div>
-            <p className="text-xs text-gray-500">Bajo mínimo</p>
-            <p className="text-2xl font-bold text-gray-900">{bajosMinimo}</p>
-          </div>
-        </div>
-
-        <div className="card-kpi flex items-center gap-3">
-          <div className="w-10 h-10 flex items-center justify-center shrink-0"
-            style={{ background: '#FEF2F2', borderRadius: '0.25rem' }}>
-            <AlertTriangle size={18} className="text-red-500" />
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Alertas activas</p>
-            <p className="text-2xl font-bold text-gray-900">{totalAlertas}</p>
-          </div>
+          <p className={clsx('text-3xl font-bold', productosConAlerta > 0 ? 'text-red-600' : 'text-gray-900')}>
+            {productosConAlerta}
+          </p>
+          <p className="text-xs text-gray-400 mt-1">productos bajo el mínimo</p>
         </div>
       </div>
 
-      {/* Alertas banner */}
-      {totalAlertas > 0 && (
-        <div className="flex items-start gap-3 px-4 py-3 bg-red-50 border border-red-100 animate-slide-in"
-          style={{ borderRadius: '0.25rem' }}>
-          <AlertTriangle size={16} className="text-red-500 shrink-0 mt-0.5" />
-          <div>
+      {/* Alertas */}
+      {alertas && alertas.length > 0 && (
+        <div className="card-base border-l-4 border-l-red-400">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertTriangle size={16} className="text-red-600" />
             <p className="text-sm font-semibold text-red-700">
-              {totalAlertas} {totalAlertas === 1 ? 'producto bajo' : 'productos bajo'} stock mínimo
+              {alertas.length} producto{alertas.length > 1 ? 's' : ''} bajo el mínimo configurado
             </p>
-            <div className="mt-1.5 flex flex-wrap gap-2">
-              {alertas?.slice(0, 5).map(a => (
-                <span key={a.stockId} className="badge-red">
-                  {a.productoNombre} — {a.cantidadDisponible}/{a.cantidadMinima}
-                </span>
-              ))}
-              {(alertas?.length ?? 0) > 5 && (
-                <span className="text-xs text-red-500">
-                  +{(alertas?.length ?? 0) - 5} más
-                </span>
-              )}
-            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {alertas.map((a: any) => (
+              <div key={a.stockId} className="flex items-center justify-between p-2.5 bg-red-50 rounded-xl border border-red-100">
+                <div>
+                  <p className="text-sm font-semibold text-red-800">{a.producto.nombre}</p>
+                  <p className="text-xs text-red-500">{a.proveedor.nombreEmpresa}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold text-red-700">{a.cantidadDisponible} u</p>
+                  <p className="text-xs text-red-400">mín. {a.cantidadMinima} u</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
       {/* Filtros */}
-      <div className="card-base">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              className="input-field pl-9"
-              placeholder="Buscar por producto o proveedor..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
-          </div>
-          <button
-            onClick={() => setFilterAlerta(v => !v)}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: '6px',
-              padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 500,
-              borderRadius: '0.25rem', cursor: 'pointer', transition: 'all 0.15s',
-              background: filterAlerta
-                ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)'
-                : '#fff',
-              color: filterAlerta ? '#fff' : '#4B5563',
-              border: filterAlerta ? 'none' : '1px solid #E5E7EB',
-            }}
-          >
-            <Filter size={14} />
-            {filterAlerta ? 'Solo alertas' : 'Bajo mínimo'}
-          </button>
+      <div className="flex gap-3">
+        <div className="relative flex-1">
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input type="text" placeholder="Buscar producto..." value={busqueda}
+            onChange={e => setBusqueda(e.target.value)} className="input pl-10" />
         </div>
+        <button
+          onClick={() => setVistaAlertasOnly(!vistaAlertasOnly)}
+          className={clsx('btn-md transition-all', vistaAlertasOnly ? 'btn-brand' : 'btn-secondary')}
+        >
+          <AlertTriangle size={15} />
+          {vistaAlertasOnly ? 'Ver todos' : 'Solo alertas'}
+        </button>
       </div>
 
-      {/* Tabla */}
-      {filtered.length === 0 ? (
-        <div className="card-base flex flex-col items-center justify-center py-12 text-center">
-          <div className="w-12 h-12 bg-gray-100 flex items-center justify-center mx-auto mb-3"
-            style={{ borderRadius: '0.25rem' }}>
-            <Package size={22} className="text-gray-400" />
-          </div>
-          <p className="titulo-card">Sin resultados</p>
-          <p className="text-xs text-gray-400 mt-1">Probá con otro término de búsqueda</p>
+      {/* Grid de productos en inventario */}
+      {!filtrado?.length ? (
+        <div className="empty-state">
+          <div className="empty-icon"><Warehouse size={24} /></div>
+          <p className="text-sm font-semibold text-gray-700">Sin stock registrado</p>
+          <p className="text-sm text-gray-400 mt-1">El stock se actualiza automáticamente al registrar compras</p>
         </div>
       ) : (
-        <div className="card-base" style={{ padding: 0, overflow: 'hidden' }}>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Producto</th>
-                <th>Proveedor</th>
-                <th className="text-right">Disponible</th>
-                <th className="text-right">Mínimo</th>
-                <th>Estado</th>
-                <th className="text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(s => (
-                <tr key={`${s.productoId}-${s.proveedorId}`}>
-                  <td className="font-medium text-gray-900">{s.productoNombre}</td>
-                  <td className="text-gray-600 text-sm">{s.proveedorNombre}</td>
-                  <td className="text-right font-semibold">
-                    {s.cantidadDisponible.toLocaleString('es-AR')}
-                  </td>
-                  <td className="text-right text-gray-500">
-                    {s.cantidadMinima?.toLocaleString('es-AR') ?? '—'}
-                  </td>
-                  <td>
-                    {s.bajoMinimo ? (
-                      <span className="badge-red">Bajo mínimo</span>
-                    ) : (
-                      <span className="badge-green">OK</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {filtrado.map((item: any) => {
+            const tieneAlerta = item.porGalpon.some((g: any) => g.bajoMinimo);
+            const tieneDeudor = item.stockTotalDeudor > 0;
+
+            return (
+              <div key={item.producto.id} className={clsx('card-base', tieneAlerta && 'border-l-4 border-l-red-400')}>
+                {/* Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h3 className="font-bold text-gray-900">{item.producto.nombre}</h3>
+                    <p className="text-xs text-gray-400 mt-0.5 capitalize">
+                      {item.producto.tipo} · {item.producto.condicion}
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-1 items-end">
+                    {tieneAlerta && (
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-lg bg-red-100 text-red-700">
+                        Stock bajo
+                      </span>
                     )}
-                  </td>
-                  <td className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => setMovimientos({ productoId: s.productoId, productoNombre: s.productoNombre })}
-                        className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors text-xs flex items-center gap-1"
-                      >
-                        <RefreshCw size={13} /> Movimientos
-                      </button>
-                      <button
-                        onClick={() => setAjuste({
-                          stockId: s.stockId,
-                          productoNombre: s.productoNombre,
-                          proveedorNombre: s.proveedorNombre,
-                          cantidadActual: s.cantidadDisponible
-                        })}
-                        style={{
-                          display: 'inline-flex', alignItems: 'center', gap: '4px',
-                          padding: '0.25rem 0.625rem', fontSize: '0.75rem', fontWeight: 500,
-                          borderRadius: '0.25rem', cursor: 'pointer', transition: 'all 0.15s',
-                          border: 'none',
-                          background: s.bajoMinimo
-                            ? 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)'
-                            : 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
-                          color: '#fff',
-                        }}
-                      >
-                        Ajustar stock
-                      </button>
+                  </div>
+                </div>
+
+                {/* Stock propio */}
+                <div className={clsx(
+                  'p-3 rounded-xl mb-3 text-center',
+                  tieneAlerta ? 'bg-red-50 border border-red-200' : 'bg-gray-50'
+                )}>
+                  <p className="text-xs text-gray-500 mb-1">Stock propio</p>
+                  <p className={clsx('text-3xl font-bold', tieneAlerta ? 'text-red-600' : 'text-gray-900')}>
+                    {formatNumero(item.stockTotalPropio)}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">unidades disponibles</p>
+                </div>
+
+                {/* Saldo deudor si existe */}
+                {tieneDeudor && (
+                  <div className="p-2.5 rounded-xl mb-3 bg-amber-50 border border-amber-200 flex items-center justify-between">
+                    <p className="text-xs font-semibold text-amber-700">Saldo deudor</p>
+                    <p className="text-sm font-bold text-amber-700">{formatNumero(item.stockTotalDeudor)} u pendientes de pago</p>
+                  </div>
+                )}
+
+                {/* Por galpón */}
+                <div className="space-y-2 mb-4">
+                  {item.porGalpon.map((g: any, i: number) => (
+                    <div key={i} className={clsx(
+                      'flex items-center justify-between p-2.5 rounded-xl border',
+                      g.bajoMinimo ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-100'
+                    )}>
+                      <div>
+                        <p className="text-xs font-semibold text-gray-700 truncate max-w-[140px]">
+                          {g.proveedor.nombreEmpresa}
+                        </p>
+                        {g.cantidadMinima && (
+                          <p className="text-xs text-gray-400">Mín: {g.cantidadMinima} u</p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <p className={clsx('text-sm font-bold', g.bajoMinimo ? 'text-red-600' : 'text-gray-900')}>
+                          {formatNumero(g.cantidadDisponible)} u
+                        </p>
+                        {g.cantidadDeudora > 0 && (
+                          <p className="text-xs text-amber-600 font-medium">+{formatNumero(g.cantidadDeudora)} deudoras</p>
+                        )}
+                      </div>
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  ))}
+                </div>
+
+                {/* Acciones */}
+                <div className="flex gap-2 pt-3 border-t border-gray-100">
+                  <button
+                    onClick={() => setMovimientosData({ id: item.producto.id, nombre: item.producto.nombre })}
+                    className="btn-secondary flex-1 justify-center text-xs py-2"
+                  >
+                    <History size={13} /> Movimientos
+                  </button>
+                  {item.porGalpon.map((g: any, i: number) => (
+                    <button key={i}
+                      onClick={() => setAjusteData({
+                        stockId: g.stockId,
+                        productoNombre: item.producto.nombre,
+                        proveedorNombre: g.proveedor.nombreEmpresa,
+                        cantidadActual: g.cantidadDisponible
+                      })}
+                      className="btn-secondary flex-1 justify-center text-xs py-2"
+                    >
+                      <Settings size={13} /> Ajustar
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {/* Modals */}
-      {ajuste && (
+      {ajusteData && (
         <AjusteStockModal
-          stockId={ajuste.stockId}
-          productoNombre={ajuste.productoNombre}
-          proveedorNombre={ajuste.proveedorNombre}
-          cantidadActual={ajuste.cantidadActual}
-          onClose={() => setAjuste(null)}
+          stockId={ajusteData.stockId}
+          productoNombre={ajusteData.productoNombre}
+          proveedorNombre={ajusteData.proveedorNombre}
+          cantidadActual={ajusteData.cantidadActual}
+          onClose={() => setAjusteData(null)}
         />
       )}
-      {movimientos && (
+      {movimientosData && (
         <MovimientosModal
-          productoId={movimientos.productoId}
-          productoNombre={movimientos.productoNombre}
-          onClose={() => setMovimientos(null)}
+          productoId={movimientosData.id || undefined}
+          productoNombre={movimientosData.nombre}
+          onClose={() => setMovimientosData(null)}
         />
       )}
     </div>

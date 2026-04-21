@@ -1,0 +1,19 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Backend: WoodPallet",
+			"type": "shell",
+			"command": "cd backend && npx ts-node --project tsconfig.json src/index.ts",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Frontend: WoodPallet",
+			"type": "shell",
+			"command": "cd frontend && npx vite --port 5174",
+			"isBackground": true,
+			"problemMatcher": []
+		}
+	]
+}

@@ -79,6 +79,7 @@ export interface Stock {
   productoId: number;
   proveedorId: number;
   cantidadDisponible: number;
+  cantidadDeudora: number;
   cantidadMinima?: number;
   producto?: { nombre: string; tipo: string };
   proveedor?: { nombreEmpresa: string };
@@ -168,11 +169,16 @@ export interface Compra {
   usuarioId: number;
   ventaId?: number;
   fechaCompra: string;
-  estado: 'solicitada' | 'confirmada' | 'recibida' | 'pagada';
-  esAnticipado: boolean;
+  estado: 'pendiente_pago' | 'pagada' | 'cancelada';
+  tipoCompra: 'reventa_inmediata' | 'stock_propio';
+  saldoDeudor: boolean;
   total?: number;
   nroRemito?: string;
   observaciones?: string;
+  fechaPago?: string;
+  metodoPago?: string;
+  cuentaDestino?: string;
+  nroComprobante?: string;
   proveedor?: { nombreEmpresa: string; nombreContacto: string };
   detalles?: DetalleCompra[];
 }
@@ -267,6 +273,8 @@ export interface DashboardData {
     cotizacionesPendientes: number;
     pedidosActivos: number;
     entregasHoy: number;
+    gananciasMes: number;
+    costoComprasMes: number;
   };
   porPropietario: {
     carlos: {
