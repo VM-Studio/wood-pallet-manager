@@ -12,7 +12,7 @@ import {
 
 const crearProveedorSchema = z.object({
   nombreEmpresa: z.string().min(1, 'El nombre de la empresa es requerido'),
-  nombreContacto: z.string().min(1, 'El nombre del contacto es requerido'),
+  nombreContacto: z.string().optional().default(''),
   telefono: z.string().optional(),
   email: z.string().email('Email inválido').optional(),
   tipoProducto: z.enum(['seminuevo', 'nuevo_medida', 'ambos']),

@@ -53,12 +53,7 @@ function ProveedorModal({
   const esEdicion = !!proveedor;
   const [form, setForm] = useState({
     nombreEmpresa: proveedor?.nombreEmpresa ?? '',
-    nombreContacto: proveedor?.nombreContacto ?? '',
-    telefono: proveedor?.telefono ?? '',
-    email: proveedor?.email ?? '',
     tipoProducto: proveedor?.tipoProducto ?? 'seminuevo' as 'seminuevo' | 'nuevo_medida' | 'ambos',
-    distanciaKm: proveedor?.distanciaKm ? String(proveedor.distanciaKm) : '',
-    observaciones: proveedor?.observaciones ?? '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -66,18 +61,13 @@ function ProveedorModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!form.nombreEmpresa.trim()) { setError('El nombre de la empresa es obligatorio'); return; }
-    if (!form.nombreContacto.trim()) { setError('El nombre de contacto es obligatorio'); return; }
+    if (!form.nombreEmpresa.trim()) { setError('El nombre es obligatorio'); return; }
     setLoading(true);
     try {
-      const payload = {
-        ...form,
-        distanciaKm: form.distanciaKm ? parseInt(form.distanciaKm) : undefined,
-      };
       if (esEdicion) {
-        await api.put(`/proveedores/${proveedor!.id}`, payload);
+        await api.put(`/proveedores/${proveedor!.id}`, form);
       } else {
-        await api.post('/proveedores', payload);
+        await api.post('/proveedores', form);
       }
       onSaved();
       onClose();
@@ -91,43 +81,23 @@ function ProveedorModal({
 
   return (
     <div className="modal-overlay">
-      <div className="modal max-w-lg animate-slide-up">
+      <div className="modal max-w-sm animate-slide-up">
         <div className="modal-header">
           <h2 className="modal-title">{esEdicion ? 'Editar proveedor' : 'Nuevo proveedor'}</h2>
           <button onClick={onClose} className="btn-icon">✕</button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className="modal-body space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">
-                <label className="label">Nombre de la empresa *</label>
-                <input className="input" value={form.nombreEmpresa}
-                  onChange={e => setForm({ ...form, nombreEmpresa: e.target.value })}
-                  placeholder="Ej: Galpón Familiar" />
-              </div>
-              <div className="col-span-2">
-                <label className="label">Nombre del contacto *</label>
-                <input className="input" value={form.nombreContacto}
-                  onChange={e => setForm({ ...form, nombreContacto: e.target.value })}
-                  placeholder="Ej: Brian Hernández" />
-              </div>
-              <div>
-                <label className="label">Teléfono</label>
-                <input className="input" value={form.telefono}
-                  onChange={e => setForm({ ...form, telefono: e.target.value })}
-                  placeholder="11 2345-6789" />
-              </div>
-              <div>
-                <label className="label">Email</label>
-                <input className="input" type="email" value={form.email}
-                  onChange={e => setForm({ ...form, email: e.target.value })}
-                  placeholder="proveedor@email.com" />
-              </div>
+            <div>
+              <label className="label">Nombre del proveedor *</label>
+              <input className="input" value={form.nombreEmpresa} autoFocus
+                onChange={e => setForm({ ...form, nombreEmpresa: e.target.value })}
+                placeholder="Ej: Galpón Familiar, Todo Pallets..." />
             </div>
 
             <div>
               <label className="label">Tipo de producto que provee *</label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-2 mt-1">
                 {(['seminuevo', 'nuevo_medida', 'ambos'] as const).map(t => (
                   <button key={t} type="button"
                     onClick={() => setForm({ ...form, tipoProducto: t })}
@@ -140,22 +110,6 @@ function ProveedorModal({
                   </button>
                 ))}
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="label">Distancia (km)</label>
-                <input className="input" type="number" min="0" value={form.distanciaKm}
-                  onChange={e => setForm({ ...form, distanciaKm: e.target.value })}
-                  placeholder="0" />
-              </div>
-            </div>
-
-            <div>
-              <label className="label">Observaciones</label>
-              <textarea className="input resize-none" rows={2} value={form.observaciones}
-                onChange={e => setForm({ ...form, observaciones: e.target.value })}
-                placeholder="Notas sobre el proveedor..." />
             </div>
 
             {error && (

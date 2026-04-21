@@ -25,7 +25,7 @@ export const getProveedorByIdService = async (id: number) => {
 
 export const crearProveedorService = async (datos: {
   nombreEmpresa: string;
-  nombreContacto: string;
+  nombreContacto?: string;
   telefono?: string;
   email?: string;
   tipoProducto: TipoProductoProveedor;
@@ -33,7 +33,7 @@ export const crearProveedorService = async (datos: {
   distanciaKm?: number;
   observaciones?: string;
 }) => {
-  return prisma.proveedor.create({ data: datos });
+  return prisma.proveedor.create({ data: { ...datos, nombreContacto: datos.nombreContacto ?? '' } });
 };
 
 export const actualizarProveedorService = async (
