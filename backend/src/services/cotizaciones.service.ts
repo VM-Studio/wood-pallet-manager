@@ -203,6 +203,7 @@ export const convertirCotizacionAVentaService = async (
     lugarEntrega?: string;
     fechaEntrega?: Date;
     observaciones?: string;
+    usaStockPropio?: boolean;
   },
   usuarioId: number
 ) => {
@@ -251,6 +252,29 @@ export const convertirCotizacionAVentaService = async (
       detalles: { include: { producto: true } },
     },
   });
+
+  // ── Descontar stock propio si corresponde ──────────────────────────────
+  if (datos.usaStockPropio) {
+    for (const d of cotizacion.detalles) {
+      const stockEntry = await prisma.stock.findFirst({ where: { productoId: d.productoId } });
+      if (stockEntry && d.cantidad > 0) {
+        await prisma.stock.update({
+          where: { id: stockEntry.id },
+          data: { cantidadDisponible: { decrement: d.cantidad } },
+        });
+        await prisma.movimientoStock.create({
+          data: {
+            stockId: stockEntry.id,
+            tipoMovimiento: 'salida',
+            cantidad: d.cantidad,
+            motivo: 'venta',
+            idReferencia: venta.id,
+            registradoPorId: usuarioId,
+          },
+        });
+      }
+    }
+  }
 
   // ── Auto-crear factura en estado pendiente ──────────────────────────────
   const totalConIva = Number(cotizacion.totalConIva ?? 0);

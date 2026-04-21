@@ -60,6 +60,7 @@ const convertirSchema = z.object({
   lugarEntrega: z.string().optional(),
   fechaEntrega: z.string().optional().transform(v => v ? new Date(v) : undefined),
   observaciones: z.string().optional(),
+  usaStockPropio: z.boolean().optional().default(false),
 });
 
 export const getCotizaciones = async (req: AuthRequest, res: Response) => {
