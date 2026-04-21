@@ -27,8 +27,8 @@ export default function InventarioPage() {
   const totalDeudor = consolidado?.reduce((acc: number, item: any) => acc + (item.stockTotalDeudor || 0), 0) || 0;
   const productosConAlerta = alertas?.length || 0;
 
-  if (isLoading) return <LoadingSpinner texto="Cargando inventario..." />;
-  if (error) return <ErrorMessage mensaje="No se pudo cargar el inventario." />;
+  if (isLoading) return <LoadingSpinner text="Cargando inventario..." />;
+  if (error) return <ErrorMessage message="No se pudo cargar el inventario." />;
 
   return (
     <div className="space-y-6">

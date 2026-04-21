@@ -9,39 +9,60 @@ interface NuevaCompraProps {
   onSuccess: () => void;
 }
 
-const PROVEEDORES_JUANCRUZ = [
-  { id: 1, nombreEmpresa: 'Galpón Familiar — Brian Hernández', tipoProducto: 'seminuevo' }
-];
-const PROVEEDORES_CARLOS = [
-  { id: 1, nombreEmpresa: 'Galpón Familiar — Brian Hernández', tipoProducto: 'seminuevo' },
-  { id: 2, nombreEmpresa: 'Todo Pallets — Guillermo', tipoProducto: 'nuevo_medida' },
-];
+interface Proveedor {
+  id: number;
+  nombreEmpresa: string;
+  tipoProducto: string;
+}
+
+interface Producto {
+  id: number;
+  nombre: string;
+  condicion: string;
+  tipo: string;
+}
+
+interface Detalle {
+  productoId: number;
+  cantidadStr: string;
+  precioCostoUnit: number;
+}
 
 export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
   const crearCompra = useCrearCompra();
   const { usuario } = useAuthStore();
   const esCarlos = usuario?.rol === 'propietario_carlos';
-  const [productos, setProductos] = useState<any[]>([]);
-  const [error, setError] = useState('');
 
-  const proveedoresDisponibles = esCarlos ? PROVEEDORES_CARLOS : PROVEEDORES_JUANCRUZ;
+  const [proveedores, setProveedores] = useState<Proveedor[]>([]);
+  const [productos, setProductos] = useState<Producto[]>([]);
+  const [error, setError] = useState('');
+  const [cargando, setCargando] = useState(true);
 
   const [form, setForm] = useState({
-    proveedorId: proveedoresDisponibles[0].id,
+    proveedorId: 0,
     tipoCompra: 'reventa_inmediata' as 'reventa_inmediata' | 'stock_propio',
     nroRemito: '',
     observaciones: ''
   });
 
-  const [detalles, setDetalles] = useState([
-    { productoId: 0, cantidad: 1, precioCostoUnit: 0 }
+  const [detalles, setDetalles] = useState<Detalle[]>([
+    { productoId: 0, cantidadStr: '', precioCostoUnit: 0 }
   ]);
 
   useEffect(() => {
-    api.get('/productos').then(({ data }) => setProductos(data));
-  }, []);
+    Promise.all([
+      api.get('/proveedores'),
+      api.get('/productos')
+    ]).then(([provRes, prodRes]) => {
+      const todos: Proveedor[] = provRes.data;
+      const filtrados = esCarlos ? todos : todos.filter(p => p.tipoProducto === 'seminuevo');
+      setProveedores(filtrados);
+      if (filtrados.length > 0) setForm(f => ({ ...f, proveedorId: filtrados[0].id }));
+      setProductos(prodRes.data);
+    }).finally(() => setCargando(false));
+  }, [esCarlos]);
 
-  const proveedorSeleccionado = proveedoresDisponibles.find(p => p.id === form.proveedorId);
+  const proveedorSeleccionado = proveedores.find(p => p.id === form.proveedorId);
 
   const productosFiltrados = productos.filter(p => {
     if (proveedorSeleccionado?.tipoProducto === 'seminuevo') {
@@ -50,25 +71,34 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
     return true;
   });
 
-  const addDetalle = () => setDetalles(prev => [...prev, { productoId: 0, cantidad: 1, precioCostoUnit: 0 }]);
+  const addDetalle = () => setDetalles(prev => [
+    ...prev, { productoId: 0, cantidadStr: '', precioCostoUnit: 0 }
+  ]);
   const removeDetalle = (idx: number) => setDetalles(prev => prev.filter((_, i) => i !== idx));
-  const updateDetalle = (idx: number, key: string, value: any) =>
+  const updateDetalle = (idx: number, key: keyof Detalle, value: string | number) =>
     setDetalles(prev => prev.map((d, i) => i === idx ? { ...d, [key]: value } : d));
 
-  const total = detalles.reduce((acc, d) => acc + (d.precioCostoUnit * d.cantidad), 0);
+  const totalCalc = detalles.reduce((acc, d) => acc + (d.precioCostoUnit * (parseInt(d.cantidadStr) || 0)), 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (detalles.some(d => !d.productoId || !d.cantidad || !d.precioCostoUnit)) {
-      setError('Completá todos los productos con precio de costo'); return;
+    if (!form.proveedorId) { setError('Seleccioná un proveedor'); return; }
+    const detallesFinales = detalles.map(d => ({
+      productoId: d.productoId,
+      cantidad: parseInt(d.cantidadStr) || 0,
+      precioCostoUnit: d.precioCostoUnit
+    }));
+    if (detallesFinales.some(d => !d.productoId || !d.cantidad || !d.precioCostoUnit)) {
+      setError('Completá todos los productos con cantidad y precio de costo'); return;
     }
     try {
-      await crearCompra.mutateAsync({ ...form, detalles });
+      await crearCompra.mutateAsync({ ...form, detalles: detallesFinales });
       onSuccess();
       onClose();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Error al registrar la compra');
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { error?: string } } };
+      setError(e.response?.data?.error || 'Error al registrar la compra');
     }
   };
 
@@ -103,7 +133,7 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
                   },
                 ].map(op => (
                   <button key={op.value} type="button"
-                    onClick={() => setForm({ ...form, tipoCompra: op.value as any })}
+                    onClick={() => setForm({ ...form, tipoCompra: op.value as 'reventa_inmediata' | 'stock_propio' })}
                     className={`p-3 rounded-xl border text-left transition-all ${
                       form.tipoCompra === op.value
                         ? 'border-[#6B3A2A] bg-orange-50'
@@ -121,14 +151,17 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
             {/* Proveedor */}
             <div>
               <label className="label">Proveedor</label>
-              {!esCarlos ? (
-                <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
-                  <p className="text-sm font-semibold text-gray-900">Galpón Familiar — Brian Hernández</p>
-                  <p className="text-xs text-gray-400 mt-0.5">Pallets semi-nuevos y usados</p>
+              {cargando ? (
+                <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-sm text-gray-400">
+                  Cargando proveedores...
+                </div>
+              ) : proveedores.length === 0 ? (
+                <div className="p-3 bg-red-50 rounded-xl border border-red-200 text-sm text-red-600">
+                  No hay proveedores registrados. Agregá uno desde el módulo de Proveedores.
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {PROVEEDORES_CARLOS.map(p => (
+                  {proveedores.map(p => (
                     <button key={p.id} type="button"
                       onClick={() => setForm({ ...form, proveedorId: p.id })}
                       className={`w-full p-3 rounded-xl border text-left transition-all ${
@@ -140,7 +173,8 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
                         {p.nombreEmpresa}
                       </p>
                       <p className="text-xs text-gray-400 mt-0.5">
-                        {p.tipoProducto === 'seminuevo' ? 'Pallets semi-nuevos y usados' : 'Pallets nuevos y a medida'}
+                        {p.tipoProducto === 'seminuevo' ? 'Pallets semi-nuevos y usados' :
+                         p.tipoProducto === 'nuevo_medida' ? 'Pallets nuevos y a medida' : p.tipoProducto}
                       </p>
                     </button>
                   ))}
@@ -165,15 +199,20 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
                           onChange={e => updateDetalle(idx, 'productoId', parseInt(e.target.value))}
                           className="select text-xs py-2">
                           <option value={0}>Seleccionar producto...</option>
-                          {productosFiltrados.map((p: any) => (
+                          {productosFiltrados.map(p => (
                             <option key={p.id} value={p.id}>{p.nombre}</option>
                           ))}
                         </select>
                       </div>
                       <div className="col-span-3">
-                        <input type="number" min={1} value={d.cantidad}
-                          onChange={e => updateDetalle(idx, 'cantidad', parseInt(e.target.value) || 1)}
-                          className="input text-xs py-2" placeholder="Cant." />
+                        <input
+                          type="number"
+                          min={1}
+                          value={d.cantidadStr}
+                          onChange={e => updateDetalle(idx, 'cantidadStr', e.target.value)}
+                          className="input text-xs py-2"
+                          placeholder="Cant."
+                        />
                       </div>
                       <div className="col-span-3">
                         <input type="number" min={1} value={d.precioCostoUnit || ''}
@@ -189,9 +228,9 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
                         )}
                       </div>
                     </div>
-                    {d.cantidad > 0 && d.precioCostoUnit > 0 && (
+                    {(parseInt(d.cantidadStr) > 0) && d.precioCostoUnit > 0 && (
                       <p className="text-xs text-gray-400 mt-1.5 pl-1">
-                        Subtotal: {formatPesos(d.cantidad * d.precioCostoUnit)}
+                        Subtotal: {formatPesos(parseInt(d.cantidadStr) * d.precioCostoUnit)}
                       </p>
                     )}
                   </div>
@@ -216,14 +255,14 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
             </div>
 
             {/* Total */}
-            {total > 0 && (
+            {totalCalc > 0 && (
               <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
                 <div className="flex justify-between items-center">
                   <div>
                     <p className="text-sm font-semibold text-gray-700">Total de la compra</p>
                     <p className="text-xs text-amber-600 font-medium mt-0.5">Saldo deudor hasta registrar el pago</p>
                   </div>
-                  <p className="text-xl font-bold text-gray-900">{formatPesos(total)}</p>
+                  <p className="text-xl font-bold text-gray-900">{formatPesos(totalCalc)}</p>
                 </div>
               </div>
             )}
@@ -237,7 +276,7 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
 
           <div className="modal-footer">
             <button type="button" onClick={onClose} className="btn-secondary">Cancelar</button>
-            <button type="submit" disabled={crearCompra.isPending} className="btn-primary">
+            <button type="submit" disabled={crearCompra.isPending || proveedores.length === 0} className="btn-primary">
               {crearCompra.isPending ? 'Registrando...' : 'Registrar compra'}
             </button>
           </div>

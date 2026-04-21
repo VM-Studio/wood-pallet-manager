@@ -54,8 +54,8 @@ export default function ComprasPage() {
     }
   };
 
-  if (isLoading) return <LoadingSpinner texto="Cargando compras..." />;
-  if (error) return <ErrorMessage mensaje="No se pudieron cargar las compras." />;
+  if (isLoading) return <LoadingSpinner text="Cargando compras..." />;
+  if (error) return <ErrorMessage message="No se pudieron cargar las compras." />;
 
   return (
     <div className="space-y-6">

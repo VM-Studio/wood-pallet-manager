@@ -1,24 +1,21 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import { AuthRequest, parseId } from '../types';
+import { AuthRequest } from '../types';
 import {
   getStockService,
   getAlertasStockService,
   getMovimientosStockService,
   ajustarStockService,
   getStockConsolidadoService,
-  setStockProductoService,
 } from '../services/inventario.service';
 
-export const getStock = async (req: AuthRequest, res: Response) => {
-  const propietarioId = req.user?.userId;
-  const stock = await getStockService(propietarioId);
+export const getStock = async (_req: AuthRequest, res: Response) => {
+  const stock = await getStockService();
   res.json(stock);
 };
 
-export const getAlertas = async (req: AuthRequest, res: Response) => {
-  const propietarioId = req.user?.userId;
-  const alertas = await getAlertasStockService(propietarioId);
+export const getAlertas = async (_req: AuthRequest, res: Response) => {
+  const alertas = await getAlertasStockService();
   res.json(alertas);
 };
 
@@ -54,18 +51,4 @@ export const ajustarStock = async (req: AuthRequest, res: Response) => {
 export const getConsolidado = async (_req: Request, res: Response) => {
   const consolidado = await getStockConsolidadoService();
   res.json(consolidado);
-};
-
-export const setStockProducto = async (req: AuthRequest, res: Response) => {
-  try {
-    const productoId = parseInt(req.params.productoId as string);
-    const { cantidad } = req.body;
-    if (isNaN(productoId) || cantidad == null || isNaN(parseInt(cantidad))) {
-      return res.status(400).json({ error: 'Datos inválidos' });
-    }
-    const result = await setStockProductoService(productoId, parseInt(cantidad), req.user!.userId);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
 };

@@ -44,12 +44,10 @@ const formatPesos = (v: number) =>
 const formatFecha = (f: string) =>
   new Date(f).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-const estadosOrden = ['solicitada', 'confirmada', 'recibida', 'pagada'];
+const estadosOrden = ['pendiente_pago', 'pagada'];
 
 const estadoLabel: Record<string, string> = {
-  confirmada: 'Confirmar compra',
-  recibida:   'Marcar como recibida',
-  pagada:     'Marcar como pagada'
+  pagada: 'Marcar como pagada'
 };
 
 export default function CompraDetalle({ compraId, onClose }: CompraDetalleProps) {

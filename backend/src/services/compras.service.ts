@@ -1,4 +1,5 @@
 import prisma from '../utils/prisma';
+import { EstadoCompra } from '@prisma/client';
 
 // Obtener compras filtradas por usuario y rol
 export const getComprasService = async (usuarioId: number, rol: string) => {
@@ -231,4 +232,26 @@ export const getDeudaProveedoresService = async () => {
   }
 
   return Object.values(deudaPorProveedor);
+};
+
+export const getCompraByIdService = async (compraId: number) => {
+  return await prisma.compra.findUnique({
+    where: { id: compraId },
+    include: {
+      proveedor: { select: { id: true, nombreEmpresa: true, nombreContacto: true } },
+      usuario: { select: { id: true, nombre: true, apellido: true, rol: true } },
+      detalles: { include: { producto: { select: { id: true, nombre: true, tipo: true } } } },
+      pagos: true
+    }
+  });
+};
+
+export const actualizarEstadoCompraService = async (
+  compraId: number,
+  estado: EstadoCompra
+) => {
+  return await prisma.compra.update({
+    where: { id: compraId },
+    data: { estado }
+  });
 };

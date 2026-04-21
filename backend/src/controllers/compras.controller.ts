@@ -6,7 +6,9 @@ import {
   crearCompraService,
   registrarPagoCompraService,
   cancelarCompraService,
-  getDeudaProveedoresService
+  getDeudaProveedoresService,
+  getCompraByIdService,
+  actualizarEstadoCompraService
 } from '../services/compras.service';
 
 const detalleSchema = z.object({
@@ -54,7 +56,7 @@ export const crearCompra = async (req: AuthRequest, res: Response) => {
 
 export const registrarPagoCompra = async (req: AuthRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params['id'] as string);
     const datos = pagoSchema.parse(req.body);
     const compra = await registrarPagoCompraService(id, datos, req.user!.userId);
     res.json(compra);
@@ -68,7 +70,7 @@ export const registrarPagoCompra = async (req: AuthRequest, res: Response) => {
 
 export const cancelarCompra = async (req: AuthRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params['id'] as string);
     const resultado = await cancelarCompraService(id, req.user!.userId);
     res.json(resultado);
   } catch (error: any) {
@@ -82,5 +84,27 @@ export const getDeudaProveedores = async (req: AuthRequest, res: Response) => {
     res.json(deuda);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+export const getCompraById = async (req: AuthRequest, res: Response) => {
+  try {
+    const id = parseInt(req.params['id'] as string);
+    const compra = await getCompraByIdService(id);
+    if (!compra) return res.status(404).json({ error: 'Compra no encontrada' });
+    res.json(compra);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const actualizarEstadoCompra = async (req: AuthRequest, res: Response) => {
+  try {
+    const id = parseInt(req.params['id'] as string);
+    const { estado } = req.body;
+    const compra = await actualizarEstadoCompraService(id, estado);
+    res.json(compra);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
   }
 };

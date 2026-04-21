@@ -1,6 +1,32 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
-import { Compra } from '../types';
+import type { Compra } from '../types';
+
+export const useCompra = (id: number) => {
+  return useQuery<Compra>({
+    queryKey: ['compra', id],
+    queryFn: async () => {
+      const { data } = await api.get(`/compras/${id}`);
+      return data;
+    },
+    enabled: !!id
+  });
+};
+
+export const useActualizarEstadoCompra = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, estado }: { id: number; estado: string }) => {
+      const { data } = await api.put(`/compras/${id}/estado`, { estado });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['compras'] });
+      queryClient.invalidateQueries({ queryKey: ['inventario'] });
+      queryClient.invalidateQueries({ queryKey: ['inventario-consolidado'] });
+    }
+  });
+};
 
 export const useCompras = () => {
   return useQuery<Compra[]>({
@@ -75,3 +101,5 @@ export const useCancelarCompra = () => {
     }
   });
 };
+
+export const useRegistrarPagoProveedor = useRegistrarPagoCompra;
