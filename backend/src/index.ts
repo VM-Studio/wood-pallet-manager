@@ -13,6 +13,7 @@ import facturacionRoutes from './routes/facturacion.routes';
 import reportesRoutes from './routes/reportes.routes';
 import alertasRoutes from './routes/alertas.routes';
 import solicitudesLogisticaRoutes from './routes/solicitudes-logistica.routes';
+import proveedoresRoutes from './routes/proveedores.routes';
 import { iniciarTareasProgramadas } from './utils/cron';
 
 dotenv.config();
@@ -39,6 +40,7 @@ app.use('/api/facturas', facturacionRoutes);
 app.use('/api/reportes', reportesRoutes);
 app.use('/api/alertas', alertasRoutes);
 app.use('/api/solicitudes-logistica', solicitudesLogisticaRoutes);
+app.use('/api/proveedores', proveedoresRoutes);
 
 app.get('/health', (_req, res) => {
   res.json({
