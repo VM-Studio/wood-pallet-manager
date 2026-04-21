@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Bell, Users, FileText,
   Truck, Receipt,
-  ClipboardList, Package, Warehouse,
+  ClipboardList, Package, Warehouse, Building2,
   BarChart3, LogOut, DollarSign
 } from 'lucide-react';
 import { useAuthStore } from '../../store/auth.store';
@@ -30,9 +30,10 @@ const grupos = [
   {
     label: 'Operaciones',
     items: [
-      { path: '/compras',    label: 'Compras',    icon: ClipboardList },
-      { path: '/productos',  label: 'Productos',  icon: Package },
-      { path: '/inventario', label: 'Inventario', icon: Warehouse },
+      { path: '/compras',      label: 'Compras',      icon: ClipboardList },
+      { path: '/proveedores',  label: 'Proveedores',  icon: Building2 },
+      { path: '/productos',    label: 'Productos',    icon: Package },
+      { path: '/inventario',   label: 'Inventario',   icon: Warehouse },
     ]
   },
   {

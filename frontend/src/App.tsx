@@ -14,6 +14,7 @@ const InventarioPage  = lazy(() => import('./pages/inventario/InventarioPage'));
 const LogisticaPage   = lazy(() => import('./pages/logistica/LogisticaPage'));
 const FacturacionPage = lazy(() => import('./pages/facturacion/FacturacionPage'));
 const ReportesPage    = lazy(() => import('./pages/reportes/ReportesPage'));
+const ProveedoresPage    = lazy(() => import('./pages/proveedores/ProveedoresPage'));
 const AlertasPage        = lazy(() => import('./pages/alertas/AlertasPage'));
 const ConfiguracionPage  = lazy(() => import('./pages/configuracion/ConfiguracionPage'));
 
@@ -44,6 +45,7 @@ export default function App() {
             <Route path="ventas"        element={<VentasPage />} />
             <Route path="compras"       element={<ComprasPage />} />
             <Route path="inventario"    element={<InventarioPage />} />
+            <Route path="proveedores"   element={<ProveedoresPage />} />
             <Route path="logistica"     element={<LogisticaPage />} />
             <Route path="facturacion"   element={<FacturacionPage />} />
             <Route path="reportes"      element={<ReportesPage />} />
