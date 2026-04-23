@@ -15,6 +15,10 @@ ALTER TABLE "compras" ADD COLUMN "metodoPago" "MetodoPago";
 
 -- Actualizar el enum EstadoCompra: agregar nuevos valores
 ALTER TYPE "EstadoCompra" ADD VALUE IF NOT EXISTS 'pendiente_pago';
+ALTER TYPE "EstadoCompra" ADD VALUE IF NOT EXISTS 'pagada';
+ALTER TYPE "EstadoCompra" ADD VALUE IF NOT EXISTS 'cancelada';
+
+COMMIT;
 
 -- Cambiar el default del estado en compras
 ALTER TABLE "compras" ALTER COLUMN "estado" SET DEFAULT 'pendiente_pago';

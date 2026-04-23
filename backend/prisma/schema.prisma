@@ -38,6 +38,7 @@ model Usuario {
   solicitudesEnviadas  SolicitudLogistica[]    @relation("SolicitudSolicitante")
   solicitudesRecibidas SolicitudLogistica[]    @relation("SolicitudDestinatario")
   consultasLogistica   Logistica[]             @relation("ConsultasLogistica")
+  devoluciones         Devolucion[]
 
   @@map("usuarios")
 }
@@ -72,6 +73,7 @@ model Cliente {
   facturas        Factura[]
   pagos           PagoCobro[]
   notasCredito    NotaCredito[]
+  devoluciones    Devolucion[]
 
   @@map("clientes")
 }
@@ -107,6 +109,7 @@ model Producto {
   detallesCotizacion DetalleCotizacion[]
   detallesVenta      DetalleVenta[]
   detallesCompra     DetalleCompra[]
+  detallesDevolucion DetalleDevolucion[]
 
   @@map("productos")
 }
@@ -325,8 +328,8 @@ model EspecificacionMedida {
   observacionesCliente String?
   medidas              Json?
 
-  detalleCotizacion DetalleCotizacion? @relation(fields: [detalleCotizacionId], references: [id])
   detalleVenta      DetalleVenta?      @relation(fields: [detalleVentaId], references: [id])
+  detalleCotizacion DetalleCotizacion? @relation(fields: [detalleCotizacionId], references: [id])
 
   @@map("especificaciones_medida")
 }
@@ -393,6 +396,7 @@ model Venta {
   facturas             Factura[]
   compras              Compra[]
   solicitudesLogistica SolicitudLogistica[]
+  devoluciones         Devolucion[]
 
   @@map("ventas")
 }
@@ -427,6 +431,7 @@ model DetalleVenta {
   producto       Producto              @relation(fields: [productoId], references: [id])
   especificacion EspecificacionMedida?
   retiros        RetiroParcial[]
+  devoluciones   DetalleDevolucion[]
 
   @@map("detalle_venta")
 }
@@ -684,4 +689,67 @@ enum EstadoConsulta {
   consultada
   aceptada
   rechazada
+}
+
+// ─── DEVOLUCIONES ────────────────────────────────────────
+model Devolucion {
+  id                           Int                @id @default(autoincrement())
+  ventaId                      Int
+  clienteId                    Int
+  usuarioId                    Int
+  fechaSolicitud               DateTime           @default(now())
+  tipoCaso                     TipoCasoDevolucion
+  estado                       EstadoDevolucion   @default(pendiente)
+  devuelveFlete                Boolean            @default(false)
+  devuelveSenasa               Boolean            @default(false)
+  montoPallets                 Decimal            @db.Decimal(12, 2)
+  montoFlete                   Decimal?           @db.Decimal(12, 2)
+  montoSenasa                  Decimal?           @db.Decimal(12, 2)
+  montoTotal                   Decimal            @db.Decimal(12, 2)
+  requiereConfirmacionDeposito Boolean            @default(false)
+  depositoConfirmo             Boolean            @default(false)
+  fechaConfirmacionDeposito    DateTime?
+  stockRestaurado              Boolean            @default(false)
+  compensaEnSiguientePedido    Boolean            @default(false)
+  metodoPago                   MetodoPago?
+  cuentaDestino                String?
+  observaciones                String?
+
+  venta    Venta               @relation(fields: [ventaId], references: [id])
+  cliente  Cliente             @relation(fields: [clienteId], references: [id])
+  usuario  Usuario             @relation(fields: [usuarioId], references: [id])
+  detalles DetalleDevolucion[]
+
+  @@map("devoluciones")
+}
+
+model DetalleDevolucion {
+  id               Int     @id @default(autoincrement())
+  devolucionId     Int
+  detalleVentaId   Int?
+  productoId       Int
+  cantidadDevuelta Int
+  precioUnitario   Decimal @db.Decimal(12, 2)
+  subtotal         Decimal @db.Decimal(12, 2)
+
+  devolucion   Devolucion    @relation(fields: [devolucionId], references: [id])
+  detalleVenta DetalleVenta? @relation(fields: [detalleVentaId], references: [id])
+  producto     Producto      @relation(fields: [productoId], references: [id])
+
+  @@map("detalle_devolucion")
+}
+
+enum TipoCasoDevolucion {
+  pallet_danado
+  cliente_no_quiere
+  devolucion_parcial
+  cancelacion_anticipada
+}
+
+enum EstadoDevolucion {
+  pendiente
+  esperando_confirmacion_deposito
+  confirmada
+  procesada
+  cancelada
 }

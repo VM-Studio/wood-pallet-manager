@@ -11,7 +11,7 @@
 		{
 			"label": "Frontend: WoodPallet",
 			"type": "shell",
-			"command": "cd frontend && npx vite --port 5174",
+			"command": "cd frontend && npx vite --port 5173",
 			"isBackground": true,
 			"problemMatcher": []
 		}

@@ -84,6 +84,7 @@ async function main() {
       dimensionAncho: 1000,
       cargaMaximaKg: 1500,
       requiereSenasa: false,
+      propietarioId: carlos.id,
     },
   });
 
@@ -98,6 +99,7 @@ async function main() {
       dimensionAncho: 1000,
       cargaMaximaKg: 1000,
       requiereSenasa: false,
+      propietarioId: carlos.id,
     },
   });
 
@@ -112,6 +114,7 @@ async function main() {
       dimensionAncho: 1000,
       cargaMaximaKg: 1500,
       requiereSenasa: true,
+      propietarioId: carlos.id,
     },
   });
 

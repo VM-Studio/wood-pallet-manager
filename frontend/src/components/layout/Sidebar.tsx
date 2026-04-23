@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Bell, Users, FileText,
   Truck, Receipt,
   ClipboardList, Package, Warehouse, Building2,
-  BarChart3, LogOut, DollarSign
+  BarChart3, LogOut, DollarSign, RotateCcw
 } from 'lucide-react';
 import { useAuthStore } from '../../store/auth.store';
 import { useQueryClient } from '@tanstack/react-query';
@@ -34,6 +34,7 @@ const grupos = [
       { path: '/proveedores',  label: 'Proveedores',  icon: Building2 },
       { path: '/productos',    label: 'Productos',    icon: Package },
       { path: '/inventario',   label: 'Inventario',   icon: Warehouse },
+      { path: '/devoluciones', label: 'Devoluciones', icon: RotateCcw },
     ]
   },
   {

@@ -17,6 +17,7 @@ const ReportesPage    = lazy(() => import('./pages/reportes/ReportesPage'));
 const ProveedoresPage    = lazy(() => import('./pages/proveedores/ProveedoresPage'));
 const AlertasPage        = lazy(() => import('./pages/alertas/AlertasPage'));
 const ConfiguracionPage  = lazy(() => import('./pages/configuracion/ConfiguracionPage'));
+const DevolucionesPage   = lazy(() => import('./pages/devoluciones/DevolucionesPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,6 +52,7 @@ export default function App() {
             <Route path="reportes"      element={<ReportesPage />} />
             <Route path="alertas"       element={<AlertasPage />} />
             <Route path="configuracion" element={<ConfiguracionPage />} />
+            <Route path="devoluciones"  element={<DevolucionesPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
