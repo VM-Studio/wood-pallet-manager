@@ -1,5 +1,6 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { z } from 'zod';
+import { AuthRequest, parseId } from '../types';
 import {
   getDevolucionesService,
   getDevolucionByIdService,
@@ -28,7 +29,7 @@ const crearSchema = z.object({
   detalles: z.array(detalleSchema).min(1, 'Debe haber al menos un producto a devolver'),
 });
 
-export const getDevoluciones = async (req: Request, res: Response) => {
+export const getDevoluciones = async (req: AuthRequest, res: Response) => {
   try {
     const devoluciones = await getDevolucionesService(req.user!.userId);
     res.json(devoluciones);
@@ -38,9 +39,9 @@ export const getDevoluciones = async (req: Request, res: Response) => {
   }
 };
 
-export const getDevolucionById = async (req: Request, res: Response) => {
+export const getDevolucionById = async (req: AuthRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseId(req.params.id);
     const devolucion = await getDevolucionByIdService(id);
     if (!devolucion) return res.status(404).json({ error: 'Devolución no encontrada' });
     res.json(devolucion);
@@ -50,23 +51,23 @@ export const getDevolucionById = async (req: Request, res: Response) => {
   }
 };
 
-export const crearDevolucion = async (req: Request, res: Response) => {
+export const crearDevolucion = async (req: AuthRequest, res: Response) => {
   try {
     const datos = crearSchema.parse(req.body);
     const devolucion = await crearDevolucionService(datos, req.user!.userId);
     res.status(201).json(devolucion);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Datos inválidos', detalles: error.errors });
+      return res.status(400).json({ error: 'Datos inválidos', detalles: error.issues });
     }
     console.error(error);
     res.status(500).json({ error: error instanceof Error ? error.message : 'Error al crear devolución' });
   }
 };
 
-export const confirmarDeposito = async (req: Request, res: Response) => {
+export const confirmarDeposito = async (req: AuthRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseId(req.params.id);
     const devolucion = await confirmarDepositoService(id, req.user!.userId);
     res.json(devolucion);
   } catch (error) {
@@ -75,9 +76,9 @@ export const confirmarDeposito = async (req: Request, res: Response) => {
   }
 };
 
-export const cancelarDevolucion = async (req: Request, res: Response) => {
+export const cancelarDevolucion = async (req: AuthRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseId(req.params.id);
     const devolucion = await cancelarDevolucionService(id);
     res.json(devolucion);
   } catch (error) {
@@ -86,7 +87,7 @@ export const cancelarDevolucion = async (req: Request, res: Response) => {
   }
 };
 
-export const getEstadisticasDevoluciones = async (req: Request, res: Response) => {
+export const getEstadisticasDevoluciones = async (req: AuthRequest, res: Response) => {
   try {
     const stats = await getEstadisticasDevolucionesService();
     res.json(stats);
