@@ -39,6 +39,7 @@ model Usuario {
   solicitudesRecibidas SolicitudLogistica[]    @relation("SolicitudDestinatario")
   consultasLogistica   Logistica[]             @relation("ConsultasLogistica")
   devoluciones         Devolucion[]
+  remitos              Remito[]
 
   @@map("usuarios")
 }
@@ -74,6 +75,7 @@ model Cliente {
   pagos           PagoCobro[]
   notasCredito    NotaCredito[]
   devoluciones    Devolucion[]
+  remitos         Remito[]
 
   @@map("clientes")
 }
@@ -397,6 +399,7 @@ model Venta {
   compras              Compra[]
   solicitudesLogistica SolicitudLogistica[]
   devoluciones         Devolucion[]
+  remito               Remito?
 
   @@map("ventas")
 }
@@ -752,4 +755,38 @@ enum EstadoDevolucion {
   confirmada
   procesada
   cancelada
+}
+
+// ─── REMITOS ─────────────────────────────────────────────
+model Remito {
+  id                    Int          @id @default(autoincrement())
+  numeroRemito          String?
+  ventaId               Int          @unique
+  clienteId             Int
+  usuarioId             Int
+  fechaEmision          DateTime     @default(now())
+  fechaEntrega          DateTime?
+  estado                EstadoRemito @default(pendiente_firma_propietario)
+  firmaPropietario      String?      @db.Text
+  fechaFirmaPropietario DateTime?
+  firmaCliente          String?      @db.Text
+  fechaFirmaCliente     DateTime?
+  tokenFirma            String       @unique @default(uuid())
+  emailEnviado          Boolean      @default(false)
+  fechaEmailEnviado     DateTime?
+  observaciones         String?
+
+  venta   Venta   @relation(fields: [ventaId], references: [id])
+  cliente Cliente @relation(fields: [clienteId], references: [id])
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@map("remitos")
+}
+
+enum EstadoRemito {
+  pendiente_firma_propietario
+  enviado_a_cliente
+  firmado_por_cliente
+  completado
+  cancelado
 }

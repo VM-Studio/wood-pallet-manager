@@ -1,5 +1,6 @@
 import prisma from '../utils/prisma';
 import { calcularPrecioService } from './precios.service';
+import { crearRemitoService } from './remitos.service';
 
 export const getCotizacionesService = async (usuarioId: number, rol: string) => {
   const where = rol === 'admin' ? {} : { usuarioId };
@@ -204,6 +205,8 @@ export const convertirCotizacionAVentaService = async (
     fechaEntrega?: Date;
     observaciones?: string;
     usaStockPropio?: boolean;
+    emitirRemito?: boolean;
+    firmaPropietario?: string;
   },
   usuarioId: number
 ) => {
@@ -321,6 +324,19 @@ export const convertirCotizacionAVentaService = async (
     where: { id: cotizacionId },
     data: { estado: 'aceptada' },
   });
+
+  // ── Auto-crear remito si se solicitó ───────────────────────────────────
+  if (datos.emitirRemito) {
+    await crearRemitoService(
+      {
+        ventaId: venta.id,
+        firmaPropietario: datos.firmaPropietario,
+        fechaEntrega: datos.fechaEntrega,
+        observaciones: datos.observaciones,
+      },
+      usuarioId
+    );
+  }
 
   return venta;
 };

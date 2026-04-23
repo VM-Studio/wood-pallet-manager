@@ -61,6 +61,8 @@ const convertirSchema = z.object({
   fechaEntrega: z.string().optional().transform(v => v ? new Date(v) : undefined),
   observaciones: z.string().optional(),
   usaStockPropio: z.boolean().optional().default(false),
+  emitirRemito: z.boolean().optional().default(false),
+  firmaPropietario: z.string().optional(),
 });
 
 export const getCotizaciones = async (req: AuthRequest, res: Response) => {

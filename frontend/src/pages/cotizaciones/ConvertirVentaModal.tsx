@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { X, ArrowRight } from 'lucide-react';
+import { X, ArrowRight, FileText } from 'lucide-react';
 import { useConvertirAVenta } from '../../hooks/useCotizaciones';
 import { useQueryClient } from '@tanstack/react-query';
+import SignaturePad from '../../components/ui/SignaturePad';
 
 interface ConvertirVentaModalProps {
   cotizacionId: number;
@@ -20,6 +21,8 @@ export default function ConvertirVentaModal({
   const queryClient = useQueryClient();
   const [error, setError] = useState('');
   const [usaStockPropio, setUsaStockPropio] = useState(false);
+  const [emitirRemito, setEmitirRemito] = useState(false);
+  const [firmaPropietario, setFirmaPropietario] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     tipoEntrega: '' as 'retira_cliente' | 'envio_woodpallet' | '',
@@ -42,6 +45,9 @@ export default function ConvertirVentaModal({
     if (form.tipoEntrega === 'envio_woodpallet' && !form.lugarEntrega) {
       setError('Ingresá el lugar de entrega'); return;
     }
+    if (emitirRemito && !firmaPropietario) {
+      setError('Debés firmar el remito antes de continuar'); return;
+    }
 
     try {
       await convertir.mutateAsync({
@@ -56,6 +62,8 @@ export default function ConvertirVentaModal({
           fechaRetiro: form.fechaRetiro || undefined,
           observaciones: form.observaciones || undefined,
           usaStockPropio,
+          emitirRemito,
+          firmaPropietario: firmaPropietario ?? undefined,
         },
       });
 
@@ -245,6 +253,39 @@ export default function ConvertirVentaModal({
               <p className="text-xs text-green-700 font-medium">
                 Se creará automáticamente una factura en estado pendiente en el módulo de Facturación.
               </p>
+            </div>
+
+            {/* Emitir remito */}
+            <div>
+              <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <FileText size={14} /> ¿Emitir remito de entrega?
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {[{ value: false, label: 'No' }, { value: true, label: 'Sí, emitir remito' }].map(op => (
+                  <button key={String(op.value)} type="button"
+                    onClick={() => { setEmitirRemito(op.value); if (!op.value) setFirmaPropietario(null); }}
+                    className={`p-3 rounded-xl border text-left transition-all text-sm font-medium ${
+                      emitirRemito === op.value
+                        ? 'border-[#6B3A2A] bg-[#FEF3E2] text-[#6B3A2A]'
+                        : 'border-gray-200 bg-white hover:border-gray-300 text-gray-700'
+                    }`}>
+                    {op.label}
+                  </button>
+                ))}
+              </div>
+              {emitirRemito && (
+                <div className="mt-3 space-y-3">
+                  <p className="text-xs text-gray-500">
+                    Se enviará un email al cliente con el remito. Él recibirá un enlace para firmarlo digitalmente. Ambos recibirán copia firmada.
+                  </p>
+                  <SignaturePad
+                    label="Tu firma (propietario) *"
+                    required
+                    onSignature={setFirmaPropietario}
+                    height={130}
+                  />
+                </div>
+              )}
             </div>
 
             {error && (

@@ -18,6 +18,8 @@ const ProveedoresPage    = lazy(() => import('./pages/proveedores/ProveedoresPag
 const AlertasPage        = lazy(() => import('./pages/alertas/AlertasPage'));
 const ConfiguracionPage  = lazy(() => import('./pages/configuracion/ConfiguracionPage'));
 const DevolucionesPage   = lazy(() => import('./pages/devoluciones/DevolucionesPage'));
+const RemitosPage        = lazy(() => import('./pages/remitos/RemitosPage'));
+const FirmarRemitoPage   = lazy(() => import('./pages/remitos/FirmarRemitoPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -53,7 +55,9 @@ export default function App() {
             <Route path="alertas"       element={<AlertasPage />} />
             <Route path="configuracion" element={<ConfiguracionPage />} />
             <Route path="devoluciones"  element={<DevolucionesPage />} />
+            <Route path="remitos"       element={<RemitosPage />} />
           </Route>
+          <Route path="/remito/:token/firmar" element={<FirmarRemitoPage />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
         </Suspense>
