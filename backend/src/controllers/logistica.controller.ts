@@ -73,7 +73,8 @@ export const getEntregasHoy = async (_req: Request, res: Response) => {
 
 export const getLogisticasPorRol = async (req: AuthRequest, res: Response) => {
   try {
-    const data = await getLogisticasPorRolService(req.user!.userId, req.user!.rol);
+    const vista = req.query.vista as string | undefined;
+    const data = await getLogisticasPorRolService(req.user!.userId, req.user!.rol, vista);
     res.json(data);
   } catch (error: any) {
     res.status(500).json({ error: error.message });

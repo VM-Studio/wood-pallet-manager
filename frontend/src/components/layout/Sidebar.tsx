@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../../store/auth.store';
 import { useQueryClient } from '@tanstack/react-query';
-import DropdownVista from '../ui/DropdownVista';
 
 const grupos = [
   {
@@ -63,11 +62,6 @@ export default function Sidebar() {
       <div className="flex items-center gap-3 px-5 h-16 border-b border-white/10 shrink-0">
         <img src="/palletlogo.png" alt="WoodPallet logo" className="w-9 h-9 object-contain" />
         <span className="text-white text-xl tracking-tight" style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic', fontWeight: 600 }}>WoodPallet</span>
-      </div>
-
-      {/* Dropdown de vista */}
-      <div className="px-4 py-3 border-b border-white/10 shrink-0">
-        <DropdownVista />
       </div>
 
       {/* Nav */}

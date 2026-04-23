@@ -162,15 +162,54 @@ const ventaLogisticaInclude = {
   consultadaPor: { select: { nombre: true, apellido: true } },
 } as const;
 
-export const getLogisticasPorRolService = async (usuarioId: number, rol: string) => {
-  if (rol === 'propietario_carlos' || rol === 'admin') {
+export const getLogisticasPorRolService = async (usuarioId: number, rol: string, vista?: string) => {
+  const esCarlos = rol === 'propietario_carlos' || rol === 'admin';
+  const orderByFecha = [{ fechaRetiroGalpon: 'asc' as const }, { id: 'desc' as const }];
+
+  // Vista "todos" → todas las logísticas por fecha
+  if (vista === 'todos') {
     return prisma.logistica.findMany({
+      include: ventaLogisticaInclude,
+      orderBy: orderByFecha,
+    });
+  }
+
+  // Vista "mis_datos" → ventas del usuario logueado
+  if (vista === 'mis_datos' || !vista) {
+    if (esCarlos) {
+      return prisma.logistica.findMany({
+        where: { venta: { usuario: { rol: 'propietario_carlos' } } },
+        include: ventaLogisticaInclude,
+        orderBy: { id: 'desc' },
+      });
+    }
+    return prisma.logistica.findMany({
+      where: { venta: { usuarioId } },
       include: ventaLogisticaInclude,
       orderBy: { id: 'desc' },
     });
   }
+
+  // Vista "otro" → las del otro propietario
+  if (vista === 'otro') {
+    if (esCarlos) {
+      // Carlos ve las de Juan Cruz
+      return prisma.logistica.findMany({
+        where: { venta: { usuario: { NOT: { rol: 'propietario_carlos' } } } },
+        include: ventaLogisticaInclude,
+        orderBy: { id: 'desc' },
+      });
+    }
+    // Juan ve las de Carlos
+    return prisma.logistica.findMany({
+      where: { venta: { usuario: { rol: 'propietario_carlos' } } },
+      include: ventaLogisticaInclude,
+      orderBy: { id: 'desc' },
+    });
+  }
+
+  // Fallback seguro
   return prisma.logistica.findMany({
-    where: { venta: { usuarioId } },
     include: ventaLogisticaInclude,
     orderBy: { id: 'desc' },
   });

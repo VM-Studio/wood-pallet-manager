@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import type { Logistica } from '../types';
+import { useVistaStore } from '../store/vista.store';
+import { useVistaParams } from './useVista';
 
 interface NuevaLogisticaInput {
   ventaId: number;
@@ -93,10 +95,12 @@ export const useConfirmarEntregaCliente = () => {
 };
 
 export const useLogisticasPorRol = () => {
+  const { vista } = useVistaStore();
+  const { vistaParam } = useVistaParams();
   return useQuery({
-    queryKey: ['logistica-por-rol'],
+    queryKey: ['logistica-por-rol', vista],
     queryFn: async () => {
-      const { data } = await api.get('/logistica/por-rol');
+      const { data } = await api.get(`/logistica/por-rol?vista=${vistaParam}`);
       return data as Logistica[];
     },
     refetchInterval: 1000 * 60 * 2

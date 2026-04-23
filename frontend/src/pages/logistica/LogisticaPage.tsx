@@ -6,6 +6,7 @@ import NuevaLogistica from './NuevaLogistica';
 import EntregaCard from './EntregaCard';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
+import DropdownVista from '../../components/ui/DropdownVista';
 
 type EstadoConsulta = 'no_aplica' | 'pendiente_consulta' | 'consultada' | 'aceptada' | 'rechazada';
 type EstadoEntrega = 'pendiente' | 'en_camino' | 'entregado' | 'con_problema';
@@ -100,12 +101,15 @@ export default function LogisticaPage() {
             {esCarlos ? 'Coordinación centralizada de todas las entregas' : 'Estado de las entregas de tus ventas'}
           </p>
         </div>
-        <button onClick={() => setShowNueva(true)}
-          style={{ background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', borderRadius: '0.25rem' }}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white">
-          <Plus size={16} />
-          {esCarlos ? 'Registrar logística' : 'Pedir entrega'}
-        </button>
+        <div className="flex items-center gap-2">
+          <DropdownVista />
+          <button onClick={() => setShowNueva(true)}
+            style={{ background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', borderRadius: '0.25rem' }}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white">
+            <Plus size={16} />
+            {esCarlos ? 'Registrar logística' : 'Pedir entrega'}
+          </button>
+        </div>
       </div>
 
       {/* KPIs */}

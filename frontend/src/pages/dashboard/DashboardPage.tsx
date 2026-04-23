@@ -14,6 +14,7 @@ import { useVistaParams } from '../../hooks/useVista';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
 import { clsx } from 'clsx';
+import DropdownVista from '../../components/ui/DropdownVista';
 
 const formatPesos = (valor: number) =>
   new Intl.NumberFormat('es-AR', {
@@ -154,12 +155,15 @@ export default function DashboardPage() {
             })}
           </p>
         </div>
-        {alertasData && alertasData.alta > 0 && (
-          <button onClick={() => navigate('/alertas')} className="btn-brand-sm">
-            <AlertTriangle size={13} />
-            {alertasData.alta} alerta{alertasData.alta > 1 ? 's' : ''} urgente{alertasData.alta > 1 ? 's' : ''}
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          <DropdownVista />
+          {alertasData && alertasData.alta > 0 && (
+            <button onClick={() => navigate('/alertas')} className="btn-brand-sm">
+              <AlertTriangle size={13} />
+              {alertasData.alta} alerta{alertasData.alta > 1 ? 's' : ''} urgente{alertasData.alta > 1 ? 's' : ''}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* KPIs fila 1 — 4 tarjetas */}
