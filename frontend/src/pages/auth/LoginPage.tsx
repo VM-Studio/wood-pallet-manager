@@ -1,9 +1,32 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Package2, Leaf } from 'lucide-react'
 import { useAuthStore } from '../../store/auth.store'
 import { useQueryClient } from '@tanstack/react-query'
 import api from '../../services/api'
+
+// ── Estilos inline base para inputs del login ──────────────
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '0.625rem 0.875rem',
+  fontSize: '0.875rem',
+  border: '1px solid #E5E7EB',
+  borderRadius: '0.25rem',
+  outline: 'none',
+  background: '#FAFAFA',
+  color: '#111827',
+  transition: 'border-color 0.15s',
+  boxSizing: 'border-box',
+}
+
+const labelStyle: React.CSSProperties = {
+  display: 'block',
+  fontSize: '0.75rem',
+  fontWeight: 500,
+  color: '#6B7280',
+  marginBottom: '0.375rem',
+  letterSpacing: '0.02em',
+  textTransform: 'uppercase',
+}
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -45,7 +68,8 @@ export default function LoginPage() {
     setRegLoading(true)
     try {
       await api.post('/auth/register', { nombre: regData.nombre, apellido: regData.apellido, email: regData.email, password: regData.password })
-      setRegSuccess(true)    } catch (err: unknown) {
+      setRegSuccess(true)
+    } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
       setRegError(msg ?? 'Error al crear la cuenta')
     } finally {
@@ -59,111 +83,279 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left panel */}
-      <div className="hidden lg:flex lg:w-1/2 bg-[#1e3a5f] flex-col items-center justify-center p-12 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-[-20%] left-[-10%] w-96 h-96 rounded-full bg-green-400 blur-3xl" />
-          <div className="absolute bottom-[-20%] right-[-10%] w-80 h-80 rounded-full bg-teal-400 blur-3xl" />
-        </div>
-        <div className="relative z-10 text-center">
-          <div className="w-20 h-20 bg-white/10 rounded-3xl flex items-center justify-center mx-auto mb-6 backdrop-blur-sm border border-white/20">
-            <Package2 className="w-10 h-10 text-white" />
-          </div>
-          <h1 className="text-4xl font-bold text-white mb-3 tracking-tight">WoodPallet</h1>
-          <p className="text-white/60 text-lg mb-10">Sistema de Gestión Integral</p>
-          <div className="space-y-4 text-left max-w-xs mx-auto">
-            {['Gestión de clientes y ventas', 'Control de stock e inventario', 'Logística y facturación', 'Reportes y alertas en tiempo real'].map(f => (
-              <div key={f} className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Leaf className="w-4 h-4 text-green-400" />
-                </div>
-                <span className="text-white/80 text-sm">{f}</span>
+    <div style={{ minHeight: '100vh', display: 'flex', background: '#d0ccc6' }}>
+
+      {/* ── Panel izquierdo (solo desktop) ── */}
+      <div style={{
+        display: 'none',
+        width: '42%',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#3c250f',
+        padding: '3rem',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+        className="lg:flex"
+      >
+        {/* Textura sutil */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'radial-gradient(ellipse at 20% 50%, rgba(196,137,90,0.12) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(107,58,42,0.2) 0%, transparent 50%)',
+          pointerEvents: 'none',
+        }} />
+
+        <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: '320px' }}>
+          {/* Logo */}
+          <img
+            src="/palletlogo.png"
+            alt="WoodPallet"
+            style={{ width: 72, height: 72, objectFit: 'contain', margin: '0 auto 1.5rem' }}
+          />
+
+          {/* Nombre */}
+          <h1 style={{
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontStyle: 'italic',
+            fontWeight: 600,
+            fontSize: '2.5rem',
+            color: '#fff',
+            margin: '0 0 0.375rem',
+            letterSpacing: '-0.01em',
+          }}>
+            WoodPallet
+          </h1>
+          <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8rem', margin: '0 0 3rem', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+            Sistema de Gestión
+          </p>
+
+          {/* Features */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem', textAlign: 'left' }}>
+            {[
+              'Clientes, cotizaciones y ventas',
+              'Stock, compras y proveedores',
+              'Logística y facturación',
+              'Remitos con firma digital',
+              'Reportes y alertas en tiempo real',
+            ].map(f => (
+              <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{
+                  width: 6, height: 6, borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #C4895A, #6B3A2A)',
+                  flexShrink: 0,
+                }} />
+                <span style={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.82rem' }}>{f}</span>
               </div>
             ))}
           </div>
         </div>
+
+        {/* Año */}
+        <p style={{ position: 'absolute', bottom: '1.5rem', color: 'rgba(255,255,255,0.2)', fontSize: '0.7rem', letterSpacing: '0.08em' }}>
+          © {new Date().getFullYear()} WoodPallet
+        </p>
       </div>
 
-      {/* Right panel */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-[#F4F6FA]">
-        <div className="w-full max-w-md">
-          <div className="flex items-center gap-3 mb-8 lg:hidden">
-            <div className="w-10 h-10 bg-[#1e3a5f] rounded-xl flex items-center justify-center">
-              <Package2 className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-xl font-bold text-gray-900">WoodPallet</span>
-          </div>
+      {/* ── Panel derecho — formulario ── */}
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '2rem 1.5rem',
+      }}>
+        <div style={{ width: '100%', maxWidth: '400px' }}>
 
-          <div className="card p-8">
-            <div className="flex bg-gray-100 rounded-xl p-1 mb-8">
+          {/* Card */}
+          <div style={{
+            background: '#fff',
+            borderRadius: '0.25rem',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+            padding: '2rem',
+            border: '1px solid rgba(255,255,255,0.9)',
+          }}>
+
+            {/* Logo + nombre dentro de la card */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1.75rem' }}>
+              <img src="/palletlogo.png" alt="WoodPallet" style={{ width: 52, height: 52, objectFit: 'contain', marginBottom: '0.5rem' }} />
+              <span style={{
+                fontFamily: "'Cormorant Garamond', Georgia, serif",
+                fontStyle: 'italic',
+                fontWeight: 600,
+                fontSize: '1.75rem',
+                color: '#3c250f',
+                lineHeight: 1,
+              }}>WoodPallet</span>
+            </div>
+
+            {/* Tabs */}
+            <div style={{
+              display: 'flex',
+              background: '#F3F4F6',
+              borderRadius: '0.25rem',
+              padding: '3px',
+              marginBottom: '1.75rem',
+            }}>
               {(['login', 'registro'] as const).map(t => (
-                <button key={t} onClick={() => switchTab(t)}
-                  className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${tab === t ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => switchTab(t)}
+                  style={{
+                    flex: 1,
+                    padding: '0.5rem',
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    border: 'none',
+                    borderRadius: '0.2rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    background: tab === t ? '#fff' : 'transparent',
+                    color: tab === t ? '#3c250f' : '#9CA3AF',
+                    boxShadow: tab === t ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
+                  }}
+                >
                   {t === 'login' ? 'Iniciar sesión' : 'Registrarse'}
                 </button>
               ))}
             </div>
 
+            {/* ── LOGIN ── */}
             {tab === 'login' && (
-              <form onSubmit={handleLogin} className="space-y-5 animate-fade-in">
+              <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
                 <div>
-                  <label className="label">Correo electrónico</label>
-                  <input type="email" className="input" placeholder="tu@empresa.com"
-                    value={loginData.email} onChange={e => setLoginData(p => ({ ...p, email: e.target.value }))} required autoFocus />
+                  <label style={labelStyle}>Correo electrónico</label>
+                  <input
+                    type="email"
+                    style={inputStyle}
+                    placeholder="tu@empresa.com"
+                    value={loginData.email}
+                    onChange={e => setLoginData(p => ({ ...p, email: e.target.value }))}
+                    required
+                    autoFocus
+                    onFocus={e => (e.target.style.borderColor = '#C4895A')}
+                    onBlur={e => (e.target.style.borderColor = '#E5E7EB')}
+                  />
                 </div>
                 <div>
-                  <label className="label">Contraseña</label>
-                  <input type="password" className="input" placeholder="••••••••"
-                    value={loginData.password} onChange={e => setLoginData(p => ({ ...p, password: e.target.value }))} required />
+                  <label style={labelStyle}>Contraseña</label>
+                  <input
+                    type="password"
+                    style={inputStyle}
+                    placeholder="••••••••"
+                    value={loginData.password}
+                    onChange={e => setLoginData(p => ({ ...p, password: e.target.value }))}
+                    required
+                    onFocus={e => (e.target.style.borderColor = '#C4895A')}
+                    onBlur={e => (e.target.style.borderColor = '#E5E7EB')}
+                  />
                 </div>
-                {loginError && <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">{loginError}</div>}
-                <button type="submit" className="btn-primary w-full btn-lg" disabled={loginLoading}>
+
+                {loginError && (
+                  <div style={{
+                    background: '#FEF2F2', border: '1px solid #FECACA',
+                    color: '#B91C1C', fontSize: '0.8rem',
+                    padding: '0.625rem 0.875rem', borderRadius: '0.25rem',
+                  }}>
+                    {loginError}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loginLoading}
+                  className="btn-brand"
+                  style={{ width: '100%', marginTop: '0.25rem', padding: '0.75rem', fontSize: '0.875rem', fontWeight: 600, justifyContent: 'center' }}
+                >
                   {loginLoading ? 'Ingresando...' : 'Ingresar'}
                 </button>
               </form>
             )}
 
+            {/* ── REGISTRO ── */}
             {tab === 'registro' && (
-              <div className="animate-fade-in">
+              <div>
                 {regSuccess ? (
-                  <div className="text-center py-4">
-                    <div className="w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <Leaf className="w-8 h-8 text-green-600" />
+                  <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
+                    <div style={{
+                      width: 56, height: 56, borderRadius: '0.25rem',
+                      background: 'linear-gradient(135deg, #6B3A2A, #C4895A)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      margin: '0 auto 1.25rem',
+                    }}>
+                      <span style={{ fontSize: '1.5rem' }}>✓</span>
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">¡Cuenta creada!</h3>
-                    <p className="text-gray-500 text-sm mb-6">Tu cuenta fue creada exitosamente.</p>
-                    <button onClick={() => switchTab('login')} className="btn-primary">Iniciar sesión</button>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#111827', margin: '0 0 0.5rem' }}>
+                      ¡Cuenta creada!
+                    </h3>
+                    <p style={{ color: '#6B7280', fontSize: '0.8rem', margin: '0 0 1.5rem' }}>
+                      Tu cuenta fue creada exitosamente.
+                    </p>
+                    <button onClick={() => switchTab('login')} className="btn-brand" style={{ justifyContent: 'center' }}>
+                      Iniciar sesión
+                    </button>
                   </div>
                 ) : (
-                  <form onSubmit={handleRegistro} className="space-y-4">
-                    <div>
-                      <label className="label">Nombre</label>
-                      <input type="text" className="input" placeholder="Juan"
-                        value={regData.nombre} onChange={e => setRegData(p => ({ ...p, nombre: e.target.value }))} required autoFocus />
+                  <form onSubmit={handleRegistro} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                      <div>
+                        <label style={labelStyle}>Nombre</label>
+                        <input type="text" style={inputStyle} placeholder="Juan"
+                          value={regData.nombre} onChange={e => setRegData(p => ({ ...p, nombre: e.target.value }))}
+                          required autoFocus
+                          onFocus={e => (e.target.style.borderColor = '#C4895A')}
+                          onBlur={e => (e.target.style.borderColor = '#E5E7EB')} />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Apellido</label>
+                        <input type="text" style={inputStyle} placeholder="García"
+                          value={regData.apellido} onChange={e => setRegData(p => ({ ...p, apellido: e.target.value }))}
+                          onFocus={e => (e.target.style.borderColor = '#C4895A')}
+                          onBlur={e => (e.target.style.borderColor = '#E5E7EB')} />
+                      </div>
                     </div>
                     <div>
-                      <label className="label">Apellido</label>
-                      <input type="text" className="input" placeholder="García"
-                        value={regData.apellido} onChange={e => setRegData(p => ({ ...p, apellido: e.target.value }))} />
+                      <label style={labelStyle}>Correo electrónico</label>
+                      <input type="email" style={inputStyle} placeholder="tu@empresa.com"
+                        value={regData.email} onChange={e => setRegData(p => ({ ...p, email: e.target.value }))}
+                        required
+                        onFocus={e => (e.target.style.borderColor = '#C4895A')}
+                        onBlur={e => (e.target.style.borderColor = '#E5E7EB')} />
                     </div>
                     <div>
-                      <label className="label">Correo electrónico</label>
-                      <input type="email" className="input" placeholder="tu@empresa.com"
-                        value={regData.email} onChange={e => setRegData(p => ({ ...p, email: e.target.value }))} required />
+                      <label style={labelStyle}>Contraseña</label>
+                      <input type="password" style={inputStyle} placeholder="Mínimo 8 caracteres"
+                        value={regData.password} onChange={e => setRegData(p => ({ ...p, password: e.target.value }))}
+                        required
+                        onFocus={e => (e.target.style.borderColor = '#C4895A')}
+                        onBlur={e => (e.target.style.borderColor = '#E5E7EB')} />
                     </div>
                     <div>
-                      <label className="label">Contraseña</label>
-                      <input type="password" className="input" placeholder="Mínimo 8 caracteres"
-                        value={regData.password} onChange={e => setRegData(p => ({ ...p, password: e.target.value }))} required />
+                      <label style={labelStyle}>Confirmar contraseña</label>
+                      <input type="password" style={inputStyle} placeholder="Repetí tu contraseña"
+                        value={regData.password2} onChange={e => setRegData(p => ({ ...p, password2: e.target.value }))}
+                        required
+                        onFocus={e => (e.target.style.borderColor = '#C4895A')}
+                        onBlur={e => (e.target.style.borderColor = '#E5E7EB')} />
                     </div>
-                    <div>
-                      <label className="label">Confirmar contraseña</label>
-                      <input type="password" className="input" placeholder="Repetí tu contraseña"
-                        value={regData.password2} onChange={e => setRegData(p => ({ ...p, password2: e.target.value }))} required />
-                    </div>
-                    {regError && <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">{regError}</div>}
-                    <button type="submit" className="btn-primary w-full btn-lg" disabled={regLoading}>
+
+                    {regError && (
+                      <div style={{
+                        background: '#FEF2F2', border: '1px solid #FECACA',
+                        color: '#B91C1C', fontSize: '0.8rem',
+                        padding: '0.625rem 0.875rem', borderRadius: '0.25rem',
+                      }}>
+                        {regError}
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={regLoading}
+                      className="btn-brand"
+                      style={{ width: '100%', padding: '0.75rem', fontSize: '0.875rem', fontWeight: 600, justifyContent: 'center', marginTop: '0.25rem' }}
+                    >
                       {regLoading ? 'Creando cuenta...' : 'Crear cuenta'}
                     </button>
                   </form>
@@ -171,7 +363,11 @@ export default function LoginPage() {
               </div>
             )}
           </div>
-          <p className="text-center text-xs text-gray-400 mt-6">WoodPallet Manager © {new Date().getFullYear()}</p>
+
+          {/* Footer */}
+          <p style={{ textAlign: 'center', fontSize: '0.7rem', color: 'rgba(0,0,0,0.3)', marginTop: '1.5rem', letterSpacing: '0.05em' }}>
+            WoodPallet Manager © {new Date().getFullYear()}
+          </p>
         </div>
       </div>
     </div>

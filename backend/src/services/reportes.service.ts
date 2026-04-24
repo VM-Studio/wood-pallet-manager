@@ -42,6 +42,14 @@ export const getDashboardService = async () => {
   const inicioMesAnterior = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
   const finMesAnterior = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
 
+  // Resolver IDs por rol (no hardcodeados)
+  const [usuarioCarlosDB, usuarioJuanCruzDB] = await Promise.all([
+    prisma.usuario.findFirst({ where: { rol: 'propietario_carlos' }, select: { id: true } }),
+    prisma.usuario.findFirst({ where: { rol: 'propietario_juancruz' }, select: { id: true } }),
+  ]);
+  const idCarlos = usuarioCarlosDB?.id;
+  const idJuanCruz = usuarioJuanCruzDB?.id;
+
   const [
     ventasMesActual,
     ventasMesAnterior,
@@ -51,6 +59,11 @@ export const getDashboardService = async () => {
     pedidosActivos,
     entregasHoy,
     stockRaw,
+    // --- Carlos ---
+    cotizacionesPendientesCarlos,
+    pedidosActivosCarlos,
+    cobrosPendientesCarlos,
+    // --- JuanCruz ---
     cotizacionesPendientesJuanCruz,
     pedidosActivosJuanCruz,
     cobrosPendientesJuanCruz,
@@ -59,13 +72,12 @@ export const getDashboardService = async () => {
       where: { fechaVenta: { gte: inicioMes } },
       include: {
         detalles: true,
-        usuario: { select: { rol: true, nombre: true } },
+        usuario: { select: { id: true, rol: true, nombre: true } },
       },
     }),
     prisma.venta.findMany({
       where: { fechaVenta: { gte: inicioMesAnterior, lte: finMesAnterior } },
-      include: { detalles: true },
-      // usuarioId ya está en el modelo, se incluye por defecto
+      include: { detalles: true, usuario: { select: { id: true } } },
     }),
     prisma.factura.findMany({
       where: { estadoCobro: { in: ['pendiente', 'cobrada_parcial'] } },
@@ -96,17 +108,36 @@ export const getDashboardService = async () => {
       },
     }),
     prisma.stock.findMany({ where: { cantidadMinima: { not: null } } }),
+    // Carlos - cotizaciones
     prisma.cotizacion.count({
-      where: { estado: { in: ['enviada', 'en_seguimiento'] }, usuarioId: 2 },
+      where: { estado: { in: ['enviada', 'en_seguimiento'] }, ...(idCarlos ? { usuarioId: idCarlos } : { usuarioId: -1 }) },
     }),
+    // Carlos - pedidos activos
     prisma.venta.count({
       where: {
-        usuarioId: 2,
+        ...(idCarlos ? { usuarioId: idCarlos } : { usuarioId: -1 }),
         estadoPedido: { in: ['confirmado', 'en_preparacion', 'listo_para_envio', 'en_transito'] },
       },
     }),
+    // Carlos - cobros pendientes
     prisma.factura.findMany({
-      where: { estadoCobro: { in: ['pendiente', 'cobrada_parcial'] }, venta: { usuarioId: 2 } },
+      where: { estadoCobro: { in: ['pendiente', 'cobrada_parcial'] }, venta: { ...(idCarlos ? { usuarioId: idCarlos } : { usuarioId: -1 }) } },
+      include: { pagos: true },
+    }),
+    // JuanCruz - cotizaciones
+    prisma.cotizacion.count({
+      where: { estado: { in: ['enviada', 'en_seguimiento'] }, ...(idJuanCruz ? { usuarioId: idJuanCruz } : { usuarioId: -1 }) },
+    }),
+    // JuanCruz - pedidos activos
+    prisma.venta.count({
+      where: {
+        ...(idJuanCruz ? { usuarioId: idJuanCruz } : { usuarioId: -1 }),
+        estadoPedido: { in: ['confirmado', 'en_preparacion', 'listo_para_envio', 'en_transito'] },
+      },
+    }),
+    // JuanCruz - cobros pendientes
+    prisma.factura.findMany({
+      where: { estadoCobro: { in: ['pendiente', 'cobrada_parcial'] }, venta: { ...(idJuanCruz ? { usuarioId: idJuanCruz } : { usuarioId: -1 }) } },
       include: { pagos: true },
     }),
   ]);
@@ -137,11 +168,18 @@ export const getDashboardService = async () => {
     return acc + (Number(f.totalConIva) - cobrado);
   }, 0);
 
+  const totalCobrosPendientesCarlos = cobrosPendientesCarlos.reduce((acc, f) => {
+    const cobrado = f.pagos.reduce((a, p) => a + Number(p.monto), 0);
+    return acc + (Number(f.totalConIva) - cobrado);
+  }, 0);
+  const facturasVencidasCarlos = cobrosPendientesCarlos.filter(
+    f => f.fechaVencimiento && f.fechaVencimiento < hoy
+  ).length;
+
   const totalCobrosPendientesJuanCruz = cobrosPendientesJuanCruz.reduce((acc, f) => {
     const cobrado = f.pagos.reduce((a, p) => a + Number(p.monto), 0);
     return acc + (Number(f.totalConIva) - cobrado);
   }, 0);
-
   const facturasVencidasJuanCruz = cobrosPendientesJuanCruz.filter(
     f => f.fechaVencimiento && f.fechaVencimiento < hoy
   ).length;
@@ -154,8 +192,8 @@ export const getDashboardService = async () => {
   );
 
   const ventasUltimos12Meses = await getVentasUltimos12MesesService();
-  const grafico12MesesCarlos = await getVentasUltimos12MesesService(1);
-  const grafico12MesesJuanCruz = await getVentasUltimos12MesesService(2);
+  const grafico12MesesCarlos = await getVentasUltimos12MesesService(idCarlos);
+  const grafico12MesesJuanCruz = await getVentasUltimos12MesesService(idJuanCruz);
 
   // Compras pagadas del mes actual (para calcular ganancias)
   const comprasMesActual = await prisma.compra.findMany({
@@ -171,9 +209,9 @@ export const getDashboardService = async () => {
 
   const gananciasMes = facturacionMesActual - costoComprasMes;
 
-  // Mes anterior por propietario
-  const ventasMesAnteriorCarlos = ventasMesAnterior.filter(v => (v as any).usuarioId === 1);
-  const ventasMesAnteriorJuanCruz = ventasMesAnterior.filter(v => (v as any).usuarioId === 2);
+  // Mes anterior por propietario (usando id resuelto por rol)
+  const ventasMesAnteriorCarlos = ventasMesAnterior.filter(v => v.usuario.id === idCarlos);
+  const ventasMesAnteriorJuanCruz = ventasMesAnterior.filter(v => v.usuario.id === idJuanCruz);
 
   return {
     kpis: {
@@ -219,6 +257,10 @@ export const getDashboardService = async () => {
           (acc, v) => acc + Number(v.totalConIva || 0),
           0
         ),
+        cotizacionesPendientes: cotizacionesPendientesCarlos,
+        pedidosActivos: pedidosActivosCarlos,
+        cobrosPendientes: totalCobrosPendientesCarlos,
+        facturasVencidas: facturasVencidasCarlos,
         grafico12Meses: grafico12MesesCarlos,
       },
       juanCruz: {

@@ -1,7 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useState, useCallback } from 'react';
 import MainLayout from './components/layout/MainLayout';
+import SplashScreen from './components/SplashScreen';
 
 const LoginPage       = lazy(() => import('./pages/auth/LoginPage'));
 const DashboardPage   = lazy(() => import('./pages/dashboard/DashboardPage'));
@@ -33,8 +34,12 @@ const queryClient = new QueryClient({
 });
 
 export default function App() {
+  const [splashDone, setSplashDone] = useState(false)
+
   return (
     <QueryClientProvider client={queryClient}>
+      {!splashDone && <SplashScreen onFinish={() => setSplashDone(true)} />}
+      {splashDone && (
       <BrowserRouter>
         <Suspense fallback={<div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',fontFamily:'Inter,sans-serif',color:'#6B7280'}}>Cargando...</div>}>
           <Routes>
@@ -62,6 +67,7 @@ export default function App() {
         </Routes>
         </Suspense>
       </BrowserRouter>
+      )}
     </QueryClientProvider>
   );
 }

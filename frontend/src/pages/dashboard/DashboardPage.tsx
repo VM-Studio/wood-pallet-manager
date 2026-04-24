@@ -113,7 +113,7 @@ function AlertaItem({ urgencia, titulo, detalle, onClick }: {
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { usuario } = useAuthStore();
-  const { vistaLabel } = useVistaParams();
+  const { vista, vistaLabel } = useVistaParams();
   const { data: dashboard, isLoading: loadingDash, error: errorDash } = useDashboard();
   const { data: alertasData, isLoading: loadingAlertas } = useAlertas();
   const { data: graficoData } = useEstacionalidad();
@@ -122,22 +122,33 @@ export default function DashboardPage() {
   if (errorDash) return <ErrorMessage message="No se pudo cargar el dashboard." />;
 
   const kpis = dashboard?.kpis;
+  const pp = dashboard?.porPropietario;
   const alertasList = alertasData?.alertas?.slice(0, 6) || [];
 
-  // Pallets y facturación desde porPropietario según el store global de vista
-  // El hook useDashboard ya recibe vistaParam, pero el backend devuelve siempre
-  // toda la estructura porPropietario. Usamos vistaLabel para mostrar a qué corresponde.
-  // Los KPIs directos los tomamos de kpis (total del mes) como fallback,
-  // porPropietario.carlos/juanCruz para vistas individuales.
-  const palletsMes        = kpis?.palletsMesActual    || 0;
-  const facturacionMes    = kpis?.facturacionMesActual || 0;
-  const palletsMesAnt     = kpis?.palletsMesAnterior   || 0;
-  const facturacionMesAnt = kpis?.facturacionMesAnterior || 0;
-  const variacionPallets  = palletsMesAnt > 0 ? Math.round(((palletsMes - palletsMesAnt) / palletsMesAnt) * 100) : 0;
-  const variacionFact     = facturacionMesAnt > 0 ? Math.round(((facturacionMes - facturacionMesAnt) / facturacionMesAnt) * 100) : 0;
-  const cotizacionesVal   = kpis?.cotizacionesPendientes || 0;
-  const ganancias         = gananciasData?.ganancias ?? 0;
-  const grafico           = graficoData ?? dashboard?.graficos?.ventasUltimos12Meses ?? [];
+  // Determinar qué bloque de porPropietario corresponde según la vista y el usuario logueado
+  const esCarlos = usuario?.rol === 'propietario_carlos';
+
+  const getPropietarioData = () => {
+    if (vista === 'total') return null;
+    if (vista === 'mis_datos') return esCarlos ? pp?.carlos : pp?.juanCruz;
+    if (vista === 'otro')     return esCarlos ? pp?.juanCruz : pp?.carlos;
+    return null;
+  };
+
+  const propData = getPropietarioData();
+
+  // KPIs: si hay datos de propietario específico, usar esos; si es "total", usar kpis globales
+  const palletsMes        = propData ? (propData.pallets ?? 0)               : (kpis?.palletsMesActual    ?? 0);
+  const facturacionMes    = propData ? (propData.facturacion ?? 0)            : (kpis?.facturacionMesActual ?? 0);
+  const palletsMesAnt     = propData ? (propData.palletsMesAnterior ?? 0)     : (kpis?.palletsMesAnterior   ?? 0);
+  const facturacionMesAnt = propData ? (propData.facturacionMesAnterior ?? 0) : (kpis?.facturacionMesAnterior ?? 0);
+  const cotizacionesVal   = propData ? (propData.cotizacionesPendientes ?? 0) : (kpis?.cotizacionesPendientes ?? 0);
+
+  const variacionPallets = palletsMesAnt > 0 ? Math.round(((palletsMes - palletsMesAnt) / palletsMesAnt) * 100) : 0;
+  const variacionFact    = facturacionMesAnt > 0 ? Math.round(((facturacionMes - facturacionMesAnt) / facturacionMesAnt) * 100) : 0;
+
+  const ganancias = gananciasData?.ganancias ?? 0;
+  const grafico   = graficoData ?? dashboard?.graficos?.ventasUltimos12Meses ?? [];
 
   return (
     <div className="space-y-6 animate-fade-in">

@@ -283,6 +283,10 @@ export interface DashboardData {
       facturacion: number;
       palletsMesAnterior: number;
       facturacionMesAnterior: number;
+      cotizacionesPendientes: number;
+      pedidosActivos: number;
+      cobrosPendientes: number;
+      facturasVencidas: number;
       grafico12Meses: { mes: string; ventas: number; pallets: number; facturacion: number }[];
     };
     juanCruz: {
@@ -291,11 +295,11 @@ export interface DashboardData {
       facturacion: number;
       palletsMesAnterior: number;
       facturacionMesAnterior: number;
-      grafico12Meses: { mes: string; ventas: number; pallets: number; facturacion: number }[];
-      cobrosPendientes: number;
-      facturasVencidas: number;
       cotizacionesPendientes: number;
       pedidosActivos: number;
+      cobrosPendientes: number;
+      facturasVencidas: number;
+      grafico12Meses: { mes: string; ventas: number; pallets: number; facturacion: number }[];
     };
   };
   graficos: {
