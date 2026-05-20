@@ -48,7 +48,7 @@ export const crearCompra = async (req: AuthRequest, res: Response) => {
     res.status(201).json(compra);
   } catch (error: any) {
     if (error.name === 'ZodError') {
-      return res.status(400).json({ error: error.errors[0].message });
+      return res.status(400).json({ error: error.issues[0].message });
     }
     res.status(400).json({ error: error.message });
   }
@@ -62,7 +62,7 @@ export const registrarPagoCompra = async (req: AuthRequest, res: Response) => {
     res.json(compra);
   } catch (error: any) {
     if (error.name === 'ZodError') {
-      return res.status(400).json({ error: error.errors[0].message });
+      return res.status(400).json({ error: error.issues[0].message });
     }
     res.status(400).json({ error: error.message });
   }

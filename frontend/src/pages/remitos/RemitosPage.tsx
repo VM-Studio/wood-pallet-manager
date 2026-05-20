@@ -28,11 +28,11 @@ const formatFecha = (f: string) =>
 // ─── Config estados ───────────────────────────────────────
 
 const ESTADO_CONFIG: Record<string, { label: string; badgeClass: string; icon: React.ReactNode }> = {
-  pendiente_firma_propietario: { label: 'Pendiente firma', badgeClass: 'badge-yellow', icon: <Clock size={11} /> },
-  enviado_a_cliente:           { label: 'Enviado',         badgeClass: 'badge-blue',   icon: <Send size={11} /> },
-  firmado_por_cliente:         { label: 'Firmado',         badgeClass: 'badge-green',  icon: <CheckCircle size={11} /> },
-  completado:                  { label: 'Completado',      badgeClass: 'badge-green',  icon: <CheckCircle size={11} /> },
-  cancelado:                   { label: 'Cancelado',       badgeClass: 'badge-gray',   icon: <Ban size={11} /> },
+  pendiente_firma_propietario: { label: 'Pendiente firma',  badgeClass: 'badge-yellow', icon: <Clock size={11} /> },
+  enviado_a_cliente:           { label: 'Enviado al cliente', badgeClass: 'badge-blue', icon: <Send size={11} /> },
+  firmado_por_cliente:         { label: 'Firmado',          badgeClass: 'badge-green',  icon: <CheckCircle size={11} /> },
+  completado:                  { label: 'Completado',       badgeClass: 'badge-green',  icon: <CheckCircle size={11} /> },
+  cancelado:                   { label: 'Cancelado',        badgeClass: 'badge-gray',   icon: <Ban size={11} /> },
 };
 
 // ─── Modal: Nueva Devolución desde una venta ──────────────
@@ -307,7 +307,7 @@ function RemitoRow({ remito }: { remito: Remito }) {
               </span>
               {remito.emailEnviado && (
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: '0.72rem', color: '#1D4ED8' }}>
-                  <Mail size={11} /> Enviado
+                  <Mail size={11} /> Email enviado
                 </span>
               )}
               {(remito.estado === 'firmado_por_cliente' || remito.estado === 'completado') && (
@@ -317,10 +317,20 @@ function RemitoRow({ remito }: { remito: Remito }) {
               )}
             </div>
             <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#111827', margin: 0 }}>{remito.cliente.razonSocial}</p>
-            <p style={{ fontSize: '0.75rem', color: '#9CA3AF', marginTop: 2 }}>
-              Venta #{remito.ventaId} · {formatFecha(remito.fechaEmision)}
-              {remito.fechaEntrega && ` · Entrega: ${formatFecha(remito.fechaEntrega)}`}
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginTop: 4 }}>
+              <span style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>Venta #{remito.ventaId} · {formatFecha(remito.fechaEmision)}</span>
+              {remito.fechaEntrega && (
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 3,
+                  fontSize: '0.72rem', fontWeight: 600,
+                  background: '#FEF3E2', color: '#C4895A',
+                  border: '1px solid #FDE68A', borderRadius: '0.25rem',
+                  padding: '1px 6px',
+                }}>
+                  Entrega: {formatFecha(remito.fechaEntrega)}
+                </span>
+              )}
+            </div>
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
             <p style={{ fontSize: '1.05rem', fontWeight: 700, color: '#111827', margin: 0 }}>
@@ -337,19 +347,20 @@ function RemitoRow({ remito }: { remito: Remito }) {
               <Hash size={13} /> Asignar número
             </button>
           )}
-          {remito.estado === 'pendiente_firma_propietario' && (
+          {/* Sin firma aún: firmar primero */}
+          {remito.estado === 'pendiente_firma_propietario' && !remito.firmaPropietario && (
             <button className="btn-brand-sm" onClick={e => { e.stopPropagation(); setShowFirmar(true); }}>
-              ✍️ Firmar y enviar
+              Firmar y enviar remito
             </button>
           )}
-          {remito.estado === 'enviado_a_cliente' && (
+          {/* Ya tiene firma del propietario o fue enviado: botón principal de envío */}
+          {(remito.estado === 'enviado_a_cliente' || (remito.estado === 'pendiente_firma_propietario' && remito.firmaPropietario)) && (
             <button
-              className="btn-secondary"
-              style={{ fontSize: '0.75rem', padding: '0.375rem 0.75rem' }}
+              className="btn-brand-sm"
               disabled={enviar.isPending}
               onClick={e => { e.stopPropagation(); enviar.mutate(remito.id); }}
             >
-              <Send size={13} /> Reenviar email
+              <Send size={13} /> {enviar.isPending ? 'Enviando...' : 'Enviar email con remito'}
             </button>
           )}
           {remito.cliente.emailContacto && remito.estado !== 'cancelado' && (

@@ -32,7 +32,7 @@ export const login = async (req: Request, res: Response) => {
     res.json(resultado);
   } catch (error: any) {
     if (error.name === 'ZodError') {
-      return res.status(400).json({ error: error.errors[0].message });
+      return res.status(400).json({ error: error.issues[0].message });
     }
     res.status(401).json({ error: error.message });
   }
@@ -51,7 +51,7 @@ export const crearUsuario = async (req: Request, res: Response) => {
     res.status(201).json(usuario);
   } catch (error: any) {
     if (error.name === 'ZodError') {
-      return res.status(400).json({ error: error.errors[0].message });
+      return res.status(400).json({ error: error.issues[0].message });
     }
     res.status(400).json({ error: error.message });
   }
@@ -80,7 +80,7 @@ export const register = async (req: Request, res: Response) => {
     res.status(201).json(usuario);
   } catch (error: any) {
     if (error.name === 'ZodError') {
-      return res.status(400).json({ error: error.errors[0].message });
+      return res.status(400).json({ error: error.issues[0].message });
     }
     res.status(400).json({ error: error.message });
   }
@@ -98,7 +98,7 @@ export const actualizarPerfil = async (req: AuthRequest, res: Response) => {
     res.json(usuario);
   } catch (error: any) {
     if (error.name === 'ZodError') {
-      return res.status(400).json({ error: error.errors[0].message });
+      return res.status(400).json({ error: error.issues[0].message });
     }
     res.status(400).json({ error: error.message });
   }
@@ -119,7 +119,7 @@ export const cambiarPassword = async (req: AuthRequest, res: Response) => {
     res.json(resultado);
   } catch (error: any) {
     if (error.name === 'ZodError') {
-      return res.status(400).json({ error: error.errors[0].message });
+      return res.status(400).json({ error: error.issues[0].message });
     }
     res.status(400).json({ error: error.message });
   }

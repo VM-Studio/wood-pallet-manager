@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { X, ArrowRight, FileText } from 'lucide-react';
+import { X, ArrowRight, FileText, Package, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useConvertirAVenta } from '../../hooks/useCotizaciones';
+import { useCotizacion } from '../../hooks/useCotizaciones';
+import { useStock } from '../../hooks/useInventario';
 import { useQueryClient } from '@tanstack/react-query';
 import SignaturePad from '../../components/ui/SignaturePad';
 
@@ -19,13 +21,15 @@ export default function ConvertirVentaModal({
 }: ConvertirVentaModalProps) {
   const convertir = useConvertirAVenta();
   const queryClient = useQueryClient();
+  const { data: cotizacion } = useCotizacion(cotizacionId);
+  const { data: stockItems } = useStock();
   const [error, setError] = useState('');
   const [usaStockPropio, setUsaStockPropio] = useState(false);
   const [emitirRemito, setEmitirRemito] = useState(false);
   const [firmaPropietario, setFirmaPropietario] = useState<string | null>(null);
 
   const [form, setForm] = useState({
-    tipoEntrega: '' as 'retira_cliente' | 'envio_woodpallet' | '',
+    tipoEntrega: (incluyeFlete ? 'envio_woodpallet' : 'retira_cliente') as 'retira_cliente' | 'envio_woodpallet' | '',
     metodoPago: '' as 'transferencia' | 'e_check' | 'efectivo' | '',
     cuentaDestino: '',
     modalidadPago: '' as 'adelantado' | 'contra_entrega' | 'por_partes' | '',
@@ -96,21 +100,29 @@ export default function ConvertirVentaModal({
 
             <div>
               <label className="label">Tipo de entrega</label>
+              <p className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 mb-2">
+                {incluyeFlete
+                  ? <>La cotización <strong>incluye flete</strong> — tipo de entrega fijado en <strong>Envío</strong>.</>
+                  : <>La cotización <strong>no incluye flete</strong> — tipo de entrega fijado en <strong>Retiro en galpón</strong>.</>
+                }
+              </p>
               <div className="grid grid-cols-2 gap-2">
                 {[
                   { value: 'envio_woodpallet', label: 'Envío' },
                   { value: 'retira_cliente',   label: 'Retiro en galpón' },
-                ].map(op => (
-                  <button key={op.value} type="button"
-                    onClick={() => setForm({ ...form, tipoEntrega: op.value as 'retira_cliente' | 'envio_woodpallet', lugarEntrega: '', fechaEntrega: '', fechaRetiro: '' })}
-                    className={`p-3 rounded-xl border text-left transition-all text-sm font-medium ${
-                      form.tipoEntrega === op.value
-                        ? 'border-[#16A34A] bg-green-50 text-[#16A34A]'
-                        : 'border-gray-200 bg-white hover:border-gray-300 text-gray-700'
-                    }`}>
-                    {op.label}
-                  </button>
-                ))}
+                ].map(op => {
+                  const esSeleccionado = form.tipoEntrega === op.value;
+                  return (
+                    <div key={op.value}
+                      className={`p-3 rounded-xl border text-left text-sm font-medium cursor-default select-none ${
+                        esSeleccionado
+                          ? 'border-[#16A34A] bg-green-50 text-[#16A34A]'
+                          : 'border-gray-200 bg-gray-50 text-gray-300'
+                      }`}>
+                      {op.label}
+                    </div>
+                  );
+                })}
               </div>
 
               {form.tipoEntrega === 'envio_woodpallet' && (
@@ -158,6 +170,61 @@ export default function ConvertirVentaModal({
                   </button>
                 ))}
               </div>
+
+              {/* Stock disponible por producto */}
+              {usaStockPropio && cotizacion?.detalles && (
+                <div className="mt-3 flex flex-col gap-2">
+                  {(cotizacion.detalles as { productoId: number | null; producto?: { nombre: string } | null; cantidadPedida?: number; cantidad?: number }[])
+                    .filter(d => d.productoId != null)
+                    .map(d => {
+                      const stockItem = (stockItems as { producto: { id: number; nombre: string }; cantidadDisponible: number }[] | undefined)
+                        ?.find(s => s.producto.id === d.productoId);
+                      const disponible = stockItem?.cantidadDisponible ?? null;
+                      const pedido = d.cantidadPedida ?? d.cantidad ?? 0;
+                      const suficiente = disponible !== null && disponible >= pedido;
+                      return (
+                        <div
+                          key={d.productoId}
+                          style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            padding: '0.6rem 0.875rem',
+                            background: disponible === null ? '#F9FAFB' : suficiente ? '#F0FDF4' : '#FFF7ED',
+                            border: `1px solid ${disponible === null ? '#E5E7EB' : suficiente ? '#86EFAC' : '#FED7AA'}`,
+                            borderRadius: '0.5rem',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <Package size={14} style={{ color: disponible === null ? '#9CA3AF' : suficiente ? '#16A34A' : '#D97706', flexShrink: 0 }} />
+                            <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#374151' }}>
+                              {d.producto?.nombre ?? `Producto #${d.productoId}`}
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                            {disponible === null ? (
+                              <span style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>Sin datos de stock</span>
+                            ) : (
+                              <>
+                                <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>
+                                  Pedido: <strong>{pedido} u</strong>
+                                </span>
+                                <span style={{
+                                  fontSize: '0.75rem', fontWeight: 700,
+                                  color: suficiente ? '#16A34A' : '#D97706',
+                                  display: 'flex', alignItems: 'center', gap: 4,
+                                }}>
+                                  {suficiente
+                                    ? <CheckCircle size={12} />
+                                    : <AlertTriangle size={12} />}
+                                  Stock: {disponible} u
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
             </div>
 
             <div>

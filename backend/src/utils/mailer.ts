@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import PDFDocument from 'pdfkit';
 
 export const crearTransporter = () => {
   return nodemailer.createTransport({
@@ -9,6 +10,111 @@ export const crearTransporter = () => {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
     },
+  });
+};
+
+// ─── Genera el PDF del remito firmado ──────────────────────────────────────
+
+export const generarPdfRemito = (params: {
+  numeroRemito: string;
+  razonSocial: string;
+  fechaEmision: string;
+  fechaEntrega?: string;
+  productos: { nombre: string; cantidad: number; precioUnitario: number; subtotal: number }[];
+  totalConIva: number;
+  firmaPropietarioBase64?: string;
+  firmaClienteBase64?: string;
+  nombreFirmante?: string;
+}): Promise<Buffer> => {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ size: 'A4', margin: 50 });
+    const chunks: Buffer[] = [];
+    doc.on('data', (c: Buffer) => chunks.push(c));
+    doc.on('end', () => resolve(Buffer.concat(chunks)));
+    doc.on('error', reject);
+
+    const ars = (v: number) =>
+      new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(v);
+
+    // ── Encabezado ──────────────────────────────────────────────────────────
+    doc.rect(50, 40, 495, 60).fill('#6B3A2A');
+    doc.fillColor('white').fontSize(20).font('Helvetica-Bold').text('Wood Pallet', 65, 55);
+    doc.fontSize(11).font('Helvetica').text(`Remito #${params.numeroRemito}`, 65, 78);
+    doc.fillColor('black');
+
+    // ── Datos ────────────────────────────────────────────────────────────────
+    doc.moveDown(3);
+    doc.fontSize(10).font('Helvetica-Bold').text('Cliente:', 50, 120);
+    doc.font('Helvetica').text(params.razonSocial, 110, 120);
+    doc.font('Helvetica-Bold').text('Fecha emisión:', 320, 120);
+    doc.font('Helvetica').text(params.fechaEmision, 410, 120);
+    if (params.fechaEntrega) {
+      doc.font('Helvetica-Bold').text('Fecha entrega:', 320, 135);
+      doc.font('Helvetica').text(params.fechaEntrega, 410, 135);
+    }
+
+    // ── Tabla de productos ───────────────────────────────────────────────────
+    let y = 160;
+    doc.rect(50, y, 495, 22).fill('#6B3A2A');
+    doc.fillColor('white').fontSize(9).font('Helvetica-Bold');
+    doc.text('Producto',     60,  y + 7);
+    doc.text('Cant.',       320,  y + 7);
+    doc.text('Precio u.',   370,  y + 7);
+    doc.text('Subtotal',    450,  y + 7, { width: 90, align: 'right' });
+    doc.fillColor('black');
+    y += 22;
+
+    params.productos.forEach((p, i) => {
+      if (i % 2 === 0) doc.rect(50, y, 495, 18).fill('#FDF6EE');
+      doc.fillColor('#374151').fontSize(9).font('Helvetica');
+      doc.text(p.nombre,           60,  y + 5, { width: 250 });
+      doc.text(String(p.cantidad), 320,  y + 5);
+      doc.text(ars(p.precioUnitario), 365, y + 5);
+      doc.text(ars(p.subtotal),    450,  y + 5, { width: 90, align: 'right' });
+      y += 18;
+    });
+
+    // Total
+    doc.rect(50, y, 495, 22).fill('#F5EDE5');
+    doc.fillColor('#6B3A2A').fontSize(10).font('Helvetica-Bold');
+    doc.text('Total con IVA', 60,  y + 6);
+    doc.text(ars(params.totalConIva), 450, y + 6, { width: 90, align: 'right' });
+    doc.fillColor('black');
+    y += 34;
+
+    // ── Firmas ───────────────────────────────────────────────────────────────
+    const firmaY = Math.max(y + 20, 560);
+    doc.fontSize(10).font('Helvetica-Bold').text('Firmas', 50, firmaY);
+    doc.moveTo(50, firmaY + 14).lineTo(545, firmaY + 14).strokeColor('#E5E7EB').stroke();
+
+    let firmaX = 50;
+    const embedFirma = (base64: string, label: string, x: number) => {
+      try {
+        const dataUrl = base64.startsWith('data:') ? base64 : `data:image/png;base64,${base64}`;
+        const base64Data = dataUrl.split(',')[1];
+        const imgBuffer = Buffer.from(base64Data, 'base64');
+        doc.image(imgBuffer, x, firmaY + 20, { height: 70, fit: [200, 70] });
+        doc.fontSize(8).font('Helvetica').fillColor('#6B7280')
+           .text(label, x, firmaY + 95, { width: 200 });
+      } catch (_) {}
+    };
+
+    if (params.firmaPropietarioBase64) {
+      embedFirma(params.firmaPropietarioBase64, 'Wood Pallet — Firma del emisor', firmaX);
+      firmaX = 320;
+    }
+    if (params.firmaClienteBase64) {
+      const labelCliente = params.nombreFirmante
+        ? `${params.razonSocial} — Firma de ${params.nombreFirmante}`
+        : `${params.razonSocial} — Firma del cliente`;
+      embedFirma(params.firmaClienteBase64, labelCliente, firmaX);
+    }
+
+    // ── Pie ──────────────────────────────────────────────────────────────────
+    doc.fontSize(8).fillColor('#9CA3AF')
+       .text('Wood Pallet Manager · Documento generado digitalmente', 50, 780, { align: 'center', width: 495 });
+
+    doc.end();
   });
 };
 
@@ -163,20 +269,48 @@ export const enviarRemitoFirmado = async (params: {
   razonSocial: string;
   numeroRemito: string;
   fechaEmision: string;
+  fechaEntrega?: string;
+  productos?: { nombre: string; cantidad: number; precioUnitario: number; subtotal: number }[];
+  totalConIva?: number;
   firmaPropietarioBase64?: string;
   firmaClienteBase64?: string;
+  nombreFirmante?: string;
   esCopia: 'propietario' | 'cliente';
 }) => {
   const transporter = crearTransporter();
   const from = process.env.SMTP_FROM || process.env.SMTP_USER;
-  const titulo = params.esCopia === 'propietario'
-    ? `Remito #${params.numeroRemito} firmado por ${params.razonSocial}`
-    : `Tu remito #${params.numeroRemito} — Copia firmada`;
 
-  const firmas = [
-    params.firmaPropietarioBase64 ? `<div style="margin-bottom:16px;"><p style="font-size:12px;color:#6B7280;margin:0 0 6px;">Firma Wood Pallet:</p><img src="${params.firmaPropietarioBase64}" style="max-height:80px;border:1px solid #E5E7EB;border-radius:4px;" /></div>` : '',
-    params.firmaClienteBase64 ? `<div><p style="font-size:12px;color:#6B7280;margin:0 0 6px;">Firma cliente (${params.razonSocial}):</p><img src="${params.firmaClienteBase64}" style="max-height:80px;border:1px solid #E5E7EB;border-radius:4px;" /></div>` : '',
-  ].join('');
+  const esParaPropietario = params.esCopia === 'propietario';
+  const titulo = esParaPropietario
+    ? `✅ Remito #${params.numeroRemito} firmado por ${params.nombreFirmante || params.razonSocial}`
+    : `✅ Tu remito #${params.numeroRemito} — Copia firmada por ambas partes`;
+
+  const firmaPropImg = params.firmaPropietarioBase64
+    ? `<div style="margin-bottom:16px;"><p style="font-size:12px;color:#6B7280;margin:0 0 6px;font-weight:600;">Firma Wood Pallet (emisor):</p><img src="${params.firmaPropietarioBase64}" style="max-height:80px;border:1px solid #E5E7EB;border-radius:4px;display:block;" /></div>`
+    : '';
+  const firmaClienteImg = params.firmaClienteBase64
+    ? `<div><p style="font-size:12px;color:#6B7280;margin:0 0 6px;font-weight:600;">Firma del cliente (${params.nombreFirmante || params.razonSocial}):</p><img src="${params.firmaClienteBase64}" style="max-height:80px;border:1px solid #E5E7EB;border-radius:4px;display:block;" /></div>`
+    : '';
+
+  const mensajePrincipal = esParaPropietario
+    ? `El cliente <strong>${params.nombreFirmante || params.razonSocial}</strong> firmó el remito <strong>#${params.numeroRemito}</strong>. Se adjunta el documento PDF con ambas firmas.`
+    : `Gracias por firmar el remito <strong>#${params.numeroRemito}</strong>. Se adjunta tu copia del documento firmado por ambas partes como comprobante.`;
+
+  // Generar PDF con ambas firmas
+  let pdfBuffer: Buffer | undefined;
+  try {
+    pdfBuffer = await generarPdfRemito({
+      numeroRemito: params.numeroRemito,
+      razonSocial: params.razonSocial,
+      fechaEmision: params.fechaEmision,
+      fechaEntrega: params.fechaEntrega,
+      productos: params.productos ?? [],
+      totalConIva: params.totalConIva ?? 0,
+      firmaPropietarioBase64: params.firmaPropietarioBase64,
+      firmaClienteBase64: params.firmaClienteBase64,
+      nombreFirmante: params.nombreFirmante,
+    });
+  } catch (_) { /* si falla la generación del PDF se envía igual sin adjunto */ }
 
   await transporter.sendMail({
     from: `"Wood Pallet" <${from}>`,
@@ -190,22 +324,32 @@ export const enviarRemitoFirmado = async (params: {
         </div>
         <div style="background:#FDF6EE;padding:28px;border:1px solid #C4895A;border-top:none;border-radius:0 0 4px 4px;">
           <p style="color:#374151;font-size:15px;margin:0 0 16px;">
-            ${params.esCopia === 'cliente' ? `Estimado/a <strong>${params.razonSocial}</strong>,` : 'El remito fue firmado correctamente por ambas partes.'}
+            ${esParaPropietario ? 'Estimado equipo Wood Pallet,' : `Estimado/a <strong>${params.razonSocial}</strong>,`}
           </p>
-          <p style="color:#374151;font-size:14px;line-height:1.6;margin:0 0 20px;">
-            ${params.esCopia === 'cliente'
-              ? 'A continuación encontrás tu copia del remito firmado. Guardalo como comprobante.'
-              : `El cliente <strong>${params.razonSocial}</strong> firmó el remito #${params.numeroRemito}. A continuación las firmas de ambas partes.`
-            }
-          </p>
-          <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:4px;padding:16px;margin-bottom:16px;">
-            ${firmas}
+          <p style="color:#374151;font-size:14px;line-height:1.6;margin:0 0 20px;">${mensajePrincipal}</p>
+
+          <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:4px;padding:16px 20px;margin-bottom:20px;">
+            <p style="margin:0 0 12px;font-size:12px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.05em;">Firmas del documento</p>
+            ${firmaPropImg}
+            ${firmaClienteImg}
           </div>
-          <p style="color:#9CA3AF;font-size:12px;margin:16px 0 0;">
+
+          <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:4px;padding:12px 16px;font-size:13px;color:#1E40AF;">
+            📎 El documento PDF con ambas firmas se encuentra adjunto en este correo.
+          </div>
+
+          <p style="color:#9CA3AF;font-size:12px;margin:24px 0 0;">
             Saludos cordiales,<br/><strong style="color:#6B3A2A;">Wood Pallet</strong>
           </p>
         </div>
       </div>
     `,
+    attachments: pdfBuffer ? [
+      {
+        filename: `Remito-${params.numeroRemito}-firmado.pdf`,
+        content: pdfBuffer,
+        contentType: 'application/pdf',
+      },
+    ] : [],
   });
 };

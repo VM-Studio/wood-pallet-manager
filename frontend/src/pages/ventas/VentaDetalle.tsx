@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { X, Truck, Receipt, ChevronRight, Plus, AlertCircle, Send } from 'lucide-react';
+import {
+  X, Truck, Receipt, Plus, AlertCircle, Send,
+  Package, ChevronRight, CheckCircle, Clock, MapPin,
+  CreditCard, FileText, Building2
+} from 'lucide-react';
 import { useVenta, useActualizarEstadoVenta, useRegistrarRetiro } from '../../hooks/useVentas';
 import { useAuthStore } from '../../store/auth.store';
 import EstadoBadge from '../../components/ui/EstadoBadge';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import SolicitudLogisticaModal from './SolicitudLogisticaModal';
-import { clsx } from 'clsx';
 
 interface VentaDetalleProps {
   ventaId: number;
@@ -18,10 +21,7 @@ const formatPesos = (v: number) =>
 const formatFecha = (f: string) =>
   new Date(f).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-const estadosOrden = [
-  'confirmado', 'en_preparacion', 'listo_para_envio',
-  'en_transito', 'entregado'
-];
+const estadosOrden = ['confirmado', 'en_preparacion', 'listo_para_envio', 'en_transito', 'entregado'];
 
 const estadoLabel: Record<string, string> = {
   confirmado:        'Confirmado',
@@ -30,10 +30,48 @@ const estadoLabel: Record<string, string> = {
   en_transito:       'En tránsito',
   entregado:         'Entregado',
   entregado_parcial: 'Entregado parcial',
-  cancelado:         'Cancelado'
+  cancelado:         'Cancelado',
 };
 
-type Tab = 'detalle' | 'retiros' | 'logistica' | 'factura';
+// ── Sección con título ────────────────────────────────────────────
+function Seccion({ icon: Icon, titulo, children, accent = false }: {
+  icon: React.ElementType;
+  titulo: string;
+  children: React.ReactNode;
+  accent?: boolean;
+}) {
+  return (
+    <div style={{ borderBottom: '1px solid #F3F4F6', paddingBottom: '1.5rem', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '1rem' }}>
+        <div style={{
+          width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: accent ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' : '#F3EDE8',
+          borderRadius: '0.25rem', flexShrink: 0,
+        }}>
+          <Icon size={14} style={{ color: accent ? '#fff' : '#6B3A2A' }} />
+        </div>
+        <h3 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#1F2937', margin: 0 }}>{titulo}</h3>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// ── Dato individual ──────────────────────────────────────────────
+function Dato({ label, value, span = false }: { label: string; value: React.ReactNode; span?: boolean }) {
+  return (
+    <div style={{
+      padding: '0.625rem 0.75rem',
+      background: '#F9FAFB',
+      border: '1px solid #E5E7EB',
+      borderRadius: '0.25rem',
+      gridColumn: span ? 'span 2' : undefined,
+    }}>
+      <p style={{ fontSize: '0.68rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 3px' }}>{label}</p>
+      <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#111827' }}>{value}</div>
+    </div>
+  );
+}
 
 export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
   const { data: venta, isLoading } = useVenta(ventaId);
@@ -41,24 +79,17 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
   const registrarRetiro = useRegistrarRetiro();
   const { usuario } = useAuthStore();
   const esJuan = usuario?.rol === 'propietario_juancruz';
+
   const [retiroDetalle, setRetiroDetalle] = useState<number | null>(null);
   const [cantidadRetiro, setCantidadRetiro] = useState(0);
   const [errorRetiro, setErrorRetiro] = useState('');
-  const [tab, setTab] = useState<Tab>('detalle');
   const [showSolicitudModal, setShowSolicitudModal] = useState(false);
 
   const handleRetiro = async (detalleId: number) => {
     setErrorRetiro('');
-    if (!cantidadRetiro || cantidadRetiro < 1) {
-      setErrorRetiro('Ingresá una cantidad válida');
-      return;
-    }
+    if (!cantidadRetiro || cantidadRetiro < 1) { setErrorRetiro('Ingresá una cantidad válida'); return; }
     try {
-      await registrarRetiro.mutateAsync({
-        ventaId,
-        detalleVentaId: detalleId,
-        cantidadRetirada: cantidadRetiro
-      });
+      await registrarRetiro.mutateAsync({ ventaId, detalleVentaId: detalleId, cantidadRetirada: cantidadRetiro });
       setRetiroDetalle(null);
       setCantidadRetiro(0);
     } catch (err: unknown) {
@@ -72,205 +103,197 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
     return idx >= 0 && idx < estadosOrden.length - 1 ? estadosOrden[idx + 1] : null;
   };
 
-  const tabs = [
-    { key: 'detalle',   label: 'Detalle' },
-    { key: 'retiros',   label: 'Retiros' },
-    { key: 'logistica', label: 'Logística' },
-    { key: 'factura',   label: 'Factura' },
-  ] as const;
-
-  const btnBrown = {
-    display: 'inline-flex', alignItems: 'center', gap: '6px',
+  const btnBrown: React.CSSProperties = {
+    display: 'inline-flex', alignItems: 'center', gap: 6,
     background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
-    color: 'white', fontWeight: 500, fontSize: '0.875rem',
-    padding: '0.5rem 1rem', borderRadius: '0.25rem', border: 'none',
-    cursor: 'pointer', transition: 'all 0.2s',
-  } as React.CSSProperties;
+    color: '#fff', fontWeight: 600, fontSize: '0.82rem',
+    padding: '0.45rem 0.875rem', borderRadius: '0.25rem', border: 'none', cursor: 'pointer',
+  };
 
-  const btnCancel = {
-    display: 'inline-flex', alignItems: 'center', gap: '6px',
+  const btnOutline: React.CSSProperties = {
+    display: 'inline-flex', alignItems: 'center', gap: 6,
     background: '#fff', color: '#374151', border: '1px solid #E5E7EB',
-    fontWeight: 500, fontSize: '0.875rem', padding: '0.5rem 1rem',
-    borderRadius: '0.25rem', cursor: 'pointer',
-  } as React.CSSProperties;
-
-  const infoBox = {
-    padding: '0.75rem', background: '#F9FAFB',
-    border: '1px solid #E5E7EB', borderRadius: '0.25rem',
-  } as React.CSSProperties;
+    fontWeight: 600, fontSize: '0.82rem',
+    padding: '0.45rem 0.875rem', borderRadius: '0.25rem', cursor: 'pointer',
+  };
 
   return (
     <>
-    <div className="modal-overlay">
-      <div className="modal max-w-3xl animate-slide-up" style={{ borderRadius: '0.25rem' }}>
+      <div className="modal-overlay">
+        <div className="modal animate-slide-up" style={{
+          maxWidth: 740, borderRadius: '0.5rem', display: 'flex', flexDirection: 'column',
+          maxHeight: '90vh',
+        }}>
 
-        {/* Header */}
-        <div className="modal-header">
-          <div>
-            <div className="flex items-center gap-3">
-              <h2 className="modal-title">Venta #{ventaId}</h2>
-              {venta && <EstadoBadge estado={venta.estadoPedido} />}
+          {/* ── Header ─────────────────────────────────────────────── */}
+          <div style={{
+            display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+            padding: '1.25rem 1.5rem', borderBottom: '1px solid #E5E7EB', flexShrink: 0,
+          }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <span style={{
+                  fontSize: '0.72rem', fontWeight: 700, padding: '3px 8px',
+                  background: '#6B3A2A', color: '#fff', borderRadius: '0.25rem', letterSpacing: '0.04em',
+                }}>VENTA #{ventaId}</span>
+                {venta && <EstadoBadge estado={venta.estadoPedido} />}
+              </div>
+              {venta && (
+                <p style={{ fontSize: '1rem', fontWeight: 700, color: '#111827', margin: '6px 0 2px' }}>
+                  {venta.cliente?.razonSocial}
+                </p>
+              )}
+              {venta && (
+                <p style={{ fontSize: '0.8rem', color: '#6B7280', margin: 0 }}>
+                  {formatFecha(venta.fechaVenta)}
+                  {venta.cliente?.cuit ? ` · CUIT ${venta.cliente.cuit}` : ''}
+                </p>
+              )}
             </div>
-            {venta && (
-              <p className="text-sm text-gray-500 mt-1">
-                {venta.cliente?.razonSocial} · {formatFecha(venta.fechaVenta)}
-              </p>
-            )}
+            <button onClick={onClose} className="btn-icon" style={{ borderRadius: '0.25rem', flexShrink: 0 }}>
+              <X size={18} />
+            </button>
           </div>
-          <button onClick={onClose} className="btn-icon" style={{ borderRadius: '0.25rem' }}>
-            <X size={18} />
-          </button>
-        </div>
 
-        {isLoading ? (
-          <div className="p-8"><LoadingSpinner /></div>
-        ) : venta && (
-          <>
-            {/* Tabs */}
-            <div className="flex border-b border-gray-100 px-6">
-              {tabs.map(t => (
-                <button
-                  key={t.key}
-                  onClick={() => setTab(t.key)}
-                  className={clsx(
-                    'px-4 py-3 text-sm font-medium border-b-2 transition-colors -mb-px',
-                    tab === t.key
-                      ? 'border-[#6B3A2A] text-[#6B3A2A]'
-                      : 'border-transparent text-gray-500 hover:text-gray-700'
-                  )}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
+          {/* ── Body ──────────────────────────────────────────────── */}
+          {isLoading ? (
+            <div className="p-8"><LoadingSpinner /></div>
+          ) : venta && (
+            <div style={{ overflowY: 'auto', flex: 1, padding: '1.5rem' }}>
 
-            <div className="modal-body max-h-[60vh] overflow-y-auto">
-
-              {/* Tab: Detalle */}
-              {tab === 'detalle' && (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div style={infoBox}>
-                      <p className="text-xs text-gray-500 mb-1">Tipo de entrega</p>
-                      <p className="text-sm font-semibold text-gray-900">
-                        {venta.tipoEntrega === 'retira_cliente' ? 'Retira el cliente' : 'Envío coordinado'}
-                      </p>
-                    </div>
-                    <div style={infoBox}>
-                      <p className="text-xs text-gray-500 mb-1">Fecha estimada de entrega</p>
-                      <p className="text-sm font-semibold text-gray-900">
-                        {venta.fechaEstimEntrega ? formatFecha(venta.fechaEstimEntrega) : 'No definida'}
-                      </p>
-                    </div>
-                    {venta.requiereSenasa && (
-                      <div className="col-span-2 p-3" style={{ background: '#FDF6EE', border: '1px solid #C4895A', borderRadius: '0.25rem' }}>
-                        <p className="text-sm font-medium" style={{ color: '#6B3A2A' }}>Requiere tratamiento SENASA</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Productos */}
-                  <div>
-                    <p className="text-sm font-semibold text-gray-700 mb-2">Productos del pedido</p>
-                    <div className="space-y-2">
-                      {venta.detalles?.map(d => {
-                        const totalRetirado = (d.retiros as { cantidadRetirada: number }[] | undefined)
-                          ?.reduce((a, r) => a + r.cantidadRetirada, 0) || 0;
-                        const pendiente = d.cantidadPedida - totalRetirado;
-                        const pct = Math.round((totalRetirado / d.cantidadPedida) * 100);
-                        return (
-                          <div key={d.id} style={{ ...infoBox, padding: '0.75rem' }}>
-                            <div className="flex items-center justify-between mb-2">
-                              <p className="text-sm font-semibold text-gray-900">{d.producto?.nombre}</p>
-                              <p className="text-sm font-bold text-gray-900">{formatPesos(d.subtotal)}</p>
-                            </div>
-                            <div className="flex items-center gap-4 text-xs text-gray-500 mb-2">
-                              <span>Pedido: {d.cantidadPedida} u</span>
-                              <span style={{ color: '#6B3A2A' }}>Entregado: {totalRetirado} u</span>
-                              <span className={pendiente > 0 ? 'text-amber-600 font-medium' : 'text-gray-400'}>
-                                Pendiente: {pendiente} u
-                              </span>
-                            </div>
-                            <div className="h-1.5 overflow-hidden" style={{ background: '#E5E7EB', borderRadius: '0.125rem' }}>
-                              <div
-                                className="h-full transition-all"
-                                style={{ width: `${pct}%`, background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', borderRadius: '0.125rem' }}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Total */}
-                  <div className="p-4 text-white" style={{ background: '#1c3557', borderRadius: '0.25rem' }}>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-300">Total con IVA</span>
-                      <span className="text-xl font-bold">{formatPesos(venta.totalConIva || 0)}</span>
-                    </div>
-                    {venta.costoFlete && (
-                      <p className="text-xs text-gray-400 mt-1">
-                        Flete: {formatPesos(venta.costoFlete)}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Avanzar estado */}
-                  {siguienteEstado(venta.estadoPedido) && (
-                    <button
-                      onClick={() => actualizarEstado.mutate({
-                        id: ventaId,
-                        estado: siguienteEstado(venta.estadoPedido)!
-                      })}
-                      disabled={actualizarEstado.isPending}
-                      style={{
-                        ...btnBrown,
-                        width: '100%', justifyContent: 'center',
-                        opacity: actualizarEstado.isPending ? 0.5 : 1,
-                        cursor: actualizarEstado.isPending ? 'not-allowed' : 'pointer',
-                      }}
-                    >
-                      <ChevronRight size={16} />
-                      Avanzar a: {estadoLabel[siguienteEstado(venta.estadoPedido)!]}
-                    </button>
+              {/* ══ 1. PEDIDO ══════════════════════════════════════ */}
+              <Seccion icon={Package} titulo="Pedido" accent>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '1rem' }}>
+                  <Dato label="Tipo de entrega" value={
+                    venta.tipoEntrega === 'retira_cliente'
+                      ? <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Building2 size={13} /> Retira el cliente</span>
+                      : <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Truck size={13} /> Envío coordinado</span>
+                  } />
+                  <Dato label="Fecha estimada de entrega" value={
+                    venta.fechaEstimEntrega ? formatFecha(venta.fechaEstimEntrega) : '—'
+                  } />
+                  {venta.lugarEntrega && (
+                    <Dato label="Lugar de entrega" value={
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <MapPin size={12} style={{ color: '#9CA3AF' }} />{venta.lugarEntrega}
+                      </span>
+                    } span />
                   )}
                 </div>
-              )}
 
-              {/* Tab: Retiros */}
-              {tab === 'retiros' && (
-                <div className="space-y-4">
-                  <p className="text-sm text-gray-500">
-                    Registrá cada vez que el cliente retira una parte del pedido.
-                    El stock se descuenta automáticamente.
-                  </p>
+                {/* Productos */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
+                  {venta.detalles?.map(d => {
+                    const totalRetirado = (d.retiros as { cantidadRetirada: number }[] | undefined)
+                      ?.reduce((a, r) => a + r.cantidadRetirada, 0) || 0;
+                    const pendiente = d.cantidadPedida - totalRetirado;
+                    const pct = d.cantidadPedida > 0 ? Math.round((totalRetirado / d.cantidadPedida) * 100) : 0;
+                    return (
+                      <div key={d.id} style={{
+                        padding: '0.75rem', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.25rem',
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                          <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#111827', margin: 0 }}>{d.producto?.nombre}</p>
+                          <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#374151', margin: 0, flexShrink: 0 }}>{formatPesos(d.subtotal)}</p>
+                        </div>
+                        <div style={{ display: 'flex', gap: 16, fontSize: '0.75rem', color: '#6B7280', marginBottom: 6 }}>
+                          <span>Pedido: <strong>{d.cantidadPedida} u</strong></span>
+                          <span style={{ color: '#6B3A2A' }}>Entregado: <strong>{totalRetirado} u</strong></span>
+                          <span style={{ color: pendiente > 0 ? '#D97706' : '#9CA3AF' }}>Pendiente: <strong>{pendiente} u</strong></span>
+                        </div>
+                        <div style={{ height: 4, background: '#E5E7EB', borderRadius: 2, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${pct}%`, background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', borderRadius: 2, transition: 'width 0.3s' }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Total */}
+                <div style={{
+                  display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', marginBottom: '1rem',
+                }}>
+                  <div style={{ padding: '0.75rem', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.25rem', textAlign: 'center' }}>
+                    <p style={{ fontSize: '0.68rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', margin: '0 0 3px' }}>Subtotal</p>
+                    <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#374151', margin: 0 }}>{formatPesos(venta.totalSinIva || 0)}</p>
+                  </div>
+                  {venta.costoFlete ? (
+                    <div style={{ padding: '0.75rem', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.25rem', textAlign: 'center' }}>
+                      <p style={{ fontSize: '0.68rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', margin: '0 0 3px' }}>Flete</p>
+                      <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#374151', margin: 0 }}>{formatPesos(venta.costoFlete)}</p>
+                    </div>
+                  ) : <div />}
+                  <div style={{
+                    padding: '0.75rem', background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
+                    borderRadius: '0.25rem', textAlign: 'center',
+                  }}>
+                    <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', margin: '0 0 3px' }}>Total c/ IVA</p>
+                    <p style={{ fontSize: '1rem', fontWeight: 800, color: '#fff', margin: 0 }}>{formatPesos(venta.totalConIva || 0)}</p>
+                  </div>
+                </div>
+
+                {/* Avanzar estado */}
+                {siguienteEstado(venta.estadoPedido) && (
+                  <button
+                    onClick={() => actualizarEstado.mutate({ id: ventaId, estado: siguienteEstado(venta.estadoPedido)! })}
+                    disabled={actualizarEstado.isPending}
+                    style={{ ...btnBrown, opacity: actualizarEstado.isPending ? 0.5 : 1 }}
+                  >
+                    <ChevronRight size={14} />
+                    Avanzar a: {estadoLabel[siguienteEstado(venta.estadoPedido)!]}
+                  </button>
+                )}
+
+                {venta.requiereSenasa && (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 8, padding: '0.5rem 0.75rem',
+                    background: '#FDF6EE', border: '1px solid #C4895A', borderRadius: '0.25rem', marginTop: 8,
+                  }}>
+                    <AlertCircle size={13} style={{ color: '#C4895A', flexShrink: 0 }} />
+                    <p style={{ fontSize: '0.8rem', color: '#6B3A2A', fontWeight: 600, margin: 0 }}>
+                      Requiere tratamiento SENASA
+                      {venta.costoSenasa ? ` · ${formatPesos(venta.costoSenasa)}` : ''}
+                    </p>
+                  </div>
+                )}
+              </Seccion>
+
+              {/* ══ 2. RETIRO ══════════════════════════════════════ */}
+              <Seccion icon={Clock} titulo="Retiro parcial">
+                <p style={{ fontSize: '0.8rem', color: '#6B7280', marginBottom: '0.875rem' }}>
+                  Registrá cada vez que el cliente retira o se despacha una parte del pedido.
+                  El stock se descuenta automáticamente.
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   {venta.detalles?.map(d => {
                     const retiros = d.retiros as { fechaRetiro: string; cantidadRetirada: number }[] | undefined;
                     const totalRetirado = retiros?.reduce((a, r) => a + r.cantidadRetirada, 0) || 0;
                     const pendiente = d.cantidadPedida - totalRetirado;
 
                     return (
-                      <div key={d.id} className="card-p" style={{ borderRadius: '0.25rem' }}>
-                        <div className="flex items-start justify-between mb-3">
+                      <div key={d.id} style={{ padding: '0.875rem', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.25rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                           <div>
-                            <p className="font-semibold text-gray-900">{d.producto?.nombre}</p>
-                            <p className="text-sm text-gray-500 mt-0.5">
+                            <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#111827', margin: '0 0 2px' }}>{d.producto?.nombre}</p>
+                            <p style={{ fontSize: '0.78rem', color: '#6B7280', margin: 0 }}>
                               {totalRetirado} / {d.cantidadPedida} unidades entregadas
                             </p>
                           </div>
                           {pendiente > 0
-                            ? <span className="badge-yellow">{pendiente} pendientes</span>
-                            : <span className="badge-green">Completo</span>
+                            ? <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '3px 8px', background: '#FEF3C7', color: '#D97706', borderRadius: 999 }}>{pendiente} pendientes</span>
+                            : <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '3px 8px', background: '#DCFCE7', color: '#15803D', borderRadius: 999, display: 'flex', alignItems: 'center', gap: 3 }}><CheckCircle size={11} /> Completo</span>
                           }
                         </div>
 
                         {retiros && retiros.length > 0 && (
-                          <div className="space-y-1.5 mb-3">
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 8 }}>
                             {retiros.map((r, i) => (
-                              <div key={i} className="flex items-center justify-between text-xs px-3 py-2" style={{ background: '#F9FAFB', borderRadius: '0.25rem' }}>
-                                <span className="text-gray-500">{formatFecha(r.fechaRetiro)}</span>
-                                <span className="font-semibold text-gray-900">{r.cantidadRetirada} unidades</span>
+                              <div key={i} style={{
+                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                padding: '4px 10px', background: '#fff', border: '1px solid #E5E7EB', borderRadius: '0.25rem', fontSize: '0.78rem',
+                              }}>
+                                <span style={{ color: '#6B7280' }}>{formatFecha(r.fechaRetiro)}</span>
+                                <span style={{ fontWeight: 700, color: '#374151' }}>{r.cantidadRetirada} unidades</span>
                               </div>
                             ))}
                           </div>
@@ -278,35 +301,29 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
 
                         {pendiente > 0 && (
                           retiroDetalle === d.id ? (
-                            <div className="space-y-2">
-                              <div className="flex gap-2">
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                              <div style={{ display: 'flex', gap: 6 }}>
                                 <input
-                                  type="number"
-                                  min={1}
-                                  max={pendiente}
+                                  type="number" min={1} max={pendiente}
                                   value={cantidadRetiro || ''}
                                   onChange={e => setCantidadRetiro(parseInt(e.target.value) || 0)}
                                   placeholder={`Máx. ${pendiente} u`}
-                                  className="input flex-1 text-sm"
-                                  style={{ borderRadius: '0.25rem' }}
+                                  style={{
+                                    flex: 1, padding: '0.4rem 0.625rem', fontSize: '0.82rem',
+                                    border: '1px solid #E5E7EB', borderRadius: '0.25rem', outline: 'none',
+                                  }}
                                   autoFocus
                                 />
-                                <button
-                                  onClick={() => handleRetiro(d.id)}
-                                  disabled={registrarRetiro.isPending}
-                                  style={{ ...btnBrown, opacity: registrarRetiro.isPending ? 0.5 : 1 }}
-                                >
+                                <button onClick={() => handleRetiro(d.id)} disabled={registrarRetiro.isPending}
+                                  style={{ ...btnBrown, opacity: registrarRetiro.isPending ? 0.5 : 1 }}>
                                   {registrarRetiro.isPending ? '...' : 'Registrar'}
                                 </button>
-                                <button
-                                  onClick={() => { setRetiroDetalle(null); setErrorRetiro(''); }}
-                                  style={btnCancel}
-                                >
-                                  <X size={14} />
+                                <button onClick={() => { setRetiroDetalle(null); setErrorRetiro(''); }} style={btnOutline}>
+                                  <X size={13} />
                                 </button>
                               </div>
                               {errorRetiro && (
-                                <p className="text-xs flex items-center gap-1 px-3 py-2" style={{ color: '#B91C1C', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '0.25rem' }}>
+                                <p style={{ fontSize: '0.78rem', color: '#B91C1C', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '0.25rem', padding: '4px 10px', display: 'flex', alignItems: 'center', gap: 4, margin: 0 }}>
                                   <AlertCircle size={12} /> {errorRetiro}
                                 </p>
                               )}
@@ -314,9 +331,8 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                           ) : (
                             <button
                               onClick={() => { setRetiroDetalle(d.id); setCantidadRetiro(0); setErrorRetiro(''); }}
-                              style={{ ...btnCancel, width: '100%', justifyContent: 'center' }}
-                            >
-                              <Plus size={15} /> Registrar retiro parcial
+                              style={{ ...btnOutline, width: '100%', justifyContent: 'center' }}>
+                              <Plus size={13} /> Registrar retiro parcial
                             </button>
                           )
                         )}
@@ -324,167 +340,148 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                     );
                   })}
                 </div>
-              )}
+              </Seccion>
 
-              {/* Tab: Logística */}
-              {tab === 'logistica' && (
-                <div>
-                  {/* Botón solicitar logística para Juan Cruz */}
-                  {esJuan && (
-                    <div className="mb-4">
-                      <button
-                        onClick={() => setShowSolicitudModal(true)}
-                        style={{
-                          display: 'inline-flex', alignItems: 'center', gap: '6px',
-                          background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
-                          color: 'white', fontWeight: 500, fontSize: '0.875rem',
-                          padding: '0.5rem 1rem', borderRadius: '0.25rem', border: 'none',
-                          cursor: 'pointer', transition: 'all 0.2s',
-                        }}
-                      >
-                        <Send size={15} />
-                        Solicitar logística a Carlos
-                      </button>
-                    </div>
-                  )}
-                  {venta.logistica ? (
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div style={infoBox}>
-                          <p className="text-xs text-gray-500 mb-1">Transportista</p>
-                          <p className="text-sm font-semibold text-gray-900">{venta.logistica.nombreTransportista}</p>
+              {/* ══ 3. LOGÍSTICA ══════════════════════════════════ */}
+              <Seccion icon={Truck} titulo="Logística">
+                {esJuan && (
+                  <div style={{ marginBottom: '0.875rem' }}>
+                    <button onClick={() => setShowSolicitudModal(true)} style={btnBrown}>
+                      <Send size={13} /> Solicitar logística a Carlos
+                    </button>
+                  </div>
+                )}
+
+                {venta.logistica ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                      <Dato label="Transportista" value={
+                        <span>
+                          {venta.logistica.nombreTransportista || '—'}
                           {venta.logistica.telefonoTransp && (
-                            <p className="text-xs text-gray-400">{venta.logistica.telefonoTransp}</p>
+                            <span style={{ fontSize: '0.75rem', color: '#6B7280', marginLeft: 6 }}>
+                              {venta.logistica.telefonoTransp}
+                            </span>
                           )}
-                        </div>
-                        <div style={infoBox}>
-                          <p className="text-xs text-gray-500 mb-1">Estado de entrega</p>
-                          <EstadoBadge estado={venta.logistica.estadoEntrega} />
-                        </div>
-                        {venta.logistica.fechaRetiroGalpon && (
-                          <div style={infoBox}>
-                            <p className="text-xs text-gray-500 mb-1">Fecha de retiro del galpón</p>
-                            <p className="text-sm font-semibold text-gray-900">
-                              {formatFecha(venta.logistica.fechaRetiroGalpon)}
-                            </p>
-                          </div>
-                        )}
-                        {venta.logistica.costoFlete && (
-                          <div style={infoBox}>
-                            <p className="text-xs text-gray-500 mb-1">Costo del flete</p>
-                            <p className="text-sm font-semibold text-gray-900">
-                              {formatPesos(venta.logistica.costoFlete)}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex gap-3">
-                        {[
-                          { ok: venta.logistica.confTransportista, label: 'Confirmación transportista' },
-                          { ok: venta.logistica.confCliente, label: 'Confirmación cliente' },
-                        ].map(({ ok, label }) => (
-                          <div
-                            key={label}
-                            className="flex-1 p-3 text-center"
-                            style={{
-                              borderRadius: '0.25rem',
-                              background: ok ? '#FDF6EE' : '#F9FAFB',
-                              border: `1px solid ${ok ? '#C4895A' : '#E5E7EB'}`,
-                            }}
-                          >
-                            <p className="text-xs text-gray-500 mb-1">{label}</p>
-                            <p className="text-sm font-semibold" style={{ color: ok ? '#6B3A2A' : '#9CA3AF' }}>
-                              {ok ? 'Confirmado' : 'Pendiente'}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
+                        </span>
+                      } />
+                      <Dato label="Estado de entrega" value={<EstadoBadge estado={venta.logistica.estadoEntrega} />} />
+                      {venta.logistica.fechaRetiroGalpon && (
+                        <Dato label="Fecha retiro del galpón" value={formatFecha(venta.logistica.fechaRetiroGalpon)} />
+                      )}
+                      {venta.logistica.costoFlete && (
+                        <Dato label="Costo del flete" value={formatPesos(venta.logistica.costoFlete)} />
+                      )}
                     </div>
-                  ) : (
-                    <div className="empty-state">
-                      <div className="empty-icon" style={{ borderRadius: '0.25rem' }}><Truck size={22} /></div>
-                      <p className="text-sm font-semibold text-gray-700">Sin logística coordinada</p>
-                      <p className="text-sm text-gray-400 mt-1">
-                        {venta.tipoEntrega === 'retira_cliente'
-                          ? 'El cliente retira directamente del galpón'
-                          : 'Coordiná la entrega desde el módulo de Logística'}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Tab: Factura */}
-              {tab === 'factura' && (
-                <div>
-                  {venta.facturas && venta.facturas.length > 0 ? (
-                    <div className="space-y-3">
-                      {(venta.facturas as Record<string, unknown>[]).map((f) => (
-                        <div key={f.id as number} className="card-p" style={{ borderRadius: '0.25rem' }}>
-                          <div className="flex items-start justify-between mb-3">
-                            <div>
-                              <p className="font-semibold text-gray-900">
-                                {f.esSinFactura ? 'Operación SN (sin factura)' : `Factura A ${(f.nroFactura as string) || ''}`}
-                              </p>
-                              <p className="text-xs text-gray-400 mt-0.5">
-                                Emitida: {formatFecha(f.fechaEmision as string)}
-                                {f.fechaVencimiento && ` · Vence: ${formatFecha(f.fechaVencimiento as string)}`}
-                              </p>
-                            </div>
-                            <EstadoBadge estado={f.estadoCobro as string} />
-                          </div>
-                          <div className="grid grid-cols-3 gap-3 text-center">
-                            <div className="p-2" style={{ background: '#F9FAFB', borderRadius: '0.25rem' }}>
-                              <p className="text-xs text-gray-500">Neto</p>
-                              <p className="text-sm font-semibold">{formatPesos(f.totalNeto as number)}</p>
-                            </div>
-                            <div className="p-2" style={{ background: '#F9FAFB', borderRadius: '0.25rem' }}>
-                              <p className="text-xs text-gray-500">IVA 21%</p>
-                              <p className="text-sm font-semibold">{formatPesos(f.iva as number)}</p>
-                            </div>
-                            <div className="p-2" style={{ background: '#FDF6EE', borderRadius: '0.25rem' }}>
-                              <p className="text-xs text-gray-500">Total</p>
-                              <p className="text-sm font-bold" style={{ color: '#6B3A2A' }}>{formatPesos(f.totalConIva as number)}</p>
-                            </div>
-                          </div>
-                          {(f.pagos as Record<string, unknown>[] | undefined)?.length && (
-                            <div className="mt-3 pt-3 border-t border-gray-100">
-                              <p className="text-xs font-semibold text-gray-500 mb-2">Pagos recibidos</p>
-                              {(f.pagos as Record<string, unknown>[]).map((p) => (
-                                <div key={p.id as number} className="flex justify-between text-xs text-gray-600 py-1">
-                                  <span>{formatFecha(p.fechaPago as string)} · {p.medioPago as string}</span>
-                                  <span className="font-semibold" style={{ color: '#6B3A2A' }}>{formatPesos(p.monto as number)}</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: 4 }}>
+                      {[
+                        { ok: venta.logistica.confTransportista, label: 'Confirmación transportista' },
+                        { ok: venta.logistica.confCliente, label: 'Confirmación cliente' },
+                      ].map(({ ok, label }) => (
+                        <div key={label} style={{
+                          padding: '0.625rem 0.75rem', textAlign: 'center', borderRadius: '0.25rem',
+                          background: ok ? '#FDF6EE' : '#F9FAFB',
+                          border: `1px solid ${ok ? '#C4895A' : '#E5E7EB'}`,
+                        }}>
+                          <p style={{ fontSize: '0.68rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', margin: '0 0 3px' }}>{label}</p>
+                          <p style={{ fontSize: '0.82rem', fontWeight: 700, color: ok ? '#6B3A2A' : '#9CA3AF', margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                            {ok ? <><CheckCircle size={12} /> Confirmado</> : <><Clock size={12} /> Pendiente</>}
+                          </p>
                         </div>
                       ))}
                     </div>
-                  ) : (
-                    <div className="empty-state">
-                      <div className="empty-icon" style={{ borderRadius: '0.25rem' }}><Receipt size={22} /></div>
-                      <p className="text-sm font-semibold text-gray-700">Sin factura emitida</p>
-                      <p className="text-sm text-gray-400 mt-1">
-                        Emitila desde ARCA y registrala en el módulo de Facturación
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
+                  </div>
+                ) : (
+                  <div style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    padding: '1.5rem', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.25rem', textAlign: 'center',
+                  }}>
+                    <Truck size={20} style={{ color: '#D1D5DB', marginBottom: 8 }} />
+                    <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#6B7280', margin: '0 0 4px' }}>Sin logística coordinada</p>
+                    <p style={{ fontSize: '0.78rem', color: '#9CA3AF', margin: 0 }}>
+                      {venta.tipoEntrega === 'retira_cliente'
+                        ? 'El cliente retira directamente del galpón'
+                        : 'Coordiná la entrega desde el módulo de Logística'}
+                    </p>
+                  </div>
+                )}
+              </Seccion>
+
+              {/* ══ 4. FACTURA ════════════════════════════════════ */}
+              <Seccion icon={Receipt} titulo="Facturación">
+                {venta.facturas && venta.facturas.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {(venta.facturas as Record<string, unknown>[]).map(f => (
+                      <div key={f.id as number} style={{ padding: '0.875rem', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.25rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+                          <div>
+                            <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#111827', margin: '0 0 2px' }}>
+                              {f.esSinFactura ? 'Operación SN (sin factura)' : `Factura A ${f.nroFactura || ''}`}
+                            </p>
+                            <p style={{ fontSize: '0.75rem', color: '#9CA3AF', margin: 0 }}>
+                              Emitida: {formatFecha(f.fechaEmision as string)}
+                              {f.fechaVencimiento && ` · Vence: ${formatFecha(f.fechaVencimiento as string)}`}
+                            </p>
+                          </div>
+                          <EstadoBadge estado={f.estadoCobro as string} />
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', marginBottom: 8 }}>
+                          <div style={{ padding: '0.5rem', background: '#fff', border: '1px solid #E5E7EB', borderRadius: '0.25rem', textAlign: 'center' }}>
+                            <p style={{ fontSize: '0.68rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', margin: '0 0 2px' }}>Neto</p>
+                            <p style={{ fontSize: '0.82rem', fontWeight: 700, color: '#374151', margin: 0 }}>{formatPesos(f.totalNeto as number)}</p>
+                          </div>
+                          <div style={{ padding: '0.5rem', background: '#fff', border: '1px solid #E5E7EB', borderRadius: '0.25rem', textAlign: 'center' }}>
+                            <p style={{ fontSize: '0.68rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', margin: '0 0 2px' }}>IVA 21%</p>
+                            <p style={{ fontSize: '0.82rem', fontWeight: 700, color: '#374151', margin: 0 }}>{formatPesos(f.iva as number)}</p>
+                          </div>
+                          <div style={{ padding: '0.5rem', background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', borderRadius: '0.25rem', textAlign: 'center' }}>
+                            <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', margin: '0 0 2px' }}>Total</p>
+                            <p style={{ fontSize: '0.875rem', fontWeight: 800, color: '#fff', margin: 0 }}>{formatPesos(f.totalConIva as number)}</p>
+                          </div>
+                        </div>
+                        {(f.pagos as Record<string, unknown>[] | undefined)?.length ? (
+                          <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: 8 }}>
+                            <p style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: 5 }}>
+                              <CreditCard size={11} /> Pagos recibidos
+                            </p>
+                            {(f.pagos as Record<string, unknown>[]).map(p => (
+                              <div key={p.id as number} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: '#6B7280', padding: '3px 0', borderBottom: '1px solid #F3F4F6' }}>
+                                <span>{formatFecha(p.fechaPago as string)} · {p.medioPago as string}</span>
+                                <span style={{ fontWeight: 700, color: '#6B3A2A' }}>{formatPesos(p.monto as number)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    padding: '1.5rem', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.25rem', textAlign: 'center',
+                  }}>
+                    <FileText size={20} style={{ color: '#D1D5DB', marginBottom: 8 }} />
+                    <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#6B7280', margin: '0 0 4px' }}>Sin factura emitida</p>
+                    <p style={{ fontSize: '0.78rem', color: '#9CA3AF', margin: 0 }}>
+                      Emitila desde ARCA y registrala en el módulo de Facturación
+                    </p>
+                  </div>
+                )}
+              </Seccion>
 
             </div>
-          </>
-        )}
+          )}
+        </div>
       </div>
-    </div>
-    {showSolicitudModal && venta && (
-      <SolicitudLogisticaModal
-        ventaId={ventaId}
-        clienteNombre={venta.cliente?.razonSocial}
-        onClose={() => setShowSolicitudModal(false)}
-      />
-    )}
+
+      {showSolicitudModal && venta && (
+        <SolicitudLogisticaModal
+          ventaId={ventaId}
+          clienteNombre={venta.cliente?.razonSocial}
+          onClose={() => setShowSolicitudModal(false)}
+        />
+      )}
     </>
   );
 }
+

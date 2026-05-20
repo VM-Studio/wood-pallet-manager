@@ -11,6 +11,7 @@ import {
   consultarLogistica,
   responderConsultaLogistica,
   confirmarLogisticaCarlos,
+  avanzarLogistica,
 } from '../controllers/logistica.controller';
 
 const router = Router();
@@ -27,5 +28,6 @@ router.put('/venta/:ventaId/confirmar-cliente', confirmarEntregaCliente);
 router.put('/venta/:ventaId/consultar', consultarLogistica);
 router.put('/venta/:ventaId/responder-consulta', responderConsultaLogistica);
 router.put('/venta/:ventaId/confirmar-carlos', confirmarLogisticaCarlos);
+router.put('/venta/:ventaId/avanzar', avanzarLogistica);
 
 export default router;

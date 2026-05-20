@@ -99,14 +99,16 @@ export const registrarRetiroParcialService = async (
     data: { cantidadEntregada: nuevaCantidadEntregada },
   });
 
-  // Descontar del stock
+  // Descontar del stock (solo si hay stock disponible para este producto)
   const stockEntry = await prisma.stock.findFirst({
     where: { productoId: detalle.productoId },
   });
-  if (stockEntry) {
+  if (stockEntry && stockEntry.cantidadDisponible > 0) {
+    // Floor en 0: el stock propio nunca puede quedar negativo
+    const nuevaCantidad = Math.max(0, stockEntry.cantidadDisponible - cantidadRetirada);
     await prisma.stock.update({
       where: { id: stockEntry.id },
-      data: { cantidadDisponible: { decrement: cantidadRetirada } },
+      data: { cantidadDisponible: nuevaCantidad },
     });
     await prisma.movimientoStock.create({
       data: {

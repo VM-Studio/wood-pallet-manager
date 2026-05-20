@@ -25,7 +25,8 @@ const firmarPropietarioSchema = z.object({
 });
 
 const firmarClienteSchema = z.object({
-  firmaCliente: z.string().min(10, 'Firma inválida'),
+  firmaCliente:    z.string().min(10, 'Firma inválida'),
+  nombreFirmante:  z.string().optional(),
 });
 
 const numeroRemitoSchema = z.object({
@@ -124,8 +125,8 @@ export const getRemitoPublico = async (req: Request, res: Response) => {
 export const firmarClientePublico = async (req: Request, res: Response) => {
   try {
     const token = String(req.params.token);
-    const { firmaCliente } = firmarClienteSchema.parse(req.body);
-    const remito = await firmarClienteService(token, firmaCliente);
+    const { firmaCliente, nombreFirmante } = firmarClienteSchema.parse(req.body);
+    const remito = await firmarClienteService(token, firmaCliente, nombreFirmante);
     res.json({ ok: true, mensaje: 'Remito firmado correctamente. Se envió una copia a tu email.', remitoId: remito.id });
   } catch (error: any) {
     if (error.name === 'ZodError') return res.status(400).json({ error: error.issues[0].message });

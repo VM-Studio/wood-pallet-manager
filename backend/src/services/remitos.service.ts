@@ -33,10 +33,8 @@ export const getRemitoByTokenService = async (token: string) => {
     include: REMITO_INCLUDE,
   });
   if (!remito) throw new Error('Remito no encontrado o token inválido');
-  if (remito.estado === 'cancelado') throw new Error('Este remito fue cancelado');
-  if (remito.estado === 'firmado_por_cliente' || remito.estado === 'completado') {
-    throw new Error('Este remito ya fue firmado');
-  }
+  // Devuelve el remito sin importar el estado —
+  // el frontend muestra la pantalla correcta según estado (ya-firmado, cancelado, etc.)
   return remito;
 };
 
@@ -134,7 +132,7 @@ export const enviarRemitoService = async (id: number) => {
   });
 };
 
-export const firmarClienteService = async (token: string, firmaCliente: string) => {
+export const firmarClienteService = async (token: string, firmaCliente: string, nombreFirmante?: string) => {
   const remito = await prisma.remito.findUnique({ where: { tokenFirma: token }, include: REMITO_INCLUDE });
   if (!remito) throw new Error('Remito no encontrado o token inválido');
   if (remito.estado === 'cancelado') throw new Error('Este remito fue cancelado');
@@ -154,6 +152,13 @@ export const firmarClienteService = async (token: string, firmaCliente: string) 
 
   const nro = actualizado.numeroRemito ?? String(actualizado.id).padStart(4, '0');
   const fechaEmision = actualizado.fechaEmision.toLocaleDateString('es-AR');
+  const productos = actualizado.venta.detalles.map(d => ({
+    nombre: d.producto.nombre,
+    cantidad: d.cantidadPedida,
+    precioUnitario: Number(d.precioUnitario),
+    subtotal: Number(d.subtotal),
+  }));
+  const totalConIva = Number(actualizado.venta.totalConIva ?? 0);
 
   // Enviar copia firmada al cliente
   if (actualizado.cliente.emailContacto) {
@@ -163,8 +168,12 @@ export const firmarClienteService = async (token: string, firmaCliente: string) 
         razonSocial: actualizado.cliente.razonSocial,
         numeroRemito: nro,
         fechaEmision,
+        fechaEntrega: actualizado.fechaEntrega?.toLocaleDateString('es-AR'),
+        productos,
+        totalConIva,
         firmaPropietarioBase64: actualizado.firmaPropietario ?? undefined,
         firmaClienteBase64: firmaCliente,
+        nombreFirmante,
         esCopia: 'cliente',
       });
     } catch (_) { /* no bloquear si falla el mail */ }
@@ -179,8 +188,12 @@ export const firmarClienteService = async (token: string, firmaCliente: string) 
         razonSocial: actualizado.cliente.razonSocial,
         numeroRemito: nro,
         fechaEmision,
+        fechaEntrega: actualizado.fechaEntrega?.toLocaleDateString('es-AR'),
+        productos,
+        totalConIva,
         firmaPropietarioBase64: actualizado.firmaPropietario ?? undefined,
         firmaClienteBase64: firmaCliente,
+        nombreFirmante,
         esCopia: 'propietario',
       });
     } catch (_) { /* no bloquear si falla el mail */ }

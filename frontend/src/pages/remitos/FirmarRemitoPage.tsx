@@ -121,7 +121,7 @@ export default function FirmarRemitoPage() {
     if (!firma) { setError('Por favor dibujá tu firma antes de confirmar'); return; }
     setError('');
     try {
-      await firmarCliente.mutateAsync({ token: token ?? '', firmaCliente: firma });
+      await firmarCliente.mutateAsync({ token: token ?? '', firmaCliente: firma, nombreFirmante: nombre || undefined });
       setExito(true);
     } catch (err: unknown) {
       setError((err as Error).message ?? 'Error al procesar la firma. Intentá de nuevo.');

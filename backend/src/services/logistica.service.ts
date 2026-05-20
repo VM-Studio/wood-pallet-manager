@@ -152,10 +152,15 @@ export const getEntregasDelDiaService = async () => {
 
 const ventaLogisticaInclude = {
   venta: {
-    include: {
+    select: {
+      id: true,
+      costoFlete: true,
+      fechaEstimEntrega: true,
+      lugarEntrega: true,
+      tipoEntrega: true,
       cliente: { select: { razonSocial: true, direccionEntrega: true, localidad: true } },
       usuario: { select: { nombre: true, apellido: true, rol: true } },
-      detalles: { include: { producto: { select: { nombre: true } } } },
+      detalles: { select: { id: true, cantidadPedida: true, producto: { select: { nombre: true } } } },
     },
   },
   registradoPor: { select: { nombre: true, apellido: true, rol: true } },
@@ -175,10 +180,10 @@ export const getLogisticasPorRolService = async (usuarioId: number, rol: string,
   }
 
   // Vista "mis_datos" → ventas del usuario logueado
+  // Carlos siempre ve TODAS las logísticas (propias + Juan) para poder gestionar todo
   if (vista === 'mis_datos' || !vista) {
     if (esCarlos) {
       return prisma.logistica.findMany({
-        where: { venta: { usuario: { rol: 'propietario_carlos' } } },
         include: ventaLogisticaInclude,
         orderBy: { id: 'desc' },
       });
@@ -216,11 +221,32 @@ export const getLogisticasPorRolService = async (usuarioId: number, rol: string,
 };
 
 export const consultarLogisticaService = async (ventaId: number, usuarioId: number) => {
-  const logistica = await prisma.logistica.findUnique({ where: { ventaId } });
-  if (!logistica) throw new Error('Logística no encontrada');
-  return prisma.logistica.update({
-    where: { ventaId },
-    data: { estadoConsulta: 'consultada', fechaConsulta: new Date(), consultadaPorId: usuarioId },
+  // Si ya existe el registro, solo actualiza estadoConsulta
+  const existente = await prisma.logistica.findUnique({ where: { ventaId } });
+
+  if (existente) {
+    return prisma.logistica.update({
+      where: { ventaId },
+      data: { estadoConsulta: 'pendiente_consulta', fechaConsulta: new Date(), consultadaPorId: usuarioId },
+    });
+  }
+
+  // Si NO existe, crea el registro con estadoConsulta = 'pendiente_consulta'
+  // para que Carlos pueda verlo en su panel de "Consultas de Juan Cruz"
+  const venta = await prisma.venta.findUnique({ where: { id: ventaId } });
+  if (!venta) throw new Error('Venta no encontrada');
+
+  return prisma.logistica.create({
+    data: {
+      ventaId,
+      nombreTransportista: '',
+      estadoConsulta: 'pendiente_consulta',
+      fechaConsulta: new Date(),
+      consultadaPorId: usuarioId,
+      registradoPorId: usuarioId,
+      confTransportista: false,
+      confCliente: false,
+    },
   });
 };
 
@@ -253,6 +279,53 @@ export const responderConsultaLogisticaService = async (
       observaciones: datos?.observaciones,
     },
   });
+};
+
+// Avanza el estado de una logística desde el panel de Carlos.
+// Los 3 botones son: consultando → aceptada → entregada
+export const avanzarLogisticaService = async (
+  ventaId: number,
+  accion: 'consultando' | 'aceptada' | 'entregada',
+  rol: string
+) => {
+  if (rol !== 'propietario_carlos' && rol !== 'admin') {
+    throw new Error('Solo Carlos puede avanzar el estado de la logística');
+  }
+
+  const logistica = await prisma.logistica.findUnique({ where: { ventaId } });
+  if (!logistica) throw new Error('Logística no encontrada');
+
+  if (accion === 'consultando') {
+    return prisma.logistica.update({
+      where: { ventaId },
+      data: { estadoConsulta: 'consultada' },
+    });
+  }
+
+  if (accion === 'aceptada') {
+    return prisma.$transaction([
+      prisma.logistica.update({
+        where: { ventaId },
+        data: { estadoConsulta: 'aceptada', estadoEntrega: 'en_camino' },
+      }),
+      prisma.venta.update({
+        where: { id: ventaId },
+        data: { estadoPedido: 'en_transito' },
+      }),
+    ]).then(([l]) => l);
+  }
+
+  // entregada
+  return prisma.$transaction([
+    prisma.logistica.update({
+      where: { ventaId },
+      data: { estadoEntrega: 'entregado', horaEntregaReal: new Date(), confTransportista: true },
+    }),
+    prisma.venta.update({
+      where: { id: ventaId },
+      data: { estadoPedido: 'entregado', fechaEntregaReal: new Date() },
+    }),
+  ]).then(([l]) => l);
 };
 
 export const confirmarLogisticaCarlosService = async (

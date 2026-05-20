@@ -12,6 +12,7 @@ import {
   consultarLogisticaService,
   responderConsultaLogisticaService,
   confirmarLogisticaCarlosService,
+  avanzarLogisticaService,
 } from '../services/logistica.service';
 
 export const getLogisticas = async (_req: Request, res: Response) => {
@@ -110,6 +111,21 @@ export const confirmarLogisticaCarlos = async (req: AuthRequest, res: Response) 
   try {
     const ventaId = parseId(req.params.ventaId);
     const data = await confirmarLogisticaCarlosService(ventaId, req.user!.rol, req.body);
+    res.json(data);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const avanzarLogistica = async (req: AuthRequest, res: Response) => {
+  try {
+    const ventaId = parseId(req.params.ventaId);
+    const { accion } = req.body;
+    if (!['consultando', 'aceptada', 'entregada'].includes(accion)) {
+      res.status(400).json({ error: 'Acción debe ser "consultando", "aceptada" o "entregada"' });
+      return;
+    }
+    const data = await avanzarLogisticaService(ventaId, accion, req.user!.rol);
     res.json(data);
   } catch (error: any) {
     res.status(400).json({ error: error.message });

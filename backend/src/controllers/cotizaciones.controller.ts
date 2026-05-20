@@ -91,7 +91,7 @@ export const crearCotizacion = async (req: AuthRequest, res: Response) => {
     res.status(201).json(cotizacion);
   } catch (error: any) {
     if (error.name === 'ZodError') {
-      return res.status(400).json({ error: error.errors[0].message });
+      return res.status(400).json({ error: error.issues[0].message });
     }
     res.status(400).json({ error: error.message });
   }
@@ -123,7 +123,7 @@ export const registrarSeguimiento = async (req: AuthRequest, res: Response) => {
     res.status(201).json(seguimiento);
   } catch (error: any) {
     if (error.name === 'ZodError') {
-      return res.status(400).json({ error: error.errors[0].message });
+      return res.status(400).json({ error: error.issues[0].message });
     }
     res.status(400).json({ error: error.message });
   }
@@ -137,7 +137,7 @@ export const convertirAVenta = async (req: AuthRequest, res: Response) => {
     res.status(201).json(venta);
   } catch (error: any) {
     if (error.name === 'ZodError') {
-      return res.status(400).json({ error: error.errors[0].message });
+      return res.status(400).json({ error: error.issues[0].message });
     }
     res.status(400).json({ error: error.message });
   }

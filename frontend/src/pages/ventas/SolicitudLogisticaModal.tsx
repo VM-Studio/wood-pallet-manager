@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { X, Truck, Send } from 'lucide-react';
-import { useCrearSolicitudLogistica } from '../../hooks/useSolicitudesLogistica';
+import { X, Truck, Send, CheckCircle } from 'lucide-react';
+import { useConsultarLogistica } from '../../hooks/useLogistica';
 
 interface SolicitudLogisticaModalProps {
   ventaId: number;
@@ -13,21 +13,16 @@ export default function SolicitudLogisticaModal({
   clienteNombre,
   onClose,
 }: SolicitudLogisticaModalProps) {
-  const crear = useCrearSolicitudLogistica();
-  const [form, setForm] = useState({
-    fechaEntrega: '',
-    cantidadUnidades: '',
-    ubicacionEntrega: '',
-    notas: '',
-  });
+  const consultar = useConsultarLogistica();
+  const [enviado, setEnviado] = useState(false);
   const [error, setError] = useState('');
 
   const btnBrown: React.CSSProperties = {
     display: 'inline-flex', alignItems: 'center', gap: '6px',
-    background: crear.isPending ? '#9CA3AF' : 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
+    background: consultar.isPending ? '#9CA3AF' : 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
     color: 'white', fontWeight: 500, fontSize: '0.875rem',
     padding: '0.5rem 1rem', borderRadius: '0.25rem', border: 'none',
-    cursor: crear.isPending ? 'not-allowed' : 'pointer', transition: 'all 0.2s',
+    cursor: consultar.isPending ? 'not-allowed' : 'pointer', transition: 'all 0.2s',
   };
 
   const btnCancel: React.CSSProperties = {
@@ -37,22 +32,11 @@ export default function SolicitudLogisticaModal({
     borderRadius: '0.25rem', cursor: 'pointer',
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSolicitar = async () => {
     setError('');
-    if (!form.ubicacionEntrega.trim()) {
-      setError('La ubicación de entrega es obligatoria');
-      return;
-    }
     try {
-      await crear.mutateAsync({
-        ventaId,
-        fechaEntrega: form.fechaEntrega || undefined,
-        cantidadUnidades: form.cantidadUnidades ? parseInt(form.cantidadUnidades) : undefined,
-        ubicacionEntrega: form.ubicacionEntrega,
-        notas: form.notas || undefined,
-      });
-      onClose();
+      await consultar.mutateAsync(ventaId);
+      setEnviado(true);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { error?: string } } };
       setError(e.response?.data?.error || 'Error al enviar la solicitud');
@@ -63,9 +47,8 @@ export default function SolicitudLogisticaModal({
     <div className="modal-overlay" style={{ zIndex: 60 }}>
       <div className="modal max-w-md animate-slide-up" style={{ borderRadius: '0.25rem' }}>
 
-        {/* Header */}
         <div className="modal-header">
-          <h2 className="modal-title flex items-center gap-2">
+          <h2 className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Truck size={18} style={{ color: '#6B3A2A' }} />
             Solicitar logística a Carlos
           </h2>
@@ -74,88 +57,77 @@ export default function SolicitudLogisticaModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="modal-body space-y-4">
+        <div className="modal-body space-y-4">
 
-            {/* Info venta */}
-            <div className="p-3" style={{ background: '#FDF6EE', border: '1px solid #C4895A', borderRadius: '0.25rem' }}>
-              <p className="text-sm font-medium" style={{ color: '#6B3A2A' }}>
-                Venta #{ventaId}{clienteNombre ? ` · ${clienteNombre}` : ''}
+          {enviado ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '1.5rem 0', textAlign: 'center' }}>
+              <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CheckCircle size={24} style={{ color: '#16A34A' }} />
+              </div>
+              <p style={{ fontSize: '0.95rem', fontWeight: 700, color: '#111827', margin: 0 }}>
+                Solicitud enviada correctamente
               </p>
-              <p className="text-xs text-gray-500 mt-0.5">
-                Tu solicitud llegará al panel de Carlos para que la coordine con el transportista.
+              <p style={{ fontSize: '0.82rem', color: '#6B7280', margin: 0 }}>
+                Carlos puede ver esta solicitud en su panel de logística como <strong>pendiente</strong>.
+                Te va a responder cuando la tenga coordinada.
               </p>
             </div>
+          ) : (
+            <>
+              <div style={{ padding: '0.75rem', background: '#FDF6EE', border: '1px solid #C4895A', borderRadius: '0.25rem' }}>
+                <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#6B3A2A', margin: '0 0 3px' }}>
+                  Venta #{ventaId}{clienteNombre ? ` · ${clienteNombre}` : ''}
+                </p>
+                <p style={{ fontSize: '0.78rem', color: '#92400E', margin: 0 }}>
+                  Al confirmar, Carlos recibirá esta consulta en su panel de logística y podrá coordinarte la entrega con el transportista.
+                </p>
+              </div>
 
-            {/* Fecha de entrega */}
-            <div>
-              <label className="label">Fecha de entrega</label>
-              <input
-                type="date"
-                value={form.fechaEntrega}
-                onChange={e => setForm({ ...form, fechaEntrega: e.target.value })}
-                className="input"
-                style={{ borderRadius: '0.25rem' }}
-              />
-            </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {[
+                  'Carlos verá la consulta como "Pendiente" en su panel',
+                  'Podrá aceptarla o rechazarla con una respuesta',
+                  'Verás el estado actualizado en tu sección de logística',
+                ].map((txt, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                    <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#6B3A2A', color: '#fff', fontSize: '0.65rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+                      {i + 1}
+                    </div>
+                    <p style={{ fontSize: '0.8rem', color: '#374151', margin: 0 }}>{txt}</p>
+                  </div>
+                ))}
+              </div>
 
-            {/* Cantidad de unidades */}
-            <div>
-              <label className="label">Cantidad de unidades</label>
-              <input
-                type="number"
-                min={1}
-                value={form.cantidadUnidades}
-                onChange={e => setForm({ ...form, cantidadUnidades: e.target.value })}
-                placeholder="Ej: 200"
-                className="input"
-                style={{ borderRadius: '0.25rem' }}
-              />
-            </div>
+              {error && (
+                <p style={{ fontSize: '0.82rem', color: '#B91C1C', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '0.25rem', padding: '0.5rem 0.75rem', margin: 0 }}>
+                  {error}
+                </p>
+              )}
+            </>
+          )}
+        </div>
 
-            {/* Ubicación */}
-            <div>
-              <label className="label">Ubicación de entrega <span style={{ color: '#EF4444' }}>*</span></label>
-              <input
-                type="text"
-                value={form.ubicacionEntrega}
-                onChange={e => setForm({ ...form, ubicacionEntrega: e.target.value })}
-                placeholder="Ej: Av. Corrientes 1234, CABA"
-                className="input"
-                style={{ borderRadius: '0.25rem' }}
-                required
-              />
-            </div>
-
-            {/* Notas */}
-            <div>
-              <label className="label">Notas adicionales <span className="text-gray-400 font-normal">(opcional)</span></label>
-              <textarea
-                value={form.notas}
-                onChange={e => setForm({ ...form, notas: e.target.value })}
-                className="input resize-none"
-                style={{ borderRadius: '0.25rem' }}
-                rows={2}
-                placeholder="Instrucciones especiales, horario preferido..."
-              />
-            </div>
-
-            {error && (
-              <p className="text-sm px-3 py-2.5" style={{ color: '#B91C1C', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '0.25rem' }}>
-                {error}
-              </p>
-            )}
-          </div>
-
-          <div className="modal-footer">
-            <button type="button" onClick={onClose} style={btnCancel}>Cancelar</button>
-            <button type="submit" disabled={crear.isPending} style={btnBrown}>
-              <Send size={15} />
-              {crear.isPending ? 'Enviando...' : 'Enviar solicitud'}
-            </button>
-          </div>
-        </form>
+        <div className="modal-footer">
+          {enviado ? (
+            <button onClick={onClose} style={btnBrown}>Cerrar</button>
+          ) : (
+            <>
+              <button type="button" onClick={onClose} style={btnCancel}>Cancelar</button>
+              <button onClick={handleSolicitar} disabled={consultar.isPending} style={btnBrown}>
+                <Send size={15} />
+                {consultar.isPending ? 'Enviando...' : 'Solicitar a Carlos'}
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
+}
+
+
+interface SolicitudLogisticaModalProps {
+  ventaId: number;
+  clienteNombre?: string;
+  onClose: () => void;
 }

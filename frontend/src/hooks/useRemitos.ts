@@ -125,6 +125,6 @@ export const useCancelarRemito = () => {
 
 export const useFirmarClientePublico = () =>
   useMutation({
-    mutationFn: ({ token, firmaCliente }: { token: string; firmaCliente: string }) =>
-      api.post(`/remitos/publico/${token}/firmar`, { firmaCliente }).then(r => r.data),
+    mutationFn: ({ token, firmaCliente, nombreFirmante }: { token: string; firmaCliente: string; nombreFirmante?: string }) =>
+      api.post(`/remitos/publico/${token}/firmar`, { firmaCliente, nombreFirmante }).then(r => r.data),
   });

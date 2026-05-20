@@ -153,3 +153,20 @@ export const useConfirmarLogisticaCarlos = () => {
     }
   });
 };
+
+export const useAvanzarLogistica = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ventaId, accion }: { ventaId: number; accion: 'consultando' | 'aceptada' | 'entregada' }) => {
+      const { data } = await api.put(`/logistica/venta/${ventaId}/avanzar`, { accion });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['logistica-por-rol'] });
+      queryClient.invalidateQueries({ queryKey: ['logisticas'] });
+      queryClient.invalidateQueries({ queryKey: ['entregas-hoy'] });
+      queryClient.invalidateQueries({ queryKey: ['ventas'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    }
+  });
+};

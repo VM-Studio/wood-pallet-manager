@@ -97,6 +97,11 @@ export const useConvertirAVenta = () => {
       queryClient.invalidateQueries({ queryKey: ['facturas'] });
       queryClient.invalidateQueries({ queryKey: ['cobros-pendientes'] });
       queryClient.invalidateQueries({ queryKey: ['facturas-vencidas'] });
+      queryClient.invalidateQueries({ queryKey: ['inventario'] });
+      queryClient.invalidateQueries({ queryKey: ['inventario-consolidado'] });
+      queryClient.invalidateQueries({ queryKey: ['alertas-stock'] });
+      queryClient.invalidateQueries({ queryKey: ['productos'] });
+      queryClient.invalidateQueries({ queryKey: ['movimientos-stock'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     }
   });

@@ -24,7 +24,11 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000'],
+  origin: (origin, callback) => {
+    // Permitir sin origin (apps móviles, Postman) y cualquier localhost/IP local
+    // En producción reemplazar por lista de dominios permitidos
+    callback(null, true);
+  },
   credentials: true,
 }));
 app.use(express.json());

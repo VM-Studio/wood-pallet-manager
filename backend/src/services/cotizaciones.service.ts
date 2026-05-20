@@ -261,9 +261,11 @@ export const convertirCotizacionAVentaService = async (
     for (const d of cotizacion.detalles) {
       const stockEntry = await prisma.stock.findFirst({ where: { productoId: d.productoId } });
       if (stockEntry && d.cantidad > 0) {
+        // Floor en 0: el stock propio nunca puede quedar negativo
+        const nuevaCantidad = Math.max(0, stockEntry.cantidadDisponible - d.cantidad);
         await prisma.stock.update({
           where: { id: stockEntry.id },
-          data: { cantidadDisponible: { decrement: d.cantidad } },
+          data: { cantidadDisponible: nuevaCantidad },
         });
         await prisma.movimientoStock.create({
           data: {

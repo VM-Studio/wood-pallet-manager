@@ -43,7 +43,7 @@ export const useReporteVentas = (desde: string, hasta: string, usuarioId?: numbe
   return useQuery<ReporteVentas>({
     queryKey: ['reporte-ventas', desde, hasta, usuarioId],
     queryFn: async () => {
-      const params = new URLSearchParams({ desde, hasta });
+      const params = new URLSearchParams({ desde, hasta, vista: 'todos' });
       if (usuarioId) params.append('usuarioId', String(usuarioId));
       const { data } = await api.get(`/reportes/ventas?${params}`);
       return data;
@@ -77,7 +77,7 @@ export const useEstacionalidad = () => {
   return useQuery<EstacionalidadMes[]>({
     queryKey: ['estacionalidad'],
     queryFn: async () => {
-      const { data } = await api.get('/reportes/estacionalidad');
+      const { data } = await api.get('/reportes/estacionalidad?vista=todos');
       return data;
     }
   });

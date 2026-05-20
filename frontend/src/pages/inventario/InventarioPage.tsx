@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Search, AlertTriangle, History, Settings, Warehouse } from 'lucide-react';
+import { Search, AlertTriangle, History, Settings, Warehouse, Trash2 } from 'lucide-react';
 import { useStockConsolidado, useAlertasStock } from '../../hooks/useInventario';
+import { useEliminarProducto } from '../../hooks/useProductos';
 import AjusteStockModal from './AjusteStockModal';
 import MovimientosModal from './MovimientosModal';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
@@ -13,6 +14,8 @@ export default function InventarioPage() {
   const { data: consolidado, isLoading, error } = useStockConsolidado();
   const { data: alertas } = useAlertasStock();
   const [busqueda, setBusqueda] = useState('');
+  const eliminarProducto = useEliminarProducto();
+  const [confirmEliminar, setConfirmEliminar] = useState<number | null>(null);
   const [ajusteData, setAjusteData] = useState<any>(null);
   const [movimientosData, setMovimientosData] = useState<any>(null);
   const [vistaAlertasOnly, setVistaAlertasOnly] = useState(false);
@@ -155,6 +158,13 @@ export default function InventarioPage() {
                         Stock bajo
                       </span>
                     )}
+                    <button
+                      onClick={() => setConfirmEliminar(item.producto.id)}
+                      className="p-1 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                      title="Eliminar producto"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 </div>
 
@@ -248,6 +258,35 @@ export default function InventarioPage() {
           productoNombre={movimientosData.nombre}
           onClose={() => setMovimientosData(null)}
         />
+      )}
+
+      {confirmEliminar !== null && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full">
+            <h3 className="font-bold text-gray-900 text-lg mb-2">¿Eliminar producto?</h3>
+            <p className="text-sm text-gray-500 mb-6">
+              Esta acción eliminará el producto y todo su historial de stock del sistema. No se puede deshacer.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmEliminar(null)}
+                className="btn-secondary flex-1 justify-center"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={async () => {
+                  await eliminarProducto.mutateAsync(confirmEliminar);
+                  setConfirmEliminar(null);
+                }}
+                disabled={eliminarProducto.isPending}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
+              >
+                <Trash2 size={14} /> {eliminarProducto.isPending ? 'Eliminando...' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

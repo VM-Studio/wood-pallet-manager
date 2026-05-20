@@ -55,7 +55,7 @@ export const crearProveedor = async (req: AuthRequest, res: Response) => {
     res.status(201).json(proveedor);
   } catch (error: any) {
     if (error.name === 'ZodError') {
-      return res.status(400).json({ error: error.errors[0].message });
+      return res.status(400).json({ error: error.issues[0].message });
     }
     res.status(400).json({ error: error.message });
   }
@@ -69,7 +69,7 @@ export const actualizarProveedor = async (req: AuthRequest, res: Response) => {
     res.json(proveedor);
   } catch (error: any) {
     if (error.name === 'ZodError') {
-      return res.status(400).json({ error: error.errors[0].message });
+      return res.status(400).json({ error: error.issues[0].message });
     }
     res.status(400).json({ error: error.message });
   }
@@ -93,7 +93,7 @@ export const vincularProducto = async (req: AuthRequest, res: Response) => {
     res.status(201).json(vinculo);
   } catch (error: any) {
     if (error.name === 'ZodError') {
-      return res.status(400).json({ error: error.errors[0].message });
+      return res.status(400).json({ error: error.issues[0].message });
     }
     res.status(400).json({ error: error.message });
   }

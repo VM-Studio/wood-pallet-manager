@@ -56,7 +56,7 @@ export const actualizarEstadoVenta = async (req: AuthRequest, res: Response) => 
     res.json(venta);
   } catch (error: any) {
     if (error.name === 'ZodError') {
-      return res.status(400).json({ error: error.errors[0].message });
+      return res.status(400).json({ error: error.issues[0].message });
     }
     res.status(400).json({ error: error.message });
   }
@@ -73,7 +73,7 @@ export const registrarRetiro = async (req: AuthRequest, res: Response) => {
     res.status(201).json(resultado);
   } catch (error: any) {
     if (error.name === 'ZodError') {
-      return res.status(400).json({ error: error.errors[0].message });
+      return res.status(400).json({ error: error.issues[0].message });
     }
     res.status(400).json({ error: error.message });
   }

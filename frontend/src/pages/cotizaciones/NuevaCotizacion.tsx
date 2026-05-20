@@ -20,10 +20,14 @@ interface ComponenteMedida {
 
 interface PalletMedida {
   baseSuperior: ComponenteMedida;
+  extraSuperior1: ComponenteMedida;
+  extraSuperior2: ComponenteMedida;
   transversales: ComponenteMedida;
   tirantes: ComponenteMedida;
   tacos: ComponenteMedida;
   baseInferior: ComponenteMedida;
+  extraInferior1: ComponenteMedida;
+  extraInferior2: ComponenteMedida;
   costoPorPie: number | '';
   gananciaPorPalet: number | '';
   cantidadUnidades: number | '';
@@ -44,21 +48,29 @@ interface DetalleForm {
 }
 
 const COMPONENTES_MADERA = [
-  { key: 'baseSuperior' as const,  label: 'Base superior'  },
-  { key: 'transversales' as const, label: 'Transversales'  },
-  { key: 'tirantes' as const,      label: 'Tirantes'       },
-  { key: 'tacos' as const,         label: 'Tacos'          },
-  { key: 'baseInferior' as const,  label: 'Base inferior'  },
+  { key: 'baseSuperior' as const,   label: 'Base superior'  },
+  { key: 'extraSuperior1' as const, label: ''               },
+  { key: 'extraSuperior2' as const, label: ''               },
+  { key: 'transversales' as const,  label: 'Transversales'  },
+  { key: 'tirantes' as const,       label: 'Tirantes'       },
+  { key: 'tacos' as const,          label: 'Tacos'          },
+  { key: 'baseInferior' as const,   label: 'Base inferior'  },
+  { key: 'extraInferior1' as const, label: ''               },
+  { key: 'extraInferior2' as const, label: ''               },
 ];
 type ComponenteKey = typeof COMPONENTES_MADERA[number]['key'];
 
 const emptyComponente = (): ComponenteMedida => ({ tablas: '', largo: '', ancho: '', espesor: '' });
 const defaultMedida = (): PalletMedida => ({
-  baseSuperior: emptyComponente(),
-  transversales: emptyComponente(),
-  tirantes: emptyComponente(),
-  tacos: emptyComponente(),
-  baseInferior: emptyComponente(),
+  baseSuperior:   emptyComponente(),
+  extraSuperior1: emptyComponente(),
+  extraSuperior2: emptyComponente(),
+  transversales:  emptyComponente(),
+  tirantes:       emptyComponente(),
+  tacos:          emptyComponente(),
+  baseInferior:   emptyComponente(),
+  extraInferior1: emptyComponente(),
+  extraInferior2: emptyComponente(),
   costoPorPie: '',
   gananciaPorPalet: '',
   cantidadUnidades: '',
@@ -154,6 +166,15 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
     return d.precioCalculado ? d.precioCalculado.precioUnitario : 0;
   };
 
+  // Total de unidades para multiplicar el costo SENASA por unidad
+  const totalUnidades = detalles.reduce((acc, d) => {
+    if (d.productoId === -1 && d.medida) {
+      return acc + (typeof d.medida.cantidadUnidades === 'number' && d.medida.cantidadUnidades > 0 ? d.medida.cantidadUnidades : 0);
+    }
+    return acc + (d.cantidad > 0 ? d.cantidad : 0);
+  }, 0);
+  const costoSenasaTotal = form.requiereSenasa && totalUnidades > 0 ? form.costoSenasa * totalUnidades : form.costoSenasa;
+
   const totalSinIva = detalles.reduce((acc, d) => {
     if (d.productoId === -1 && d.medida) {
       // costoUnitario + ganancia = precio por unidad × cantidad
@@ -171,7 +192,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
     return acc + getPrecioEfectivo(d) * d.cantidad;
   }, 0)
     + (form.incluyeFlete && form.fleteIncluido ? form.costoFlete : 0)
-    + (form.requiereSenasa ? form.costoSenasa : 0);
+    + (form.requiereSenasa ? form.costoSenasa * totalUnidades : 0);
 
   const totalConIva = totalSinIva * 1.21;
   const totalFinal = form.incluyeIva ? totalConIva : totalSinIva;
@@ -279,10 +300,11 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
         numeroCotizacion: resultado.id,
         fechaCotizacion: fechaStr,
         razonSocialCliente: cliente?.razonSocial ?? '',
+        cuitCliente: cliente?.cuit || undefined,
         cuitEmpresa: usuario?.cuit,
         detalles: detallesPDF,
         costoFlete: form.incluyeFlete ? form.costoFlete : undefined,
-        costoSenasa: form.requiereSenasa ? form.costoSenasa : undefined,
+        costoSenasa: form.requiereSenasa ? costoSenasaTotal : undefined,
         observaciones: form.observaciones || undefined,
         incluyeIva: form.incluyeIva,
       });
@@ -708,14 +730,22 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
                   <span className="text-sm font-medium text-gray-700">Requiere SENASA</span>
                 </label>
                 {form.requiereSenasa && (
-                  <input
-                    type="number"
-                    placeholder="Costo SENASA ($)"
-                    value={form.costoSenasa || ''}
-                    onChange={e => setForm({ ...form, costoSenasa: parseInt(e.target.value) || 0 })}
-                    className="input text-sm"
-                    style={{ borderRadius: '0.25rem' }}
-                  />
+                  <div>
+                    <input
+                      type="number"
+                      placeholder="Costo SENASA por unidad ($)"
+                      value={form.costoSenasa || ''}
+                      onChange={e => setForm({ ...form, costoSenasa: parseInt(e.target.value) || 0 })}
+                      className="input text-sm"
+                      style={{ borderRadius: '0.25rem' }}
+                    />
+                    {form.costoSenasa > 0 && totalUnidades > 0 && (
+                      <p style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '0.375rem' }}>
+                        {formatPesos(form.costoSenasa)} × {totalUnidades} u. ={' '}
+                        <strong style={{ color: '#6B3A2A' }}>{formatPesos(costoSenasaTotal)}</strong>
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

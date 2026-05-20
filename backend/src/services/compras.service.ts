@@ -164,7 +164,7 @@ export const registrarPagoCompraService = async (
     if (stockEntry) {
       await prisma.stock.update({
         where: { id: stockEntry.id },
-        data: { cantidadDeudora: { decrement: detalle.cantidad } }
+        data: { cantidadDeudora: Math.max(0, stockEntry.cantidadDeudora - detalle.cantidad) }
       });
     }
   }
@@ -189,10 +189,10 @@ export const cancelarCompraService = async (compraId: number, usuarioId: number)
 
     if (stockEntry) {
       const updateData: any = {
-        cantidadDeudora: { decrement: detalle.cantidad }
+        cantidadDeudora: Math.max(0, stockEntry.cantidadDeudora - detalle.cantidad)
       };
       if (compra.tipoCompra === 'stock_propio') {
-        updateData.cantidadDisponible = { decrement: detalle.cantidad };
+        updateData.cantidadDisponible = Math.max(0, stockEntry.cantidadDisponible - detalle.cantidad);
       }
       await prisma.stock.update({
         where: { id: stockEntry.id },

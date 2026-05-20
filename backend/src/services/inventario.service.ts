@@ -3,6 +3,7 @@ import prisma from '../utils/prisma';
 // Stock consolidado con distinción de stock propio vs deudor
 export const getStockConsolidadoService = async () => {
   const stock = await prisma.stock.findMany({
+    where: { producto: { activo: true } },
     include: {
       producto: { select: { id: true, nombre: true, tipo: true, condicion: true } },
       proveedor: { select: { id: true, nombreEmpresa: true } }
@@ -114,11 +115,13 @@ export const ajustarStockService = async (
   const stock = await prisma.stock.findUnique({ where: { id: stockId } });
   if (!stock) throw new Error('Registro de stock no encontrado');
 
-  const diferencia = nuevaCantidad - stock.cantidadDisponible;
+  // El stock propio nunca puede ser negativo
+  const cantidadFinal = Math.max(0, nuevaCantidad);
+  const diferencia = cantidadFinal - stock.cantidadDisponible;
 
   await prisma.stock.update({
     where: { id: stockId },
-    data: { cantidadDisponible: nuevaCantidad }
+    data: { cantidadDisponible: cantidadFinal }
   });
 
   await prisma.movimientoStock.create({
@@ -134,7 +137,7 @@ export const ajustarStockService = async (
   return {
     mensaje: 'Stock ajustado correctamente',
     cantidadAnterior: stock.cantidadDisponible,
-    cantidadNueva: nuevaCantidad,
+    cantidadNueva: cantidadFinal,
     diferencia
   };
 };

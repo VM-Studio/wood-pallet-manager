@@ -137,6 +137,9 @@ export const useEliminarProducto = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['productos'] });
+      queryClient.invalidateQueries({ queryKey: ['inventario'] });
+      queryClient.invalidateQueries({ queryKey: ['inventario-consolidado'] });
+      queryClient.invalidateQueries({ queryKey: ['alertas-stock'] });
     }
   });
 };

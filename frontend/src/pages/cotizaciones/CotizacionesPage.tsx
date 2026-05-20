@@ -71,6 +71,7 @@ export default function CotizacionesPage() {
       numeroCotizacion: c.id,
       fechaCotizacion: fechaStr,
       razonSocialCliente: c.cliente?.razonSocial ?? '',
+      cuitCliente: c.cliente?.cuit || undefined,
       detalles: detallesPDF,
       costoFlete: c.incluyeFlete ? c.costoFlete : undefined,
       costoSenasa: c.requiereSenasa ? c.costoSenasa : undefined,

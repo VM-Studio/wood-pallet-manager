@@ -103,7 +103,7 @@ export interface Cotizacion {
   totalConIva?: number;
   canalEnvio?: string;
   observaciones?: string;
-  cliente?: { razonSocial: string; telefonoContacto?: string };
+  cliente?: { razonSocial: string; telefonoContacto?: string; cuit?: string };
   usuario?: { nombre: string; apellido: string; rol: string };
   detalles?: DetalleCotizacion[];
 }

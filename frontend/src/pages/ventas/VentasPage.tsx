@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, Search, ShoppingCart, CheckCircle, Package, Truck, Building2, Trash2 } from 'lucide-react';
+import { Search, ShoppingCart, CheckCircle, Package, Truck, Building2, Trash2 } from 'lucide-react';
 import { useVentas, useVentasActivas, useEliminarVenta } from '../../hooks/useVentas';
 import EstadoBadge from '../../components/ui/EstadoBadge';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
@@ -183,10 +183,9 @@ export default function VentasPage() {
                   <div className="flex items-center gap-1 justify-end">
                     <button
                       onClick={e => { e.stopPropagation(); setVentaSeleccionada(v.id); }}
-                      className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
-                      title="Ver detalle"
+                      className="px-2.5 py-1 text-xs font-medium text-white bg-[#6B3A2A] hover:bg-[#9B5E3A] rounded transition-colors"
                     >
-                      <Eye size={15} />
+                      Detalle
                     </button>
                     <button
                       onClick={e => { e.stopPropagation(); setConfirmEliminar(v.id); }}

@@ -23,6 +23,7 @@ interface DatosPresupuesto {
   numeroCotizacion: number;
   fechaCotizacion: string;
   razonSocialCliente: string;
+  cuitCliente?: string;
   cuitEmpresa?: string;
   detalles: DetallePresupuesto[];
   costoFlete?: number;
@@ -90,7 +91,11 @@ export async function generarPresupuestoPDF(datos: DatosPresupuesto): Promise<Bl
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
-  doc.text(`CUIT: ${datos.cuitEmpresa ?? '—'}`, pageW / 2, 35, { align: 'center' });
+  if (datos.cuitCliente) {
+    doc.text(`CUIT cliente: ${datos.cuitCliente}`, pageW / 2, 35, { align: 'center' });
+  } else if (datos.cuitEmpresa) {
+    doc.text(`CUIT: ${datos.cuitEmpresa}`, pageW / 2, 35, { align: 'center' });
+  }
 
   // ── Título PRESUPUESTO y número ───────────────────────────────────────────
   doc.setFont('helvetica', 'bold');
@@ -221,9 +226,9 @@ export async function generarPresupuestoPDF(datos: DatosPresupuesto): Promise<Bl
   }
 
   const incluyeIva = datos.incluyeIva !== false; // default true si no se pasa
-  let subtotal = datos.detalles.reduce((acc, d) => acc + d.subtotal, 0);
-  if (datos.costoFlete)   subtotal += datos.costoFlete;
-  if (datos.costoSenasa)  subtotal += datos.costoSenasa;
+  let subtotal = datos.detalles.reduce((acc, d) => acc + Number(d.subtotal), 0);
+  if (datos.costoFlete)   subtotal += Number(datos.costoFlete);
+  if (datos.costoSenasa)  subtotal += Number(datos.costoSenasa);
   const iva   = subtotal * 0.21;
   const total = incluyeIva ? subtotal + iva : subtotal;
 
