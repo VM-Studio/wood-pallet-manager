@@ -33,32 +33,15 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
       background: '#d0ccc6',
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
-      gap: '1.5rem',
+      gap: '0.4rem',
     }}>
-      {/* Logo + Nombre */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+      {/* Logo */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <img
-          src="/palletlogo.png"
+          src="/logoWoodPalletDos.png"
           alt="WoodPallet"
-          style={{ width: 56, height: 56, objectFit: 'contain' }}
+          style={{ width: 240, height: 240, objectFit: 'contain' }}
         />
-        <span
-          id="splash-title"
-          style={{
-            fontFamily: "'Cormorant Garamond', Georgia, serif",
-            fontStyle: 'italic',
-            fontWeight: 600,
-            fontSize: 'clamp(2rem, 5vw, 3rem)',
-            background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            lineHeight: 1,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          WoodPallet
-        </span>
       </div>
 
       {/* Barra de avance */}

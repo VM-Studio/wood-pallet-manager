@@ -59,9 +59,8 @@ export default function Sidebar() {
   return (
     <aside className="fixed top-0 left-0 h-screen w-65 bg-[#3c250f] flex flex-col z-30">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-5 h-16 border-b border-white/10 shrink-0">
-        <img src="/palletlogo.png" alt="WoodPallet logo" className="w-9 h-9 object-contain" />
-        <span className="text-white text-xl tracking-tight" style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic', fontWeight: 600 }}>WoodPallet</span>
+      <div className="flex items-center justify-center border-b border-white/10 shrink-0 py-4">
+        <span className="text-white tracking-tight text-center" style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic', fontWeight: 600, fontSize: '1.6rem', lineHeight: 1.2 }}>Wood Pallet</span>
       </div>
 
       {/* Nav */}

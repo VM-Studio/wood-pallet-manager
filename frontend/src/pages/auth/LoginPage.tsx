@@ -109,7 +109,7 @@ export default function LoginPage() {
         <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: '320px' }}>
           {/* Logo */}
           <img
-            src="/palletlogo.png"
+            src="/logoWoodPalletDos.png"
             alt="WoodPallet"
             style={{ width: 72, height: 72, objectFit: 'contain', margin: '0 auto 1.5rem' }}
           />
@@ -178,7 +178,7 @@ export default function LoginPage() {
 
             {/* Logo + nombre dentro de la card */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1.75rem' }}>
-              <img src="/palletlogo.png" alt="WoodPallet" style={{ width: 52, height: 52, objectFit: 'contain', marginBottom: '0.5rem' }} />
+              <img src="/logoWoodPalletDos.png" alt="WoodPallet" style={{ width: 52, height: 52, objectFit: 'contain', marginBottom: '0.5rem' }} />
               <span style={{
                 fontFamily: "'Cormorant Garamond', Georgia, serif",
                 fontStyle: 'italic',
