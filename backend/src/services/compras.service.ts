@@ -1,6 +1,37 @@
 import prisma from '../utils/prisma';
 import { EstadoCompra } from '@prisma/client';
 
+// Proveedores y sus condiciones permitidas
+const CONDICIONES_PROVEEDOR: Record<string, string[]> = {
+  seminuevo: ['seminuevo'],       // Galpón Familiar → solo semi-nuevos
+  nuevo_medida: ['nuevo'],        // Todo Pallets → solo nuevos
+};
+
+// Obtener ventas de tipo compra directa pendientes de abastecimiento
+export const getVentasParaCompraDirectaService = async (usuarioId: number, rol: string) => {
+  const where = rol === 'admin'
+    ? { origenStock: 'compra_directa' }
+    : { origenStock: 'compra_directa', usuarioId };
+
+  const ventas = await prisma.venta.findMany({
+    where: {
+      ...where,
+      estadoPedido: { notIn: ['cancelado'] },
+    },
+    include: {
+      cliente: { select: { id: true, razonSocial: true, nombreContacto: true } },
+      detalles: {
+        include: { producto: { select: { id: true, nombre: true, condicion: true, tipo: true } } }
+      },
+      compras: { select: { id: true } },
+    },
+    orderBy: { fechaVenta: 'desc' },
+  });
+
+  // Filtrar solo las que NO tienen compra asociada aún
+  return ventas.filter(v => v.compras.length === 0);
+};
+
 // Obtener compras filtradas por usuario y rol
 export const getComprasService = async (usuarioId: number, rol: string) => {
   const where = rol === 'admin' ? {} : { usuarioId };
@@ -10,8 +41,14 @@ export const getComprasService = async (usuarioId: number, rol: string) => {
     include: {
       proveedor: { select: { id: true, nombreEmpresa: true, nombreContacto: true } },
       usuario: { select: { id: true, nombre: true, apellido: true, rol: true } },
-      detalles: { include: { producto: { select: { id: true, nombre: true, tipo: true } } } },
-      pagos: true
+      detalles: { include: { producto: { select: { id: true, nombre: true, tipo: true, condicion: true } } } },
+      pagos: true,
+      venta: {
+        include: {
+          cliente: { select: { id: true, razonSocial: true, nombreContacto: true } },
+          detalles: { include: { producto: { select: { id: true, nombre: true, condicion: true } } } },
+        }
+      }
     },
     orderBy: { fechaCompra: 'desc' }
   });
@@ -22,6 +59,7 @@ export const crearCompraService = async (
   datos: {
     proveedorId: number;
     tipoCompra: 'reventa_inmediata' | 'stock_propio';
+    ventaId?: number;
     nroRemito?: string;
     observaciones?: string;
     detalles: { productoId: number; cantidad: number; precioCostoUnit: number }[];
@@ -36,6 +74,34 @@ export const crearCompraService = async (
     throw new Error('Juan Cruz solo puede comprar al Galpón Familiar (pallets semi-nuevos)');
   }
 
+  // Validar: compra directa requiere ventaId
+  if (datos.tipoCompra === 'reventa_inmediata') {
+    if (!datos.ventaId) {
+      throw new Error('Una compra directa debe estar asociada a una venta confirmada. Seleccioná la venta antes de continuar.');
+    }
+    const venta = await prisma.venta.findUnique({
+      where: { id: datos.ventaId },
+      include: { compras: { select: { id: true } } },
+    });
+    if (!venta) throw new Error('La venta seleccionada no existe');
+    if (venta.origenStock !== 'compra_directa') throw new Error('La venta seleccionada no es de tipo compra directa');
+    if (venta.compras.length > 0) throw new Error('Esta venta ya tiene una compra asociada');
+  }
+
+  // Validar restricción proveedor ↔ condición de producto
+  const condicionesPermitidas = CONDICIONES_PROVEEDOR[proveedor.tipoProducto ?? ''];
+  if (condicionesPermitidas) {
+    for (const det of datos.detalles) {
+      const producto = await prisma.producto.findUnique({ where: { id: det.productoId } });
+      if (producto && !condicionesPermitidas.includes(producto.condicion)) {
+        const condPermStr = condicionesPermitidas.join(' o ');
+        throw new Error(
+          `El producto "${producto.nombre}" (${producto.condicion}) no es compatible con ${proveedor.nombreEmpresa}. Solo acepta pallets ${condPermStr}.`
+        );
+      }
+    }
+  }
+
   const total = datos.detalles.reduce(
     (acc, d) => acc + d.precioCostoUnit * d.cantidad, 0
   );
@@ -44,6 +110,7 @@ export const crearCompraService = async (
     data: {
       proveedorId: datos.proveedorId,
       usuarioId,
+      ventaId: datos.ventaId ?? null,
       tipoCompra: datos.tipoCompra,
       total,
       nroRemito: datos.nroRemito,

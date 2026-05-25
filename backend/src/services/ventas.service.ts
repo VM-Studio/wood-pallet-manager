@@ -41,7 +41,19 @@ export const getVentaByIdService = async (id: number) => {
         },
       },
       facturas: { include: { pagos: true } },
-      logistica: true,
+      logistica: {
+        include: {
+          registradoPor: { select: { id: true, nombre: true, apellido: true } },
+          consultadaPor: { select: { id: true, nombre: true, apellido: true } },
+        },
+      },
+      solicitudesLogistica: {
+        include: {
+          solicitante: { select: { id: true, nombre: true, apellido: true, rol: true } },
+          destinatario: { select: { id: true, nombre: true, apellido: true, rol: true } },
+        },
+        orderBy: { fechaSolicitud: 'desc' },
+      },
     },
   });
   if (!venta) throw new Error('Venta no encontrada');

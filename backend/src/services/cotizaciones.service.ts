@@ -1,6 +1,7 @@
 import prisma from '../utils/prisma';
 import { calcularPrecioService } from './precios.service';
 import { crearRemitoService } from './remitos.service';
+import { crearRetiroService } from './retiros.service';
 
 export const getCotizacionesService = async (usuarioId: number, rol: string) => {
   const where = rol === 'admin' ? {} : { usuarioId };
@@ -203,6 +204,9 @@ export const convertirCotizacionAVentaService = async (
     fechaRetiro?: Date;
     lugarEntrega?: string;
     fechaEntrega?: Date;
+    horaEntrega?: string; // formato "HH:MM", ej: "14:30"
+    horaEstimadaRetiro?: string; // formato "HH:MM" — para retiro en galpón
+    galponRetiro?: string; // nombre/dirección del galpón
     observaciones?: string;
     usaStockPropio?: boolean;
     emitirRemito?: boolean;
@@ -241,6 +245,7 @@ export const convertirCotizacionAVentaService = async (
       totalConIva: cotizacion.totalConIva,
       costoFlete: cotizacion.costoFlete,
       observaciones: datos.observaciones,
+      origenStock: datos.usaStockPropio ? 'stock_propio' : 'compra_directa',
       detalles: {
         create: cotizacion.detalles.map((d) => ({
           productoId: d.productoId,
@@ -302,17 +307,63 @@ export const convertirCotizacionAVentaService = async (
     },
   });
 
+  // ── Auto-crear retiro si es retiro en galpón ──────────────────────────────
+  if (datos.tipoEntrega === 'retira_cliente') {
+    const cliente = await prisma.cliente.findUnique({ where: { id: cotizacion.clienteId } });
+
+    // Combinar fecha + hora si se proveyeron ambas
+    let horaEstimadaRetiro: Date | undefined;
+    if (datos.fechaRetiro && datos.horaEstimadaRetiro) {
+      const [hh, mm] = datos.horaEstimadaRetiro.split(':').map(Number);
+      const combined = new Date(datos.fechaRetiro);
+      combined.setHours(hh, mm, 0, 0);
+      horaEstimadaRetiro = combined;
+    }
+
+    const productos = cotizacion.detalles.map((d: { productoId: number; cantidad: number }) => {
+      return { nombre: `Producto #${d.productoId}`, cantidad: d.cantidad };
+    });
+
+    // Intentar obtener nombres de productos
+    const productosConNombre = await Promise.all(
+      cotizacion.detalles.map(async (d: { productoId: number; cantidad: number }) => {
+        const prod = await prisma.producto.findUnique({ where: { id: d.productoId }, select: { nombre: true } });
+        return { nombre: prod?.nombre ?? `Producto #${d.productoId}`, cantidad: d.cantidad };
+      })
+    );
+    void productos; // evitar unused warning
+
+    await crearRetiroService({
+      ventaId: venta.id,
+      clienteNombre: cliente?.nombreContacto || cliente?.razonSocial || '',
+      clienteEmail: cliente?.emailContacto,
+      galpon: datos.galponRetiro || datos.lugarEntrega,
+      horaEstimadaRetiro,
+      fechaRetiro: datos.fechaRetiro,
+      productos: productosConNombre,
+    });
+  }
+
   // ── Auto-crear logística si incluye flete con envío ────────────────────
   if (cotizacion.incluyeFlete && datos.tipoEntrega === 'envio_woodpallet') {
     const usuarioVenta = await prisma.usuario.findUnique({ where: { id: usuarioId } });
     const esJuanCruz = usuarioVenta?.rol === 'propietario_juancruz';
+
+    // Combinar fecha + hora si se proveyeron ambas
+    let horaEstimadaEntrega: Date | undefined = datos.fechaEntrega;
+    if (datos.fechaEntrega && datos.horaEntrega) {
+      const [hh, mm] = datos.horaEntrega.split(':').map(Number);
+      const combined = new Date(datos.fechaEntrega);
+      combined.setHours(hh, mm, 0, 0);
+      horaEstimadaEntrega = combined;
+    }
 
     await prisma.logistica.create({
       data: {
         ventaId: venta.id,
         nombreTransportista: '',
         costoFlete: cotizacion.costoFlete ? Number(cotizacion.costoFlete) : undefined,
-        horaEstimadaEntrega: datos.fechaEntrega,
+        horaEstimadaEntrega,
         estadoEntrega: 'pendiente',
         estadoConsulta: esJuanCruz ? 'pendiente_consulta' : 'no_aplica',
         registradoPorId: usuarioId,

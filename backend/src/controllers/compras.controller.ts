@@ -8,7 +8,8 @@ import {
   cancelarCompraService,
   getDeudaProveedoresService,
   getCompraByIdService,
-  actualizarEstadoCompraService
+  actualizarEstadoCompraService,
+  getVentasParaCompraDirectaService,
 } from '../services/compras.service';
 
 const detalleSchema = z.object({
@@ -20,6 +21,7 @@ const detalleSchema = z.object({
 const crearCompraSchema = z.object({
   proveedorId: z.number(),
   tipoCompra: z.enum(['reventa_inmediata', 'stock_propio']),
+  ventaId: z.number().optional(),
   nroRemito: z.string().optional(),
   observaciones: z.string().optional(),
   detalles: z.array(detalleSchema).min(1, 'Debe haber al menos un producto')
@@ -106,5 +108,14 @@ export const actualizarEstadoCompra = async (req: AuthRequest, res: Response) =>
     res.json(compra);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
+  }
+};
+
+export const getVentasParaCompraDirecta = async (req: AuthRequest, res: Response) => {
+  try {
+    const ventas = await getVentasParaCompraDirectaService(req.user!.userId, req.user!.rol);
+    res.json(ventas);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 };

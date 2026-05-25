@@ -2,11 +2,12 @@ import prisma from '../utils/prisma';
 
 export const getVentasUltimos12MesesService = async (usuarioId?: number) => {
   const meses = [];
-  const ahora = new Date();
+  // Arrancar siempre desde Abril 2026 y generar 12 meses consecutivos hacia adelante
+  const mesInicio = new Date(2026, 3, 1); // Abril 2026 (mes 3 = abril, base 0)
 
   for (let i = 0; i < 12; i++) {
-    const inicio = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
-    const fin = new Date(ahora.getFullYear(), ahora.getMonth() - i + 1, 0);
+    const inicio = new Date(mesInicio.getFullYear(), mesInicio.getMonth() + i, 1);
+    const fin = new Date(mesInicio.getFullYear(), mesInicio.getMonth() + i + 1, 0);
 
     const where: any = { fechaVenta: { gte: inicio, lte: fin } };
     if (usuarioId !== undefined) where.usuarioId = usuarioId;
@@ -289,6 +290,65 @@ export const getDashboardService = async () => {
       },
     },
     graficos: { ventasUltimos12Meses },
+  };
+};
+
+export const getGananciasDetalleService = async (usuarioId?: number) => {
+  const hoy = new Date();
+  const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+  const finMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0, 23, 59, 59);
+
+  // Filtro por usuario en ventas y compras
+  const ventaWhere: any = { fechaVenta: { gte: inicioMes, lte: finMes } };
+  if (usuarioId !== undefined) ventaWhere.usuarioId = usuarioId;
+
+  const compraWhere: any = {
+    estado: 'pagada',
+    fechaCompra: { gte: inicioMes, lte: finMes },
+  };
+  if (usuarioId !== undefined) compraWhere.usuarioId = usuarioId;
+
+  // Para PagoCobro filtramos por la venta asociada a la factura
+  const cobradoWhere: any = { fechaPago: { gte: inicioMes, lte: finMes } };
+  if (usuarioId !== undefined) {
+    cobradoWhere.factura = { venta: { usuarioId } };
+  }
+
+  const [ventasMes, cobradoAggregate, comprasStockPropioRaw, comprasReventaRaw] = await Promise.all([
+    prisma.venta.findMany({
+      where: ventaWhere,
+      select: { totalConIva: true },
+    }),
+    prisma.pagoCobro.aggregate({
+      _sum: { monto: true },
+      where: cobradoWhere,
+    }),
+    prisma.compra.aggregate({
+      _sum: { total: true },
+      where: { ...compraWhere, tipoCompra: 'stock_propio' },
+    }),
+    prisma.compra.aggregate({
+      _sum: { total: true },
+      where: { ...compraWhere, tipoCompra: 'reventa_inmediata' },
+    }),
+  ]);
+
+  const cantidadVentas = ventasMes.length;
+  const facturadoMes = ventasMes.reduce((acc, v) => acc + Number(v.totalConIva || 0), 0);
+  const cobrado = Number(cobradoAggregate._sum?.monto || 0);
+  const comprasStockPropio = Number(comprasStockPropioRaw._sum?.total || 0);
+  const comprasReventa = Number(comprasReventaRaw._sum?.total || 0);
+  const totalCompras = comprasStockPropio + comprasReventa;
+  const gananciaNeta = cobrado - totalCompras;
+
+  return {
+    cantidadVentas,
+    facturadoMes,
+    cobradoMes: cobrado,
+    comprasStockPropio,
+    comprasReventa,
+    totalCompras,
+    gananciaNeta,
   };
 };
 

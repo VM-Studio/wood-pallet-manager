@@ -18,13 +18,15 @@ model Usuario {
   rol           RolUsuario
   activo        Boolean    @default(true)
   fechaCreacion DateTime   @default(now())
+  fotoPerfil    String? // base64 data URL
+  firma         String? // base64 data URL
 
   // Relaciones
   clientes             Cliente[]
   cotizaciones         Cotizacion[]
   ventas               Venta[]
   compras              Compra[]
-  productos            Producto[]              @relation("ProductosPropietario")
+  productos            Producto[]               @relation("ProductosPropietario")
   listaPrecios         ListaPrecio[]
   historialPrecios     HistorialPrecio[]
   movimientosStock     MovimientoStock[]
@@ -35,11 +37,17 @@ model Usuario {
   pagosProveedores     PagoProveedor[]
   retirosParciales     RetiroParcial[]
   seguimientos         SeguimientoCotizacion[]
-  solicitudesEnviadas  SolicitudLogistica[]    @relation("SolicitudSolicitante")
-  solicitudesRecibidas SolicitudLogistica[]    @relation("SolicitudDestinatario")
-  consultasLogistica   Logistica[]             @relation("ConsultasLogistica")
+  solicitudesEnviadas  SolicitudLogistica[]     @relation("SolicitudSolicitante")
+  solicitudesRecibidas SolicitudLogistica[]     @relation("SolicitudDestinatario")
+  consultasLogistica   Logistica[]              @relation("ConsultasLogistica")
   devoluciones         Devolucion[]
   remitos              Remito[]
+  plantillasEmail      PlantillaEmail[]
+  campanasEnviadas     CampanaSeguimiento[]
+  reglasAutomatizacion ReglaAutomatizacion[]
+  verificacionesCodigo VerificacionCodigo[]
+  retirosConfirmados   Retiro[]                 @relation("RetirosConfirmados")
+  reenviosRetiro       HistorialReenvioRetiro[]
 
   @@map("usuarios")
 }
@@ -48,6 +56,31 @@ enum RolUsuario {
   propietario_carlos
   propietario_juancruz
   admin
+}
+
+// ─── VERIFICACIONES DE CÓDIGO ────────────────────────────
+model VerificacionCodigo {
+  id        Int              @id @default(autoincrement())
+  usuarioId Int?
+  email     String? // para recuperación donde el usuario puede no existir
+  codigo    String // 6 dígitos
+  tipo      TipoVerificacion
+  dato      String? // payload: nuevo email / nuevo teléfono
+  canal     String? // 'email' | 'telefono'
+  expiresAt DateTime
+  usado     Boolean          @default(false)
+  creadoAt  DateTime         @default(now())
+
+  usuario Usuario? @relation(fields: [usuarioId], references: [id])
+
+  @@map("verificaciones_codigo")
+}
+
+enum TipoVerificacion {
+  cambio_password
+  cambio_email
+  cambio_telefono
+  recuperacion_password
 }
 
 // ─── CLIENTES ────────────────────────────────────────────
@@ -68,14 +101,15 @@ model Cliente {
   activo            Boolean       @default(true)
 
   // Relaciones
-  usuarioAsignado Usuario       @relation(fields: [usuarioAsignadoId], references: [id])
-  cotizaciones    Cotizacion[]
-  ventas          Venta[]
-  facturas        Factura[]
-  pagos           PagoCobro[]
-  notasCredito    NotaCredito[]
-  devoluciones    Devolucion[]
-  remitos         Remito[]
+  usuarioAsignado      Usuario               @relation(fields: [usuarioAsignadoId], references: [id])
+  cotizaciones         Cotizacion[]
+  ventas               Venta[]
+  facturas             Factura[]
+  pagos                PagoCobro[]
+  notasCredito         NotaCredito[]
+  devoluciones         Devolucion[]
+  remitos              Remito[]
+  destinatariosCampana DestinatarioCampana[]
 
   @@map("clientes")
 }
@@ -389,12 +423,14 @@ model Venta {
   cuentaDestino     String?
   modalidadPago     ModalidadPago?
   observaciones     String?
+  origenStock       String?        @default("stock_propio")
 
   cotizacion           Cotizacion?          @relation(fields: [cotizacionId], references: [id])
   cliente              Cliente              @relation(fields: [clienteId], references: [id])
   usuario              Usuario              @relation(fields: [usuarioId], references: [id])
   detalles             DetalleVenta[]
   logistica            Logistica?
+  retiroGalpon         Retiro?
   facturas             Factura[]
   compras              Compra[]
   solicitudesLogistica SolicitudLogistica[]
@@ -437,6 +473,48 @@ model DetalleVenta {
   devoluciones   DetalleDevolucion[]
 
   @@map("detalle_venta")
+}
+
+// ─── RETIROS DE GALPÓN ───────────────────────────────────
+model Retiro {
+  id                 Int          @id @default(autoincrement())
+  ventaId            Int          @unique
+  codigoRetiro       String       @unique
+  estadoRetiro       EstadoRetiro @default(pendiente)
+  galpon             String?
+  horaEstimadaRetiro DateTime?
+  confirmadoPorId    Int?
+  fechaConfirmacion  DateTime?
+  observacionesConf  String?
+  motivoCancelacion  String?
+  creadoEn           DateTime     @default(now())
+
+  venta             Venta                    @relation(fields: [ventaId], references: [id])
+  confirmadoPor     Usuario?                 @relation("RetirosConfirmados", fields: [confirmadoPorId], references: [id])
+  historialReenvios HistorialReenvioRetiro[]
+
+  @@map("retiros_galpon")
+}
+
+enum EstadoRetiro {
+  pendiente
+  confirmado
+  completado
+  cancelado
+}
+
+model HistorialReenvioRetiro {
+  id              Int      @id @default(autoincrement())
+  retiroId        Int
+  emailEnviado    String?
+  telefonoEnviado String?
+  enviadoPorId    Int
+  creadoEn        DateTime @default(now())
+
+  retiro     Retiro  @relation(fields: [retiroId], references: [id])
+  enviadoPor Usuario @relation(fields: [enviadoPorId], references: [id])
+
+  @@map("historial_reenvio_retiro")
 }
 
 // ─── RETIROS PARCIALES ───────────────────────────────────
@@ -789,4 +867,74 @@ enum EstadoRemito {
   firmado_por_cliente
   completado
   cancelado
+}
+
+// ─── EMAIL MARKETING / SEGUIMIENTOS ──────────────────────
+
+model PlantillaEmail {
+  id          Int      @id @default(autoincrement())
+  nombre      String
+  asunto      String
+  bloques     Json // array de bloques de contenido
+  creadaPorId Int
+  creadaEn    DateTime @default(now())
+  activa      Boolean  @default(true)
+
+  creadaPor            Usuario               @relation(fields: [creadaPorId], references: [id])
+  campanas             CampanaSeguimiento[]
+  reglasAutomatizacion ReglaAutomatizacion[]
+
+  @@map("plantillas_email")
+}
+
+model CampanaSeguimiento {
+  id                 Int      @id @default(autoincrement())
+  nombre             String
+  asunto             String
+  segmento           String // 'activos' | 'cotizacion_sin_respuesta' | 'cotizacion_rechazada' | 'sin_actividad' | 'todos' | 'manual'
+  diasCondicion      Int? // para segmentos con umbral de días
+  bloques            Json // snapshot de bloques al momento del envío
+  plantillaId        Int?
+  enviadaPorId       Int
+  enviadaEn          DateTime @default(now())
+  totalDestinatarios Int      @default(0)
+  estado             String   @default("enviado") // 'borrador' | 'enviado'
+
+  enviadaPor    Usuario               @relation(fields: [enviadaPorId], references: [id])
+  plantilla     PlantillaEmail?       @relation(fields: [plantillaId], references: [id])
+  destinatarios DestinatarioCampana[]
+
+  @@map("campanas_seguimiento")
+}
+
+model DestinatarioCampana {
+  id        Int       @id @default(autoincrement())
+  campanaId Int
+  clienteId Int
+  email     String
+  enviado   Boolean   @default(false)
+  error     String?
+  enviadoEn DateTime?
+
+  campana CampanaSeguimiento @relation(fields: [campanaId], references: [id], onDelete: Cascade)
+  cliente Cliente            @relation(fields: [clienteId], references: [id])
+
+  @@map("destinatarios_campana")
+}
+
+model ReglaAutomatizacion {
+  id            Int      @id @default(autoincrement())
+  nombre        String
+  activa        Boolean  @default(true)
+  evento        String // 'cotizacion_sin_respuesta' | 'sin_actividad'
+  diasCondicion Int // días sin respuesta / inactividad
+  plantillaId   Int
+  asunto        String
+  creadaPorId   Int
+  creadaEn      DateTime @default(now())
+
+  plantilla PlantillaEmail @relation(fields: [plantillaId], references: [id])
+  creadaPor Usuario        @relation(fields: [creadaPorId], references: [id])
+
+  @@map("reglas_automatizacion")
 }

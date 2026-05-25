@@ -6,6 +6,7 @@ import {
   getTopClientes,
   getReporteCobranzas,
   getEstacionalidad,
+  getGananciasDetalle,
 } from '../controllers/reportes.controller';
 
 const router = Router();
@@ -16,5 +17,6 @@ router.get('/ventas', getReporteVentas);
 router.get('/cobranzas', getReporteCobranzas);
 router.get('/top-clientes', getTopClientes);
 router.get('/estacionalidad', getEstacionalidad);
+router.get('/ganancias-detalle', getGananciasDetalle);
 
 export default router;

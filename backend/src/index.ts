@@ -16,6 +16,8 @@ import solicitudesLogisticaRoutes from './routes/solicitudes-logistica.routes';
 import proveedoresRoutes from './routes/proveedores.routes';
 import devolucionesRoutes from './routes/devoluciones.routes';
 import remitosRoutes from './routes/remitos.routes';
+import seguimientosRoutes from './routes/seguimientos.routes';
+import retirosRoutes from './routes/retiros.routes';
 import { iniciarTareasProgramadas } from './utils/cron';
 
 dotenv.config();
@@ -49,6 +51,8 @@ app.use('/api/solicitudes-logistica', solicitudesLogisticaRoutes);
 app.use('/api/proveedores', proveedoresRoutes);
 app.use('/api/devoluciones', devolucionesRoutes);
 app.use('/api/remitos', remitosRoutes);
+app.use('/api/seguimientos', seguimientosRoutes);
+app.use('/api/retiros', retirosRoutes);
 
 app.get('/health', (_req, res) => {
   res.json({

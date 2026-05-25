@@ -59,6 +59,9 @@ const convertirSchema = z.object({
   fechaRetiro: z.string().optional().transform(v => v ? new Date(v) : undefined),
   lugarEntrega: z.string().optional(),
   fechaEntrega: z.string().optional().transform(v => v ? new Date(v) : undefined),
+  horaEntrega: z.string().optional(), // "HH:MM"
+  horaEstimadaRetiro: z.string().optional(), // "HH:MM" — para retiro en galpón
+  galponRetiro: z.string().optional(),
   observaciones: z.string().optional(),
   usaStockPropio: z.boolean().optional().default(false),
   emitirRemito: z.boolean().optional().default(false),

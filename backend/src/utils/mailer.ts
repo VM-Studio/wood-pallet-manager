@@ -353,3 +353,145 @@ export const enviarRemitoFirmado = async (params: {
     ] : [],
   });
 };
+
+// ─── Envío de código de verificación ─────────────────────────────────────────
+const tipoLabels: Record<string, string> = {
+  cambio_password:       'Cambio de contraseña',
+  cambio_email:          'Cambio de email',
+  cambio_telefono:       'Cambio de teléfono',
+  recuperacion_password: 'Recuperación de contraseña',
+};
+
+export const sendVerificationCode = async (params: {
+  to: string;
+  codigo: string;
+  tipo: string;
+  nombre: string;
+}) => {
+  const transporter = crearTransporter();
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+  const accion = tipoLabels[params.tipo] || 'Verificación';
+
+  await transporter.sendMail({
+    from,
+    to: params.to,
+    subject: `${params.codigo} — Tu código de verificación · Wood Pallet`,
+    html: `
+      <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#F9F7F5;padding:40px 20px;min-height:100vh;">
+        <div style="max-width:480px;margin:0 auto;background:#FFFFFF;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+          <div style="background:#3c250f;padding:28px 32px;">
+            <p style="color:rgba(255,255,255,0.7);font-size:13px;margin:0 0 4px;">Wood Pallet</p>
+            <h1 style="color:#FFFFFF;font-size:20px;font-weight:700;margin:0;">Código de verificación</h1>
+          </div>
+          <div style="padding:32px;">
+            <p style="color:#374151;font-size:15px;margin:0 0 8px;">Hola <strong>${params.nombre}</strong>,</p>
+            <p style="color:#6B7280;font-size:14px;margin:0 0 28px;">Recibimos una solicitud de <strong>${accion}</strong> en tu cuenta. Usá el siguiente código para continuar:</p>
+            <div style="background:#FDF6EE;border:2px dashed #D97706;border-radius:12px;padding:24px;text-align:center;margin-bottom:24px;">
+              <p style="color:#92400E;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 8px;">Tu código</p>
+              <p style="color:#3c250f;font-size:42px;font-weight:800;letter-spacing:0.18em;margin:0;font-variant-numeric:tabular-nums;">${params.codigo}</p>
+            </div>
+            <p style="color:#9CA3AF;font-size:12px;margin:0 0 4px;">⏱ Este código expira en <strong>15 minutos</strong>.</p>
+            <p style="color:#9CA3AF;font-size:12px;margin:0 0 24px;">Si no solicitaste este código, podés ignorar este email. Tu cuenta permanece segura.</p>
+            <p style="color:#9CA3AF;font-size:12px;margin:0;">Saludos,<br/><strong style="color:#6B3A2A;">Wood Pallet</strong></p>
+          </div>
+        </div>
+      </div>
+    `,
+  });
+};
+
+// ─── Código único de retiro ──────────────────────────────────────────────────
+export const sendCodigoRetiro = async (params: {
+  to: string;
+  nombre: string;
+  codigoRetiro: string;
+  fechaRetiro?: string;
+  horaRetiro?: string;
+  galpon?: string;
+  productos?: { nombre: string; cantidad: number }[];
+}) => {
+  const transporter = crearTransporter();
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+
+  const productosHtml = params.productos?.length
+    ? `<ul style="margin:8px 0 0;padding-left:20px;color:#374151;font-size:14px;">
+        ${params.productos.map(p => `<li>${p.nombre} × ${p.cantidad}</li>`).join('')}
+       </ul>`
+    : '';
+
+  await transporter.sendMail({
+    from,
+    to: params.to,
+    subject: `Código de retiro ${params.codigoRetiro} · Wood Pallet`,
+    html: `
+      <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#F9F7F5;padding:40px 20px;min-height:100vh;">
+        <div style="max-width:480px;margin:0 auto;background:#FFFFFF;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+          <div style="background:#3c250f;padding:28px 32px;">
+            <p style="color:rgba(255,255,255,0.7);font-size:13px;margin:0 0 4px;">Wood Pallet · Retiro en galpón</p>
+            <h1 style="color:#FFFFFF;font-size:20px;font-weight:700;margin:0;">Tu pedido está listo para retirar</h1>
+          </div>
+          <div style="padding:32px;">
+            <p style="color:#374151;font-size:15px;margin:0 0 8px;">Hola <strong>${params.nombre}</strong>,</p>
+            <p style="color:#6B7280;font-size:14px;margin:0 0 24px;">Tu pedido fue confirmado. Este es tu código único de retiro — presentalo en el galpón al momento de retirar la mercadería.</p>
+
+            <div style="background:#FEF3E2;border:2px solid #F9C97C;border-radius:12px;padding:24px 32px;text-align:center;margin-bottom:28px;">
+              <p style="color:#92400E;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">Código de retiro</p>
+              <p style="color:#3c250f;font-size:36px;font-weight:800;letter-spacing:4px;margin:0;font-family:monospace;">${params.codigoRetiro}</p>
+            </div>
+
+            ${params.fechaRetiro || params.horaRetiro || params.galpon ? `
+            <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
+              ${params.fechaRetiro ? `<tr><td style="padding:6px 0;color:#9CA3AF;font-size:13px;width:140px;">Fecha estimada</td><td style="padding:6px 0;color:#374151;font-size:13px;font-weight:500;">${params.fechaRetiro}</td></tr>` : ''}
+              ${params.horaRetiro ? `<tr><td style="padding:6px 0;color:#9CA3AF;font-size:13px;">Hora estimada</td><td style="padding:6px 0;color:#374151;font-size:13px;font-weight:500;">${params.horaRetiro}</td></tr>` : ''}
+              ${params.galpon ? `<tr><td style="padding:6px 0;color:#9CA3AF;font-size:13px;">Galpón</td><td style="padding:6px 0;color:#374151;font-size:13px;font-weight:500;">${params.galpon}</td></tr>` : ''}
+            </table>` : ''}
+
+            ${productosHtml ? `<div style="margin-bottom:24px;"><p style="color:#374151;font-size:13px;font-weight:600;margin:0 0 4px;">Productos incluidos</p>${productosHtml}</div>` : ''}
+
+            <p style="color:#9CA3AF;font-size:12px;margin:0 0 4px;">⚠️ Guardá este email — necesitás el código para retirar tu pedido.</p>
+            <p style="color:#9CA3AF;font-size:12px;margin:0 0 24px;">Si tenés alguna consulta, comunicate con nosotros al <strong>11 6623-1866</strong>.</p>
+            <p style="color:#9CA3AF;font-size:12px;margin:0;">Saludos,<br/><strong style="color:#6B3A2A;">Wood Pallet</strong></p>
+          </div>
+        </div>
+      </div>
+    `,
+  });
+};
+// ─── Envío de link de recuperación de contraseña ─────────────────────────────
+export const sendPasswordRecoveryLink = async (params: {
+  to: string;
+  nombre: string;
+  resetLink: string;
+}) => {
+  const transporter = crearTransporter();
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+
+  await transporter.sendMail({
+    from,
+    to: params.to,
+    subject: 'Recuperación de contraseña · Wood Pallet',
+    html: `
+      <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#F9F7F5;padding:40px 20px;min-height:100vh;">
+        <div style="max-width:480px;margin:0 auto;background:#FFFFFF;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+          <div style="background:#3c250f;padding:28px 32px;">
+            <p style="color:rgba(255,255,255,0.7);font-size:13px;margin:0 0 4px;">Wood Pallet</p>
+            <h1 style="color:#FFFFFF;font-size:20px;font-weight:700;margin:0;">Recuperar contraseña</h1>
+          </div>
+          <div style="padding:32px;">
+            <p style="color:#374151;font-size:15px;margin:0 0 8px;">Hola <strong>${params.nombre}</strong>,</p>
+            <p style="color:#6B7280;font-size:14px;margin:0 0 28px;">Recibimos una solicitud para recuperar el acceso a tu cuenta. Hacé clic en el botón para crear una nueva contraseña:</p>
+            <div style="text-align:center;margin-bottom:28px;">
+              <a href="${params.resetLink}" style="display:inline-block;background:#3c250f;color:#FFFFFF;font-size:15px;font-weight:600;padding:14px 32px;border-radius:8px;text-decoration:none;">
+                Crear nueva contraseña
+              </a>
+            </div>
+            <p style="color:#9CA3AF;font-size:12px;margin:0 0 4px;">⏱ Este enlace expira en <strong>30 minutos</strong> y es de un solo uso.</p>
+            <p style="color:#9CA3AF;font-size:12px;margin:0 0 24px;">Si no solicitaste esto, podés ignorar este email. Tu contraseña no va a cambiar.</p>
+            <p style="color:#9CA3AF;font-size:11px;word-break:break-all;margin:0 0 24px;">Si el botón no funciona, copiá este enlace: ${params.resetLink}</p>
+            <p style="color:#9CA3AF;font-size:12px;margin:0;">Saludos,<br/><strong style="color:#6B3A2A;">Wood Pallet</strong></p>
+          </div>
+        </div>
+      </div>
+    `,
+  });
+};

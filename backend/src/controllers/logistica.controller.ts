@@ -13,6 +13,7 @@ import {
   responderConsultaLogisticaService,
   confirmarLogisticaCarlosService,
   avanzarLogisticaService,
+  getLogisticasAceptadasService,
 } from '../services/logistica.service';
 
 export const getLogisticas = async (_req: Request, res: Response) => {
@@ -130,4 +131,9 @@ export const avanzarLogistica = async (req: AuthRequest, res: Response) => {
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }
+};
+
+export const getLogisticasAceptadas = async (_req: Request, res: Response) => {
+  const data = await getLogisticasAceptadasService();
+  res.json(data);
 };

@@ -12,6 +12,7 @@ import {
   responderConsultaLogistica,
   confirmarLogisticaCarlos,
   avanzarLogistica,
+  getLogisticasAceptadas,
 } from '../controllers/logistica.controller';
 
 const router = Router();
@@ -20,6 +21,7 @@ router.use(authenticate);
 
 router.get('/entregas-hoy', getEntregasHoy);
 router.get('/por-rol', getLogisticasPorRol);
+router.get('/aceptadas', getLogisticasAceptadas);
 router.get('/', getLogisticas);
 router.get('/venta/:ventaId', getLogisticaByVenta);
 router.post('/', crearLogistica);

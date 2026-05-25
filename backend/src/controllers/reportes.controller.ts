@@ -7,6 +7,7 @@ import {
   getTopClientesService,
   getReporteCobranzasService,
   getVentasUltimos12MesesService,
+  getGananciasDetalleService,
 } from '../services/reportes.service';
 
 export const getDashboard = async (_req: AuthRequest, res: Response) => {
@@ -89,4 +90,23 @@ export const getEstacionalidad = async (req: AuthRequest, res: Response) => {
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
+};
+
+export const getGananciasDetalle = async (req: AuthRequest, res: Response) => {
+  const { vista } = req.query;
+
+  let usuarioId: number | undefined;
+  if (vista === 'mis_datos') {
+    usuarioId = req.user!.userId;
+  } else if (vista === 'carlos') {
+    const carlos = await prisma.usuario.findFirst({ where: { rol: 'propietario_carlos' } });
+    usuarioId = carlos?.id;
+  } else if (vista === 'juancruz') {
+    const juancruz = await prisma.usuario.findFirst({ where: { rol: 'propietario_juancruz' } });
+    usuarioId = juancruz?.id;
+  }
+  // vista === 'todos' o sin vista → usuarioId queda undefined (todos)
+
+  const detalle = await getGananciasDetalleService(usuarioId);
+  res.json(detalle);
 };

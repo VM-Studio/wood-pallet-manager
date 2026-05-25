@@ -6,7 +6,8 @@ import {
   cancelarCompra,
   getDeudaProveedores,
   getCompraById,
-  actualizarEstadoCompra
+  actualizarEstadoCompra,
+  getVentasParaCompraDirecta,
 } from '../controllers/compras.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 
@@ -15,6 +16,7 @@ router.use(authenticate);
 
 router.get('/', getCompras);
 router.get('/deuda-proveedores', getDeudaProveedores);
+router.get('/ventas-para-compra-directa', getVentasParaCompraDirecta);
 router.get('/:id', getCompraById);
 router.post('/', crearCompra);
 router.put('/:id/estado', actualizarEstadoCompra);

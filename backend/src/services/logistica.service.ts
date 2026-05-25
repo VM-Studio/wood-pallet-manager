@@ -347,3 +347,28 @@ export const confirmarLogisticaCarlosService = async (
     data: { ...datos, estadoConsulta: 'aceptada', estadoEntrega: 'pendiente' },
   });
 };
+
+// Retorna todas las logísticas con estadoConsulta = 'aceptada', ordenadas por fecha estimada de entrega
+export const getLogisticasAceptadasService = async () => {
+  return prisma.logistica.findMany({
+    where: {
+      estadoConsulta: 'aceptada',
+      estadoEntrega: { not: 'entregado' }, // excluir ya entregadas
+    },
+    include: {
+      venta: {
+        select: {
+          id: true,
+          fechaEstimEntrega: true,
+          lugarEntrega: true,
+          cliente: { select: { razonSocial: true, nombreContacto: true } },
+          usuario: { select: { nombre: true, apellido: true, rol: true } },
+        },
+      },
+    },
+    orderBy: [
+      { horaEstimadaEntrega: 'asc' },
+      { id: 'asc' },
+    ],
+  });
+};
