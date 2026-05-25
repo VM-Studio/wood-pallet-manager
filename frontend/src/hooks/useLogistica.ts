@@ -4,6 +4,19 @@ import type { Logistica } from '../types';
 import { useVistaStore } from '../store/vista.store';
 import { useVistaParams } from './useVista';
 
+export interface LogisticaAceptada {
+  id: number;
+  horaEstimadaEntrega: string | null;
+  lugarEntrega: string | null;
+  venta: {
+    id: number;
+    fechaEstimEntrega: string | null;
+    lugarEntrega: string | null;
+    cliente: { razonSocial: string; nombreContacto: string | null };
+    usuario: { nombre: string; apellido: string; rol: string };
+  };
+}
+
 interface NuevaLogisticaInput {
   ventaId: number;
   nombreTransportista?: string;
@@ -23,6 +36,17 @@ export const useLogisticas = () => {
       return data as Logistica[];
     },
     refetchInterval: 1000 * 60 * 2
+  });
+};
+
+export const useLogisticasAceptadas = () => {
+  return useQuery({
+    queryKey: ['logisticas-aceptadas'],
+    queryFn: async () => {
+      const { data } = await api.get('/logistica/aceptadas');
+      return data as LogisticaAceptada[];
+    },
+    staleTime: 1000 * 30, // refrescar cada 30s para mantener agenda actualizada
   });
 };
 
@@ -150,6 +174,7 @@ export const useConfirmarLogisticaCarlos = () => {
       queryClient.invalidateQueries({ queryKey: ['logistica-por-rol'] });
       queryClient.invalidateQueries({ queryKey: ['logisticas'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['logisticas-aceptadas'] });
     }
   });
 };
@@ -167,6 +192,7 @@ export const useAvanzarLogistica = () => {
       queryClient.invalidateQueries({ queryKey: ['entregas-hoy'] });
       queryClient.invalidateQueries({ queryKey: ['ventas'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['logisticas-aceptadas'] });
     }
   });
 };

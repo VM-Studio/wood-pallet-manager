@@ -385,7 +385,9 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
               >
                 <option value={0}>Seleccioná un cliente...</option>
                 {clientes?.filter(c => c.usuarioAsignadoId === usuario?.id).map(c => (
-                  <option key={c.id} value={c.id}>{c.razonSocial}</option>
+                  <option key={c.id} value={c.id}>
+                    {[c.nombreContacto, c.razonSocial].filter(Boolean).join(' — ')}
+                  </option>
                 ))}
               </select>
             </div>
@@ -617,7 +619,10 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
                             {d.precioCalculado && !d.usarPrecioEspecial && (
                               <div>
                                 <p className="text-xs font-semibold text-gray-900">
-                                  {formatPesos(d.precioCalculado.precioUnitario)}
+                                  {d.cantidad > 0
+                                    ? <>{d.cantidad} × {formatPesos(d.precioCalculado.precioUnitario)} = <span style={{ color: '#6B3A2A' }}>{formatPesos(d.cantidad * d.precioCalculado.precioUnitario)}</span></>
+                                    : formatPesos(d.precioCalculado.precioUnitario)
+                                  }
                                 </p>
                                 {d.precioCalculado.bonificaFlete && (
                                   <p className="text-[10px] text-green-600 font-medium">Flete bonificado</p>
@@ -626,7 +631,10 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
                             )}
                             {d.usarPrecioEspecial && d.precioEspecial ? (
                               <p className="text-xs font-semibold text-[#6B3A2A]">
-                                {formatPesos(d.precioEspecial)}
+                                {d.cantidad > 0
+                                  ? <>{d.cantidad} × {formatPesos(d.precioEspecial)} = {formatPesos(d.cantidad * d.precioEspecial)}</>
+                                  : formatPesos(d.precioEspecial)
+                                }
                               </p>
                             ) : null}
                           </div>

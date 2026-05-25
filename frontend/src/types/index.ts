@@ -7,6 +7,8 @@ export interface Usuario {
   rol: 'propietario_carlos' | 'propietario_juancruz' | 'admin';
   telefono?: string;
   cuit?: string;
+  fotoPerfil?: string;  // base64 data URL
+  firma?: string;       // base64 data URL
 }
 
 export interface AuthState {
@@ -141,6 +143,10 @@ export interface Venta {
   detalles?: DetalleVenta[];
   facturas?: Factura[];
   logistica?: Logistica;
+  solicitudesLogistica?: SolicitudLogistica[];
+  lugarEntrega?: string;
+  costoSenasa?: number;
+  origenStock?: string;
 }
 
 export interface DetalleVenta {
@@ -163,6 +169,19 @@ export interface RetiroParcial {
 }
 
 // Compra
+export interface CompraVentaResumen {
+  id: number;
+  fechaVenta: string;
+  estadoPedido: string;
+  totalConIva: number | null;
+  lugarEntrega: string | null;
+  fechaEstimEntrega: string | null;
+  metodoPago: string | null;
+  modalidadPago: string | null;
+  cliente: { id: number; razonSocial: string; nombreContacto: string | null };
+  detalles: { id: number; cantidadPedida: number; producto: { nombre: string; condicion: string } }[];
+}
+
 export interface Compra {
   id: number;
   proveedorId: number;
@@ -181,6 +200,7 @@ export interface Compra {
   nroComprobante?: string;
   proveedor?: { nombreEmpresa: string; nombreContacto: string };
   detalles?: DetalleCompra[];
+  venta?: CompraVentaResumen;
 }
 
 export interface DetalleCompra {
@@ -199,6 +219,7 @@ export interface Logistica {
   nombreTransportista: string;
   telefonoTransp?: string;
   fechaRetiroGalpon?: string;
+  horaRetiro?: string;
   horaEstimadaEntrega?: string;
   horaEntregaReal?: string;
   estadoEntrega: 'pendiente' | 'en_camino' | 'entregado' | 'con_problema';
@@ -206,6 +227,28 @@ export interface Logistica {
   confCliente: boolean;
   costoFlete?: number;
   observaciones?: string;
+  lugarEntrega?: string;
+  estadoConsulta?: string;
+  fechaConsulta?: string;
+  registradoPor?: { id: number; nombre: string; apellido: string };
+  consultadaPor?: { id: number; nombre: string; apellido: string };
+}
+
+export interface SolicitudLogistica {
+  id: number;
+  ventaId?: number;
+  solicitanteId: number;
+  destinatarioId: number;
+  fechaSolicitud: string;
+  fechaEntrega?: string;
+  cantidadUnidades?: number;
+  ubicacionEntrega?: string;
+  notas?: string;
+  estado: 'pendiente' | 'aceptada' | 'rechazada';
+  fechaRespuesta?: string;
+  notasRespuesta?: string;
+  solicitante: { id: number; nombre: string; apellido: string; rol: string };
+  destinatario: { id: number; nombre: string; apellido: string; rol: string };
 }
 
 // Factura
@@ -327,6 +370,6 @@ export interface SolicitudLogistica {
   fechaRespuesta?: string;
   notasRespuesta?: string;
   venta?: { cliente?: { razonSocial: string } };
-  solicitante?: { id: number; nombre: string; apellido: string };
-  destinatario?: { id: number; nombre: string; apellido: string };
+  solicitante: { id: number; nombre: string; apellido: string; rol: string };
+  destinatario: { id: number; nombre: string; apellido: string; rol: string };
 }

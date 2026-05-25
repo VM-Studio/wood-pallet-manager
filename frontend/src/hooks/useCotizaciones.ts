@@ -103,6 +103,11 @@ export const useConvertirAVenta = () => {
       queryClient.invalidateQueries({ queryKey: ['productos'] });
       queryClient.invalidateQueries({ queryKey: ['movimientos-stock'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['logisticas-aceptadas'] });
+      queryClient.invalidateQueries({ queryKey: ['logistica-por-rol'] });
+      queryClient.invalidateQueries({ queryKey: ['logisticas'] });
+      queryClient.invalidateQueries({ queryKey: ['retiros'] });
+      queryClient.invalidateQueries({ queryKey: ['retiros-stats'] });
     }
   });
 };

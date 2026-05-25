@@ -143,18 +143,6 @@ export default function ClienteForm({ cliente, onClose, onSuccess }: ClienteForm
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Dirección de entrega</label>
-              <input
-                type="text"
-                value={form.direccionEntrega}
-                onChange={(e) => setForm({ ...form, direccionEntrega: e.target.value })}
-                className="input-field"
-                style={{ borderRadius: '0.25rem' }}
-                placeholder="Calle y número"
-              />
-            </div>
-
             {/* Localidad field removed as requested */}
 
             <div className="md:col-span-2">

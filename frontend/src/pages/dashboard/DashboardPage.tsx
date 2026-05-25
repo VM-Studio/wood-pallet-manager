@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -6,7 +7,7 @@ import {
 import {
   Package, DollarSign, FileText,
   TrendingUp, TrendingDown, Minus, ArrowRight,
-  Users, Plus, AlertTriangle
+  Users, Plus, AlertTriangle, ChevronDown, ChevronUp, ShoppingCart, Layers
 } from 'lucide-react';
 import { useDashboard, useAlertas, useEstacionalidad, useGanancias } from '../../hooks/useDashboard';
 import { useAuthStore } from '../../store/auth.store';
@@ -110,6 +111,97 @@ function AlertaItem({ urgencia, titulo, detalle, onClick }: {
   );
 }
 
+function GananciasCard({ gananciasData }: {
+  gananciasData?: {
+    cantidadVentas: number;
+    facturadoMes: number;
+    cobradoMes: number;
+    comprasStockPropio: number;
+    comprasReventa: number;
+    totalCompras: number;
+    gananciaNeta: number;
+  };
+}) {
+  const [open, setOpen] = useState(false);
+  const neta = gananciasData?.gananciaNeta ?? 0;
+  const positivo = neta >= 0;
+
+  return (
+    <div className={clsx('card-kpi', 'cursor-pointer transition-all duration-200')}>
+      {/* Header — click toggles detail */}
+      <div className="flex items-center gap-2 mb-2" onClick={() => setOpen(o => !o)}>
+        <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+          <TrendingUp size={18} />
+        </div>
+        <p className="titulo-card flex-1">Ganancias del mes</p>
+        {open ? <ChevronUp size={14} className="text-gray-400" /> : <ChevronDown size={14} className="text-gray-400" />}
+      </div>
+
+      {/* Main value */}
+      <p
+        className="text-2xl font-bold leading-none mb-1"
+        style={{ color: positivo ? '#15803d' : '#dc2626' }}
+        onClick={() => setOpen(o => !o)}
+      >
+        {formatPesos(neta)}
+      </p>
+      <p className="text-xs text-gray-400 mb-1" onClick={() => setOpen(o => !o)}>
+        {gananciasData ? `${gananciasData.cantidadVentas} venta${gananciasData.cantidadVentas !== 1 ? 's' : ''} · cobrado real` : 'Calculando...'}
+      </p>
+
+      {/* Expandable detail */}
+      {open && gananciasData && (
+        <div className="mt-3 pt-3 border-t border-gray-100 space-y-2 text-xs">
+          {/* Ingresos */}
+          <div className="flex items-center gap-2">
+            <DollarSign size={12} className="text-green-600 shrink-0" />
+            <span className="text-gray-500 flex-1">Facturado</span>
+            <span className="font-medium text-gray-700">{formatPesos(gananciasData.facturadoMes)}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <DollarSign size={12} className="text-green-700 shrink-0" />
+            <span className="text-gray-500 flex-1">Cobrado real</span>
+            <span className="font-semibold text-green-700">{formatPesos(gananciasData.cobradoMes)}</span>
+          </div>
+
+          {/* Separador costos */}
+          <div className="border-t border-dashed border-gray-200 pt-2 space-y-2">
+            <div className="flex items-center gap-2">
+              <Layers size={12} className="text-amber-600 shrink-0" />
+              <span className="text-gray-500 flex-1">Compras stock propio</span>
+              <span className="font-medium text-red-500">− {formatPesos(gananciasData.comprasStockPropio)}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <ShoppingCart size={12} className="text-amber-700 shrink-0" />
+              <span className="text-gray-500 flex-1">Compras directas</span>
+              <span className="font-medium text-red-500">− {formatPesos(gananciasData.comprasReventa)}</span>
+            </div>
+            <div className="flex items-center justify-between pt-1 border-t border-gray-200">
+              <span className="text-gray-500 font-medium">Total compras</span>
+              <span className="font-semibold text-red-600">− {formatPesos(gananciasData.totalCompras)}</span>
+            </div>
+          </div>
+
+          {/* Resultado */}
+          <div
+            className={clsx(
+              'flex items-center justify-between rounded-md px-2 py-1.5 mt-1',
+              positivo ? 'bg-green-50' : 'bg-red-50'
+            )}
+          >
+            <span className={clsx('font-bold', positivo ? 'text-green-700' : 'text-red-600')}>
+              Ganancia neta
+            </span>
+            <span className={clsx('font-bold text-sm', positivo ? 'text-green-700' : 'text-red-600')}>
+              {positivo ? '+' : ''}{formatPesos(neta)}
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { usuario } = useAuthStore();
@@ -147,7 +239,6 @@ export default function DashboardPage() {
   const variacionPallets = palletsMesAnt > 0 ? Math.round(((palletsMes - palletsMesAnt) / palletsMesAnt) * 100) : 0;
   const variacionFact    = facturacionMesAnt > 0 ? Math.round(((facturacionMes - facturacionMesAnt) / facturacionMesAnt) * 100) : 0;
 
-  const ganancias = gananciasData?.ganancias ?? 0;
   const grafico   = graficoData ?? dashboard?.graficos?.ventasUltimos12Meses ?? [];
 
   return (
@@ -195,13 +286,7 @@ export default function DashboardPage() {
           icono={<DollarSign size={18} />}
           onClick={() => navigate('/reportes')}
         />
-        <KpiCard
-          titulo="Ganancias del mes"
-          valor={formatPesos(ganancias)}
-          subtitulo={gananciasData ? `Compras: ${formatPesos(gananciasData.costoCompras)}` : 'Calculando...'}
-          icono={<TrendingUp size={18} />}
-          onClick={() => navigate('/reportes')}
-        />
+        <GananciasCard gananciasData={gananciasData} />
         <KpiCard
           titulo="Cotizaciones activas"
           valor={cotizacionesVal}

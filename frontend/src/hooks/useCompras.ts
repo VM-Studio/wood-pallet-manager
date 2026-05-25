@@ -2,6 +2,19 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import type { Compra } from '../types';
 
+export interface VentaParaCompraDirecta {
+  id: number;
+  fechaVenta: string;
+  estadoPedido: string;
+  totalConIva: number | null;
+  cliente: { id: number; razonSocial: string; nombreContacto: string | null };
+  detalles: {
+    id: number;
+    cantidadPedida: number;
+    producto: { id: number; nombre: string; condicion: string };
+  }[];
+}
+
 export const useCompra = (id: number) => {
   return useQuery<Compra>({
     queryKey: ['compra', id],
@@ -64,6 +77,7 @@ export const useCrearCompra = () => {
       queryClient.invalidateQueries({ queryKey: ['productos'] });
       queryClient.invalidateQueries({ queryKey: ['deuda-proveedores'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['ventas-para-compra-directa'] });
     }
   });
 };
@@ -103,3 +117,14 @@ export const useCancelarCompra = () => {
 };
 
 export const useRegistrarPagoProveedor = useRegistrarPagoCompra;
+
+export const useVentasParaCompraDirecta = () => {
+  return useQuery<VentaParaCompraDirecta[]>({
+    queryKey: ['ventas-para-compra-directa'],
+    queryFn: async () => {
+      const { data } = await api.get('/compras/ventas-para-compra-directa');
+      return data;
+    },
+    staleTime: 0,
+  });
+};

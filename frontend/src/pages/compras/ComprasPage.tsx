@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Search, Check, X, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Search, Check, X, AlertTriangle, ChevronDown, ChevronUp, FileText } from 'lucide-react';
 import { useCompras, useDeudaProveedores, useRegistrarPagoCompra, useCancelarCompra } from '../../hooks/useCompras';
 import NuevaCompra from './NuevaCompra';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
@@ -12,7 +12,7 @@ const formatFecha = (f: string) =>
   new Date(f).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' });
 
 const tipoCompraLabel: Record<string, string> = {
-  reventa_inmediata: 'Reventa inmediata',
+  reventa_inmediata: 'Compra directa',
   stock_propio:      'Stock propio',
 };
 
@@ -25,6 +25,7 @@ export default function ComprasPage() {
   const [showNueva, setShowNueva] = useState(false);
   const [expandido, setExpandido] = useState<number | null>(null);
   const [pagoModal, setPagoModal] = useState<number | null>(null);
+  const [detalleVentaModal, setDetalleVentaModal] = useState<import('../../types').CompraVentaResumen | null>(null);
   const [pagoForm, setPagoForm] = useState({
     metodoPago: '' as 'transferencia' | 'e_check' | 'efectivo' | '',
     cuentaDestino: '',
@@ -141,6 +142,19 @@ export default function ComprasPage() {
                 </div>
 
                 <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+                  {/* Botón Detalle — solo para compras directas con venta asociada */}
+                  {c.tipoCompra === 'reventa_inmediata' && c.venta && (
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        setDetalleVentaModal(c.venta);
+                      }}
+                      className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 hover:bg-blue-100 transition-colors"
+                      title="Ver venta asociada"
+                    >
+                      <FileText size={15} />
+                    </button>
+                  )}
                   {c.estado === 'pendiente_pago' && (
                     <>
                       <button
@@ -297,6 +311,74 @@ export default function ComprasPage() {
               >
                 {registrarPago.isPending ? 'Registrando...' : 'Confirmar pago'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal detalle de venta asociada */}
+      {detalleVentaModal && (
+        <div className="modal-overlay" onClick={() => setDetalleVentaModal(null)}>
+          <div className="modal-container max-w-lg" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">Venta asociada #{detalleVentaModal.id}</h2>
+            </div>
+            <div className="modal-body space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-xs text-gray-500">Cliente</p>
+                  <p className="text-sm font-medium">{detalleVentaModal.cliente.razonSocial}</p>
+                  {detalleVentaModal.cliente.nombreContacto && (
+                    <p className="text-xs text-gray-400">{detalleVentaModal.cliente.nombreContacto}</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Estado pedido</p>
+                  <p className="text-sm font-medium capitalize">{detalleVentaModal.estadoPedido.replace('_', ' ')}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Total c/ IVA</p>
+                  <p className="text-sm font-medium">
+                    {detalleVentaModal.totalConIva != null
+                      ? `$${Number(detalleVentaModal.totalConIva).toLocaleString('es-AR')}`
+                      : '—'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Entrega estimada</p>
+                  <p className="text-sm font-medium">
+                    {detalleVentaModal.fechaEstimEntrega
+                      ? new Date(detalleVentaModal.fechaEstimEntrega).toLocaleDateString('es-AR')
+                      : '—'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Lugar de entrega</p>
+                  <p className="text-sm font-medium">{detalleVentaModal.lugarEntrega || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Método de pago</p>
+                  <p className="text-sm font-medium">{detalleVentaModal.metodoPago || '—'}</p>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs text-gray-500 mb-2">Productos</p>
+                <div className="space-y-1">
+                  {detalleVentaModal.detalles.map((d: { id: number; cantidadPedida: number; producto: { nombre: string; condicion: string } }) => (
+                    <div key={d.id} className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg">
+                      <span className="text-sm">{d.producto.nombre}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500 capitalize">{d.producto.condicion.replace('_', ' ')}</span>
+                        <span className="text-sm font-medium">× {d.cantidadPedida}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button onClick={() => setDetalleVentaModal(null)} className="btn-primary">Cerrar</button>
             </div>
           </div>
         </div>

@@ -110,7 +110,6 @@ export default function ProductoForm({ producto, onClose }: ProductoFormProps) {
                 >
                   <option value="nuevo">Nuevo</option>
                   <option value="seminuevo">Semi-nuevo</option>
-                  <option value="usado">Usado</option>
                 </select>
               </div>
             </div>

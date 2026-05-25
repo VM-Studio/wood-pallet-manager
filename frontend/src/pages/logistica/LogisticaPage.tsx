@@ -1,4 +1,5 @@
-import { Truck, Calendar, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { useState } from 'react';
+import { Truck, Calendar, Clock, CheckCircle, AlertCircle, X, MapPin, Package, CreditCard } from 'lucide-react';
 import { useLogisticasPorRol, useEntregasHoy, useConsultarLogistica, useAvanzarLogistica } from '../../hooks/useLogistica';
 import { useAuthStore } from '../../store/auth.store';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
@@ -16,6 +17,8 @@ interface LogisticaRow {
   nombreTransportista?: string;
   telefonoTransp?: string;
   fechaRetiroGalpon?: string;
+  horaRetiro?: string;
+  horaEstimadaEntrega?: string;
   observaciones?: string;
   consultadaPor?: { nombre: string; apellido: string };
   registradoPor?: { nombre: string; apellido: string };
@@ -198,6 +201,193 @@ function EmptyState({ esCarlos, label }: { esCarlos: boolean; label?: string }) 
   );
 }
 
+type FiltroKpi = 'pendiente' | 'en_camino' | 'entregado' | 'hoy' | null;
+
+// ── Modal de KPI ────────────────────────────────────────────────────
+function KpiModal({
+  filtro, logisticas, entregasHoy, esCarlos, onClose,
+  avanzarMutation,
+}: {
+  filtro: FiltroKpi;
+  logisticas: LogisticaRow[];
+  entregasHoy: LogisticaRow[];
+  esCarlos: boolean;
+  onClose: () => void;
+  avanzarMutation: ReturnType<typeof useAvanzarLogistica>;
+}) {
+  const titulos: Record<string, string> = {
+    pendiente:  'Entregas pendientes',
+    en_camino:  'En camino ahora',
+    entregado:  'Entregadas',
+    hoy:        'Entregas de hoy',
+  };
+
+  const items = filtro === 'hoy'
+    ? entregasHoy
+    : logisticas.filter(l => l.estadoEntrega === filtro);
+
+  const fmtHora = (s?: string) =>
+    s ? new Date(s).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) + ' hs' : null;
+
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+      onClick={onClose}
+    >
+      <div
+        style={{ background: '#fff', borderRadius: '0.5rem', width: '100%', maxWidth: 680, maxHeight: '85vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.25rem', borderBottom: '1px solid #E5E7EB', flexShrink: 0 }}>
+          <div>
+            <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#111827', margin: '0 0 2px' }}>
+              {filtro ? titulos[filtro] : ''}
+            </h2>
+            <p style={{ fontSize: '0.78rem', color: '#9CA3AF', margin: 0 }}>
+              {items.length} entrega{items.length !== 1 ? 's' : ''}
+              {filtro === 'hoy' && ` · ${new Date().toLocaleDateString('es-AR', { weekday: 'long', day: '2-digit', month: 'long' })}`}
+            </p>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280', padding: 4 }}>
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div style={{ overflowY: 'auto', flex: 1, padding: '1rem 1.25rem' }}>
+          {items.length === 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2.5rem 1rem', textAlign: 'center' }}>
+              <Truck size={24} style={{ color: '#D1D5DB', marginBottom: 10 }} />
+              <p style={{ fontSize: '0.875rem', color: '#9CA3AF', margin: 0 }}>
+                {filtro === 'hoy' ? 'No hay entregas programadas para hoy' : 'No hay entregas en este estado'}
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+              {items.map(l => {
+                const est = estadoEntregaStyle(l.estadoEntrega);
+                const lugarEntrega =
+                  l.venta?.lugarEntrega ||
+                  [l.venta?.cliente?.direccionEntrega, l.venta?.cliente?.localidad].filter(Boolean).join(', ') || '—';
+                const costoFlete = l.venta?.costoFlete ?? l.costoFlete;
+                const fechaEntrega = l.venta?.fechaEstimEntrega ?? l.fechaRetiroGalpon;
+
+                return (
+                  <div key={l.id} style={{ border: '1px solid #E5E7EB', borderRadius: '0.5rem', overflow: 'hidden' }}>
+                    {/* Cabecera tarjeta */}
+                    <div style={{ padding: '0.75rem 1rem', background: '#F9FAFB', borderBottom: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '2px 7px', background: '#6B3A2A', color: '#fff', borderRadius: '0.25rem' }}>
+                          Venta #{l.ventaId}
+                        </span>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#111827' }}>
+                          {l.venta?.cliente?.razonSocial ?? '—'}
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '0.7rem', fontWeight: 600, padding: '2px 8px', borderRadius: 999, background: est.bg, color: est.color }}>
+                        {est.label}
+                      </span>
+                    </div>
+
+                    {/* Datos principales */}
+                    <div style={{ padding: '0.75rem 1rem', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem 1.5rem' }}>
+                      <div>
+                        <p style={{ fontSize: '0.67rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 2px', display: 'flex', alignItems: 'center', gap: 3 }}>
+                          <MapPin size={9} /> Lugar de entrega
+                        </p>
+                        <p style={{ fontSize: '0.82rem', color: '#374151', fontWeight: 500, margin: 0 }}>{lugarEntrega}</p>
+                      </div>
+                      <div>
+                        <p style={{ fontSize: '0.67rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 2px', display: 'flex', alignItems: 'center', gap: 3 }}>
+                          <Truck size={9} /> Transportista
+                        </p>
+                        <p style={{ fontSize: '0.82rem', color: '#374151', fontWeight: 500, margin: 0 }}>
+                          {l.nombreTransportista ?? '—'}
+                          {l.telefonoTransp && <span style={{ color: '#6B7280', marginLeft: 6 }}>{l.telefonoTransp}</span>}
+                        </p>
+                      </div>
+                      <div>
+                        <p style={{ fontSize: '0.67rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 2px', display: 'flex', alignItems: 'center', gap: 3 }}>
+                          <Calendar size={9} /> Fecha / Hora retiro
+                        </p>
+                        <p style={{ fontSize: '0.82rem', color: '#374151', fontWeight: 500, margin: 0 }}>
+                          {fmtFecha(fechaEntrega)}
+                          {l.horaRetiro && <span style={{ color: '#6B7280', marginLeft: 6 }}>{fmtHora(l.horaRetiro)}</span>}
+                        </p>
+                      </div>
+                      {costoFlete != null && (
+                        <div>
+                          <p style={{ fontSize: '0.67rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 2px', display: 'flex', alignItems: 'center', gap: 3 }}>
+                            <CreditCard size={9} /> Costo flete
+                          </p>
+                          <p style={{ fontSize: '0.82rem', color: '#6B3A2A', fontWeight: 700, margin: 0 }}>{fmt(costoFlete)}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Productos */}
+                    {l.venta?.detalles && l.venta.detalles.length > 0 && (
+                      <div style={{ padding: '0 1rem 0.75rem', borderTop: '1px solid #F3F4F6' }}>
+                        <p style={{ fontSize: '0.67rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0.625rem 0 0.375rem', display: 'flex', alignItems: 'center', gap: 3 }}>
+                          <Package size={9} /> Productos
+                        </p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                          {l.venta.detalles.map(d => (
+                            <div key={d.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 10px', background: '#F9FAFB', borderRadius: '0.25rem', border: '1px solid #E5E7EB' }}>
+                              <span style={{ fontSize: '0.8rem', color: '#374151' }}>{d.producto?.nombre ?? '—'}</span>
+                              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#6B3A2A' }}>{d.cantidadPedida} u</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Observaciones */}
+                    {l.observaciones && (
+                      <div style={{ padding: '0 1rem 0.75rem' }}>
+                        <p style={{ fontSize: '0.75rem', color: '#6B7280', fontStyle: 'italic', margin: 0 }}>"{l.observaciones}"</p>
+                      </div>
+                    )}
+
+                    {/* Acciones en modal */}
+                    {esCarlos && l.estadoEntrega !== 'entregado' && (
+                      <div style={{ padding: '0 1rem 0.75rem', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        <button
+                          onClick={() => avanzarMutation.mutate({ ventaId: l.ventaId, accion: 'consultando' })}
+                          disabled={avanzarMutation.isPending || l.estadoConsulta === 'consultada' || l.estadoConsulta === 'aceptada'}
+                          style={{
+                            fontSize: '0.75rem', fontWeight: 600, padding: '4px 12px', borderRadius: '0.25rem', border: 'none', cursor: 'pointer',
+                            background: (l.estadoConsulta === 'consultada' || l.estadoConsulta === 'aceptada') ? '#DBEAFE' : 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
+                            color: (l.estadoConsulta === 'consultada' || l.estadoConsulta === 'aceptada') ? '#1D4ED8' : '#fff',
+                          }}>
+                          Consultando
+                        </button>
+                        <button
+                          onClick={() => avanzarMutation.mutate({ ventaId: l.ventaId, accion: 'aceptada' })}
+                          disabled={avanzarMutation.isPending || l.estadoConsulta === 'aceptada'}
+                          style={{ fontSize: '0.75rem', fontWeight: 600, padding: '4px 12px', borderRadius: '0.25rem', border: '1px solid #E5E7EB', cursor: 'pointer', background: l.estadoConsulta === 'aceptada' ? '#DCFCE7' : '#F3F4F6', color: l.estadoConsulta === 'aceptada' ? '#15803D' : '#374151' }}>
+                          Aceptada
+                        </button>
+                        <button
+                          onClick={() => avanzarMutation.mutate({ ventaId: l.ventaId, accion: 'entregada' })}
+                          disabled={avanzarMutation.isPending}
+                          style={{ fontSize: '0.75rem', fontWeight: 600, padding: '4px 12px', borderRadius: '0.25rem', border: '1px solid #E5E7EB', cursor: 'pointer', background: '#F3F4F6', color: '#374151' }}>
+                          Entregada
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function LogisticaPage() {
   const { data: logisticas, isLoading, isError } = useLogisticasPorRol() as {
     data: LogisticaRow[] | undefined; isLoading: boolean; isError: boolean;
@@ -205,6 +395,8 @@ export default function LogisticaPage() {
   const { data: entregasHoy } = useEntregasHoy() as { data: LogisticaRow[] | undefined };
   const { usuario } = useAuthStore();
   const esCarlos = usuario?.rol === 'propietario_carlos';
+
+  const [filtroActivo, setFiltroActivo] = useState<FiltroKpi>(null);
 
   const consultarMutation = useConsultarLogistica();
   const avanzarMutation   = useAvanzarLogistica();
@@ -224,6 +416,13 @@ export default function LogisticaPage() {
 
   const cardProps = { esCarlos, consultarMutation, avanzarMutation };
 
+  const kpis = [
+    { icon: Clock,       color: '#C4895A', bg: '#FEF3E2', val: pendientes,              label: 'Pendientes',  filtro: 'pendiente' as FiltroKpi },
+    { icon: Truck,       color: '#6B3A2A', bg: '#F3EDE8', val: enCamino,                label: 'En camino',   filtro: 'en_camino' as FiltroKpi },
+    { icon: CheckCircle, color: '#15803D', bg: '#DCFCE7', val: entregadas,              label: 'Entregadas',  filtro: 'entregado' as FiltroKpi },
+    ...(esCarlos ? [{ icon: Calendar, color: '#6B3A2A', bg: '#F3EDE8', val: entregasHoy?.length ?? 0, label: 'Hoy', filtro: 'hoy' as FiltroKpi }] : []),
+  ];
+
   return (
     <div className="space-y-6 animate-fade-in">
 
@@ -235,25 +434,38 @@ export default function LogisticaPage() {
         </p>
       </div>
 
-      {/* KPIs */}
+      {/* KPIs clicables */}
       <div className={`grid ${esCarlos ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-3'} gap-4`}>
-        {[
-          { icon: Clock,       color: '#C4895A', bg: '#FEF3E2', val: pendientes,              label: 'Pendientes' },
-          { icon: Truck,       color: '#6B3A2A', bg: '#F3EDE8', val: enCamino,                label: 'En camino' },
-          { icon: CheckCircle, color: '#15803D', bg: '#DCFCE7', val: entregadas,              label: 'Entregadas' },
-          ...(esCarlos ? [{ icon: Calendar, color: '#6B3A2A', bg: '#F3EDE8', val: entregasHoy?.length ?? 0, label: 'Hoy' }] : []),
-        ].map(({ icon: Icon, color, bg, val, label }) => (
-          <div key={label} className="card-kpi">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ background: bg, borderRadius: '0.25rem' }}>
+        {kpis.map(({ icon: Icon, color, bg, val, label, filtro }) => (
+          <button
+            key={label}
+            onClick={() => setFiltroActivo(filtroActivo === filtro ? null : filtro)}
+            style={{
+              background: '#fff',
+              border: `1.5px solid ${filtroActivo === filtro ? color : '#E5E7EB'}`,
+              borderRadius: '0.5rem',
+              padding: '0.875rem 1rem',
+              cursor: 'pointer',
+              textAlign: 'left',
+              transition: 'all 0.15s',
+              boxShadow: filtroActivo === filtro ? `0 0 0 3px ${color}22` : 'none',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', background: bg, borderRadius: '0.25rem', flexShrink: 0 }}>
                 <Icon size={18} style={{ color }} />
               </div>
               <div>
-                <p className="text-2xl font-bold" style={{ color: '#6B3A2A' }}>{val}</p>
-                <p className="text-xs text-gray-500">{label}</p>
+                <p style={{ fontSize: '1.375rem', fontWeight: 800, color: filtroActivo === filtro ? color : '#6B3A2A', margin: 0, lineHeight: 1 }}>{val}</p>
+                <p style={{ fontSize: '0.75rem', color: '#6B7280', margin: '3px 0 0', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  {label}
+                  <span style={{ fontSize: '0.65rem', color: filtroActivo === filtro ? color : '#9CA3AF' }}>
+                    {filtroActivo === filtro ? '▲' : '▼'}
+                  </span>
+                </p>
               </div>
             </div>
-          </div>
+          </button>
         ))}
       </div>
 
@@ -313,6 +525,18 @@ export default function LogisticaPage() {
           </div>
 
         </div>
+      )}
+
+      {/* Modal KPI */}
+      {filtroActivo && (
+        <KpiModal
+          filtro={filtroActivo}
+          logisticas={logisticas ?? []}
+          entregasHoy={entregasHoy ?? []}
+          esCarlos={esCarlos}
+          onClose={() => setFiltroActivo(null)}
+          avanzarMutation={avanzarMutation}
+        />
       )}
     </div>
   );

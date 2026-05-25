@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { X, ArrowRight, FileText, Package, AlertTriangle, CheckCircle } from 'lucide-react';
+import { X, ArrowRight, FileText, Package, AlertTriangle, CheckCircle, CalendarDays } from 'lucide-react';
 import { useConvertirAVenta } from '../../hooks/useCotizaciones';
 import { useCotizacion } from '../../hooks/useCotizaciones';
 import { useStock } from '../../hooks/useInventario';
 import { useQueryClient } from '@tanstack/react-query';
 import SignaturePad from '../../components/ui/SignaturePad';
+import AgendaLogisticasModal from './AgendaLogisticasModal';
 
 interface ConvertirVentaModalProps {
   cotizacionId: number;
@@ -27,6 +28,7 @@ export default function ConvertirVentaModal({
   const [usaStockPropio, setUsaStockPropio] = useState(false);
   const [emitirRemito, setEmitirRemito] = useState(false);
   const [firmaPropietario, setFirmaPropietario] = useState<string | null>(null);
+  const [showAgenda, setShowAgenda] = useState(false);
 
   const [form, setForm] = useState({
     tipoEntrega: (incluyeFlete ? 'envio_woodpallet' : 'retira_cliente') as 'retira_cliente' | 'envio_woodpallet' | '',
@@ -35,7 +37,10 @@ export default function ConvertirVentaModal({
     modalidadPago: '' as 'adelantado' | 'contra_entrega' | 'por_partes' | '',
     lugarEntrega: '',
     fechaEntrega: '',
+    horaEntrega: '',
     fechaRetiro: '',
+    horaEstimadaRetiro: '',
+    galponRetiro: '',
     observaciones: '',
   });
 
@@ -63,7 +68,10 @@ export default function ConvertirVentaModal({
           modalidadPago: form.modalidadPago as 'adelantado' | 'contra_entrega' | 'por_partes',
           lugarEntrega: form.lugarEntrega || undefined,
           fechaEntrega: form.fechaEntrega || undefined,
+          horaEntrega: form.horaEntrega || undefined,
           fechaRetiro: form.fechaRetiro || undefined,
+          horaEstimadaRetiro: form.horaEstimadaRetiro || undefined,
+          galponRetiro: form.galponRetiro || undefined,
           observaciones: form.observaciones || undefined,
           usaStockPropio,
           emitirRemito,
@@ -75,6 +83,8 @@ export default function ConvertirVentaModal({
       await queryClient.invalidateQueries({ queryKey: ['ventas'] });
       await queryClient.invalidateQueries({ queryKey: ['logisticas'] });
       await queryClient.invalidateQueries({ queryKey: ['logistica-por-rol'] });
+      await queryClient.invalidateQueries({ queryKey: ['retiros'] });
+      await queryClient.invalidateQueries({ queryKey: ['retiros-stats'] });
       await queryClient.invalidateQueries({ queryKey: ['facturas'] });
       await queryClient.invalidateQueries({ queryKey: ['cobros-pendientes'] });
       await queryClient.invalidateQueries({ queryKey: ['dashboard'] });
@@ -90,6 +100,7 @@ export default function ConvertirVentaModal({
   return (
     <div className="modal-overlay">
       <div className="modal max-w-lg animate-slide-up">
+        {showAgenda && <AgendaLogisticasModal onClose={() => setShowAgenda(false)} />}
         <div className="modal-header">
           <h2 className="modal-title">Convertir a venta</h2>
           <button onClick={onClose} className="btn-icon"><X size={18} /></button>
@@ -139,15 +150,58 @@ export default function ConvertirVentaModal({
                       onChange={e => setForm({ ...form, fechaEntrega: e.target.value })}
                       className="input" />
                   </div>
+                  <div>
+                    <label className="label">Hora estimada de entrega</label>
+                    <input type="time" value={form.horaEntrega}
+                      onChange={e => setForm({ ...form, horaEntrega: e.target.value })}
+                      className="input" placeholder="Ej: 14:30" />
+                  </div>
+                  {/* Botón para ver agenda de logísticas aceptadas */}
+                  <button
+                    type="button"
+                    onClick={() => setShowAgenda(true)}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      fontSize: '0.8rem', fontWeight: 500, color: '#6B3A2A',
+                      background: '#FEF3E2', border: '1px solid #F9C97C',
+                      padding: '0.45rem 0.875rem', cursor: 'pointer',
+                      transition: 'background 0.15s',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#FDE8C8')}
+                    onMouseLeave={e => (e.currentTarget.style.background = '#FEF3E2')}
+                  >
+                    <CalendarDays size={14} />
+                    Ver logísticas aceptadas →
+                  </button>
                 </div>
               )}
 
               {form.tipoEntrega === 'retira_cliente' && (
-                <div className="mt-3">
-                  <label className="label">Fecha de retiro</label>
-                  <input type="date" value={form.fechaRetiro}
-                    onChange={e => setForm({ ...form, fechaRetiro: e.target.value })}
-                    className="input" />
+                <div className="mt-3 space-y-3">
+                  <div>
+                    <label className="label">Fecha de retiro</label>
+                    <input type="date" value={form.fechaRetiro}
+                      onChange={e => setForm({ ...form, fechaRetiro: e.target.value })}
+                      className="input" />
+                  </div>
+                  <div>
+                    <label className="label">
+                      Hora estimada de retiro
+                      <span className="text-gray-400 font-normal ml-1">(recomendado)</span>
+                    </label>
+                    <input type="time" value={form.horaEstimadaRetiro}
+                      onChange={e => setForm({ ...form, horaEstimadaRetiro: e.target.value })}
+                      className="input" placeholder="Ej: 10:00" />
+                  </div>
+                  <div>
+                    <label className="label">
+                      Galpón de retiro
+                      <span className="text-gray-400 font-normal ml-1">(opcional)</span>
+                    </label>
+                    <input type="text" value={form.galponRetiro}
+                      onChange={e => setForm({ ...form, galponRetiro: e.target.value })}
+                      className="input" placeholder="Ej: Galpón principal · Av. Roca 1234" />
+                  </div>
                 </div>
               )}
             </div>

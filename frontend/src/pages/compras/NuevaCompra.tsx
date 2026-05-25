@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { X, Plus, Trash2 } from 'lucide-react';
-import { useCrearCompra } from '../../hooks/useCompras';
+import { X, Plus, Trash2, AlertTriangle, Info } from 'lucide-react';
+import { useCrearCompra, useVentasParaCompraDirecta } from '../../hooks/useCompras';
 import { useAuthStore } from '../../store/auth.store';
 import api from '../../services/api';
 
@@ -22,11 +22,23 @@ interface Producto {
   tipo: string;
 }
 
+interface StockItem {
+  producto: { id: number; nombre: string; condicion: string };
+  stockTotalPropio: number;
+  stockTotalDeudor: number;
+}
+
 interface Detalle {
   productoId: number;
   cantidadStr: string;
   precioCostoUnit: number;
 }
+
+// Regla fija: proveedor → condición permitida
+const CONDICION_POR_PROVEEDOR: Record<string, string> = {
+  seminuevo:   'seminuevo',   // Galpón Familiar
+  nuevo_medida: 'nuevo',      // Todo Pallets
+};
 
 export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
   const crearCompra = useCrearCompra();
@@ -35,44 +47,64 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
 
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
+  const [stock, setStock] = useState<StockItem[]>([]);
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(true);
 
   const [form, setForm] = useState({
     proveedorId: 0,
     tipoCompra: 'reventa_inmediata' as 'reventa_inmediata' | 'stock_propio',
+    ventaId: 0,
     nroRemito: '',
-    observaciones: ''
+    observaciones: '',
   });
 
   const [detalles, setDetalles] = useState<Detalle[]>([
-    { productoId: 0, cantidadStr: '', precioCostoUnit: 0 }
+    { productoId: 0, cantidadStr: '', precioCostoUnit: 0 },
   ]);
+
+  const { data: ventasDisponibles, isLoading: cargandoVentas } = useVentasParaCompraDirecta();
 
   useEffect(() => {
     Promise.all([
       api.get('/proveedores'),
-      api.get('/productos')
-    ]).then(([provRes, prodRes]) => {
+      api.get('/productos'),
+      api.get('/inventario/consolidado'),
+    ]).then(([provRes, prodRes, stockRes]) => {
       const todos: Proveedor[] = provRes.data;
-      const filtrados = esCarlos ? todos : todos.filter(p => p.tipoProducto === 'seminuevo');
+      const filtrados = esCarlos ? todos : todos.filter((p: Proveedor) => p.tipoProducto === 'seminuevo');
       setProveedores(filtrados);
       if (filtrados.length > 0) setForm(f => ({ ...f, proveedorId: filtrados[0].id }));
       setProductos(prodRes.data);
+      setStock(stockRes.data ?? []);
     }).finally(() => setCargando(false));
   }, [esCarlos]);
 
   const proveedorSeleccionado = proveedores.find(p => p.id === form.proveedorId);
+  const condicionPermitida = proveedorSeleccionado
+    ? CONDICION_POR_PROVEEDOR[proveedorSeleccionado.tipoProducto]
+    : null;
 
-  const productosFiltrados = productos.filter(p => {
-    if (proveedorSeleccionado?.tipoProducto === 'seminuevo') {
-      return p.condicion === 'seminuevo' || p.condicion === 'usado';
-    }
-    return true;
-  });
+  const productosFiltrados = condicionPermitida
+    ? productos.filter(p => p.condicion === condicionPermitida)
+    : productos;
+
+  const ventaSeleccionada = ventasDisponibles?.find(v => v.id === form.ventaId);
+
+  // Autocompletar detalles desde la venta seleccionada
+  const autocompletarDesdeVenta = (ventaId: number) => {
+    const venta = ventasDisponibles?.find(v => v.id === ventaId);
+    if (!venta) return;
+    const nuevosDetalles = venta.detalles.map(d => ({
+      productoId: d.producto.id,
+      cantidadStr: String(d.cantidadPedida),
+      precioCostoUnit: 0,
+    }));
+    setDetalles(nuevosDetalles.length > 0 ? nuevosDetalles : [{ productoId: 0, cantidadStr: '', precioCostoUnit: 0 }]);
+  };
 
   const addDetalle = () => setDetalles(prev => [
-    ...prev, { productoId: 0, cantidadStr: '', precioCostoUnit: 0 }
+    ...prev, { productoId: 0, cantidadStr: '', precioCostoUnit: 0 },
   ]);
   const removeDetalle = (idx: number) => setDetalles(prev => prev.filter((_, i) => i !== idx));
   const updateDetalle = (idx: number, key: keyof Detalle, value: string | number) =>
@@ -84,16 +116,23 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
     e.preventDefault();
     setError('');
     if (!form.proveedorId) { setError('Seleccioná un proveedor'); return; }
+    if (form.tipoCompra === 'reventa_inmediata' && !form.ventaId) {
+      setError('Debés seleccionar la venta asociada a esta compra directa'); return;
+    }
     const detallesFinales = detalles.map(d => ({
       productoId: d.productoId,
       cantidad: parseInt(d.cantidadStr) || 0,
-      precioCostoUnit: d.precioCostoUnit
+      precioCostoUnit: d.precioCostoUnit,
     }));
     if (detallesFinales.some(d => !d.productoId || !d.cantidad || !d.precioCostoUnit)) {
       setError('Completá todos los productos con cantidad y precio de costo'); return;
     }
     try {
-      await crearCompra.mutateAsync({ ...form, detalles: detallesFinales });
+      await crearCompra.mutateAsync({
+        ...form,
+        ventaId: form.tipoCompra === 'reventa_inmediata' ? form.ventaId : undefined,
+        detalles: detallesFinales,
+      });
       onSuccess();
       onClose();
     } catch (err: unknown) {
@@ -116,24 +155,24 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
         <form onSubmit={handleSubmit}>
           <div className="modal-body space-y-5">
 
-            {/* Tipo de compra */}
+            {/* ── Tipo de compra ─────────────────────────────────── */}
             <div>
               <label className="label">Tipo de compra</label>
               <div className="grid grid-cols-2 gap-2">
                 {[
                   {
                     value: 'reventa_inmediata',
-                    label: 'Compra - Reventa inmediata',
-                    desc: 'No modifica el stock propio. Solo registra la operación.'
+                    label: 'Compra directa',
+                    desc: 'Asociada a una venta ya confirmada. No agrega stock propio.',
                   },
                   {
                     value: 'stock_propio',
                     label: 'Para stock propio',
-                    desc: 'Agrega las unidades a tu stock disponible.'
+                    desc: 'Agrega las unidades a tu stock disponible.',
                   },
                 ].map(op => (
                   <button key={op.value} type="button"
-                    onClick={() => setForm({ ...form, tipoCompra: op.value as 'reventa_inmediata' | 'stock_propio' })}
+                    onClick={() => setForm({ ...form, tipoCompra: op.value as 'reventa_inmediata' | 'stock_propio', ventaId: 0 })}
                     className={`p-3 rounded-xl border text-left transition-all ${
                       form.tipoCompra === op.value
                         ? 'border-[#6B3A2A] bg-orange-50'
@@ -148,7 +187,90 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
               </div>
             </div>
 
-            {/* Proveedor */}
+            {/* ── Selector de venta (solo compra directa) ────────── */}
+            {form.tipoCompra === 'reventa_inmediata' && (
+              <div>
+                <label className="label">Venta asociada <span className="text-red-500">*</span></label>
+                {cargandoVentas ? (
+                  <p className="text-sm text-gray-400 p-3 bg-gray-50 rounded-xl border border-gray-100">Cargando ventas...</p>
+                ) : !ventasDisponibles?.length ? (
+                  <div className="flex items-start gap-2 p-3 bg-amber-50 rounded-xl border border-amber-200">
+                    <AlertTriangle size={15} className="text-amber-600 mt-0.5 shrink-0" />
+                    <p className="text-sm text-amber-800">
+                      No hay ventas con compra directa pendiente de abastecimiento. Convertí una cotización con origen "Compra directa" primero.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {ventasDisponibles.map(v => (
+                      <button
+                        key={v.id}
+                        type="button"
+                        onClick={() => {
+                          setForm(f => ({ ...f, ventaId: v.id }));
+                          autocompletarDesdeVenta(v.id);
+                        }}
+                        className={`w-full p-3 rounded-xl border text-left transition-all ${
+                          form.ventaId === v.id
+                            ? 'border-[#6B3A2A] bg-orange-50'
+                            : 'border-gray-200 bg-white hover:border-gray-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <p className={`text-sm font-semibold ${form.ventaId === v.id ? 'text-[#6B3A2A]' : 'text-gray-900'}`}>
+                            Venta #{v.id} — {v.cliente.razonSocial}
+                          </p>
+                          {v.totalConIva && (
+                            <span className="text-xs text-gray-500">{formatPesos(Number(v.totalConIva))}</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {v.detalles.map(d => `${d.cantidadPedida}× ${d.producto.nombre}`).join(' · ')}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {ventaSeleccionada && (
+                  <div className="mt-2 flex items-center gap-2 text-xs text-[#6B3A2A] bg-orange-50 px-3 py-2 rounded-lg border border-orange-200">
+                    <Info size={12} />
+                    Productos autocompletados desde la venta. Revisá las cantidades y cargá el precio de costo.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Panel de stock (solo stock propio) ─────────────── */}
+            {form.tipoCompra === 'stock_propio' && stock.length > 0 && (
+              <div>
+                <label className="label flex items-center gap-1.5">
+                  <Info size={13} className="text-blue-400" />
+                  Stock actual disponible
+                </label>
+                <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 max-h-40 overflow-y-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="text-blue-400 border-b border-blue-100">
+                        <th className="text-left py-1 font-medium">Producto</th>
+                        <th className="text-left py-1 font-medium">Condición</th>
+                        <th className="text-right py-1 font-medium">Disponible</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stock.map((s: StockItem) => (
+                        <tr key={s.producto.id} className="border-b border-blue-50 last:border-0">
+                          <td className="py-1 text-blue-900">{s.producto.nombre}</td>
+                          <td className="py-1 text-blue-600 capitalize">{s.producto.condicion.replace('_', ' ')}</td>
+                          <td className="py-1 text-right font-semibold text-blue-800">{s.stockTotalPropio} u</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* ── Proveedor ──────────────────────────────────────── */}
             <div>
               <label className="label">Proveedor</label>
               {cargando ? (
@@ -173,16 +295,24 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
                         {p.nombreEmpresa}
                       </p>
                       <p className="text-xs text-gray-400 mt-0.5">
-                        {p.tipoProducto === 'seminuevo' ? 'Pallets semi-nuevos y usados' :
-                         p.tipoProducto === 'nuevo_medida' ? 'Pallets nuevos y a medida' : p.tipoProducto}
+                        {p.tipoProducto === 'seminuevo'
+                          ? 'Pallets semi-nuevos únicamente'
+                          : p.tipoProducto === 'nuevo_medida'
+                          ? 'Pallets nuevos únicamente'
+                          : p.tipoProducto}
                       </p>
                     </button>
                   ))}
                 </div>
               )}
+              {condicionPermitida && (
+                <p className="mt-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg">
+                  Solo podés seleccionar productos con condición <strong>{condicionPermitida === 'nuevo' ? 'Nuevo' : 'Semi-nuevo'}</strong> para este proveedor.
+                </p>
+              )}
             </div>
 
-            {/* Productos */}
+            {/* ── Productos ──────────────────────────────────────── */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="label mb-0">Productos</label>
@@ -238,7 +368,7 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
               </div>
             </div>
 
-            {/* N° de remito */}
+            {/* ── N° de remito ───────────────────────────────────── */}
             <div>
               <label className="label">N° de remito (opcional)</label>
               <input type="text" value={form.nroRemito}
@@ -246,7 +376,7 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
                 className="input" placeholder="Número de remito del galpón" />
             </div>
 
-            {/* Observaciones */}
+            {/* ── Observaciones ──────────────────────────────────── */}
             <div>
               <label className="label">Observaciones</label>
               <textarea value={form.observaciones}
@@ -254,7 +384,7 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
                 className="input resize-none" rows={2} />
             </div>
 
-            {/* Total */}
+            {/* ── Total ──────────────────────────────────────────── */}
             {totalCalc > 0 && (
               <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
                 <div className="flex justify-between items-center">
@@ -276,7 +406,15 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
 
           <div className="modal-footer">
             <button type="button" onClick={onClose} className="btn-secondary">Cancelar</button>
-            <button type="submit" disabled={crearCompra.isPending || proveedores.length === 0} className="btn-primary">
+            <button
+              type="submit"
+              disabled={
+                crearCompra.isPending ||
+                proveedores.length === 0 ||
+                (form.tipoCompra === 'reventa_inmediata' && !ventasDisponibles?.length)
+              }
+              className="btn-primary"
+            >
               {crearCompra.isPending ? 'Registrando...' : 'Registrar compra'}
             </button>
           </div>
@@ -285,3 +423,4 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
     </div>
   );
 }
+

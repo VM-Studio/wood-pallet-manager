@@ -3,7 +3,8 @@ import {
   LayoutDashboard, Bell, Users, FileText,
   Truck, Receipt,
   ClipboardList, Package, Warehouse, Building2,
-  BarChart3, LogOut, DollarSign, RotateCcw, FileCheck
+  BarChart3, LogOut, DollarSign, RotateCcw, FileCheck, Mail,
+  UserCircle,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/auth.store';
 import { useQueryClient } from '@tanstack/react-query';
@@ -23,8 +24,10 @@ const grupos = [
       { path: '/cotizaciones', label: 'Cotizaciones', icon: FileText },
       { path: '/ventas',       label: 'Ventas',       icon: DollarSign },
       { path: '/logistica',    label: 'Logística',    icon: Truck },
+      { path: '/retiros',      label: 'Retiros',      icon: Warehouse },
       { path: '/remitos',      label: 'Remitos',      icon: FileCheck },
       { path: '/facturacion',  label: 'Facturación',  icon: Receipt },
+      { path: '/seguimientos', label: 'Seguimientos', icon: Mail },
     ]
   },
   {
@@ -46,7 +49,7 @@ const grupos = [
 ];
 
 export default function Sidebar() {
-  const { logout } = useAuthStore();
+  const { logout, usuario } = useAuthStore();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -91,8 +94,31 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* Cerrar sesión */}
-      <div className="shrink-0 border-t border-white/10 p-4">
+      {/* Mi Cuenta + Cerrar sesión */}
+      <div className="shrink-0 border-t border-white/10 p-3 space-y-1">
+        {/* Mi Cuenta — con avatar */}
+        <NavLink to="/mi-cuenta"
+          className={({ isActive }) =>
+            `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 ${
+              isActive ? 'bg-white/15 text-white' : 'text-white/60 hover:bg-white/8 hover:text-white'
+            }`
+          }
+        >
+          <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0 flex items-center justify-center bg-white/10">
+            {usuario?.fotoPerfil
+              ? <img src={usuario.fotoPerfil} alt="foto" className="w-full h-full object-cover" />
+              : <UserCircle className="w-4 h-4" />
+            }
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-medium leading-tight truncate">
+              {usuario ? `${usuario.nombre} ${usuario.apellido}` : 'Mi Cuenta'}
+            </p>
+            <p className="text-[10px] text-white/40 leading-tight">Mi Cuenta</p>
+          </div>
+        </NavLink>
+
+        {/* Cerrar sesión */}
         <button
           onClick={handleLogout}
           className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"

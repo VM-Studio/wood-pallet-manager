@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import {
   X, Truck, Receipt, Plus, AlertCircle, Send,
   Package, ChevronRight, CheckCircle, Clock, MapPin,
-  CreditCard, FileText, Building2
+  CreditCard, FileText, Building2, Phone, User,
+  CalendarClock, MessageSquare, AlertTriangle, Navigation,
+  ArrowRight, Info
 } from 'lucide-react';
 import { useVenta, useActualizarEstadoVenta, useRegistrarRetiro } from '../../hooks/useVentas';
 import { useAuthStore } from '../../store/auth.store';
@@ -344,7 +346,9 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
 
               {/* ══ 3. LOGÍSTICA ══════════════════════════════════ */}
               <Seccion icon={Truck} titulo="Logística">
-                {esJuan && (
+
+                {/* Botón solicitar (Juan) */}
+                {esJuan && !venta.logistica && (
                   <div style={{ marginBottom: '0.875rem' }}>
                     <button onClick={() => setShowSolicitudModal(true)} style={btnBrown}>
                       <Send size={13} /> Solicitar logística a Carlos
@@ -352,57 +356,231 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                   </div>
                 )}
 
-                {venta.logistica ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                      <Dato label="Transportista" value={
-                        <span>
-                          {venta.logistica.nombreTransportista || '—'}
-                          {venta.logistica.telefonoTransp && (
-                            <span style={{ fontSize: '0.75rem', color: '#6B7280', marginLeft: 6 }}>
-                              {venta.logistica.telefonoTransp}
-                            </span>
-                          )}
-                        </span>
-                      } />
-                      <Dato label="Estado de entrega" value={<EstadoBadge estado={venta.logistica.estadoEntrega} />} />
-                      {venta.logistica.fechaRetiroGalpon && (
-                        <Dato label="Fecha retiro del galpón" value={formatFecha(venta.logistica.fechaRetiroGalpon)} />
-                      )}
-                      {venta.logistica.costoFlete && (
-                        <Dato label="Costo del flete" value={formatPesos(venta.logistica.costoFlete)} />
-                      )}
+                {/* ── Sin logística ── */}
+                {!venta.logistica ? (
+                  <>
+                    <div style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                      padding: '1.5rem', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.25rem', textAlign: 'center',
+                      marginBottom: venta.solicitudesLogistica?.length ? '1rem' : 0,
+                    }}>
+                      <Truck size={20} style={{ color: '#D1D5DB', marginBottom: 8 }} />
+                      <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#6B7280', margin: '0 0 4px' }}>Sin logística coordinada</p>
+                      <p style={{ fontSize: '0.78rem', color: '#9CA3AF', margin: 0 }}>
+                        {venta.tipoEntrega === 'retira_cliente'
+                          ? 'El cliente retira directamente del galpón'
+                          : 'Coordiná la entrega desde el módulo de Logística'}
+                      </p>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: 4 }}>
+                  </>
+                ) : (
+                  /* ── Con logística ── */
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+
+                    {/* Encabezado: transportista + estado */}
+                    <div style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '0.875rem 1rem', background: '#F9FAFB', border: '1px solid #E5E7EB',
+                      borderRadius: '0.25rem',
+                    }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{
+                            width: 32, height: 32, background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
+                            borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                          }}>
+                            <User size={15} style={{ color: '#fff' }} />
+                          </div>
+                          <div>
+                            <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#111827', margin: 0 }}>
+                              {venta.logistica.nombreTransportista}
+                            </p>
+                            {venta.logistica.telefonoTransp && (
+                              <a href={`tel:${venta.logistica.telefonoTransp}`} style={{
+                                fontSize: '0.75rem', color: '#6B7280', display: 'flex', alignItems: 'center', gap: 4, textDecoration: 'none',
+                              }}>
+                                <Phone size={11} />{venta.logistica.telefonoTransp}
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <EstadoBadge estado={venta.logistica.estadoEntrega} />
+                    </div>
+
+                    {/* Timeline de fechas/horas */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                       {[
-                        { ok: venta.logistica.confTransportista, label: 'Confirmación transportista' },
-                        { ok: venta.logistica.confCliente, label: 'Confirmación cliente' },
-                      ].map(({ ok, label }) => (
+                        {
+                          icon: Navigation,
+                          label: 'Retiro del galpón',
+                          value: venta.logistica.fechaRetiroGalpon
+                            ? formatFecha(venta.logistica.fechaRetiroGalpon) +
+                              (venta.logistica.horaRetiro
+                                ? ' · ' + new Date(venta.logistica.horaRetiro).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) + ' hs'
+                                : '')
+                            : null,
+                        },
+                        {
+                          icon: CalendarClock,
+                          label: 'Entrega estimada',
+                          value: venta.logistica.horaEstimadaEntrega
+                            ? new Date(venta.logistica.horaEstimadaEntrega).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) + ' hs'
+                            : null,
+                        },
+                        {
+                          icon: CheckCircle,
+                          label: 'Entrega real',
+                          value: venta.logistica.horaEntregaReal
+                            ? new Date(venta.logistica.horaEntregaReal).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) + ' hs'
+                            : null,
+                        },
+                        {
+                          icon: MapPin,
+                          label: 'Lugar de entrega',
+                          value: venta.logistica.lugarEntrega || venta.lugarEntrega || null,
+                        },
+                      ].map(({ icon: Icon, label, value }) => (
                         <div key={label} style={{
-                          padding: '0.625rem 0.75rem', textAlign: 'center', borderRadius: '0.25rem',
-                          background: ok ? '#FDF6EE' : '#F9FAFB',
-                          border: `1px solid ${ok ? '#C4895A' : '#E5E7EB'}`,
+                          padding: '0.625rem 0.75rem', background: '#F9FAFB', border: '1px solid #E5E7EB',
+                          borderRadius: '0.25rem', opacity: value ? 1 : 0.5,
                         }}>
-                          <p style={{ fontSize: '0.68rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', margin: '0 0 3px' }}>{label}</p>
-                          <p style={{ fontSize: '0.82rem', fontWeight: 700, color: ok ? '#6B3A2A' : '#9CA3AF', margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                            {ok ? <><CheckCircle size={12} /> Confirmado</> : <><Clock size={12} /> Pendiente</>}
+                          <p style={{ fontSize: '0.68rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 3px', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <Icon size={10} />{label}
+                          </p>
+                          <p style={{ fontSize: '0.82rem', fontWeight: 600, color: value ? '#111827' : '#D1D5DB', margin: 0 }}>
+                            {value ?? '—'}
                           </p>
                         </div>
                       ))}
                     </div>
+
+                    {/* Costo flete */}
+                    {venta.logistica.costoFlete && (
+                      <div style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '0.625rem 0.875rem', background: '#FDF6EE', border: '1px solid #C4895A', borderRadius: '0.25rem',
+                      }}>
+                        <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#6B3A2A', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <Truck size={13} /> Costo del flete
+                        </span>
+                        <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#6B3A2A' }}>
+                          {formatPesos(Number(venta.logistica.costoFlete))}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Confirmaciones */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                      {[
+                        { ok: venta.logistica.confTransportista, label: 'Confirmación transportista', icon: Truck },
+                        { ok: venta.logistica.confCliente, label: 'Confirmación cliente', icon: User },
+                      ].map(({ ok, label, icon: Icon }) => (
+                        <div key={label} style={{
+                          padding: '0.625rem 0.75rem', textAlign: 'center', borderRadius: '0.25rem',
+                          background: ok ? '#F0FDF4' : '#F9FAFB',
+                          border: `1px solid ${ok ? '#86EFAC' : '#E5E7EB'}`,
+                        }}>
+                          <p style={{ fontSize: '0.68rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', margin: '0 0 4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                            <Icon size={10} />{label}
+                          </p>
+                          <p style={{ fontSize: '0.82rem', fontWeight: 700, color: ok ? '#15803D' : '#9CA3AF', margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                            {ok ? <><CheckCircle size={13} /> Confirmado</> : <><Clock size={13} /> Pendiente</>}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Observaciones */}
+                    {venta.logistica.observaciones && (
+                      <div style={{
+                        display: 'flex', gap: 8, padding: '0.625rem 0.875rem',
+                        background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.25rem',
+                      }}>
+                        <MessageSquare size={13} style={{ color: '#9CA3AF', flexShrink: 0, marginTop: 2 }} />
+                        <div>
+                          <p style={{ fontSize: '0.68rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', margin: '0 0 2px' }}>Observaciones</p>
+                          <p style={{ fontSize: '0.82rem', color: '#374151', margin: 0 }}>{venta.logistica.observaciones}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Registrado por */}
+                    {venta.logistica.registradoPor && (
+                      <p style={{ fontSize: '0.72rem', color: '#9CA3AF', margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <Info size={11} />
+                        Registrado por {venta.logistica.registradoPor.nombre} {venta.logistica.registradoPor.apellido}
+                      </p>
+                    )}
                   </div>
-                ) : (
-                  <div style={{
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    padding: '1.5rem', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.25rem', textAlign: 'center',
-                  }}>
-                    <Truck size={20} style={{ color: '#D1D5DB', marginBottom: 8 }} />
-                    <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#6B7280', margin: '0 0 4px' }}>Sin logística coordinada</p>
-                    <p style={{ fontSize: '0.78rem', color: '#9CA3AF', margin: 0 }}>
-                      {venta.tipoEntrega === 'retira_cliente'
-                        ? 'El cliente retira directamente del galpón'
-                        : 'Coordiná la entrega desde el módulo de Logística'}
+                )}
+
+                {/* ── Historial de solicitudes ── */}
+                {venta.solicitudesLogistica && venta.solicitudesLogistica.length > 0 && (
+                  <div style={{ marginTop: '1rem' }}>
+                    <p style={{
+                      fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase',
+                      letterSpacing: '0.04em', margin: '0 0 0.5rem', display: 'flex', alignItems: 'center', gap: 5,
+                    }}>
+                      <MessageSquare size={11} /> Historial de solicitudes
                     </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {venta.solicitudesLogistica.map((sol) => (
+                        <div key={sol.id} style={{
+                          padding: '0.75rem', background: '#F9FAFB', border: '1px solid #E5E7EB',
+                          borderRadius: '0.25rem',
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', color: '#6B7280' }}>
+                              <span style={{ fontWeight: 600, color: '#374151' }}>{sol.solicitante.nombre}</span>
+                              <ArrowRight size={11} />
+                              <span style={{ fontWeight: 600, color: '#374151' }}>{sol.destinatario.nombre}</span>
+                              <span style={{ color: '#9CA3AF' }}>·</span>
+                              <span>{formatFecha(sol.fechaSolicitud)}</span>
+                            </div>
+                            <span style={{
+                              fontSize: '0.68rem', fontWeight: 700, padding: '2px 7px', borderRadius: 999,
+                              background: sol.estado === 'aceptada' ? '#F0FDF4' : sol.estado === 'rechazada' ? '#FEF2F2' : '#FEF3C7',
+                              color: sol.estado === 'aceptada' ? '#15803D' : sol.estado === 'rechazada' ? '#B91C1C' : '#D97706',
+                              border: `1px solid ${sol.estado === 'aceptada' ? '#86EFAC' : sol.estado === 'rechazada' ? '#FECACA' : '#FDE68A'}`,
+                            }}>
+                              {sol.estado === 'aceptada' ? 'Aceptada' : sol.estado === 'rechazada' ? 'Rechazada' : 'Pendiente'}
+                            </span>
+                          </div>
+                          {sol.notas && (
+                            <p style={{ fontSize: '0.78rem', color: '#6B7280', margin: '0 0 4px', fontStyle: 'italic' }}>"{sol.notas}"</p>
+                          )}
+                          {sol.cantidadUnidades && (
+                            <p style={{ fontSize: '0.75rem', color: '#9CA3AF', margin: 0 }}>
+                              {sol.cantidadUnidades} unidades
+                              {sol.ubicacionEntrega && ` · ${sol.ubicacionEntrega}`}
+                              {sol.fechaEntrega && ` · Entrega: ${formatFecha(sol.fechaEntrega)}`}
+                            </p>
+                          )}
+                          {sol.notasRespuesta && (
+                            <div style={{
+                              marginTop: 6, padding: '4px 8px',
+                              background: sol.estado === 'rechazada' ? '#FEF2F2' : '#F0FDF4',
+                              border: `1px solid ${sol.estado === 'rechazada' ? '#FECACA' : '#86EFAC'}`,
+                              borderRadius: '0.25rem', fontSize: '0.75rem',
+                              color: sol.estado === 'rechazada' ? '#B91C1C' : '#15803D',
+                            }}>
+                              <AlertTriangle size={10} style={{ display: 'inline', marginRight: 4 }} />
+                              {sol.notasRespuesta}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Botón solicitar si ya hay logística (Juan puede volver a solicitar) */}
+                {esJuan && venta.logistica && (
+                  <div style={{ marginTop: '0.875rem' }}>
+                    <button onClick={() => setShowSolicitudModal(true)} style={btnOutline}>
+                      <Send size={13} /> Nueva solicitud a Carlos
+                    </button>
                   </div>
                 )}
               </Seccion>

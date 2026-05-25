@@ -270,6 +270,17 @@ export default function LoginPage() {
                 >
                   {loginLoading ? 'Ingresando...' : 'Ingresar'}
                 </button>
+
+                {/* Olvidé mi contraseña */}
+                <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+                  <a href="/recuperar-password"
+                    style={{ fontSize: '0.8rem', color: '#6B7280', textDecoration: 'none' }}
+                    onMouseOver={e => (e.currentTarget.style.color = '#3c250f')}
+                    onMouseOut={e => (e.currentTarget.style.color = '#6B7280')}
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </a>
+                </div>
               </form>
             )}
 

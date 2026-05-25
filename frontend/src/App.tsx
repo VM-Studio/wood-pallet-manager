@@ -5,6 +5,8 @@ import MainLayout from './components/layout/MainLayout';
 import SplashScreen from './components/SplashScreen';
 
 const LoginPage       = lazy(() => import('./pages/auth/LoginPage'));
+const RecuperarPasswordPage = lazy(() => import('./pages/auth/RecuperarPasswordPage'));
+const ResetPasswordPage     = lazy(() => import('./pages/auth/ResetPasswordPage'));
 const DashboardPage   = lazy(() => import('./pages/dashboard/DashboardPage'));
 const ClientesPage    = lazy(() => import('./pages/clientes/ClientesPage'));
 const ProductosPage   = lazy(() => import('./pages/productos/ProductosPage'));
@@ -13,6 +15,7 @@ const VentasPage      = lazy(() => import('./pages/ventas/VentasPage'));
 const ComprasPage     = lazy(() => import('./pages/compras/ComprasPage'));
 const InventarioPage  = lazy(() => import('./pages/inventario/InventarioPage'));
 const LogisticaPage   = lazy(() => import('./pages/logistica/LogisticaPage'));
+const RetirosPage     = lazy(() => import('./pages/retiros/RetirosPage'));
 const FacturacionPage = lazy(() => import('./pages/facturacion/FacturacionPage'));
 const ReportesPage    = lazy(() => import('./pages/reportes/ReportesPage'));
 const ProveedoresPage    = lazy(() => import('./pages/proveedores/ProveedoresPage'));
@@ -21,6 +24,8 @@ const ConfiguracionPage  = lazy(() => import('./pages/configuracion/Configuracio
 const DevolucionesPage   = lazy(() => import('./pages/devoluciones/DevolucionesPage'));
 const RemitosPage        = lazy(() => import('./pages/remitos/RemitosPage'));
 const FirmarRemitoPage   = lazy(() => import('./pages/remitos/FirmarRemitoPage'));
+const SeguimientosPage   = lazy(() => import('./pages/seguimientos/SeguimientosPage'));
+const MiCuentaPage       = lazy(() => import('./pages/cuenta/MiCuentaPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -55,14 +60,19 @@ export default function App() {
             <Route path="inventario"    element={<InventarioPage />} />
             <Route path="proveedores"   element={<ProveedoresPage />} />
             <Route path="logistica"     element={<LogisticaPage />} />
+            <Route path="retiros"       element={<RetirosPage />} />
             <Route path="facturacion"   element={<FacturacionPage />} />
             <Route path="reportes"      element={<ReportesPage />} />
             <Route path="alertas"       element={<AlertasPage />} />
             <Route path="configuracion" element={<ConfiguracionPage />} />
             <Route path="devoluciones"  element={<DevolucionesPage />} />
             <Route path="remitos"       element={<RemitosPage />} />
+            <Route path="seguimientos"  element={<SeguimientosPage />} />
+            <Route path="mi-cuenta"     element={<MiCuentaPage />} />
           </Route>
           <Route path="/remito/:token/firmar" element={<FirmarRemitoPage />} />
+          <Route path="/recuperar-password"   element={<RecuperarPasswordPage />} />
+          <Route path="/reset-password"       element={<ResetPasswordPage />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
         </Suspense>

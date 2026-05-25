@@ -48,35 +48,20 @@ export const useEstacionalidad = () => {
 };
 
 export const useGanancias = () => {
-  const { vista } = useVistaStore();
   const { vistaParam } = useVistaParams();
-  const hoy = new Date();
-  const desde = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-01`;
-  const hasta = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).toISOString().split('T')[0];
 
   return useQuery({
-    queryKey: ['ganancias', vista, desde, hasta],
+    queryKey: ['ganancias', vistaParam],
     queryFn: async () => {
-      const [ventasRes, comprasRes] = await Promise.all([
-        api.get(`/reportes/ventas?desde=${desde}&hasta=${hasta}&vista=${vistaParam}`),
-        api.get(`/compras?vista=${vistaParam}`),
-      ]);
-
-      const facturacion: number = ventasRes.data?.resumen?.totalFacturado || 0;
-
-      const comprasDelMes = (comprasRes.data || []).filter((c: any) => {
-        const fecha = new Date(c.fechaCompra);
-        return fecha >= new Date(desde) && fecha <= new Date(hasta);
-      });
-
-      const costoCompras = comprasDelMes.reduce(
-        (acc: number, c: any) => acc + Number(c.total || 0), 0
-      );
-
-      return {
-        facturacion,
-        costoCompras,
-        ganancias: facturacion - costoCompras,
+      const { data } = await api.get(`/reportes/ganancias-detalle?vista=${vistaParam}`);
+      return data as {
+        cantidadVentas: number;
+        facturadoMes: number;
+        cobradoMes: number;
+        comprasStockPropio: number;
+        comprasReventa: number;
+        totalCompras: number;
+        gananciaNeta: number;
       };
     },
     staleTime: 0,

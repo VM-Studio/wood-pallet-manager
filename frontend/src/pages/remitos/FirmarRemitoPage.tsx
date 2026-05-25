@@ -248,66 +248,81 @@ export default function FirmarRemitoPage() {
           </div>
         )}
 
-        {/* Formulario de firma del cliente */}
-        <div style={{ background: '#fff', borderRadius: '0.5rem', border: '1px solid #E5E7EB', overflow: 'hidden' }}>
-          <div style={{ background: '#F9FAFB', padding: '0.875rem 1.25rem', borderBottom: '1px solid #E5E7EB' }}>
-            <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#111827', margin: 0 }}>Tu firma de conformidad</p>
-            <p style={{ fontSize: '0.75rem', color: '#6B7280', marginTop: 4 }}>
-              Al firmar confirmás que recibiste la mercadería detallada arriba en conformidad.
-            </p>
-          </div>
-          <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: '#374151', marginBottom: '0.375rem' }}>
-                Nombre del firmante <span style={{ color: '#9CA3AF', fontWeight: 400 }}>(opcional)</span>
-              </label>
-              <input
-                type="text"
-                style={{ width: '100%', fontSize: '0.875rem', border: '1px solid #D1D5DB', borderRadius: '0.25rem', padding: '0.5rem 0.75rem', outline: 'none', boxSizing: 'border-box' }}
-                placeholder={`Ej: ${remito.cliente.razonSocial}`}
-                value={nombre}
-                onChange={e => setNombre(e.target.value)}
-              />
+        {/* Formulario de firma del cliente — solo si el remito fue enviado al cliente */}
+        {remito.estado === 'enviado_a_cliente' ? (
+          <div style={{ background: '#fff', borderRadius: '0.5rem', border: '1px solid #E5E7EB', overflow: 'hidden' }}>
+            <div style={{ background: '#F9FAFB', padding: '0.875rem 1.25rem', borderBottom: '1px solid #E5E7EB' }}>
+              <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#111827', margin: 0 }}>Tu firma de conformidad</p>
+              <p style={{ fontSize: '0.75rem', color: '#6B7280', marginTop: 4 }}>
+                Al firmar confirmás que recibiste la mercadería detallada arriba en conformidad.
+              </p>
             </div>
-
-            <SignaturePad
-              label="Tu firma"
-              required
-              onSignature={setFirma}
-              height={150}
-              width={560}
-            />
-
-            {error && (
-              <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#B91C1C', fontSize: '0.8rem', padding: '0.625rem 0.875rem', borderRadius: '0.25rem' }}>
-                {error}
+            <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: '#374151', marginBottom: '0.375rem' }}>
+                  Nombre del firmante <span style={{ color: '#9CA3AF', fontWeight: 400 }}>(opcional)</span>
+                </label>
+                <input
+                  type="text"
+                  style={{ width: '100%', fontSize: '0.875rem', border: '1px solid #D1D5DB', borderRadius: '0.25rem', padding: '0.5rem 0.75rem', outline: 'none', boxSizing: 'border-box' }}
+                  placeholder={`Ej: ${remito.cliente.razonSocial}`}
+                  value={nombre}
+                  onChange={e => setNombre(e.target.value)}
+                />
               </div>
-            )}
 
-            <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '0.25rem', padding: '0.75rem', fontSize: '0.78rem', color: '#1E40AF', lineHeight: 1.6 }}>
-              <strong>Importante:</strong> Al firmar este remito confirmás la recepción de los productos. 
-              Recibirás una copia completa por correo electrónico con ambas firmas.
-            </div>
+              <SignaturePad
+                label="Tu firma"
+                required
+                onSignature={setFirma}
+                height={150}
+                width={560}
+              />
 
-            <button
-              onClick={handleFirmar}
-              disabled={!firma || firmarCliente.isPending}
-              style={{
-                width: '100%', padding: '0.875rem', border: 'none', cursor: firma ? 'pointer' : 'not-allowed',
-                background: firma ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' : '#E5E7EB',
-                color: firma ? '#fff' : '#9CA3AF', borderRadius: '0.25rem',
-                fontSize: '0.925rem', fontWeight: 600, transition: 'all 0.2s',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-              }}
-            >
-              {firmarCliente.isPending ? (
-                <><Loader size={16} className="animate-spin" /> Procesando firma...</>
-              ) : (
-                <><CheckCircle size={16} /> Confirmar firma y aceptar remito</>
+              {error && (
+                <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#B91C1C', fontSize: '0.8rem', padding: '0.625rem 0.875rem', borderRadius: '0.25rem' }}>
+                  {error}
+                </div>
               )}
-            </button>
+
+              <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '0.25rem', padding: '0.75rem', fontSize: '0.78rem', color: '#1E40AF', lineHeight: 1.6 }}>
+                <strong>Importante:</strong> Al firmar este remito confirmás la recepción de los productos.
+                Recibirás una copia completa por correo electrónico con ambas firmas.
+              </div>
+
+              <button
+                onClick={handleFirmar}
+                disabled={!firma || firmarCliente.isPending}
+                style={{
+                  width: '100%', padding: '0.875rem', border: 'none', cursor: firma ? 'pointer' : 'not-allowed',
+                  background: firma ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' : '#E5E7EB',
+                  color: firma ? '#fff' : '#9CA3AF', borderRadius: '0.25rem',
+                  fontSize: '0.925rem', fontWeight: 600, transition: 'all 0.2s',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                }}
+              >
+                {firmarCliente.isPending ? (
+                  <><Loader size={16} className="animate-spin" /> Procesando firma...</>
+                ) : (
+                  <><CheckCircle size={16} /> Confirmar firma y aceptar remito</>
+                )}
+              </button>
+            </div>
           </div>
-        </div>
+        ) : (
+          /* Remito pendiente de firma del propietario — el cliente aún no puede firmar */
+          <div style={{ background: '#FFFBEB', borderRadius: '0.5rem', border: '1px solid #FDE68A', padding: '1.25rem', display: 'flex', alignItems: 'flex-start', gap: '0.875rem' }}>
+            <div style={{ width: 36, height: 36, background: '#FEF3C7', borderRadius: '0.375rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <FileText size={18} color="#B45309" />
+            </div>
+            <div>
+              <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#92400E', margin: '0 0 4px' }}>Pendiente de envío</p>
+              <p style={{ fontSize: '0.8rem', color: '#78350F', margin: 0, lineHeight: 1.6 }}>
+                Este remito aún no fue enviado formalmente al cliente. La sección de firma estará disponible una vez que el vendedor lo envíe por correo electrónico.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Footer */}
         <p style={{ textAlign: 'center', fontSize: '0.72rem', color: '#D1D5DB' }}>

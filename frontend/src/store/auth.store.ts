@@ -8,6 +8,7 @@ interface AuthStore {
   isAuthenticated: boolean;
   login: (token: string, usuario: Usuario) => void;
   logout: () => void;
+  setUsuario: (usuario: Usuario) => void;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -24,7 +25,8 @@ export const useAuthStore = create<AuthStore>()(
         localStorage.removeItem('wp_token');
         localStorage.removeItem('wp_usuario');
         set({ token: null, usuario: null, isAuthenticated: false });
-      }
+      },
+      setUsuario: (usuario) => set({ usuario }),
     }),
     { name: 'wp_auth' }
   )
