@@ -18,6 +18,7 @@ const crearProveedorSchema = z.object({
   tipoProducto: z.enum(['seminuevo', 'nuevo_medida', 'ambos']),
   contactoExclusivoId: z.number().int().positive().optional(),
   distanciaKm: z.number().int().nonnegative().optional(),
+  ubicacion: z.string().optional(),
   observaciones: z.string().optional(),
 });
 

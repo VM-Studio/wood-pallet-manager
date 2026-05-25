@@ -175,6 +175,7 @@ model Proveedor {
   tipoProducto        TipoProductoProveedor
   contactoExclusivoId Int?
   distanciaKm         Int?
+  ubicacion           String?
   observaciones       String?
   activo              Boolean               @default(true)
 
