@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import { X, ArrowRight, FileText, Package, AlertTriangle, CheckCircle, CalendarDays } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, ArrowRight, FileText, Package, AlertTriangle, CheckCircle, CalendarDays, MapPin } from 'lucide-react';
 import { useConvertirAVenta } from '../../hooks/useCotizaciones';
 import { useCotizacion } from '../../hooks/useCotizaciones';
 import { useStock } from '../../hooks/useInventario';
 import { useQueryClient } from '@tanstack/react-query';
 import SignaturePad from '../../components/ui/SignaturePad';
 import AgendaLogisticasModal from './AgendaLogisticasModal';
+import api from '../../services/api';
 
 interface ConvertirVentaModalProps {
   cotizacionId: number;
@@ -29,6 +30,34 @@ export default function ConvertirVentaModal({
   const [emitirRemito, setEmitirRemito] = useState(false);
   const [firmaPropietario, setFirmaPropietario] = useState<string | null>(null);
   const [showAgenda, setShowAgenda] = useState(false);
+  const [proveedorUbicacion, setProveedorUbicacion] = useState<string>('');
+
+  // Derivar el galpón automáticamente según la condición de los productos de la cotización
+  const condicionDetectada: 'nuevo' | 'semi-nuevo' | null = (() => {
+    if (!cotizacion?.detalles?.length) return null;
+    const condiciones = cotizacion.detalles
+      .map(d => d.producto?.condicion)
+      .filter(Boolean);
+    if (condiciones.every(c => c === 'nuevo')) return 'nuevo';
+    if (condiciones.every(c => c === 'semi-nuevo')) return 'semi-nuevo';
+    // mixto: usar la primera
+    return condiciones[0] === 'nuevo' ? 'nuevo' : 'semi-nuevo';
+  })();
+
+  const galponAutoNombre =
+    condicionDetectada === 'nuevo' ? 'Todo Pallets' :
+    condicionDetectada === 'semi-nuevo' ? 'Galpón Familiar' : '';
+
+  // Cargar proveedores para obtener la ubicación del galpón correspondiente
+  useEffect(() => {
+    if (!galponAutoNombre) return;
+    const tipoProveedor = condicionDetectada === 'nuevo' ? 'nuevo_medida' : 'seminuevo';
+    api.get('/proveedores').then(res => {
+      const proveedor = (res.data as { tipoProducto: string; ubicacion?: string }[])
+        .find(p => p.tipoProducto === tipoProveedor || p.tipoProducto === 'ambos');
+      setProveedorUbicacion(proveedor?.ubicacion ?? '');
+    }).catch(() => {});
+  }, [galponAutoNombre, condicionDetectada]);
 
   const [form, setForm] = useState({
     tipoEntrega: (incluyeFlete ? 'envio_woodpallet' : 'retira_cliente') as 'retira_cliente' | 'envio_woodpallet' | '',
@@ -71,7 +100,7 @@ export default function ConvertirVentaModal({
           horaEntrega: form.horaEntrega || undefined,
           fechaRetiro: form.fechaRetiro || undefined,
           horaEstimadaRetiro: form.horaEstimadaRetiro || undefined,
-          galponRetiro: form.galponRetiro || undefined,
+          galponRetiro: galponAutoNombre || form.galponRetiro || undefined,
           observaciones: form.observaciones || undefined,
           usaStockPropio,
           emitirRemito,
@@ -196,11 +225,29 @@ export default function ConvertirVentaModal({
                   <div>
                     <label className="label">
                       Galpón de retiro
-                      <span className="text-gray-400 font-normal ml-1">(opcional)</span>
                     </label>
-                    <input type="text" value={form.galponRetiro}
-                      onChange={e => setForm({ ...form, galponRetiro: e.target.value })}
-                      className="input" placeholder="Ej: Galpón principal · Av. Roca 1234" />
+                    {galponAutoNombre ? (
+                      <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Package size={14} className="text-amber-700 shrink-0" />
+                          <span className="text-sm font-semibold text-amber-900">{galponAutoNombre}</span>
+                          <span className="text-xs text-amber-600 ml-auto">
+                            {condicionDetectada === 'nuevo' ? 'Productos nuevos' : 'Productos semi-nuevos'}
+                          </span>
+                        </div>
+                        {proveedorUbicacion && (
+                          <div className="flex items-center gap-2 text-xs text-amber-700">
+                            <MapPin size={12} className="shrink-0" />
+                            <span>{proveedorUbicacion}</span>
+                          </div>
+                        )}
+                        <p className="text-xs text-amber-500 mt-0.5">Asignado automáticamente según el tipo de producto.</p>
+                      </div>
+                    ) : (
+                      <input type="text" value={form.galponRetiro}
+                        onChange={e => setForm({ ...form, galponRetiro: e.target.value })}
+                        className="input" placeholder="Ej: Galpón principal · Av. Roca 1234" />
+                    )}
                   </div>
                 </div>
               )}

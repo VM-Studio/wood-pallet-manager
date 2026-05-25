@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Link2, Package, Phone, Mail, Pencil } from 'lucide-react';
+import { Plus, Trash2, Link2, Package, Phone, Mail, Pencil, MapPin } from 'lucide-react';
 import api from '../../services/api';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
@@ -26,6 +26,7 @@ interface Proveedor {
   email?: string;
   tipoProducto: 'seminuevo' | 'nuevo_medida' | 'ambos';
   distanciaKm?: number;
+  ubicacion?: string;
   observaciones?: string;
   activo: boolean;
   prodProveedores?: ProdProveedor[];
@@ -54,6 +55,7 @@ function ProveedorModal({
   const [form, setForm] = useState({
     nombreEmpresa: proveedor?.nombreEmpresa ?? '',
     tipoProducto: proveedor?.tipoProducto ?? 'seminuevo' as 'seminuevo' | 'nuevo_medida' | 'ambos',
+    ubicacion: proveedor?.ubicacion ?? '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -110,6 +112,14 @@ function ProveedorModal({
                   </button>
                 ))}
               </div>
+            </div>
+
+            <div>
+              <label className="label">Ubicación del galpón</label>
+              <input className="input" value={form.ubicacion}
+                onChange={e => setForm({ ...form, ubicacion: e.target.value })}
+                placeholder="Ej: Av. Roca 1234, Quilmes" />
+              <p className="text-xs text-gray-400 mt-1">Se mostrará automáticamente al cliente al coordinar un retiro.</p>
             </div>
 
             {error && (
@@ -361,6 +371,12 @@ export default function ProveedoresPage() {
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Mail size={13} className="text-gray-400 shrink-0" />
                     <span className="truncate">{p.email}</span>
+                  </div>
+                )}
+                {p.ubicacion && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <MapPin size={13} className="text-gray-400 shrink-0" />
+                    <span className="truncate">{p.ubicacion}</span>
                   </div>
                 )}
               </div>

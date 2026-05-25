@@ -319,7 +319,7 @@ export default function ComprasPage() {
       {/* Modal detalle de venta asociada */}
       {detalleVentaModal && (
         <div className="modal-overlay" onClick={() => setDetalleVentaModal(null)}>
-          <div className="modal-container max-w-lg" onClick={e => e.stopPropagation()}>
+          <div className="modal max-w-lg" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="modal-title">Venta asociada #{detalleVentaModal.id}</h2>
             </div>

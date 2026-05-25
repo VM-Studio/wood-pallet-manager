@@ -20,25 +20,32 @@ function formatHora(iso: string | null): string {
   }
 }
 
-// Devuelve "DD/MM/YYYY" de un ISO o de fechaEstimEntrega
+// Extrae la parte YYYY-MM-DD de un ISO string sin conversión de timezone
+function extraerFechaLocal(iso: string): string {
+  // Si ya viene como "YYYY-MM-DD" o empieza con eso, usarlo directamente
+  return iso.substring(0, 10);
+}
+
+// Devuelve "Día DD de Mes de YYYY" sin desvíos de timezone
 function fechaBase(log: LogisticaAceptada): string {
   const iso = log.horaEstimadaEntrega || log.venta.fechaEstimEntrega;
   if (!iso) return 'Sin fecha';
   try {
-    const d = new Date(iso);
+    // Parsear la parte de fecha directamente para evitar el desvío UTC→local
+    const [yyyy, mm, dd] = extraerFechaLocal(iso).split('-').map(Number);
+    const d = new Date(yyyy, mm - 1, dd); // constructor local, sin UTC
     return d.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   } catch {
     return 'Sin fecha';
   }
 }
 
-// Clave para agrupar por día (YYYY-MM-DD)
+// Clave para agrupar por día (YYYY-MM-DD) — sin desvíos de timezone
 function claveAgrupacion(log: LogisticaAceptada): string {
   const iso = log.horaEstimadaEntrega || log.venta.fechaEstimEntrega;
   if (!iso) return 'sin-fecha';
   try {
-    const d = new Date(iso);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return extraerFechaLocal(iso);
   } catch {
     return 'sin-fecha';
   }

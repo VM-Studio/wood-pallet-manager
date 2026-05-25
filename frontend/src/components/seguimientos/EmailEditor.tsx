@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Plus, Trash2, MoveUp, MoveDown } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { ImageIcon, Plus, Trash2, MoveUp, MoveDown, X } from 'lucide-react';
 import type { BloqueEmail } from '../../hooks/useSeguimientos';
 
 interface Props {
@@ -17,6 +17,7 @@ const TIPOS_BLOQUE: { value: BloqueEmail['tipo']; label: string }[] = [
 
 export default function EmailEditor({ bloques, onChange }: Props) {
   const [agregando, setAgregando] = useState(false);
+  const fileInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
 
   const actualizar = (i: number, partial: Partial<BloqueEmail>) => {
     const copia = [...bloques];
@@ -38,7 +39,7 @@ export default function EmailEditor({ bloques, onChange }: Props) {
     const defaults: Record<BloqueEmail['tipo'], Partial<BloqueEmail>> = {
       header: { contenido: 'Hola {{nombre_cliente}}', colorFondo: '#92400e' },
       texto:  { contenido: 'Escribí tu mensaje aquí...' },
-      imagen: { url: 'https://placehold.co/600x200' },
+      imagen: { url: '' },
       boton:  { textoBoton: 'Ver más', url: 'https://woodpallet.com.ar' },
       footer: { contenido: 'WoodPallet Manager · contacto@woodpallet.com.ar' },
     };
@@ -84,12 +85,58 @@ export default function EmailEditor({ bloques, onChange }: Props) {
               )}
 
               {b.tipo === 'imagen' && (
-                <input
-                  value={b.url ?? ''}
-                  onChange={e => actualizar(i, { url: e.target.value })}
-                  className="w-full border border-gray-200 px-2 py-1.5 text-sm"
-                  placeholder="URL de la imagen"
-                />
+                <div className="space-y-2">
+                  {b.url ? (
+                    <div className="relative">
+                      <img
+                        src={b.url}
+                        alt="preview"
+                        className="w-full max-h-40 object-cover border border-gray-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => actualizar(i, { url: '' })}
+                        className="absolute top-1 right-1 bg-white border border-gray-200 rounded-full p-0.5 text-gray-500 hover:text-red-500"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      className="border-2 border-dashed border-gray-200 rounded p-4 text-center cursor-pointer hover:border-amber-400 transition-colors"
+                      onClick={() => fileInputRefs.current[i]?.click()}
+                    >
+                      <ImageIcon size={20} className="mx-auto text-gray-300 mb-1" />
+                      <p className="text-xs text-gray-400">Hacé clic para elegir una imagen</p>
+                      <p className="text-xs text-gray-300 mt-0.5">JPG, PNG, GIF, WebP</p>
+                    </div>
+                  )}
+                  <input
+                    ref={el => { fileInputRefs.current[i] = el; }}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = ev => {
+                        actualizar(i, { url: ev.target?.result as string });
+                      };
+                      reader.readAsDataURL(file);
+                      e.target.value = '';
+                    }}
+                  />
+                  {b.url && (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRefs.current[i]?.click()}
+                      className="text-xs text-amber-700 hover:text-amber-800 underline"
+                    >
+                      Cambiar imagen
+                    </button>
+                  )}
+                </div>
               )}
 
               {b.tipo === 'boton' && (

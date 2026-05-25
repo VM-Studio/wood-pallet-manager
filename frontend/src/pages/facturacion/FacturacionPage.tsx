@@ -25,9 +25,6 @@ interface CobroData {
 const formatPesos = (v: number) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(v);
 
-const formatFecha = (f: string) =>
-  new Date(f).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' });
-
 const estadoFiltros = [
   { key: 'todos',           label: 'Todas' },
   { key: 'pendiente',       label: 'Pendientes' },
@@ -265,8 +262,8 @@ export default function FacturacionPage() {
                 <th>Cliente</th>
                 <th>Comprobante</th>
                 <th>Total</th>
-                <th>Método / Cuándo</th>
-                <th>Vencimiento</th>
+                <th>Método de pago</th>
+                <th>Modalidad</th>
                 <th>Estado</th>
                 <th>Acciones</th>
               </tr>
@@ -316,30 +313,33 @@ export default function FacturacionPage() {
                           : medio === 'e_check' ? 'E-check'
                           : medio === 'efectivo' ? 'Efectivo'
                           : null;
-                        const labelModalidad = f.modalidadPago === 'completo_anticipado' ? 'Anticipado completo'
-                          : f.modalidadPago === 'mitad_adelanto_mitad_entrega' ? '50% adelanto'
-                          : f.modalidadPago === 'completo_entrega' ? 'Al entregar'
-                          : null;
-                        if (!labelMedio && !labelModalidad) return <span className="text-gray-400 text-sm">—</span>;
-                        return (
-                          <div>
-                            {labelMedio && <p className="text-sm font-medium text-gray-800">{labelMedio}</p>}
-                            {labelModalidad && <p className="text-xs text-gray-500">{labelModalidad}</p>}
-                          </div>
-                        );
+                        if (!labelMedio) return <span className="text-gray-400 text-sm">—</span>;
+                        return <p className="text-sm font-medium text-gray-800">{labelMedio}</p>;
                       })()}
                     </td>
                     <td>
-                      {f.fechaVencimiento ? (
-                        <div>
-                          <p className="text-sm" style={vencida ? { color: '#B91C1C', fontWeight: 600 } : { color: '#374151' }}>
-                            {formatFecha(f.fechaVencimiento)}
-                          </p>
-                          {vencida && <p className="text-xs text-red-500">Vencida</p>}
-                        </div>
-                      ) : (
-                        <span className="text-gray-400 text-sm">—</span>
-                      )}
+                      {(() => {
+                        const labelModalidad = f.modalidadPago === 'adelantado' ? 'Adelantado'
+                          : f.modalidadPago === 'contra_entrega' ? 'Contra entrega'
+                          : f.modalidadPago === 'por_partes' ? 'Por partes'
+                          : null;
+                        if (!labelModalidad) return <span className="text-gray-400 text-sm">—</span>;
+                        const color = f.modalidadPago === 'adelantado'
+                          ? { bg: '#F0FDF4', text: '#15803D', border: '#BBF7D0' }
+                          : f.modalidadPago === 'por_partes'
+                          ? { bg: '#FEF9C3', text: '#854D0E', border: '#FDE047' }
+                          : { bg: '#EFF6FF', text: '#1D4ED8', border: '#BFDBFE' };
+                        return (
+                          <span style={{
+                            fontSize: '0.75rem', fontWeight: 600,
+                            padding: '0.2rem 0.6rem', borderRadius: '999px',
+                            background: color.bg, color: color.text,
+                            border: `1px solid ${color.border}`,
+                          }}>
+                            {labelModalidad}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td><EstadoBadge estado={f.estadoCobro} /></td>
                     <td>
