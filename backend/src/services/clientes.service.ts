@@ -123,40 +123,90 @@ export const desactivarClienteService = async (
 };
 
 export const getHistorialClienteService = async (id: number) => {
-  const cliente = await prisma.cliente.findUnique({
+  const cliente = await prisma.cliente.findUniqueOrThrow({
     where: { id },
     include: {
+      cotizaciones: {
+        orderBy: { fechaCotizacion: 'desc' },
+        include: {
+          detalles: {
+            include: {
+              producto: { select: { id: true, nombre: true, tipo: true, condicion: true } },
+              especificacion: true,
+            },
+          },
+          usuario: { select: { nombre: true, apellido: true, rol: true } },
+          seguimientos: { orderBy: { fechaContacto: 'desc' }, take: 5 },
+        },
+      },
       ventas: {
         orderBy: { fechaVenta: 'desc' },
         include: {
-          detalles: { include: { producto: true } },
-          facturas: { include: { pagos: true } },
+          detalles: {
+            include: {
+              producto: { select: { id: true, nombre: true, tipo: true, condicion: true } },
+              retiros: { orderBy: { fechaRetiro: 'desc' } },
+            },
+          },
+          facturas: {
+            include: {
+              pagos: { orderBy: { fechaPago: 'desc' } },
+              notasCredito: true,
+            },
+          },
           logistica: true,
+          retiroGalpon: true,
           usuario: { select: { nombre: true, apellido: true, rol: true } },
         },
       },
     },
   });
 
-  if (!cliente) throw new Error('Cliente no encontrado');
-
   const totalPallets = cliente.ventas.reduce(
-    (acc, venta) => acc + venta.detalles.reduce((a, d) => a + d.cantidadPedida, 0),
+    (acc: number, venta) => acc + venta.detalles.reduce((a: number, d) => a + d.cantidadPedida, 0),
     0
   );
 
   const totalFacturado = cliente.ventas.reduce(
-    (acc, venta) => acc + Number(venta.totalConIva || 0),
+    (acc: number, venta) => acc + Number(venta.totalConIva || 0),
     0
   );
 
+  const totalCobrado = cliente.ventas.reduce((acc: number, venta) => {
+    return acc + venta.facturas.reduce((fa: number, f) => {
+      return fa + f.pagos.reduce((pa: number, p) => pa + Number(p.monto || 0), 0);
+    }, 0);
+  }, 0);
+
+  const totalPendiente = totalFacturado - totalCobrado;
+
+  const primerVenta = cliente.ventas.length
+    ? cliente.ventas[cliente.ventas.length - 1].fechaVenta
+    : null;
+
+  const ultimaVenta = cliente.ventas.length
+    ? cliente.ventas[0].fechaVenta
+    : null;
+
   return {
-    cliente: { id: cliente.id, razonSocial: cliente.razonSocial, cuit: cliente.cuit },
+    cliente: {
+      id: cliente.id,
+      razonSocial: cliente.razonSocial,
+      cuit: cliente.cuit,
+      emailContacto: cliente.emailContacto,
+      telefonoContacto: cliente.telefonoContacto,
+    },
     estadisticas: {
       totalVentas: cliente.ventas.length,
+      totalCotizaciones: cliente.cotizaciones.length,
       totalPallets,
       totalFacturado,
+      totalCobrado,
+      totalPendiente,
+      primerVenta,
+      ultimaVenta,
     },
+    cotizaciones: cliente.cotizaciones,
     ventas: cliente.ventas,
   };
 };

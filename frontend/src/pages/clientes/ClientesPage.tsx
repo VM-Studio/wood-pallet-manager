@@ -160,9 +160,19 @@ export default function ClientesPage() {
                     <p className="text-xs text-gray-400 mt-0.5">CUIT: {cliente.cuit}</p>
                   )}
                 </div>
-                {cliente.esExportador && (
-                  <span className="badge-blue ml-2 shrink-0">Exportador</span>
-                )}
+                <div className="flex items-center gap-2 ml-2 shrink-0">
+                  {cliente.esExportador && (
+                    <span className="badge-blue">Exportador</span>
+                  )}
+                  <button
+                    onClick={() => setClienteHistorial(cliente.id)}
+                    className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded hover:bg-amber-100 transition-colors"
+                    title="Ver historial del cliente"
+                  >
+                    <History size={13} />
+                    Historial
+                  </button>
+                </div>
               </div>
 
               {/* Info de contacto */}
@@ -204,13 +214,6 @@ export default function ClientesPage() {
                   </span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setClienteHistorial(cliente.id)}
-                    className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
-                    title="Ver historial"
-                  >
-                    <History size={15} />
-                  </button>
                   {esAsignado(cliente) && (
                     <button
                       onClick={() => { setClienteEditar(cliente); setShowForm(true); }}
