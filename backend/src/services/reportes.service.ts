@@ -1,7 +1,7 @@
 import prisma from '../utils/prisma';
 
 export const getVentasUltimos12MesesService = async (usuarioId?: number) => {
-  const meses = [];
+  const meses: { mes: string; ventas: number; pallets: number; facturacion: number }[] = [];
   // Arrancar siempre desde Abril 2026 y generar 12 meses consecutivos hacia adelante
   const mesInicio = new Date(2026, 3, 1); // Abril 2026 (mes 3 = abril, base 0)
 

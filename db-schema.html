@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WoodPallet Manager — Base de Datos</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f0eb; color: #1a1a1a; padding: 32px 24px; }
+    h1 { font-size: 2rem; color: #3c250f; margin-bottom: 4px; }
+    .subtitle { color: #7a5c3a; font-size: 0.95rem; margin-bottom: 32px; }
+    .badge { display: inline-block; background: #fde68a; color: #92400e; border-radius: 9999px; font-size: 0.7rem; font-weight: 700; padding: 2px 10px; margin-left: 8px; vertical-align: middle; }
+
+    /* SECCIÓN */
+    .section { margin-bottom: 40px; }
+    .section-title { font-size: 1.2rem; font-weight: 700; color: #3c250f; border-bottom: 2px solid #e7c99a; padding-bottom: 6px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .section-title span { font-size: 1.3rem; }
+
+    /* TABLAS */
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(60,37,15,0.08); margin-bottom: 24px; }
+    thead { background: #3c250f; color: #fff; }
+    thead th { padding: 9px 14px; font-size: 0.78rem; text-align: left; font-weight: 600; letter-spacing: 0.05em; }
+    tbody tr:nth-child(even) { background: #faf6f1; }
+    tbody tr:hover { background: #fef3e2; }
+    td { padding: 7px 14px; font-size: 0.82rem; border-bottom: 1px solid #f0e8de; vertical-align: top; }
+    td:first-child { font-family: monospace; font-weight: 600; color: #3c250f; white-space: nowrap; }
+    td:nth-child(2) { color: #1a6b4a; font-family: monospace; white-space: nowrap; }
+    td:nth-child(3) { color: #6b5c48; }
+    .pk { background: #fbbf24; color: #7c3a00; border-radius: 4px; font-size: 0.65rem; font-weight: 700; padding: 1px 5px; margin-left: 4px; }
+    .fk { background: #bfdbfe; color: #1e3a8a; border-radius: 4px; font-size: 0.65rem; font-weight: 700; padding: 1px 5px; margin-left: 4px; }
+    .unique { background: #d1fae5; color: #065f46; border-radius: 4px; font-size: 0.65rem; font-weight: 700; padding: 1px 5px; margin-left: 4px; }
+    .model-title { font-size: 1rem; font-weight: 700; color: #3c250f; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+    .table-name { font-family: monospace; font-size: 0.8rem; color: #7a5c3a; margin-left: 4px; }
+
+    /* ENUMS */
+    .enum-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+    .enum-card { background: #fff; border-radius: 8px; padding: 12px 16px; border-left: 4px solid #c4895a; box-shadow: 0 1px 3px rgba(60,37,15,0.07); }
+    .enum-name { font-family: monospace; font-weight: 700; color: #3c250f; margin-bottom: 6px; font-size: 0.85rem; }
+    .enum-values { display: flex; flex-wrap: wrap; gap: 5px; }
+    .enum-val { background: #fef3e2; color: #7c3a00; border-radius: 4px; font-size: 0.72rem; font-weight: 500; padding: 2px 7px; font-family: monospace; border: 1px solid #fde68a; }
+
+    /* RELACIONES */
+    .rel-list { background: #fff; border-radius: 10px; padding: 16px 20px; box-shadow: 0 1px 4px rgba(60,37,15,0.08); }
+    .rel-item { display: flex; align-items: baseline; gap: 8px; padding: 5px 0; border-bottom: 1px solid #f5f0eb; font-size: 0.82rem; font-family: monospace; }
+    .rel-item:last-child { border-bottom: none; }
+    .rel-from { color: #3c250f; font-weight: 700; }
+    .rel-arrow { color: #c4895a; font-weight: 700; }
+    .rel-to { color: #1a6b4a; font-weight: 700; }
+    .rel-note { color: #9ca3af; font-family: sans-serif; font-size: 0.75rem; }
+
+    /* PRINT */
+    @media print {
+      body { background: white; padding: 16px; }
+      table { box-shadow: none; border: 1px solid #ddd; }
+      .enum-card { border: 1px solid #ddd; box-shadow: none; }
+      .rel-list { box-shadow: none; border: 1px solid #ddd; }
+      .no-print { display: none; }
+    }
+
+    .download-btn {
+      position: fixed; top: 20px; right: 24px;
+      background: #3c250f; color: white; border: none; border-radius: 8px;
+      padding: 10px 18px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+      box-shadow: 0 2px 8px rgba(60,37,15,0.25); z-index: 999;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .download-btn:hover { background: #5a3a1a; }
+  </style>
+</head>
+<body>
+
+<button class="download-btn no-print" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+
+<h1>🪵 WoodPallet Manager</h1>
+<p class="subtitle">Documentación completa de Base de Datos — PostgreSQL + Prisma ORM &nbsp;|&nbsp; Generado: Mayo 2026</p>
+
+<!-- ═══════════════════════════════════════ ENUMS ═══════════════════════════ -->
+<div class="section">
+  <div class="section-title"><span>🏷️</span> ENUMERACIONES (ENUMs)</div>
+  <div class="enum-grid">
+
+    <div class="enum-card">
+      <div class="enum-name">RolUsuario</div>
+      <div class="enum-values">
+        <span class="enum-val">propietario_carlos</span>
+        <span class="enum-val">propietario_juancruz</span>
+        <span class="enum-val">admin</span>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-name">TipoVerificacion</div>
+      <div class="enum-values">
+        <span class="enum-val">cambio_password</span>
+        <span class="enum-val">cambio_email</span>
+        <span class="enum-val">cambio_telefono</span>
+        <span class="enum-val">recuperacion_password</span>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-name">CanalEntrada</div>
+      <div class="enum-values">
+        <span class="enum-val">whatsapp</span>
+        <span class="enum-val">formulario_web</span>
+        <span class="enum-val">llamada</span>
+        <span class="enum-val">recomendacion</span>
+        <span class="enum-val">otro</span>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-name">TipoPallet</div>
+      <div class="enum-values">
+        <span class="enum-val">estandar</span>
+        <span class="enum-val">reforzado</span>
+        <span class="enum-val">liviano</span>
+        <span class="enum-val">exportacion</span>
+        <span class="enum-val">carton</span>
+        <span class="enum-val">a_medida</span>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-name">CondicionPallet</div>
+      <div class="enum-values">
+        <span class="enum-val">nuevo</span>
+        <span class="enum-val">seminuevo</span>
+        <span class="enum-val">usado</span>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-name">TipoProductoProveedor</div>
+      <div class="enum-values">
+        <span class="enum-val">seminuevo</span>
+        <span class="enum-val">nuevo_medida</span>
+        <span class="enum-val">ambos</span>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-name">TipoMovimiento</div>
+      <div class="enum-values">
+        <span class="enum-val">entrada</span>
+        <span class="enum-val">salida</span>
+        <span class="enum-val">ajuste</span>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-name">MotivoMovimiento</div>
+      <div class="enum-values">
+        <span class="enum-val">venta</span>
+        <span class="enum-val">compra</span>
+        <span class="enum-val">devolucion</span>
+        <span class="enum-val">ajuste_manual</span>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-name">EstadoCotizacion</div>
+      <div class="enum-values">
+        <span class="enum-val">enviada</span>
+        <span class="enum-val">en_seguimiento</span>
+        <span class="enum-val">aceptada</span>
+        <span class="enum-val">rechazada</span>
+        <span class="enum-val">perdida</span>
+        <span class="enum-val">vencida</span>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-name">CanalEnvioCotizacion</div>
+      <div class="enum-values">
+        <span class="enum-val">whatsapp</span>
+        <span class="enum-val">email</span>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-name">TipoContacto</div>
+      <div class="enum-values">
+        <span class="enum-val">whatsapp</span>
+        <span class="enum-val">llamada</span>
+        <span class="enum-val">email</span>
+        <span class="enum-val">presencial</span>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-name">ResultadoSeguimiento</div>
+      <div class="enum-values">
+        <span class="enum-val">sin_respuesta</span>
+        <span class="enum-val">interesado</span>
+        <span class="enum-val">no_interesado</span>
+        <span class="enum-val">cerrado</span>
+        <span class="enum-val">reprogramado</span>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-name">EstadoPedido</div>
+      <div class="enum-values">
+        <span class="enum-val">confirmado</span>
+        <span class="enum-val">en_preparacion</span>
+        <span class="enum-val">listo_para_envio</span>
+        <span class="enum-val">en_transito</span>
+        <span class="enum-val">entregado</span>
+        <span class="enum-val">entregado_parcial</span>
+        <span class="enum-val">cancelado</span>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-name">TipoEntrega</div>
+      <div class="enum-values">
+        <span class="enum-val">retira_cliente</span>
+        <span class="enum-val">envio_woodpallet</span>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-name">EstadoRetiro</div>
+      <div class="enum-values">
+        <span class="enum-val">pendiente</span>
+        <span class="enum-val">confirmado</span>
+        <span class="enum-val">completado</span>
+        <span class="enum-val">cancelado</span>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-name">EstadoCompra</div>
+      <div class="enum-values">
+        <span class="enum-val">pendiente_pago</span>
+        <span class="enum-val">pagada</span>
+        <span class="enum-val">cancelada</span>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-name">TipoCompra</div>
+      <div class="enum-values">
+        <span class="enum-val">reventa_inmediata</span>
+        <span class="enum-val">stock_propio</span>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-name">EstadoEntrega</div>
+      <div class="enum-values">
+        <span class="enum-val">pendiente</span>
+        <span class="enum-val">en_camino</span>
+        <span class="enum-val">entregado</span>
+        <span class="enum-val">con_problema</span>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-name">EstadoConsulta</div>
+      <div class="enum-values">
+        <span class="enum-val">no_aplica</span>
+        <span class="enum-val">pendiente_consulta</span>
+        <span class="enum-val">consultada</span>
+        <span class="enum-val">aceptada</span>
+        <span class="enum-val">rechazada</span>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-name">TipoFactura</div>
+      <div class="enum-values">
+        <span class="enum-val">A</span>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-name">EstadoCobro</div>
+      <div class="enum-values">
+        <span class="enum-val">pendiente</span>
+        <span class="enum-val">cobrada_parcial</span>
+        <span class="enum-val">cobrada_total</span>
+        <span class="enum-val">vencida</span>
+        <span class="enum-val">incobrable</span>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-name">MedioPago / MetodoPago</div>
+      <div class="enum-values">
+        <span class="enum-val">transferencia</span>
+        <span class="enum-val">e_check</span>
+        <span class="enum-val">efectivo</span>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-name">ModalidadPago</div>
+      <div class="enum-values">
+        <span class="enum-val">adelantado</span>
+        <span class="enum-val">contra_entrega</span>
+        <span class="enum-val">por_partes</span>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-name">EstadoSolicitudLogistica</div>
+      <div class="enum-values">
+        <span class="enum-val">pendiente</span>
+        <span class="enum-val">aceptada</span>
+        <span class="enum-val">rechazada</span>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-name">TipoCasoDevolucion</div>
+      <div class="enum-values">
+        <span class="enum-val">pallet_danado</span>
+        <span class="enum-val">cliente_no_quiere</span>
+        <span class="enum-val">devolucion_parcial</span>
+        <span class="enum-val">cancelacion_anticipada</span>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-name">EstadoDevolucion</div>
+      <div class="enum-values">
+        <span class="enum-val">pendiente</span>
+        <span class="enum-val">esperando_confirmacion_deposito</span>
+        <span class="enum-val">confirmada</span>
+        <span class="enum-val">procesada</span>
+        <span class="enum-val">cancelada</span>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-name">EstadoRemito</div>
+      <div class="enum-values">
+        <span class="enum-val">pendiente_firma_propietario</span>
+        <span class="enum-val">enviado_a_cliente</span>
+        <span class="enum-val">firmado_por_cliente</span>
+        <span class="enum-val">completado</span>
+        <span class="enum-val">cancelado</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ TABLAS ══════════════════════════ -->
+<div class="section">
+  <div class="section-title"><span>📋</span> TABLAS / MODELOS</div>
+
+  <!-- usuarios -->
+  <div class="model-title">Usuario <span class="table-name">→ tabla: usuarios</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int autoincrement</td><td></td></tr>
+      <tr><td>nombre</td><td>String</td><td></td></tr>
+      <tr><td>apellido</td><td>String</td><td></td></tr>
+      <tr><td>email</td><td>String <span class="unique">UNIQUE</span></td><td></td></tr>
+      <tr><td>passwordHash</td><td>String</td><td></td></tr>
+      <tr><td>telefono</td><td>String?</td><td>opcional</td></tr>
+      <tr><td>cuit</td><td>String?</td><td>opcional</td></tr>
+      <tr><td>rol</td><td>RolUsuario</td><td>enum</td></tr>
+      <tr><td>activo</td><td>Boolean</td><td>default: true</td></tr>
+      <tr><td>fechaCreacion</td><td>DateTime</td><td>default: now()</td></tr>
+      <tr><td>fotoPerfil</td><td>String?</td><td>base64 data URL</td></tr>
+      <tr><td>firma</td><td>String?</td><td>base64 data URL</td></tr>
+    </tbody>
+  </table>
+
+  <!-- verificaciones_codigo -->
+  <div class="model-title">VerificacionCodigo <span class="table-name">→ tabla: verificaciones_codigo</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>usuarioId <span class="fk">FK</span></td><td>Int? → usuarios</td><td>opcional (recuperación)</td></tr>
+      <tr><td>email</td><td>String?</td><td>para recuperación sin cuenta</td></tr>
+      <tr><td>codigo</td><td>String</td><td>6 dígitos</td></tr>
+      <tr><td>tipo</td><td>TipoVerificacion</td><td>enum</td></tr>
+      <tr><td>dato</td><td>String?</td><td>payload: nuevo email/tel</td></tr>
+      <tr><td>canal</td><td>String?</td><td>'email' | 'telefono'</td></tr>
+      <tr><td>expiresAt</td><td>DateTime</td><td></td></tr>
+      <tr><td>usado</td><td>Boolean</td><td>default: false</td></tr>
+      <tr><td>creadoAt</td><td>DateTime</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- clientes -->
+  <div class="model-title">Cliente <span class="table-name">→ tabla: clientes</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>razonSocial</td><td>String</td><td></td></tr>
+      <tr><td>cuit</td><td>String?</td><td></td></tr>
+      <tr><td>nombreContacto</td><td>String?</td><td></td></tr>
+      <tr><td>telefonoContacto</td><td>String?</td><td></td></tr>
+      <tr><td>emailContacto</td><td>String?</td><td></td></tr>
+      <tr><td>canalEntrada</td><td>CanalEntrada?</td><td>enum</td></tr>
+      <tr><td>usuarioAsignadoId <span class="fk">FK</span></td><td>Int → usuarios</td><td></td></tr>
+      <tr><td>direccionEntrega</td><td>String?</td><td></td></tr>
+      <tr><td>localidad</td><td>String?</td><td></td></tr>
+      <tr><td>esExportador</td><td>Boolean</td><td>default: false</td></tr>
+      <tr><td>observaciones</td><td>String?</td><td></td></tr>
+      <tr><td>fechaAlta</td><td>DateTime</td><td></td></tr>
+      <tr><td>activo</td><td>Boolean</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- productos -->
+  <div class="model-title">Producto <span class="table-name">→ tabla: productos</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>nombre</td><td>String</td><td></td></tr>
+      <tr><td>tipo</td><td>TipoPallet</td><td>enum</td></tr>
+      <tr><td>condicion</td><td>CondicionPallet</td><td>enum</td></tr>
+      <tr><td>propietarioId <span class="fk">FK</span></td><td>Int → usuarios</td><td></td></tr>
+      <tr><td>dimensionLargo</td><td>Int?</td><td></td></tr>
+      <tr><td>dimensionAncho</td><td>Int?</td><td></td></tr>
+      <tr><td>cargaMaximaKg</td><td>Int?</td><td></td></tr>
+      <tr><td>requiereSenasa</td><td>Boolean</td><td></td></tr>
+      <tr><td>descripcion</td><td>String?</td><td></td></tr>
+      <tr><td>activo</td><td>Boolean</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- proveedores -->
+  <div class="model-title">Proveedor <span class="table-name">→ tabla: proveedores</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>nombreEmpresa</td><td>String</td><td></td></tr>
+      <tr><td>nombreContacto</td><td>String</td><td></td></tr>
+      <tr><td>telefono</td><td>String?</td><td></td></tr>
+      <tr><td>email</td><td>String?</td><td></td></tr>
+      <tr><td>tipoProducto</td><td>TipoProductoProveedor</td><td>enum</td></tr>
+      <tr><td>contactoExclusivoId</td><td>Int?</td><td></td></tr>
+      <tr><td>distanciaKm</td><td>Int?</td><td></td></tr>
+      <tr><td>ubicacion</td><td>String?</td><td></td></tr>
+      <tr><td>observaciones</td><td>String?</td><td></td></tr>
+      <tr><td>activo</td><td>Boolean</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- producto_proveedor -->
+  <div class="model-title">ProductoProveedor <span class="table-name">→ tabla: producto_proveedor</span> <span class="badge">TABLA PIVOTE</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>proveedorId <span class="fk">FK</span></td><td>Int → proveedores</td><td></td></tr>
+      <tr><td>productoId <span class="fk">FK</span></td><td>Int → productos</td><td></td></tr>
+      <tr><td>precioCosto</td><td>Decimal(12,2)</td><td></td></tr>
+      <tr><td>fechaActualizacion</td><td>DateTime</td><td></td></tr>
+      <tr><td>observaciones</td><td>String?</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- lista_precios -->
+  <div class="model-title">ListaPrecio <span class="table-name">→ tabla: lista_precios</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>productoId <span class="fk">FK</span></td><td>Int → productos</td><td></td></tr>
+      <tr><td>precioUnitario</td><td>Decimal(12,2)</td><td></td></tr>
+      <tr><td>margenPct</td><td>Decimal(5,2)?</td><td></td></tr>
+      <tr><td>cantMinima</td><td>Int</td><td></td></tr>
+      <tr><td>cantMaxima</td><td>Int?</td><td></td></tr>
+      <tr><td>bonificaFlete</td><td>Boolean</td><td></td></tr>
+      <tr><td>vigentDesde</td><td>DateTime</td><td></td></tr>
+      <tr><td>vigentHasta</td><td>DateTime?</td><td></td></tr>
+      <tr><td>creadoPorId <span class="fk">FK</span></td><td>Int → usuarios</td><td></td></tr>
+      <tr><td>observaciones</td><td>String?</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- historial_precios -->
+  <div class="model-title">HistorialPrecio <span class="table-name">→ tabla: historial_precios</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>productoId <span class="fk">FK</span></td><td>Int → productos</td><td></td></tr>
+      <tr><td>precioAnterior</td><td>Decimal(12,2)</td><td></td></tr>
+      <tr><td>precioNuevo</td><td>Decimal(12,2)</td><td></td></tr>
+      <tr><td>motivo</td><td>String?</td><td></td></tr>
+      <tr><td>fechaCambio</td><td>DateTime</td><td></td></tr>
+      <tr><td>registradoPorId <span class="fk">FK</span></td><td>Int → usuarios</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- stock -->
+  <div class="model-title">Stock <span class="table-name">→ tabla: stock</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>productoId <span class="fk">FK</span></td><td>Int → productos</td><td><span class="unique">UNIQUE</span> con proveedorId</td></tr>
+      <tr><td>proveedorId <span class="fk">FK</span></td><td>Int → proveedores</td><td><span class="unique">UNIQUE</span> con productoId</td></tr>
+      <tr><td>cantidadDisponible</td><td>Int</td><td>default: 0</td></tr>
+      <tr><td>cantidadMinima</td><td>Int?</td><td>alerta de stock bajo</td></tr>
+      <tr><td>cantidadDeudora</td><td>Int</td><td>default: 0</td></tr>
+      <tr><td>ultimaActualizacion</td><td>DateTime</td><td>updatedAt</td></tr>
+      <tr><td>observaciones</td><td>String?</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- movimientos_stock -->
+  <div class="model-title">MovimientoStock <span class="table-name">→ tabla: movimientos_stock</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>stockId <span class="fk">FK</span></td><td>Int → stock</td><td></td></tr>
+      <tr><td>tipoMovimiento</td><td>TipoMovimiento</td><td>enum</td></tr>
+      <tr><td>cantidad</td><td>Int</td><td></td></tr>
+      <tr><td>motivo</td><td>MotivoMovimiento</td><td>enum</td></tr>
+      <tr><td>idReferencia</td><td>Int?</td><td>id de venta/compra relacionada</td></tr>
+      <tr><td>fecha</td><td>DateTime</td><td></td></tr>
+      <tr><td>registradoPorId <span class="fk">FK</span></td><td>Int → usuarios</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- cotizaciones -->
+  <div class="model-title">Cotizacion <span class="table-name">→ tabla: cotizaciones</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>clienteId <span class="fk">FK</span></td><td>Int → clientes</td><td></td></tr>
+      <tr><td>usuarioId <span class="fk">FK</span></td><td>Int → usuarios</td><td></td></tr>
+      <tr><td>fechaCotizacion</td><td>DateTime</td><td>default: now()</td></tr>
+      <tr><td>fechaVencimiento</td><td>DateTime?</td><td></td></tr>
+      <tr><td>estado</td><td>EstadoCotizacion</td><td>enum, default: enviada</td></tr>
+      <tr><td>incluyeFlete</td><td>Boolean</td><td></td></tr>
+      <tr><td>costoFlete</td><td>Decimal?</td><td></td></tr>
+      <tr><td>fleteIncluido</td><td>Boolean</td><td></td></tr>
+      <tr><td>requiereSenasa</td><td>Boolean</td><td></td></tr>
+      <tr><td>costoSenasa</td><td>Decimal?</td><td></td></tr>
+      <tr><td>totalSinIva</td><td>Decimal?</td><td></td></tr>
+      <tr><td>totalConIva</td><td>Decimal?</td><td></td></tr>
+      <tr><td>canalEnvio</td><td>CanalEnvioCotizacion?</td><td>enum</td></tr>
+      <tr><td>observaciones</td><td>String?</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- detalle_cotizacion -->
+  <div class="model-title">DetalleCotizacion <span class="table-name">→ tabla: detalle_cotizacion</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>cotizacionId <span class="fk">FK</span></td><td>Int → cotizaciones</td><td></td></tr>
+      <tr><td>productoId <span class="fk">FK</span></td><td>Int → productos</td><td></td></tr>
+      <tr><td>cantidad</td><td>Int</td><td></td></tr>
+      <tr><td>precioUnitario</td><td>Decimal(12,2)</td><td></td></tr>
+      <tr><td>subtotal</td><td>Decimal(12,2)</td><td></td></tr>
+      <tr><td>esAMedida</td><td>Boolean</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- especificaciones_medida -->
+  <div class="model-title">EspecificacionMedida <span class="table-name">→ tabla: especificaciones_medida</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>detalleCotizacionId <span class="fk">FK</span></td><td>Int? <span class="unique">UNIQUE</span> → detalle_cotizacion</td><td></td></tr>
+      <tr><td>detalleVentaId <span class="fk">FK</span></td><td>Int? <span class="unique">UNIQUE</span> → detalle_venta</td><td></td></tr>
+      <tr><td>largoMm</td><td>Int?</td><td></td></tr>
+      <tr><td>anchoMm</td><td>Int?</td><td></td></tr>
+      <tr><td>altoMm</td><td>Int?</td><td></td></tr>
+      <tr><td>cargaMaximaKg</td><td>Int?</td><td></td></tr>
+      <tr><td>tipoMadera</td><td>String?</td><td></td></tr>
+      <tr><td>observacionesCliente</td><td>String?</td><td></td></tr>
+      <tr><td>medidas</td><td>Json?</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- seguimiento_cotizacion -->
+  <div class="model-title">SeguimientoCotizacion <span class="table-name">→ tabla: seguimiento_cotizacion</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>cotizacionId <span class="fk">FK</span></td><td>Int → cotizaciones</td><td></td></tr>
+      <tr><td>usuarioId <span class="fk">FK</span></td><td>Int → usuarios</td><td></td></tr>
+      <tr><td>fechaContacto</td><td>DateTime</td><td>default: now()</td></tr>
+      <tr><td>tipoContacto</td><td>TipoContacto</td><td>enum</td></tr>
+      <tr><td>resultado</td><td>ResultadoSeguimiento</td><td>enum</td></tr>
+      <tr><td>observaciones</td><td>String?</td><td></td></tr>
+      <tr><td>proximoContacto</td><td>DateTime?</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- ventas -->
+  <div class="model-title">Venta <span class="table-name">→ tabla: ventas</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>cotizacionId <span class="fk">FK</span></td><td>Int? <span class="unique">UNIQUE</span> → cotizaciones</td><td></td></tr>
+      <tr><td>clienteId <span class="fk">FK</span></td><td>Int → clientes</td><td></td></tr>
+      <tr><td>usuarioId <span class="fk">FK</span></td><td>Int → usuarios</td><td></td></tr>
+      <tr><td>fechaVenta</td><td>DateTime</td><td></td></tr>
+      <tr><td>estadoPedido</td><td>EstadoPedido</td><td>enum, default: confirmado</td></tr>
+      <tr><td>tipoEntrega</td><td>TipoEntrega</td><td>enum</td></tr>
+      <tr><td>requiereSenasa</td><td>Boolean</td><td></td></tr>
+      <tr><td>fechaEstimEntrega</td><td>DateTime?</td><td></td></tr>
+      <tr><td>fechaEntregaReal</td><td>DateTime?</td><td></td></tr>
+      <tr><td>fechaRetiro</td><td>DateTime?</td><td></td></tr>
+      <tr><td>lugarEntrega</td><td>String?</td><td></td></tr>
+      <tr><td>totalSinIva</td><td>Decimal?</td><td></td></tr>
+      <tr><td>totalConIva</td><td>Decimal?</td><td></td></tr>
+      <tr><td>costoFlete</td><td>Decimal?</td><td></td></tr>
+      <tr><td>metodoPago</td><td>MetodoPago?</td><td>enum</td></tr>
+      <tr><td>cuentaDestino</td><td>String?</td><td></td></tr>
+      <tr><td>modalidadPago</td><td>ModalidadPago?</td><td>enum</td></tr>
+      <tr><td>observaciones</td><td>String?</td><td></td></tr>
+      <tr><td>origenStock</td><td>String?</td><td>default: 'stock_propio'</td></tr>
+    </tbody>
+  </table>
+
+  <!-- detalle_venta -->
+  <div class="model-title">DetalleVenta <span class="table-name">→ tabla: detalle_venta</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>ventaId <span class="fk">FK</span></td><td>Int → ventas</td><td></td></tr>
+      <tr><td>productoId <span class="fk">FK</span></td><td>Int → productos</td><td></td></tr>
+      <tr><td>cantidadPedida</td><td>Int</td><td></td></tr>
+      <tr><td>cantidadEntregada</td><td>Int</td><td>default: 0</td></tr>
+      <tr><td>precioUnitario</td><td>Decimal(12,2)</td><td></td></tr>
+      <tr><td>subtotal</td><td>Decimal(12,2)</td><td></td></tr>
+      <tr><td>observaciones</td><td>String?</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- retiros_galpon -->
+  <div class="model-title">Retiro <span class="table-name">→ tabla: retiros_galpon</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>ventaId <span class="fk">FK</span></td><td>Int <span class="unique">UNIQUE</span> → ventas</td><td></td></tr>
+      <tr><td>codigoRetiro</td><td>String <span class="unique">UNIQUE</span></td><td></td></tr>
+      <tr><td>estadoRetiro</td><td>EstadoRetiro</td><td>enum, default: pendiente</td></tr>
+      <tr><td>galpon</td><td>String?</td><td></td></tr>
+      <tr><td>horaEstimadaRetiro</td><td>DateTime?</td><td></td></tr>
+      <tr><td>confirmadoPorId <span class="fk">FK</span></td><td>Int? → usuarios</td><td></td></tr>
+      <tr><td>fechaConfirmacion</td><td>DateTime?</td><td></td></tr>
+      <tr><td>observacionesConf</td><td>String?</td><td></td></tr>
+      <tr><td>motivoCancelacion</td><td>String?</td><td></td></tr>
+      <tr><td>creadoEn</td><td>DateTime</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- historial_reenvio_retiro -->
+  <div class="model-title">HistorialReenvioRetiro <span class="table-name">→ tabla: historial_reenvio_retiro</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>retiroId <span class="fk">FK</span></td><td>Int → retiros_galpon</td><td></td></tr>
+      <tr><td>emailEnviado</td><td>String?</td><td></td></tr>
+      <tr><td>telefonoEnviado</td><td>String?</td><td></td></tr>
+      <tr><td>enviadoPorId <span class="fk">FK</span></td><td>Int → usuarios</td><td></td></tr>
+      <tr><td>creadoEn</td><td>DateTime</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- retiros_parciales -->
+  <div class="model-title">RetiroParcial <span class="table-name">→ tabla: retiros_parciales</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>detalleVentaId <span class="fk">FK</span></td><td>Int → detalle_venta</td><td></td></tr>
+      <tr><td>fechaRetiro</td><td>DateTime</td><td></td></tr>
+      <tr><td>cantidadRetirada</td><td>Int</td><td></td></tr>
+      <tr><td>registradoPorId <span class="fk">FK</span></td><td>Int → usuarios</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- compras -->
+  <div class="model-title">Compra <span class="table-name">→ tabla: compras</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>proveedorId <span class="fk">FK</span></td><td>Int → proveedores</td><td></td></tr>
+      <tr><td>usuarioId <span class="fk">FK</span></td><td>Int → usuarios</td><td></td></tr>
+      <tr><td>ventaId <span class="fk">FK</span></td><td>Int? → ventas</td><td>opcional</td></tr>
+      <tr><td>fechaCompra</td><td>DateTime</td><td></td></tr>
+      <tr><td>estado</td><td>EstadoCompra</td><td>enum</td></tr>
+      <tr><td>tipoCompra</td><td>TipoCompra</td><td>enum</td></tr>
+      <tr><td>total</td><td>Decimal?</td><td></td></tr>
+      <tr><td>nroRemito</td><td>String?</td><td></td></tr>
+      <tr><td>observaciones</td><td>String?</td><td></td></tr>
+      <tr><td>saldoDeudor</td><td>Boolean</td><td></td></tr>
+      <tr><td>fechaPago</td><td>DateTime?</td><td></td></tr>
+      <tr><td>metodoPago</td><td>MetodoPago?</td><td>enum</td></tr>
+      <tr><td>cuentaDestino</td><td>String?</td><td></td></tr>
+      <tr><td>nroComprobante</td><td>String?</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- detalle_compra -->
+  <div class="model-title">DetalleCompra <span class="table-name">→ tabla: detalle_compra</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>compraId <span class="fk">FK</span></td><td>Int → compras</td><td></td></tr>
+      <tr><td>productoId <span class="fk">FK</span></td><td>Int → productos</td><td></td></tr>
+      <tr><td>cantidad</td><td>Int</td><td></td></tr>
+      <tr><td>precioCostoUnit</td><td>Decimal(12,2)</td><td></td></tr>
+      <tr><td>subtotal</td><td>Decimal(12,2)</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- logistica -->
+  <div class="model-title">Logistica <span class="table-name">→ tabla: logistica</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>ventaId <span class="fk">FK</span></td><td>Int <span class="unique">UNIQUE</span> → ventas</td><td></td></tr>
+      <tr><td>nombreTransportista</td><td>String</td><td></td></tr>
+      <tr><td>telefonoTransp</td><td>String?</td><td></td></tr>
+      <tr><td>fechaRetiroGalpon</td><td>DateTime?</td><td></td></tr>
+      <tr><td>horaRetiro</td><td>DateTime?</td><td></td></tr>
+      <tr><td>horaEstimadaEntrega</td><td>DateTime?</td><td></td></tr>
+      <tr><td>horaEntregaReal</td><td>DateTime?</td><td></td></tr>
+      <tr><td>estadoEntrega</td><td>EstadoEntrega</td><td>enum, default: pendiente</td></tr>
+      <tr><td>confTransportista</td><td>Boolean</td><td></td></tr>
+      <tr><td>confCliente</td><td>Boolean</td><td></td></tr>
+      <tr><td>costoFlete</td><td>Decimal?</td><td></td></tr>
+      <tr><td>registradoPorId <span class="fk">FK</span></td><td>Int → usuarios</td><td></td></tr>
+      <tr><td>observaciones</td><td>String?</td><td></td></tr>
+      <tr><td>lugarEntrega</td><td>String?</td><td></td></tr>
+      <tr><td>estadoConsulta</td><td>EstadoConsulta</td><td>enum, default: no_aplica</td></tr>
+      <tr><td>fechaConsulta</td><td>DateTime?</td><td></td></tr>
+      <tr><td>consultadaPorId <span class="fk">FK</span></td><td>Int? → usuarios</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- facturas -->
+  <div class="model-title">Factura <span class="table-name">→ tabla: facturas</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>ventaId <span class="fk">FK</span></td><td>Int → ventas</td><td></td></tr>
+      <tr><td>clienteId <span class="fk">FK</span></td><td>Int → clientes</td><td></td></tr>
+      <tr><td>usuarioId <span class="fk">FK</span></td><td>Int → usuarios</td><td></td></tr>
+      <tr><td>tipoFactura</td><td>TipoFactura</td><td>enum, default: A</td></tr>
+      <tr><td>nroFactura</td><td>String?</td><td></td></tr>
+      <tr><td>esSinFactura</td><td>Boolean</td><td></td></tr>
+      <tr><td>fechaEmision</td><td>DateTime</td><td></td></tr>
+      <tr><td>fechaVencimiento</td><td>DateTime?</td><td></td></tr>
+      <tr><td>totalNeto</td><td>Decimal(12,2)</td><td></td></tr>
+      <tr><td>iva</td><td>Decimal(12,2)</td><td></td></tr>
+      <tr><td>totalConIva</td><td>Decimal(12,2)</td><td></td></tr>
+      <tr><td>estadoCobro</td><td>EstadoCobro</td><td>enum, default: pendiente</td></tr>
+      <tr><td>modalidadPago</td><td>String?</td><td></td></tr>
+      <tr><td>medioPago</td><td>String?</td><td></td></tr>
+      <tr><td>metodoPago</td><td>MetodoPago?</td><td>enum</td></tr>
+      <tr><td>cuentaDestino</td><td>String?</td><td></td></tr>
+      <tr><td>observaciones</td><td>String?</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- pagos_cobros -->
+  <div class="model-title">PagoCobro <span class="table-name">→ tabla: pagos_cobros</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>facturaId <span class="fk">FK</span></td><td>Int → facturas</td><td></td></tr>
+      <tr><td>clienteId <span class="fk">FK</span></td><td>Int → clientes</td><td></td></tr>
+      <tr><td>fechaPago</td><td>DateTime</td><td></td></tr>
+      <tr><td>monto</td><td>Decimal(12,2)</td><td></td></tr>
+      <tr><td>medioPago</td><td>MedioPago</td><td>enum</td></tr>
+      <tr><td>nroComprobante</td><td>String?</td><td></td></tr>
+      <tr><td>esAdelanto</td><td>Boolean</td><td></td></tr>
+      <tr><td>registradoPorId <span class="fk">FK</span></td><td>Int → usuarios</td><td></td></tr>
+      <tr><td>observaciones</td><td>String?</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- notas_credito -->
+  <div class="model-title">NotaCredito <span class="table-name">→ tabla: notas_credito</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>facturaId <span class="fk">FK</span></td><td>Int → facturas</td><td></td></tr>
+      <tr><td>clienteId <span class="fk">FK</span></td><td>Int → clientes</td><td></td></tr>
+      <tr><td>usuarioId <span class="fk">FK</span></td><td>Int → usuarios</td><td></td></tr>
+      <tr><td>fechaEmision</td><td>DateTime</td><td></td></tr>
+      <tr><td>nroNota</td><td>String?</td><td></td></tr>
+      <tr><td>monto</td><td>Decimal(12,2)</td><td></td></tr>
+      <tr><td>motivo</td><td>String</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- pagos_proveedores -->
+  <div class="model-title">PagoProveedor <span class="table-name">→ tabla: pagos_proveedores</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>compraId <span class="fk">FK</span></td><td>Int → compras</td><td></td></tr>
+      <tr><td>proveedorId <span class="fk">FK</span></td><td>Int → proveedores</td><td></td></tr>
+      <tr><td>fechaPago</td><td>DateTime</td><td></td></tr>
+      <tr><td>monto</td><td>Decimal(12,2)</td><td></td></tr>
+      <tr><td>medioPago</td><td>MedioPago</td><td>enum</td></tr>
+      <tr><td>nroComprobante</td><td>String?</td><td></td></tr>
+      <tr><td>registradoPorId <span class="fk">FK</span></td><td>Int → usuarios</td><td></td></tr>
+      <tr><td>observaciones</td><td>String?</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- solicitudes_logistica -->
+  <div class="model-title">SolicitudLogistica <span class="table-name">→ tabla: solicitudes_logistica</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>ventaId <span class="fk">FK</span></td><td>Int? → ventas</td><td></td></tr>
+      <tr><td>solicitanteId <span class="fk">FK</span></td><td>Int → usuarios</td><td></td></tr>
+      <tr><td>destinatarioId <span class="fk">FK</span></td><td>Int → usuarios</td><td></td></tr>
+      <tr><td>fechaSolicitud</td><td>DateTime</td><td></td></tr>
+      <tr><td>fechaEntrega</td><td>DateTime?</td><td></td></tr>
+      <tr><td>cantidadUnidades</td><td>Int?</td><td></td></tr>
+      <tr><td>ubicacionEntrega</td><td>String?</td><td></td></tr>
+      <tr><td>notas</td><td>String?</td><td></td></tr>
+      <tr><td>estado</td><td>EstadoSolicitudLogistica</td><td>enum</td></tr>
+      <tr><td>fechaRespuesta</td><td>DateTime?</td><td></td></tr>
+      <tr><td>notasRespuesta</td><td>String?</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- devoluciones -->
+  <div class="model-title">Devolucion <span class="table-name">→ tabla: devoluciones</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>ventaId <span class="fk">FK</span></td><td>Int → ventas</td><td></td></tr>
+      <tr><td>clienteId <span class="fk">FK</span></td><td>Int → clientes</td><td></td></tr>
+      <tr><td>usuarioId <span class="fk">FK</span></td><td>Int → usuarios</td><td></td></tr>
+      <tr><td>fechaSolicitud</td><td>DateTime</td><td></td></tr>
+      <tr><td>tipoCaso</td><td>TipoCasoDevolucion</td><td>enum</td></tr>
+      <tr><td>estado</td><td>EstadoDevolucion</td><td>enum</td></tr>
+      <tr><td>devuelveFlete</td><td>Boolean</td><td></td></tr>
+      <tr><td>devuelveSenasa</td><td>Boolean</td><td></td></tr>
+      <tr><td>montoPallets</td><td>Decimal(12,2)</td><td></td></tr>
+      <tr><td>montoFlete</td><td>Decimal?</td><td></td></tr>
+      <tr><td>montoSenasa</td><td>Decimal?</td><td></td></tr>
+      <tr><td>montoTotal</td><td>Decimal(12,2)</td><td></td></tr>
+      <tr><td>requiereConfirmacionDeposito</td><td>Boolean</td><td></td></tr>
+      <tr><td>depositoConfirmo</td><td>Boolean</td><td></td></tr>
+      <tr><td>fechaConfirmacionDeposito</td><td>DateTime?</td><td></td></tr>
+      <tr><td>stockRestaurado</td><td>Boolean</td><td></td></tr>
+      <tr><td>compensaEnSiguientePedido</td><td>Boolean</td><td></td></tr>
+      <tr><td>metodoPago</td><td>MetodoPago?</td><td>enum</td></tr>
+      <tr><td>cuentaDestino</td><td>String?</td><td></td></tr>
+      <tr><td>observaciones</td><td>String?</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- detalle_devolucion -->
+  <div class="model-title">DetalleDevolucion <span class="table-name">→ tabla: detalle_devolucion</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>devolucionId <span class="fk">FK</span></td><td>Int → devoluciones</td><td></td></tr>
+      <tr><td>detalleVentaId <span class="fk">FK</span></td><td>Int? → detalle_venta</td><td></td></tr>
+      <tr><td>productoId <span class="fk">FK</span></td><td>Int → productos</td><td></td></tr>
+      <tr><td>cantidadDevuelta</td><td>Int</td><td></td></tr>
+      <tr><td>precioUnitario</td><td>Decimal(12,2)</td><td></td></tr>
+      <tr><td>subtotal</td><td>Decimal(12,2)</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- remitos -->
+  <div class="model-title">Remito <span class="table-name">→ tabla: remitos</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>numeroRemito</td><td>String?</td><td></td></tr>
+      <tr><td>ventaId <span class="fk">FK</span></td><td>Int <span class="unique">UNIQUE</span> → ventas</td><td></td></tr>
+      <tr><td>clienteId <span class="fk">FK</span></td><td>Int → clientes</td><td></td></tr>
+      <tr><td>usuarioId <span class="fk">FK</span></td><td>Int → usuarios</td><td></td></tr>
+      <tr><td>fechaEmision</td><td>DateTime</td><td></td></tr>
+      <tr><td>fechaEntrega</td><td>DateTime?</td><td></td></tr>
+      <tr><td>estado</td><td>EstadoRemito</td><td>enum</td></tr>
+      <tr><td>firmaPropietario</td><td>String? Text</td><td>base64</td></tr>
+      <tr><td>fechaFirmaPropietario</td><td>DateTime?</td><td></td></tr>
+      <tr><td>firmaCliente</td><td>String? Text</td><td>base64</td></tr>
+      <tr><td>fechaFirmaCliente</td><td>DateTime?</td><td></td></tr>
+      <tr><td>tokenFirma</td><td>String <span class="unique">UNIQUE</span></td><td>uuid</td></tr>
+      <tr><td>emailEnviado</td><td>Boolean</td><td></td></tr>
+      <tr><td>fechaEmailEnviado</td><td>DateTime?</td><td></td></tr>
+      <tr><td>observaciones</td><td>String?</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- plantillas_email -->
+  <div class="model-title">PlantillaEmail <span class="table-name">→ tabla: plantillas_email</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>nombre</td><td>String</td><td></td></tr>
+      <tr><td>asunto</td><td>String</td><td></td></tr>
+      <tr><td>bloques</td><td>Json</td><td>array de bloques de contenido</td></tr>
+      <tr><td>creadaPorId <span class="fk">FK</span></td><td>Int → usuarios</td><td></td></tr>
+      <tr><td>creadaEn</td><td>DateTime</td><td></td></tr>
+      <tr><td>activa</td><td>Boolean</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- campanas_seguimiento -->
+  <div class="model-title">CampanaSeguimiento <span class="table-name">→ tabla: campanas_seguimiento</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>nombre</td><td>String</td><td></td></tr>
+      <tr><td>asunto</td><td>String</td><td></td></tr>
+      <tr><td>segmento</td><td>String</td><td>tipo de segmento</td></tr>
+      <tr><td>diasCondicion</td><td>Int?</td><td>umbral en días</td></tr>
+      <tr><td>bloques</td><td>Json</td><td>snapshot al momento del envío</td></tr>
+      <tr><td>plantillaId <span class="fk">FK</span></td><td>Int? → plantillas_email</td><td></td></tr>
+      <tr><td>enviadaPorId <span class="fk">FK</span></td><td>Int → usuarios</td><td></td></tr>
+      <tr><td>enviadaEn</td><td>DateTime</td><td></td></tr>
+      <tr><td>totalDestinatarios</td><td>Int</td><td></td></tr>
+      <tr><td>estado</td><td>String</td><td>'borrador' | 'enviado'</td></tr>
+    </tbody>
+  </table>
+
+  <!-- destinatarios_campana -->
+  <div class="model-title">DestinatarioCampana <span class="table-name">→ tabla: destinatarios_campana</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>campanaId <span class="fk">FK</span></td><td>Int → campanas_seguimiento</td><td>CASCADE DELETE</td></tr>
+      <tr><td>clienteId <span class="fk">FK</span></td><td>Int → clientes</td><td></td></tr>
+      <tr><td>email</td><td>String</td><td></td></tr>
+      <tr><td>enviado</td><td>Boolean</td><td></td></tr>
+      <tr><td>error</td><td>String?</td><td></td></tr>
+      <tr><td>enviadoEn</td><td>DateTime?</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- reglas_automatizacion -->
+  <div class="model-title">ReglaAutomatizacion <span class="table-name">→ tabla: reglas_automatizacion</span></div>
+  <table>
+    <thead><tr><th>Campo</th><th>Tipo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>id <span class="pk">PK</span></td><td>Int</td><td></td></tr>
+      <tr><td>nombre</td><td>String</td><td></td></tr>
+      <tr><td>activa</td><td>Boolean</td><td>default: true</td></tr>
+      <tr><td>evento</td><td>String</td><td>'cotizacion_sin_respuesta' | 'sin_actividad'</td></tr>
+      <tr><td>diasCondicion</td><td>Int</td><td>días umbral</td></tr>
+      <tr><td>plantillaId <span class="fk">FK</span></td><td>Int → plantillas_email</td><td></td></tr>
+      <tr><td>asunto</td><td>String</td><td></td></tr>
+      <tr><td>creadaPorId <span class="fk">FK</span></td><td>Int → usuarios</td><td></td></tr>
+      <tr><td>creadaEn</td><td>DateTime</td><td></td></tr>
+    </tbody>
+  </table>
+
+</div>
+
+<!-- ═══════════════════════════════════════ RELACIONES ══════════════════════ -->
+<div class="section">
+  <div class="section-title"><span>🔗</span> RELACIONES ENTRE TABLAS</div>
+  <div class="rel-list">
+    <div class="rel-item"><span class="rel-from">usuarios</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">clientes</span><span class="rel-note">(usuarioAsignadoId)</span></div>
+    <div class="rel-item"><span class="rel-from">usuarios</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">cotizaciones</span><span class="rel-note">(usuarioId)</span></div>
+    <div class="rel-item"><span class="rel-from">usuarios</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">ventas</span><span class="rel-note">(usuarioId)</span></div>
+    <div class="rel-item"><span class="rel-from">usuarios</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">compras</span><span class="rel-note">(usuarioId)</span></div>
+    <div class="rel-item"><span class="rel-from">usuarios</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">facturas</span><span class="rel-note">(usuarioId)</span></div>
+    <div class="rel-item"><span class="rel-from">usuarios</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">remitos</span><span class="rel-note">(usuarioId)</span></div>
+    <div class="rel-item"><span class="rel-from">usuarios</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">retiros_galpon</span><span class="rel-note">(confirmadoPorId)</span></div>
+    <div class="rel-item"><span class="rel-from">usuarios</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">plantillas_email</span><span class="rel-note">(creadaPorId)</span></div>
+    <div class="rel-item"><span class="rel-from">usuarios</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">campanas_seguimiento</span><span class="rel-note">(enviadaPorId)</span></div>
+    <div class="rel-item"><span class="rel-from">usuarios</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">reglas_automatizacion</span><span class="rel-note">(creadaPorId)</span></div>
+    <div class="rel-item"><span class="rel-from">usuarios</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">verificaciones_codigo</span><span class="rel-note">(usuarioId)</span></div>
+    <div class="rel-item"><span class="rel-from">usuarios</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">solicitudes_logistica</span><span class="rel-note">(solicitanteId / destinatarioId — doble FK)</span></div>
+    <div class="rel-item"><span class="rel-from">usuarios</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">historial_reenvio_retiro</span><span class="rel-note">(enviadoPorId)</span></div>
+    <div class="rel-item" style="border-top: 2px solid #f0e8de; margin-top:4px; padding-top:8px;"></div>
+    <div class="rel-item"><span class="rel-from">clientes</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">cotizaciones</span></div>
+    <div class="rel-item"><span class="rel-from">clientes</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">ventas</span></div>
+    <div class="rel-item"><span class="rel-from">clientes</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">facturas</span></div>
+    <div class="rel-item"><span class="rel-from">clientes</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">pagos_cobros</span></div>
+    <div class="rel-item"><span class="rel-from">clientes</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">notas_credito</span></div>
+    <div class="rel-item"><span class="rel-from">clientes</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">devoluciones</span></div>
+    <div class="rel-item"><span class="rel-from">clientes</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">remitos</span></div>
+    <div class="rel-item"><span class="rel-from">clientes</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">destinatarios_campana</span></div>
+    <div class="rel-item" style="border-top: 2px solid #f0e8de; margin-top:4px; padding-top:8px;"></div>
+    <div class="rel-item"><span class="rel-from">cotizaciones</span><span class="rel-arrow">1 ──── 1</span><span class="rel-to">ventas</span><span class="rel-note">(UNIQUE — una cotización puede convertirse en una venta)</span></div>
+    <div class="rel-item"><span class="rel-from">cotizaciones</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">detalle_cotizacion</span></div>
+    <div class="rel-item"><span class="rel-from">cotizaciones</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">seguimiento_cotizacion</span></div>
+    <div class="rel-item" style="border-top: 2px solid #f0e8de; margin-top:4px; padding-top:8px;"></div>
+    <div class="rel-item"><span class="rel-from">ventas</span><span class="rel-arrow">1 ──── 1</span><span class="rel-to">logistica</span><span class="rel-note">(UNIQUE)</span></div>
+    <div class="rel-item"><span class="rel-from">ventas</span><span class="rel-arrow">1 ──── 1</span><span class="rel-to">retiros_galpon</span><span class="rel-note">(UNIQUE)</span></div>
+    <div class="rel-item"><span class="rel-from">ventas</span><span class="rel-arrow">1 ──── 1</span><span class="rel-to">remitos</span><span class="rel-note">(UNIQUE)</span></div>
+    <div class="rel-item"><span class="rel-from">ventas</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">detalle_venta</span></div>
+    <div class="rel-item"><span class="rel-from">ventas</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">facturas</span></div>
+    <div class="rel-item"><span class="rel-from">ventas</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">compras</span></div>
+    <div class="rel-item"><span class="rel-from">ventas</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">devoluciones</span></div>
+    <div class="rel-item"><span class="rel-from">ventas</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">solicitudes_logistica</span></div>
+    <div class="rel-item" style="border-top: 2px solid #f0e8de; margin-top:4px; padding-top:8px;"></div>
+    <div class="rel-item"><span class="rel-from">detalle_venta</span><span class="rel-arrow">1 ──── 1</span><span class="rel-to">especificaciones_medida</span><span class="rel-note">(UNIQUE)</span></div>
+    <div class="rel-item"><span class="rel-from">detalle_venta</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">retiros_parciales</span></div>
+    <div class="rel-item"><span class="rel-from">detalle_venta</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">detalle_devolucion</span></div>
+    <div class="rel-item"><span class="rel-from">detalle_cotizacion</span><span class="rel-arrow">1 ──── 1</span><span class="rel-to">especificaciones_medida</span><span class="rel-note">(UNIQUE)</span></div>
+    <div class="rel-item" style="border-top: 2px solid #f0e8de; margin-top:4px; padding-top:8px;"></div>
+    <div class="rel-item"><span class="rel-from">facturas</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">pagos_cobros</span></div>
+    <div class="rel-item"><span class="rel-from">facturas</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">notas_credito</span></div>
+    <div class="rel-item" style="border-top: 2px solid #f0e8de; margin-top:4px; padding-top:8px;"></div>
+    <div class="rel-item"><span class="rel-from">productos</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">producto_proveedor</span></div>
+    <div class="rel-item"><span class="rel-from">productos</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">stock</span></div>
+    <div class="rel-item"><span class="rel-from">productos</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">lista_precios</span></div>
+    <div class="rel-item"><span class="rel-from">productos</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">historial_precios</span></div>
+    <div class="rel-item"><span class="rel-from">productos</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">detalle_cotizacion</span></div>
+    <div class="rel-item"><span class="rel-from">productos</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">detalle_venta</span></div>
+    <div class="rel-item"><span class="rel-from">productos</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">detalle_compra</span></div>
+    <div class="rel-item"><span class="rel-from">productos</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">detalle_devolucion</span></div>
+    <div class="rel-item" style="border-top: 2px solid #f0e8de; margin-top:4px; padding-top:8px;"></div>
+    <div class="rel-item"><span class="rel-from">proveedores</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">producto_proveedor</span></div>
+    <div class="rel-item"><span class="rel-from">proveedores</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">stock</span></div>
+    <div class="rel-item"><span class="rel-from">proveedores</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">compras</span></div>
+    <div class="rel-item"><span class="rel-from">proveedores</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">pagos_proveedores</span></div>
+    <div class="rel-item" style="border-top: 2px solid #f0e8de; margin-top:4px; padding-top:8px;"></div>
+    <div class="rel-item"><span class="rel-from">stock</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">movimientos_stock</span></div>
+    <div class="rel-item"><span class="rel-from">compras</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">detalle_compra</span></div>
+    <div class="rel-item"><span class="rel-from">compras</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">pagos_proveedores</span></div>
+    <div class="rel-item"><span class="rel-from">retiros_galpon</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">historial_reenvio_retiro</span></div>
+    <div class="rel-item"><span class="rel-from">devoluciones</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">detalle_devolucion</span></div>
+    <div class="rel-item" style="border-top: 2px solid #f0e8de; margin-top:4px; padding-top:8px;"></div>
+    <div class="rel-item"><span class="rel-from">plantillas_email</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">campanas_seguimiento</span></div>
+    <div class="rel-item"><span class="rel-from">plantillas_email</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">reglas_automatizacion</span></div>
+    <div class="rel-item"><span class="rel-from">campanas_seguimiento</span><span class="rel-arrow">1 ──── N</span><span class="rel-to">destinatarios_campana</span><span class="rel-note">(CASCADE DELETE)</span></div>
+  </div>
+</div>
+
+<p style="text-align:center; color:#c4895a; font-size:0.8rem; margin-top:32px; padding-bottom:16px;">
+  WoodPallet Manager · Base de Datos · 26 tablas · PostgreSQL + Prisma ORM
+</p>
+
+</body>
+</html>

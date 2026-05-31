@@ -70,7 +70,21 @@ export const crearCotizacionService = async (
   usuarioId: number
 ) => {
   let totalSinIva = 0;
-  const detallesConPrecio = [];
+  const detallesConPrecio: {
+    productoId: number;
+    cantidad: number;
+    precioUnitario: number;
+    subtotal: number;
+    esAMedida?: boolean;
+    especificacion?: {
+      largoMm?: number;
+      anchoMm?: number;
+      altoMm?: number;
+      cargaMaximaKg?: number;
+      tipoMadera?: string;
+      observacionesCliente?: string;
+    };
+  }[] = [];
 
   // Obtener (o crear) el producto genérico "a_medida" que actúa como placeholder
   let productoMedidaId: number | null = null;
