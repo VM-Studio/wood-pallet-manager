@@ -9,16 +9,16 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log('Creando usuarios iniciales...');
 
-  const passwordCarlos = await bcrypt.hash('woodpallet_carlos_2026', 10);
-  const passwordJuanCruz = await bcrypt.hash('woodpallet_juancruz_2026', 10);
+  const passwordCarlos = await bcrypt.hash('wood_pallet2026', 10);
+  const passwordJuanCruz = await bcrypt.hash('wood_pallet2026', 10);
 
   const carlos = await prisma.usuario.upsert({
-    where: { email: 'carlos@woodpallet.com' },
+    where: { email: 'megapallets@gmail.com' },
     update: {},
     create: {
       nombre: 'Carlos Horacio',
       apellido: 'Benítez',
-      email: 'carlos@woodpallet.com',
+      email: 'megapallets@gmail.com',
       passwordHash: passwordCarlos,
       rol: 'propietario_carlos',
       telefono: '1130058664',
@@ -26,12 +26,12 @@ async function main() {
   });
 
   const juanCruz = await prisma.usuario.upsert({
-    where: { email: 'juancruz@woodpallet.com' },
+    where: { email: 'empresadejj@gmail.com' },
     update: {},
     create: {
       nombre: 'Juan Cruz',
       apellido: 'Benítez',
-      email: 'juancruz@woodpallet.com',
+      email: 'empresadejj@gmail.com',
       passwordHash: passwordJuanCruz,
       rol: 'propietario_juancruz',
       telefono: '1166231866',
@@ -39,8 +39,8 @@ async function main() {
   });
 
   console.log('Usuarios creados:');
-  console.log(`  Carlos: ${carlos.email} / contraseña: woodpallet_carlos_2026`);
-  console.log(`  Juan Cruz: ${juanCruz.email} / contraseña: woodpallet_juancruz_2026`);
+  console.log(`  Carlos: ${carlos.email} / contraseña: wood_pallet2026`);
+  console.log(`  Juan Cruz: ${juanCruz.email} / contraseña: wood_pallet2026`);
 
   // Crear proveedores
   console.log('Creando proveedores...');
