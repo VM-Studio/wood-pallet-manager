@@ -1,0 +1,17 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_middleware_1 = require("../middlewares/auth.middleware");
+const facturacion_controller_1 = require("../controllers/facturacion.controller");
+const router = (0, express_1.Router)();
+router.use(auth_middleware_1.authenticate);
+router.get('/vencidas', facturacion_controller_1.getFacturasVencidas);
+router.get('/cobros-pendientes', facturacion_controller_1.getCobrosPendientes);
+router.get('/', facturacion_controller_1.getFacturas);
+router.get('/:id', facturacion_controller_1.getFacturaById);
+router.post('/', facturacion_controller_1.crearFactura);
+router.post('/:id/cobro', facturacion_controller_1.registrarCobro);
+router.post('/nota-credito', facturacion_controller_1.crearNotaCredito);
+router.patch('/:id/nro-factura', facturacion_controller_1.actualizarNroFactura);
+router.put('/:id/nro-arca', facturacion_controller_1.cargarNroArca);
+exports.default = router;

@@ -245,19 +245,19 @@ export const convertirCotizacionAVentaService = async (
   const venta = await prisma.venta.create({
     data: {
       cotizacionId,
-      clienteId: cotizacion.clienteId,
+      clienteId: cotizacion.clienteId as number,
       usuarioId,
       tipoEntrega: datos.tipoEntrega,
       requiereSenasa: cotizacion.requiereSenasa,
       metodoPago: datos.metodoPago as any,
-      cuentaDestino: datos.cuentaDestino,
+      cuentaDestino: datos.cuentaDestino as any,
       modalidadPago: datos.modalidadPago as any,
-      fechaRetiro: datos.fechaRetiro,
-      lugarEntrega: datos.lugarEntrega,
-      fechaEstimEntrega: datos.fechaEntrega,
-      totalSinIva: cotizacion.totalSinIva,
-      totalConIva: cotizacion.totalConIva,
-      costoFlete: cotizacion.costoFlete,
+      fechaRetiro: datos.fechaRetiro as any,
+      lugarEntrega: datos.lugarEntrega as any,
+      fechaEstimEntrega: datos.fechaEntrega as any,
+      totalSinIva: cotizacion.totalSinIva != null ? Number(cotizacion.totalSinIva) : undefined,
+      totalConIva: cotizacion.totalConIva != null ? Number(cotizacion.totalConIva) : undefined,
+      costoFlete: cotizacion.costoFlete != null ? Number(cotizacion.costoFlete) : undefined,
       observaciones: datos.observaciones,
       origenStock: datos.usaStockPropio ? 'stock_propio' : 'compra_directa',
       detalles: {
@@ -308,14 +308,14 @@ export const convertirCotizacionAVentaService = async (
   await prisma.factura.create({
     data: {
       ventaId: venta.id,
-      clienteId: cotizacion.clienteId,
+      clienteId: cotizacion.clienteId as number,
       usuarioId,
       totalNeto,
       iva,
       totalConIva,
       estadoCobro: 'pendiente',
       metodoPago: datos.metodoPago as any,
-      cuentaDestino: datos.cuentaDestino,
+      cuentaDestino: (datos.cuentaDestino ?? undefined) as any,
       modalidadPago: datos.modalidadPago,
       observaciones: `Generada automáticamente al convertir cotización #${cotizacionId}`,
     },
@@ -323,7 +323,7 @@ export const convertirCotizacionAVentaService = async (
 
   // ── Auto-crear retiro si es retiro en galpón ──────────────────────────────
   if (datos.tipoEntrega === 'retira_cliente') {
-    const cliente = await prisma.cliente.findUnique({ where: { id: cotizacion.clienteId } });
+    const cliente = await prisma.cliente.findUnique({ where: { id: cotizacion.clienteId as number } });
 
     // Combinar fecha + hora si se proveyeron ambas
     let horaEstimadaRetiro: Date | undefined;
@@ -434,7 +434,7 @@ export const generarTextoWhatsAppService = async (cotizacionId: number) => {
 
   let texto = `*Cotización Wood Pallet*\n`;
   texto += `━━━━━━━━━━━━━━━━━━━━━━\n`;
-  texto += `Cliente: ${cotizacion.cliente.razonSocial}\n\n`;
+  texto += `Cliente: ${cotizacion.cliente?.razonSocial ?? 'Cliente'}\n\n`;
 
   for (const detalle of cotizacion.detalles) {
     const p = detalle.producto;

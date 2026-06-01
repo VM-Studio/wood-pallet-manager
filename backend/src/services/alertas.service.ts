@@ -76,7 +76,7 @@ export const getAlertasActivasService = async () => {
     alertas.push({
       tipo: 'cotizacion_sin_seguimiento',
       urgencia: diasSinRespuesta > 7 ? 'alta' : 'media',
-      titulo: `Cotización sin respuesta — ${c.cliente.razonSocial}`,
+      titulo: `Cotización sin respuesta — ${c.cliente?.razonSocial ?? 'Cliente'}`,
       detalle: `Sin respuesta hace ${diasSinRespuesta} días`,
       referencia: { tipo: 'cotizacion', id: c.id },
       propietario: c.usuario.rol,

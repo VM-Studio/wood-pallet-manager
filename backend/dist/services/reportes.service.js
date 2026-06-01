@@ -1,0 +1,374 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getReporteCobranzasService = exports.getTopClientesService = exports.getReporteVentasService = exports.getGananciasDetalleService = exports.getDashboardService = exports.getVentasUltimos12MesesService = void 0;
+const prisma_1 = __importDefault(require("../utils/prisma"));
+const getVentasUltimos12MesesService = async (usuarioId) => {
+    const meses = [];
+    // Arrancar siempre desde Abril 2026 y generar 12 meses consecutivos hacia adelante
+    const mesInicio = new Date(2026, 3, 1); // Abril 2026 (mes 3 = abril, base 0)
+    for (let i = 0; i < 12; i++) {
+        const inicio = new Date(mesInicio.getFullYear(), mesInicio.getMonth() + i, 1);
+        const fin = new Date(mesInicio.getFullYear(), mesInicio.getMonth() + i + 1, 0);
+        const where = { fechaVenta: { gte: inicio, lte: fin } };
+        if (usuarioId !== undefined)
+            where.usuarioId = usuarioId;
+        const ventas = await prisma_1.default.venta.findMany({
+            where,
+            include: { detalles: true },
+        });
+        const pallets = ventas.reduce((acc, v) => acc + v.detalles.reduce((a, d) => a + d.cantidadPedida, 0), 0);
+        const facturacion = ventas.reduce((acc, v) => acc + Number(v.totalConIva || 0), 0);
+        meses.push({
+            mes: inicio.toLocaleDateString('es-AR', { month: 'short', year: '2-digit' }),
+            ventas: ventas.length,
+            pallets,
+            facturacion,
+        });
+    }
+    return meses;
+};
+exports.getVentasUltimos12MesesService = getVentasUltimos12MesesService;
+const getDashboardService = async () => {
+    const hoy = new Date();
+    const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+    const inicioMesAnterior = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+    const finMesAnterior = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
+    // Resolver IDs por rol (no hardcodeados)
+    const [usuarioCarlosDB, usuarioJuanCruzDB] = await Promise.all([
+        prisma_1.default.usuario.findFirst({ where: { rol: 'propietario_carlos' }, select: { id: true } }),
+        prisma_1.default.usuario.findFirst({ where: { rol: 'propietario_juancruz' }, select: { id: true } }),
+    ]);
+    const idCarlos = usuarioCarlosDB?.id;
+    const idJuanCruz = usuarioJuanCruzDB?.id;
+    const [ventasMesActual, ventasMesAnterior, cobrosPendientes, facturasVencidas, cotizacionesPendientes, pedidosActivos, entregasHoy, stockRaw, 
+    // --- Carlos ---
+    cotizacionesPendientesCarlos, pedidosActivosCarlos, cobrosPendientesCarlos, 
+    // --- JuanCruz ---
+    cotizacionesPendientesJuanCruz, pedidosActivosJuanCruz, cobrosPendientesJuanCruz,] = await Promise.all([
+        prisma_1.default.venta.findMany({
+            where: { fechaVenta: { gte: inicioMes } },
+            include: {
+                detalles: true,
+                usuario: { select: { id: true, rol: true, nombre: true } },
+            },
+        }),
+        prisma_1.default.venta.findMany({
+            where: { fechaVenta: { gte: inicioMesAnterior, lte: finMesAnterior } },
+            include: { detalles: true, usuario: { select: { id: true } } },
+        }),
+        prisma_1.default.factura.findMany({
+            where: { estadoCobro: { in: ['pendiente', 'cobrada_parcial'] } },
+            include: { pagos: true },
+        }),
+        prisma_1.default.factura.count({
+            where: {
+                estadoCobro: { in: ['pendiente', 'cobrada_parcial'] },
+                fechaVencimiento: { lt: hoy },
+            },
+        }),
+        prisma_1.default.cotizacion.count({
+            where: { estado: { in: ['enviada', 'en_seguimiento'] } },
+        }),
+        prisma_1.default.venta.count({
+            where: {
+                estadoPedido: {
+                    in: ['confirmado', 'en_preparacion', 'listo_para_envio', 'en_transito'],
+                },
+            },
+        }),
+        prisma_1.default.logistica.count({
+            where: {
+                fechaRetiroGalpon: {
+                    gte: new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()),
+                    lt: new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 1),
+                },
+            },
+        }),
+        prisma_1.default.stock.findMany({ where: { cantidadMinima: { not: null } } }),
+        // Carlos - cotizaciones
+        prisma_1.default.cotizacion.count({
+            where: { estado: { in: ['enviada', 'en_seguimiento'] }, ...(idCarlos ? { usuarioId: idCarlos } : { usuarioId: -1 }) },
+        }),
+        // Carlos - pedidos activos
+        prisma_1.default.venta.count({
+            where: {
+                ...(idCarlos ? { usuarioId: idCarlos } : { usuarioId: -1 }),
+                estadoPedido: { in: ['confirmado', 'en_preparacion', 'listo_para_envio', 'en_transito'] },
+            },
+        }),
+        // Carlos - cobros pendientes
+        prisma_1.default.factura.findMany({
+            where: { estadoCobro: { in: ['pendiente', 'cobrada_parcial'] }, venta: { ...(idCarlos ? { usuarioId: idCarlos } : { usuarioId: -1 }) } },
+            include: { pagos: true },
+        }),
+        // JuanCruz - cotizaciones
+        prisma_1.default.cotizacion.count({
+            where: { estado: { in: ['enviada', 'en_seguimiento'] }, ...(idJuanCruz ? { usuarioId: idJuanCruz } : { usuarioId: -1 }) },
+        }),
+        // JuanCruz - pedidos activos
+        prisma_1.default.venta.count({
+            where: {
+                ...(idJuanCruz ? { usuarioId: idJuanCruz } : { usuarioId: -1 }),
+                estadoPedido: { in: ['confirmado', 'en_preparacion', 'listo_para_envio', 'en_transito'] },
+            },
+        }),
+        // JuanCruz - cobros pendientes
+        prisma_1.default.factura.findMany({
+            where: { estadoCobro: { in: ['pendiente', 'cobrada_parcial'] }, venta: { ...(idJuanCruz ? { usuarioId: idJuanCruz } : { usuarioId: -1 }) } },
+            include: { pagos: true },
+        }),
+    ]);
+    const alertasStock = stockRaw.filter((s) => s.cantidadDisponible <= (s.cantidadMinima ?? 0)).length;
+    const palletsMesActual = ventasMesActual.reduce((acc, v) => acc + v.detalles.reduce((a, d) => a + d.cantidadPedida, 0), 0);
+    const facturacionMesActual = ventasMesActual.reduce((acc, v) => acc + Number(v.totalConIva || 0), 0);
+    const palletsMesAnterior = ventasMesAnterior.reduce((acc, v) => acc + v.detalles.reduce((a, d) => a + d.cantidadPedida, 0), 0);
+    const facturacionMesAnterior = ventasMesAnterior.reduce((acc, v) => acc + Number(v.totalConIva || 0), 0);
+    const totalCobrosPendientes = cobrosPendientes.reduce((acc, f) => {
+        const cobrado = f.pagos.reduce((a, p) => a + Number(p.monto), 0);
+        return acc + (Number(f.totalConIva) - cobrado);
+    }, 0);
+    const totalCobrosPendientesCarlos = cobrosPendientesCarlos.reduce((acc, f) => {
+        const cobrado = f.pagos.reduce((a, p) => a + Number(p.monto), 0);
+        return acc + (Number(f.totalConIva) - cobrado);
+    }, 0);
+    const facturasVencidasCarlos = cobrosPendientesCarlos.filter(f => f.fechaVencimiento && f.fechaVencimiento < hoy).length;
+    const totalCobrosPendientesJuanCruz = cobrosPendientesJuanCruz.reduce((acc, f) => {
+        const cobrado = f.pagos.reduce((a, p) => a + Number(p.monto), 0);
+        return acc + (Number(f.totalConIva) - cobrado);
+    }, 0);
+    const facturasVencidasJuanCruz = cobrosPendientesJuanCruz.filter(f => f.fechaVencimiento && f.fechaVencimiento < hoy).length;
+    const ventasCarlos = ventasMesActual.filter((v) => v.usuario.rol === 'propietario_carlos');
+    const ventasJuanCruz = ventasMesActual.filter((v) => v.usuario.rol === 'propietario_juancruz');
+    const ventasUltimos12Meses = await (0, exports.getVentasUltimos12MesesService)();
+    const grafico12MesesCarlos = await (0, exports.getVentasUltimos12MesesService)(idCarlos);
+    const grafico12MesesJuanCruz = await (0, exports.getVentasUltimos12MesesService)(idJuanCruz);
+    // Compras pagadas del mes actual (para calcular ganancias)
+    const comprasMesActual = await prisma_1.default.compra.findMany({
+        where: {
+            fechaCompra: { gte: inicioMes },
+            estado: 'pagada',
+        }
+    });
+    const costoComprasMes = comprasMesActual.reduce((acc, c) => acc + Number(c.total || 0), 0);
+    const gananciasMes = facturacionMesActual - costoComprasMes;
+    // Mes anterior por propietario (usando id resuelto por rol)
+    const ventasMesAnteriorCarlos = ventasMesAnterior.filter(v => v.usuario.id === idCarlos);
+    const ventasMesAnteriorJuanCruz = ventasMesAnterior.filter(v => v.usuario.id === idJuanCruz);
+    return {
+        kpis: {
+            palletsMesActual,
+            palletsMesAnterior,
+            variacionPallets: palletsMesAnterior > 0
+                ? Math.round(((palletsMesActual - palletsMesAnterior) / palletsMesAnterior) * 100)
+                : 0,
+            facturacionMesActual,
+            facturacionMesAnterior,
+            variacionFacturacion: facturacionMesAnterior > 0
+                ? Math.round(((facturacionMesActual - facturacionMesAnterior) / facturacionMesAnterior) * 100)
+                : 0,
+            totalCobrosPendientes,
+            facturasVencidas,
+            cotizacionesPendientes,
+            pedidosActivos,
+            alertasStock,
+            entregasHoy,
+            gananciasMes,
+            costoComprasMes,
+        },
+        porPropietario: {
+            carlos: {
+                ventas: ventasCarlos.length,
+                pallets: ventasCarlos.reduce((acc, v) => acc + v.detalles.reduce((a, d) => a + d.cantidadPedida, 0), 0),
+                facturacion: ventasCarlos.reduce((acc, v) => acc + Number(v.totalConIva || 0), 0),
+                palletsMesAnterior: ventasMesAnteriorCarlos.reduce((acc, v) => acc + v.detalles.reduce((a, d) => a + d.cantidadPedida, 0), 0),
+                facturacionMesAnterior: ventasMesAnteriorCarlos.reduce((acc, v) => acc + Number(v.totalConIva || 0), 0),
+                cotizacionesPendientes: cotizacionesPendientesCarlos,
+                pedidosActivos: pedidosActivosCarlos,
+                cobrosPendientes: totalCobrosPendientesCarlos,
+                facturasVencidas: facturasVencidasCarlos,
+                grafico12Meses: grafico12MesesCarlos,
+            },
+            juanCruz: {
+                ventas: ventasJuanCruz.length,
+                pallets: ventasJuanCruz.reduce((acc, v) => acc + v.detalles.reduce((a, d) => a + d.cantidadPedida, 0), 0),
+                facturacion: ventasJuanCruz.reduce((acc, v) => acc + Number(v.totalConIva || 0), 0),
+                palletsMesAnterior: ventasMesAnteriorJuanCruz.reduce((acc, v) => acc + v.detalles.reduce((a, d) => a + d.cantidadPedida, 0), 0),
+                facturacionMesAnterior: ventasMesAnteriorJuanCruz.reduce((acc, v) => acc + Number(v.totalConIva || 0), 0),
+                grafico12Meses: grafico12MesesJuanCruz,
+                cobrosPendientes: totalCobrosPendientesJuanCruz,
+                facturasVencidas: facturasVencidasJuanCruz,
+                cotizacionesPendientes: cotizacionesPendientesJuanCruz,
+                pedidosActivos: pedidosActivosJuanCruz,
+            },
+        },
+        graficos: { ventasUltimos12Meses },
+    };
+};
+exports.getDashboardService = getDashboardService;
+const getGananciasDetalleService = async (usuarioId) => {
+    const hoy = new Date();
+    const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+    const finMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0, 23, 59, 59);
+    // Filtro por usuario en ventas y compras
+    const ventaWhere = { fechaVenta: { gte: inicioMes, lte: finMes } };
+    if (usuarioId !== undefined)
+        ventaWhere.usuarioId = usuarioId;
+    const compraWhere = {
+        estado: 'pagada',
+        fechaCompra: { gte: inicioMes, lte: finMes },
+    };
+    if (usuarioId !== undefined)
+        compraWhere.usuarioId = usuarioId;
+    // Para PagoCobro filtramos por la venta asociada a la factura
+    const cobradoWhere = { fechaPago: { gte: inicioMes, lte: finMes } };
+    if (usuarioId !== undefined) {
+        cobradoWhere.factura = { venta: { usuarioId } };
+    }
+    const [ventasMes, cobradoAggregate, comprasStockPropioRaw, comprasReventaRaw] = await Promise.all([
+        prisma_1.default.venta.findMany({
+            where: ventaWhere,
+            select: { totalConIva: true },
+        }),
+        prisma_1.default.pagoCobro.aggregate({
+            _sum: { monto: true },
+            where: cobradoWhere,
+        }),
+        prisma_1.default.compra.aggregate({
+            _sum: { total: true },
+            where: { ...compraWhere, tipoCompra: 'stock_propio' },
+        }),
+        prisma_1.default.compra.aggregate({
+            _sum: { total: true },
+            where: { ...compraWhere, tipoCompra: 'reventa_inmediata' },
+        }),
+    ]);
+    const cantidadVentas = ventasMes.length;
+    const facturadoMes = ventasMes.reduce((acc, v) => acc + Number(v.totalConIva || 0), 0);
+    const cobrado = Number(cobradoAggregate._sum?.monto || 0);
+    const comprasStockPropio = Number(comprasStockPropioRaw._sum?.total || 0);
+    const comprasReventa = Number(comprasReventaRaw._sum?.total || 0);
+    const totalCompras = comprasStockPropio + comprasReventa;
+    const gananciaNeta = cobrado - totalCompras;
+    return {
+        cantidadVentas,
+        facturadoMes,
+        cobradoMes: cobrado,
+        comprasStockPropio,
+        comprasReventa,
+        totalCompras,
+        gananciaNeta,
+    };
+};
+exports.getGananciasDetalleService = getGananciasDetalleService;
+const getReporteVentasService = async (desde, hasta, usuarioId) => {
+    const where = { fechaVenta: { gte: desde, lte: hasta } };
+    if (usuarioId)
+        where.usuarioId = usuarioId;
+    const ventas = await prisma_1.default.venta.findMany({
+        where,
+        include: {
+            cliente: { select: { razonSocial: true } },
+            usuario: { select: { nombre: true, apellido: true, rol: true } },
+            detalles: { include: { producto: { select: { nombre: true, tipo: true } } } },
+            facturas: { select: { estadoCobro: true, totalConIva: true } },
+        },
+        orderBy: { fechaVenta: 'desc' },
+    });
+    const totalPallets = ventas.reduce((acc, v) => acc + v.detalles.reduce((a, d) => a + d.cantidadPedida, 0), 0);
+    const totalFacturado = ventas.reduce((acc, v) => acc + Number(v.totalConIva || 0), 0);
+    const totalCobrado = ventas.reduce((acc, v) => acc +
+        v.facturas.reduce((a, f) => (f.estadoCobro === 'cobrada_total' ? a + Number(f.totalConIva) : a), 0), 0);
+    const porTipo = {};
+    for (const venta of ventas) {
+        for (const detalle of venta.detalles) {
+            const tipo = detalle.producto.tipo;
+            porTipo[tipo] = (porTipo[tipo] || 0) + detalle.cantidadPedida;
+        }
+    }
+    const porPropietario = {};
+    for (const venta of ventas) {
+        const rol = venta.usuario.rol;
+        if (!porPropietario[rol]) {
+            porPropietario[rol] = {
+                nombre: `${venta.usuario.nombre} ${venta.usuario.apellido}`,
+                ventas: 0,
+                pallets: 0,
+                facturacion: 0,
+            };
+        }
+        porPropietario[rol].ventas += 1;
+        porPropietario[rol].pallets += venta.detalles.reduce((a, d) => a + d.cantidadPedida, 0);
+        porPropietario[rol].facturacion += Number(venta.totalConIva || 0);
+    }
+    return {
+        resumen: {
+            totalVentas: ventas.length,
+            totalPallets,
+            totalFacturado,
+            totalCobrado,
+            pendienteCobro: totalFacturado - totalCobrado,
+        },
+        porTipoPallet: porTipo,
+        porPropietario,
+        ventas,
+    };
+};
+exports.getReporteVentasService = getReporteVentasService;
+const getTopClientesService = async (limite = 10) => {
+    const clientes = await prisma_1.default.cliente.findMany({
+        where: { activo: true },
+        include: {
+            ventas: { include: { detalles: true } },
+        },
+    });
+    return clientes
+        .map((c) => {
+        const totalPallets = c.ventas.reduce((acc, v) => acc + v.detalles.reduce((a, d) => a + d.cantidadPedida, 0), 0);
+        const totalFacturado = c.ventas.reduce((acc, v) => acc + Number(v.totalConIva || 0), 0);
+        return {
+            id: c.id,
+            razonSocial: c.razonSocial,
+            localidad: c.localidad,
+            totalVentas: c.ventas.length,
+            totalPallets,
+            totalFacturado,
+        };
+    })
+        .sort((a, b) => b.totalPallets - a.totalPallets)
+        .slice(0, limite);
+};
+exports.getTopClientesService = getTopClientesService;
+const getReporteCobranzasService = async (desde, hasta) => {
+    const facturas = await prisma_1.default.factura.findMany({
+        where: { fechaEmision: { gte: desde, lte: hasta } },
+        include: {
+            cliente: { select: { razonSocial: true } },
+            usuario: { select: { nombre: true, apellido: true, rol: true } },
+            pagos: true,
+        },
+        orderBy: { fechaEmision: 'desc' },
+    });
+    const totalEmitido = facturas.reduce((acc, f) => acc + Number(f.totalConIva), 0);
+    const totalCobrado = facturas.reduce((acc, f) => acc + f.pagos.reduce((a, p) => a + Number(p.monto), 0), 0);
+    const porEstado = {
+        pendiente: facturas.filter((f) => f.estadoCobro === 'pendiente').length,
+        cobrada_parcial: facturas.filter((f) => f.estadoCobro === 'cobrada_parcial').length,
+        cobrada_total: facturas.filter((f) => f.estadoCobro === 'cobrada_total').length,
+        vencida: facturas.filter((f) => f.estadoCobro === 'vencida').length,
+    };
+    return {
+        resumen: {
+            totalFacturas: facturas.length,
+            totalEmitido,
+            totalCobrado,
+            pendienteCobro: totalEmitido - totalCobrado,
+            tasaCobranza: totalEmitido > 0 ? Math.round((totalCobrado / totalEmitido) * 100) : 0,
+        },
+        porEstado,
+        facturas,
+    };
+};
+exports.getReporteCobranzasService = getReporteCobranzasService;

@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_middleware_1 = require("../middlewares/auth.middleware");
+const inventario_controller_1 = require("../controllers/inventario.controller");
+const router = (0, express_1.Router)();
+router.use(auth_middleware_1.authenticate);
+router.get('/alertas', inventario_controller_1.getAlertas);
+router.get('/consolidado', inventario_controller_1.getConsolidado);
+router.get('/movimientos', inventario_controller_1.getMovimientos);
+router.get('/', inventario_controller_1.getStock);
+router.post('/ajuste', inventario_controller_1.ajustarStock);
+exports.default = router;

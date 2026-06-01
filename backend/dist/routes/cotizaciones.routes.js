@@ -1,0 +1,21 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const cotizaciones_controller_1 = require("../controllers/cotizaciones.controller");
+const auth_middleware_1 = require("../middlewares/auth.middleware");
+const router = (0, express_1.Router)();
+router.use(auth_middleware_1.authenticate);
+// Estáticas antes de dinámicas
+router.get('/pendientes-seguimiento', cotizaciones_controller_1.getCotizacionesPendientes);
+router.get('/', cotizaciones_controller_1.getCotizaciones);
+router.post('/', cotizaciones_controller_1.crearCotizacion);
+router.post('/rapida', cotizaciones_controller_1.crearCotizacionRapida);
+router.get('/:id', cotizaciones_controller_1.getCotizacionById);
+router.get('/:id/whatsapp', cotizaciones_controller_1.getTextoWhatsApp);
+router.put('/:id/estado', cotizaciones_controller_1.actualizarEstado);
+router.post('/:id/seguimiento', cotizaciones_controller_1.registrarSeguimiento);
+router.post('/:id/convertir', cotizaciones_controller_1.convertirAVenta);
+router.post('/:id/enviar-email', cotizaciones_controller_1.enviarEmailCotizacion);
+router.post('/:id/registrar-cliente', cotizaciones_controller_1.registrarClienteDesdeProspecto);
+router.delete('/:id', cotizaciones_controller_1.eliminarCotizacion);
+exports.default = router;
