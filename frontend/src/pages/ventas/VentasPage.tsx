@@ -65,7 +65,7 @@ export default function VentasPage() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <div className="card-kpi flex items-center gap-3">
           <div className="w-10 h-10 flex items-center justify-center shrink-0"
             style={{ background: '#F3EDE8', borderRadius: '0.25rem' }}>

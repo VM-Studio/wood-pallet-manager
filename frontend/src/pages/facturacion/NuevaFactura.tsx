@@ -188,7 +188,7 @@ export default function NuevaFactura({ onClose, onSuccess }: NuevaFacturaProps) 
 
             {/* Importes — auto-calculados, solo lectura */}
             {form.ventaId > 0 && (
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div
                   className="p-3"
                   style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.375rem' }}

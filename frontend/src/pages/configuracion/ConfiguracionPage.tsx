@@ -141,7 +141,7 @@ export default function ConfiguracionPage() {
           </div>
 
           <form onSubmit={handleGuardarPerfil} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="label">Nombre</label>
                 <input type="text" value={perfil.nombre}

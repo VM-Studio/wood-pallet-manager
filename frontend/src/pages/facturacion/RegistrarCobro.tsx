@@ -73,7 +73,7 @@ export default function RegistrarCobro({
             {/* Info factura */}
             <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
               <p className="text-sm font-semibold text-gray-900 mb-2">{clienteNombre}</p>
-              <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-center">
                 <div>
                   <p className="text-xs text-gray-500">Total factura</p>
                   <p className="text-sm font-bold text-gray-900">{formatPesos(totalFactura)}</p>
@@ -116,7 +116,7 @@ export default function RegistrarCobro({
             {/* Medio de pago */}
             <div>
               <label className="label">Medio de pago</label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {mediosPago.map(m => (
                   <button key={m.value} type="button"
                     onClick={() => setForm({ ...form, medioPago: m.value })}

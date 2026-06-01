@@ -155,7 +155,7 @@ function TabNuevaCampana() {
       {step === 1 && (
         <div className="bg-white border border-gray-200 p-5">
           <h2 className="font-semibold text-gray-700 mb-4">¿A quién enviás la campaña?</h2>
-          <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
             {SEGMENTOS.map(s => (
               <button
                 key={s.value}
@@ -249,7 +249,7 @@ function TabNuevaCampana() {
               Cargar desde plantilla guardada
             </button>
             {usarPlantilla && plantillas && (
-              <div className="mt-2 grid grid-cols-3 gap-2">
+              <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {plantillas.map(p => (
                   <button
                     key={p.id}
@@ -578,7 +578,7 @@ function TabAutomatizaciones() {
       {showForm && (
         <div className="bg-white border border-amber-200 p-5 space-y-3">
           <h3 className="font-semibold text-gray-700">Nueva regla de automatización</h3>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-gray-500 block mb-1">Nombre de la regla</label>
               <input value={nombre} onChange={e => setNombre(e.target.value)} className="w-full border border-gray-300 px-3 py-1.5 text-sm" />

@@ -324,7 +324,7 @@ export default function NuevaCotizacionRapida({ onClose, onSuccess }: NuevaCotiz
             {/* Datos del prospecto */}
             <div>
               <label className="label">Datos del prospecto</label>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="text-xs text-gray-500 mb-1 block">Nombre / Empresa <span className="text-red-500">*</span></label>
                   <input
@@ -433,7 +433,7 @@ export default function NuevaCotizacionRapida({ onClose, onSuccess }: NuevaCotiz
                               </tfoot>
                             </table>
                           </div>
-                          <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-gray-200">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 pt-3 border-t border-gray-200">
                             <div>
                               <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#4B5563', display: 'block', marginBottom: '0.25rem' }}>Costo por pie</label>
                               <input type="number" min={0} step="0.01" placeholder="$ por pie" value={d.medida.costoPorPie === '' ? '' : d.medida.costoPorPie}
@@ -504,7 +504,7 @@ export default function NuevaCotizacionRapida({ onClose, onSuccess }: NuevaCotiz
             </div>
 
             {/* Flete / SENASA */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-4 bg-gray-50 border border-gray-100" style={{ borderRadius: '0.25rem' }}>
                 <label className="flex items-center gap-2 cursor-pointer mb-3">
                   <input type="checkbox" checked={form.incluyeFlete} onChange={e => setForm({ ...form, incluyeFlete: e.target.checked })} className="w-4 h-4 rounded" />

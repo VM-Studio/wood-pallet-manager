@@ -238,7 +238,7 @@ export default function ComprasPage() {
 
               <div>
                 <label className="label">Método de pago</label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {[
                     { value: 'transferencia', label: 'Transferencia' },
                     { value: 'e_check',       label: 'E-check' },
@@ -324,7 +324,7 @@ export default function ComprasPage() {
               <h2 className="modal-title">Venta asociada #{detalleVentaModal.id}</h2>
             </div>
             <div className="modal-body space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <p className="text-xs text-gray-500">Cliente</p>
                   <p className="text-sm font-medium">{detalleVentaModal.cliente.razonSocial}</p>

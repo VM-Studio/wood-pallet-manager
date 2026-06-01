@@ -109,7 +109,7 @@ export default function AlertasPage() {
       </div>
 
       {/* Resumen por urgencia */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {([
           {
             key: 'alta' as FiltroUrgencia,

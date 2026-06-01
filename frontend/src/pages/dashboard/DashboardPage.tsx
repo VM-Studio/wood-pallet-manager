@@ -297,7 +297,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Accesos rápidos — 3 tarjetas */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <button
           onClick={() => navigate('/clientes?nuevo=true')}
           className="text-left hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-pointer p-4"

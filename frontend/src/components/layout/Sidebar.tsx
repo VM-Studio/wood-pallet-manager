@@ -4,8 +4,7 @@ import {
   Truck, Receipt,
   ClipboardList, Package, Warehouse, Building2,
   BarChart3, LogOut, DollarSign, RotateCcw, FileCheck, Mail,
-  UserCircle,
-} from 'lucide-react';
+  UserCircle, X } from 'lucide-react';
 import { useAuthStore } from '../../store/auth.store';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -48,7 +47,7 @@ const grupos = [
   },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { logout, usuario } = useAuthStore();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -60,10 +59,13 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="fixed top-0 left-0 h-screen w-65 bg-[#3c250f] flex flex-col z-30">
-      {/* Logo */}
-      <div className="flex items-center justify-center border-b border-white/10 shrink-0 py-4">
+    <aside className={`fixed top-0 left-0 h-screen w-[260px] bg-[#3c250f] flex flex-col z-30 transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
+      {/* Logo + close button on mobile */}
+      <div className="flex items-center justify-between border-b border-white/10 shrink-0 py-4 px-4">
         <span className="text-white tracking-tight text-center" style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic', fontWeight: 600, fontSize: '1.6rem', lineHeight: 1.2 }}>Wood Pallet</span>
+        <button onClick={onClose} className="md:hidden text-white/60 hover:text-white p-1" aria-label="Cerrar menú">
+          <X size={20} />
+        </button>
       </div>
 
       {/* Nav */}
@@ -77,6 +79,7 @@ export default function Sidebar() {
             <div className="space-y-0.5">
               {grupo.items.map(item => (
                 <NavLink key={item.path} to={item.path}
+                  onClick={onClose}
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
                       isActive
@@ -98,6 +101,7 @@ export default function Sidebar() {
       <div className="shrink-0 border-t border-white/10 p-3 space-y-1">
         {/* Mi Cuenta — con avatar */}
         <NavLink to="/mi-cuenta"
+          onClick={onClose}
           className={({ isActive }) =>
             `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 ${
               isActive ? 'bg-white/15 text-white' : 'text-white/60 hover:bg-white/8 hover:text-white'

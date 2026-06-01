@@ -517,7 +517,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
                           </div>
 
                           {/* Campos de precio y cantidad */}
-                          <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-gray-200">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 pt-3 border-t border-gray-200">
                             {/* Costo por pie */}
                             <div>
                               <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#4B5563', display: 'block', marginBottom: '0.25rem' }}>
@@ -694,7 +694,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
             </div>
 
             {/* Opciones flete / SENASA */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-4 bg-gray-50 border border-gray-100" style={{ borderRadius: '0.25rem' }}>
                 <label className="flex items-center gap-2 cursor-pointer mb-3">
                   <input

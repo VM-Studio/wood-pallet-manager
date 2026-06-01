@@ -107,7 +107,7 @@ export default function CompraDetalle({ compraId, onClose }: CompraDetalleProps)
           <div className="modal-body space-y-5">
 
             {/* Info general */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="p-3 bg-gray-50 rounded-xl">
                 <p className="text-xs text-gray-500 mb-1">Proveedor</p>
                 <p className="text-sm font-semibold text-gray-900">{compra.proveedor?.nombreEmpresa}</p>
@@ -189,7 +189,7 @@ export default function CompraDetalle({ compraId, onClose }: CompraDetalleProps)
               showPago ? (
                 <form onSubmit={handlePago} className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
                   <p className="text-sm font-semibold text-gray-700">Registrar pago al proveedor</p>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="label">Monto ($)</label>
                       <input

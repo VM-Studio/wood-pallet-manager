@@ -452,7 +452,7 @@ export default function DevolucionesPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <div className="card-kpi" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div style={{ width: 40, height: 40, background: '#FEF3E2', borderRadius: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <AlertCircle size={18} style={{ color: '#C4895A' }} />

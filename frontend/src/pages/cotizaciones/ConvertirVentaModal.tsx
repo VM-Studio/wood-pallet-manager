@@ -194,7 +194,7 @@ export default function ConvertirVentaModal({
                 </p>
                 {errorRegistro && <p className="text-xs text-red-600">{errorRegistro}</p>}
                 <form onSubmit={handleRegistrarCliente} className="space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
                       <label className="label text-xs">Razón social *</label>
                       <input className="input text-sm" required value={formCliente.razonSocial}
@@ -443,7 +443,7 @@ export default function ConvertirVentaModal({
 
             <div>
               <label className="label">Método de pago</label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {[
                   { value: 'transferencia', label: 'Transferencia' },
                   { value: 'e_check',       label: 'E-check' },
@@ -495,7 +495,7 @@ export default function ConvertirVentaModal({
 
             <div>
               <label className="label">Modalidad de pago</label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {[
                   { value: 'adelantado',     label: 'Adelantado' },
                   { value: 'contra_entrega', label: 'Contra entrega' },

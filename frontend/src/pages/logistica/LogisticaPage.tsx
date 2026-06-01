@@ -435,7 +435,7 @@ export default function LogisticaPage() {
       </div>
 
       {/* KPIs clicables */}
-      <div className={`grid ${esCarlos ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-3'} gap-4`}>
+      <div className={`grid ${esCarlos ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3'} gap-4`}>
         {kpis.map(({ icon: Icon, color, bg, val, label, filtro }) => (
           <button
             key={label}

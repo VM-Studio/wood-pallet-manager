@@ -85,7 +85,7 @@ export default function ProductoForm({ producto, onClose }: ProductoFormProps) {
                 required
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="label">Tipo</label>
                 <select
@@ -113,7 +113,7 @@ export default function ProductoForm({ producto, onClose }: ProductoFormProps) {
                 </select>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <div>
                 <label className="label">Largo (mm)</label>
                 <input

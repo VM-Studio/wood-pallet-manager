@@ -175,7 +175,7 @@ function InfoPersonalSection() {
           <div className="flex-1 min-w-0">
             {editando ? (
               <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1">Nombre</label>
                     <input value={nombre} onChange={e => setNombre(e.target.value)}
