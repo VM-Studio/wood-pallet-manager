@@ -78,7 +78,7 @@ export const getProductoByIdService = async (id: number) => {
 
 export const crearProductoService = async (datos: {
   nombre: string;
-  tipo: 'estandar' | 'reforzado' | 'liviano' | 'exportacion' | 'carton' | 'a_medida';
+  tipo: 'estandar' | 'reforzado' | 'liviano' | 'exportacion' | 'carton' | 'a_medida' | 'personalizado';
   condicion: 'nuevo' | 'seminuevo' | 'usado';
   dimensionLargo?: number;
   dimensionAncho?: number;
@@ -95,7 +95,7 @@ export const actualizarProductoService = async (
   propietarioId: number,
   datos: {
     nombre?: string;
-    tipo?: 'estandar' | 'reforzado' | 'liviano' | 'exportacion' | 'carton' | 'a_medida';
+    tipo?: 'estandar' | 'reforzado' | 'liviano' | 'exportacion' | 'carton' | 'a_medida' | 'personalizado';
     condicion?: 'nuevo' | 'seminuevo' | 'usado';
     dimensionLargo?: number;
     dimensionAncho?: number;

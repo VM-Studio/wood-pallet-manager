@@ -12,7 +12,7 @@ import {
 
 const crearProductoSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido'),
-  tipo: z.enum(['estandar', 'reforzado', 'liviano', 'exportacion', 'carton', 'a_medida']),
+  tipo: z.enum(['estandar', 'reforzado', 'liviano', 'exportacion', 'carton', 'a_medida', 'personalizado']),
   condicion: z.enum(['nuevo', 'seminuevo', 'usado']),
   dimensionLargo: z.number().optional(),
   dimensionAncho: z.number().optional(),
