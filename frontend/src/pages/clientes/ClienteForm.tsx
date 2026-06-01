@@ -100,8 +100,10 @@ export default function ClienteForm({ cliente, onClose, onSuccess }: ClienteForm
                 style={{ borderRadius: '0.25rem' }}
               >
                 <option value="whatsapp">WhatsApp</option>
-                <option value="formulario_web">Formulario web</option>
+                <option value="instagram">Instagram</option>
+                <option value="email">Email</option>
                 <option value="llamada">Llamada</option>
+                <option value="formulario_web">Formulario web</option>
                 <option value="recomendacion">Recomendación</option>
                 <option value="otro">Otro</option>
               </select>

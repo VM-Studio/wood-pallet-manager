@@ -18,7 +18,7 @@ const crearClienteSchema = z.object({
   telefonoContacto: z.string().optional(),
   emailContacto: z.string().email().optional().or(z.literal('')),
   canalEntrada: z
-    .enum(['whatsapp', 'formulario_web', 'llamada', 'recomendacion', 'otro'])
+    .enum(['whatsapp', 'formulario_web', 'llamada', 'recomendacion', 'instagram', 'email', 'otro'])
     .optional(),
   direccionEntrega: z.string().optional(),
   localidad: z.string().optional(),

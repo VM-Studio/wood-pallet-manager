@@ -225,9 +225,11 @@ export default function ConvertirVentaModal({
                       <select className="input text-sm" value={formCliente.canalEntrada}
                         onChange={e => setFormCliente(p => ({ ...p, canalEntrada: e.target.value }))}>
                         <option value="whatsapp">WhatsApp</option>
-                        <option value="email">Email</option>
                         <option value="instagram">Instagram</option>
-                        <option value="referido">Referido</option>
+                        <option value="email">Email</option>
+                        <option value="llamada">Llamada</option>
+                        <option value="recomendacion">Recomendación</option>
+                        <option value="formulario_web">Formulario web</option>
                         <option value="otro">Otro</option>
                       </select>
                     </div>

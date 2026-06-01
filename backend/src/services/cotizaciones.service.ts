@@ -615,7 +615,7 @@ export const registrarClienteDesdeProspectoService = async (
     nombreContacto?: string;
     telefonoContacto?: string;
     emailContacto?: string;
-    canalEntrada?: 'whatsapp' | 'formulario_web' | 'llamada' | 'recomendacion' | 'otro';
+    canalEntrada?: 'whatsapp' | 'formulario_web' | 'llamada' | 'recomendacion' | 'instagram' | 'email' | 'otro';
     direccionEntrega?: string;
     localidad?: string;
     observaciones?: string;

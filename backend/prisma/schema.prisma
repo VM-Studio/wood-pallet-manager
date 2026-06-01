@@ -119,6 +119,8 @@ enum CanalEntrada {
   formulario_web
   llamada
   recomendacion
+  instagram
+  email
   otro
 }
 

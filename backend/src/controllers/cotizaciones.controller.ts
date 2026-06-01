@@ -257,7 +257,7 @@ export const registrarClienteDesdeProspecto = async (req: AuthRequest, res: Resp
       nombreContacto: z.string().optional(),
       telefonoContacto: z.string().optional(),
       emailContacto: z.string().optional(),
-      canalEntrada: z.enum(['whatsapp', 'formulario_web', 'llamada', 'recomendacion', 'otro']).optional(),
+      canalEntrada: z.enum(['whatsapp', 'formulario_web', 'llamada', 'recomendacion', 'instagram', 'email', 'otro']).optional(),
       direccionEntrega: z.string().optional(),
       localidad: z.string().optional(),
       observaciones: z.string().optional(),
