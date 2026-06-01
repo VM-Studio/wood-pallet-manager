@@ -157,6 +157,7 @@ enum TipoPallet {
   exportacion
   carton
   a_medida
+  personalizado
 }
 
 enum CondicionPallet {

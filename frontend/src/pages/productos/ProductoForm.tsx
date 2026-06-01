@@ -90,7 +90,19 @@ export default function ProductoForm({ producto, onClose }: ProductoFormProps) {
                 <label className="label">Tipo</label>
                 <select
                   value={form.tipo}
-                  onChange={e => setForm({ ...form, tipo: e.target.value })}
+                  onChange={e => {
+                    const tipo = e.target.value;
+                    setForm({
+                      ...form,
+                      tipo,
+                      // Si cambia a personalizado, limpiar medidas
+                      ...(tipo === 'personalizado' && {
+                        dimensionLargo: '',
+                        dimensionAncho: '',
+                        cargaMaximaKg: '',
+                      }),
+                    });
+                  }}
                   className="select"
                 >
                   <option value="estandar">Estándar</option>
@@ -99,6 +111,7 @@ export default function ProductoForm({ producto, onClose }: ProductoFormProps) {
                   <option value="exportacion">Exportación</option>
                   <option value="carton">Cartón</option>
                   <option value="a_medida">A medida</option>
+                  <option value="personalizado">Personalizado</option>
                 </select>
               </div>
               <div>
@@ -113,6 +126,12 @@ export default function ProductoForm({ producto, onClose }: ProductoFormProps) {
                 </select>
               </div>
             </div>
+            {form.tipo === 'personalizado' ? (
+              <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
+                <span className="text-base">📐</span>
+                <span>Las medidas son personalizadas — se definen en cada cotización.</span>
+              </div>
+            ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <div>
                 <label className="label">Largo (mm)</label>
@@ -145,6 +164,7 @@ export default function ProductoForm({ producto, onClose }: ProductoFormProps) {
                 />
               </div>
             </div>
+            )}
             <div>
               <label className="label">Stock disponible</label>
               <input
