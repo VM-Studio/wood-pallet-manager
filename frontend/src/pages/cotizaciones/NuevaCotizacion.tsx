@@ -335,24 +335,25 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
         );
         setTimeout(() => window.open(`https://wa.me/${telConCodigo}?text=${mensaje}`, '_blank'), 500);
       } else if (form.canalEnvio === 'email' && cliente?.emailContacto) {
-        // Convertir el PDF blob a base64 y enviarlo via el backend
-        const pdfArrayBuffer = await pdfBlob.arrayBuffer();
-        const pdfUint8 = new Uint8Array(pdfArrayBuffer);
-        let binary = '';
-        pdfUint8.forEach(b => { binary += String.fromCharCode(b); });
-        const pdfBase64 = btoa(binary);
+        // Convertir el PDF blob a base64 con FileReader (más confiable que btoa manual)
+        const pdfBase64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const dataUrl = reader.result as string;
+            resolve(dataUrl.split(',')[1]);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(pdfBlob);
+        });
 
-        try {
-          await api.post(`/cotizaciones/${resultado.id}/enviar-email`, {
-            pdfBase64,
-            filename,
-            razonSocial: cliente.razonSocial,
-            emailDestino: cliente.emailContacto,
-            fecha: fechaStr,
-          });
-        } catch {
-          // Si falla el envío, no bloquea el cierre — el PDF ya se descargó
-        }
+        // El envío no bloquea el cierre del modal
+        api.post(`/cotizaciones/${resultado.id}/enviar-email`, {
+          pdfBase64,
+          filename,
+          razonSocial: cliente.razonSocial,
+          emailDestino: cliente.emailContacto,
+          fecha: fechaStr,
+        }).catch(() => { /* fallo silencioso — el PDF ya se descargó */ });
       }
 
       onSuccess(resultado.id);

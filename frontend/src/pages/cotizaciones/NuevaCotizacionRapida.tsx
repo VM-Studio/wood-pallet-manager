@@ -273,19 +273,21 @@ export default function NuevaCotizacionRapida({ onClose, onSuccess }: NuevaCotiz
         const mensaje = encodeURIComponent(`Hola! Te envío el presupuesto que consultaste 📋\n\nNúmero: #${String(resultado.id).padStart(4, '0')}\n\nPor favor revisá el PDF adjunto. Ante cualquier consulta, estamos a disposición. ¡Saludos!`);
         setTimeout(() => window.open(`https://wa.me/${telConCodigo}?text=${mensaje}`, '_blank'), 500);
       } else if (form.canalEnvio === 'email' && prospecto.emailProspecto) {
-        const pdfArrayBuffer = await pdfBlob.arrayBuffer();
-        const pdfUint8 = new Uint8Array(pdfArrayBuffer);
-        let binary = '';
-        pdfUint8.forEach(b => { binary += String.fromCharCode(b); });
-        const pdfBase64 = btoa(binary);
-        try {
-          await api.post(`/cotizaciones/${resultado.id}/enviar-email`, {
-            pdfBase64, filename,
-            razonSocial: prospecto.nombreProspecto,
-            emailDestino: prospecto.emailProspecto,
-            fecha: fechaStr,
-          });
-        } catch { /* no bloquea */ }
+        const pdfBase64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const dataUrl = reader.result as string;
+            resolve(dataUrl.split(',')[1]);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(pdfBlob);
+        });
+        api.post(`/cotizaciones/${resultado.id}/enviar-email`, {
+          pdfBase64, filename,
+          razonSocial: prospecto.nombreProspecto,
+          emailDestino: prospecto.emailProspecto,
+          fecha: fechaStr,
+        }).catch(() => { /* no bloquea */ });
       }
 
       onSuccess(resultado.id);
