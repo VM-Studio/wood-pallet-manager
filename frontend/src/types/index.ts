@@ -91,8 +91,12 @@ export interface Stock {
 // Cotización
 export interface Cotizacion {
   id: number;
-  clienteId: number;
+  clienteId?: number;
   usuarioId: number;
+  esRapida?: boolean;
+  nombreProspecto?: string;
+  telefonoProspecto?: string;
+  emailProspecto?: string;
   fechaCotizacion: string;
   fechaVencimiento?: string;
   estado: 'enviada' | 'en_seguimiento' | 'aceptada' | 'rechazada' | 'perdida' | 'vencida';

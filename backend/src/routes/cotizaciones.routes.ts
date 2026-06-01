@@ -10,6 +10,8 @@ import {
   getCotizacionesPendientes,
   enviarEmailCotizacion,
   eliminarCotizacion,
+  crearCotizacionRapida,
+  registrarClienteDesdeProspecto,
 } from '../controllers/cotizaciones.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 
@@ -22,6 +24,7 @@ router.get('/pendientes-seguimiento', getCotizacionesPendientes);
 
 router.get('/', getCotizaciones);
 router.post('/', crearCotizacion);
+router.post('/rapida', crearCotizacionRapida);
 
 router.get('/:id', getCotizacionById);
 router.get('/:id/whatsapp', getTextoWhatsApp);
@@ -29,6 +32,7 @@ router.put('/:id/estado', actualizarEstado);
 router.post('/:id/seguimiento', registrarSeguimiento);
 router.post('/:id/convertir', convertirAVenta);
 router.post('/:id/enviar-email', enviarEmailCotizacion);
+router.post('/:id/registrar-cliente', registrarClienteDesdeProspecto);
 router.delete('/:id', eliminarCotizacion);
 
 export default router;

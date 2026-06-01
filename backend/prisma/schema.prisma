@@ -296,23 +296,27 @@ enum MotivoMovimiento {
 
 // ─── COTIZACIONES ────────────────────────────────────────
 model Cotizacion {
-  id               Int                   @id @default(autoincrement())
-  clienteId        Int
-  usuarioId        Int
-  fechaCotizacion  DateTime              @default(now())
-  fechaVencimiento DateTime?
-  estado           EstadoCotizacion      @default(enviada)
-  incluyeFlete     Boolean               @default(false)
-  costoFlete       Decimal?              @db.Decimal(12, 2)
-  fleteIncluido    Boolean               @default(true)
-  requiereSenasa   Boolean               @default(false)
-  costoSenasa      Decimal?              @db.Decimal(12, 2)
-  totalSinIva      Decimal?              @db.Decimal(12, 2)
-  totalConIva      Decimal?              @db.Decimal(12, 2)
-  canalEnvio       CanalEnvioCotizacion?
-  observaciones    String?
+  id                Int                   @id @default(autoincrement())
+  clienteId         Int?
+  usuarioId         Int
+  fechaCotizacion   DateTime              @default(now())
+  fechaVencimiento  DateTime?
+  estado            EstadoCotizacion      @default(enviada)
+  incluyeFlete      Boolean               @default(false)
+  costoFlete        Decimal?              @db.Decimal(12, 2)
+  fleteIncluido     Boolean               @default(true)
+  requiereSenasa    Boolean               @default(false)
+  costoSenasa       Decimal?              @db.Decimal(12, 2)
+  totalSinIva       Decimal?              @db.Decimal(12, 2)
+  totalConIva       Decimal?              @db.Decimal(12, 2)
+  canalEnvio        CanalEnvioCotizacion?
+  observaciones     String?
+  esRapida          Boolean               @default(false)
+  nombreProspecto   String?
+  telefonoProspecto String?
+  emailProspecto    String?
 
-  cliente      Cliente                 @relation(fields: [clienteId], references: [id])
+  cliente      Cliente?                @relation(fields: [clienteId], references: [id])
   usuario      Usuario                 @relation(fields: [usuarioId], references: [id])
   detalles     DetalleCotizacion[]
   venta        Venta?

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, ArrowRight, FileText, Package, AlertTriangle, CheckCircle, CalendarDays, MapPin } from 'lucide-react';
+import { X, ArrowRight, FileText, Package, AlertTriangle, CheckCircle, CalendarDays, MapPin, UserPlus } from 'lucide-react';
 import { useConvertirAVenta } from '../../hooks/useCotizaciones';
 import { useCotizacion } from '../../hooks/useCotizaciones';
 import { useStock } from '../../hooks/useInventario';
@@ -31,6 +31,49 @@ export default function ConvertirVentaModal({
   const [firmaPropietario, setFirmaPropietario] = useState<string | null>(null);
   const [showAgenda, setShowAgenda] = useState(false);
   const [proveedorUbicacion, setProveedorUbicacion] = useState<string>('');
+
+  // Registro de cliente desde prospecto
+  const esProspectoSinCliente = !!(cotizacion?.esRapida && !cotizacion?.clienteId);
+  const [clienteRegistrado, setClienteRegistrado] = useState(false);
+  const [registrandoCliente, setRegistrandoCliente] = useState(false);
+  const [errorRegistro, setErrorRegistro] = useState('');
+  const [formCliente, setFormCliente] = useState({
+    razonSocial: cotizacion?.nombreProspecto ?? '',
+    cuit: '',
+    nombreContacto: '',
+    telefonoContacto: cotizacion?.telefonoProspecto ?? '',
+    emailContacto: cotizacion?.emailProspecto ?? '',
+    canalEntrada: 'whatsapp' as string,
+    direccionEntrega: '',
+    localidad: '',
+  });
+
+  // Sync formCliente with cotizacion when it loads
+  useEffect(() => {
+    if (cotizacion) {
+      setFormCliente(prev => ({
+        ...prev,
+        razonSocial: prev.razonSocial || cotizacion.nombreProspecto || '',
+        telefonoContacto: prev.telefonoContacto || cotizacion.telefonoProspecto || '',
+        emailContacto: prev.emailContacto || cotizacion.emailProspecto || '',
+      }));
+    }
+  }, [cotizacion]);
+
+  const handleRegistrarCliente = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorRegistro('');
+    setRegistrandoCliente(true);
+    try {
+      await api.post(`/cotizaciones/${cotizacionId}/registrar-cliente`, formCliente);
+      queryClient.invalidateQueries({ queryKey: ['cotizacion', cotizacionId] });
+      setClienteRegistrado(true);
+    } catch (err: unknown) {
+      setErrorRegistro((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Error al registrar el cliente');
+    } finally {
+      setRegistrandoCliente(false);
+    }
+  };
 
   // Derivar el galpón automáticamente según la condición de los productos de la cotización
   const condicionDetectada: 'nuevo' | 'semi-nuevo' | null = (() => {
@@ -137,6 +180,76 @@ export default function ConvertirVentaModal({
 
         <form onSubmit={handleSubmit}>
           <div className="modal-body space-y-5">
+
+            {/* Bloqueo si es cotización rápida sin cliente registrado */}
+            {esProspectoSinCliente && !clienteRegistrado && (
+              <div className="bg-amber-50 border border-amber-300 rounded-xl p-4 space-y-3">
+                <div className="flex items-center gap-2 text-amber-700 font-semibold text-sm">
+                  <UserPlus size={16} />
+                  Registrá el cliente antes de convertir a venta
+                </div>
+                <p className="text-xs text-amber-600">
+                  Esta cotización fue creada para un prospecto (<strong>{cotizacion?.nombreProspecto}</strong>).
+                  Para generar una venta necesitás registrarlo como cliente.
+                </p>
+                {errorRegistro && <p className="text-xs text-red-600">{errorRegistro}</p>}
+                <form onSubmit={handleRegistrarCliente} className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="label text-xs">Razón social *</label>
+                      <input className="input text-sm" required value={formCliente.razonSocial}
+                        onChange={e => setFormCliente(p => ({ ...p, razonSocial: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="label text-xs">CUIT</label>
+                      <input className="input text-sm" value={formCliente.cuit}
+                        onChange={e => setFormCliente(p => ({ ...p, cuit: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="label text-xs">Nombre contacto</label>
+                      <input className="input text-sm" value={formCliente.nombreContacto}
+                        onChange={e => setFormCliente(p => ({ ...p, nombreContacto: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="label text-xs">Teléfono</label>
+                      <input className="input text-sm" value={formCliente.telefonoContacto}
+                        onChange={e => setFormCliente(p => ({ ...p, telefonoContacto: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="label text-xs">Email</label>
+                      <input className="input text-sm" value={formCliente.emailContacto}
+                        onChange={e => setFormCliente(p => ({ ...p, emailContacto: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="label text-xs">Canal de entrada</label>
+                      <select className="input text-sm" value={formCliente.canalEntrada}
+                        onChange={e => setFormCliente(p => ({ ...p, canalEntrada: e.target.value }))}>
+                        <option value="whatsapp">WhatsApp</option>
+                        <option value="email">Email</option>
+                        <option value="instagram">Instagram</option>
+                        <option value="referido">Referido</option>
+                        <option value="otro">Otro</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="label text-xs">Dirección de entrega</label>
+                      <input className="input text-sm" value={formCliente.direccionEntrega}
+                        onChange={e => setFormCliente(p => ({ ...p, direccionEntrega: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="label text-xs">Localidad</label>
+                      <input className="input text-sm" value={formCliente.localidad}
+                        onChange={e => setFormCliente(p => ({ ...p, localidad: e.target.value }))} />
+                    </div>
+                  </div>
+                  <button type="submit" disabled={registrandoCliente}
+                    className="btn-primary w-full text-sm flex items-center justify-center gap-2">
+                    <UserPlus size={14} />
+                    {registrandoCliente ? 'Registrando...' : 'Registrar cliente y continuar'}
+                  </button>
+                </form>
+              </div>
+            )}
 
             <div>
               <label className="label">Tipo de entrega</label>
@@ -465,7 +578,7 @@ export default function ConvertirVentaModal({
 
           <div className="modal-footer">
             <button type="button" onClick={onClose} className="btn-secondary">Cancelar</button>
-            <button type="submit" disabled={convertir.isPending} className="btn-primary">
+            <button type="submit" disabled={convertir.isPending || (esProspectoSinCliente && !clienteRegistrado)} className="btn-primary">
               {convertir.isPending
                 ? 'Convirtiendo...'
                 : <><span>Convertir a venta</span><ArrowRight size={16} /></>}

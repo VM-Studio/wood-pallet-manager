@@ -2,10 +2,11 @@ import { useState, useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Plus, MoreHorizontal,
-  CheckCircle, XCircle, Search, FileText, Truck, Leaf, Trash2, MessageCircle
+  CheckCircle, XCircle, Search, FileText, Truck, Leaf, Trash2, MessageCircle, Zap
 } from 'lucide-react';
 import { useCotizaciones, useActualizarEstadoCotizacion, useEliminarCotizacion } from '../../hooks/useCotizaciones';
 import NuevaCotizacion from './NuevaCotizacion';
+import NuevaCotizacionRapida from './NuevaCotizacionRapida';
 import WhatsAppModal from './WhatsAppModal';
 import ConvertirVentaModal from './ConvertirVentaModal';
 import EstadoBadge from '../../components/ui/EstadoBadge';
@@ -37,6 +38,7 @@ export default function CotizacionesPage() {
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [searchParams] = useSearchParams();
   const [showNueva, setShowNueva] = useState(() => searchParams.get('nueva') === 'true');
+  const [showNuevaRapida, setShowNuevaRapida] = useState(false);
   const [whatsappId, setWhatsappId] = useState<number | null>(null);
   const [convertirId, setConvertirId] = useState<number | null>(null);
   const [confirmEliminar, setConfirmEliminar] = useState<number | null>(null);
@@ -70,7 +72,7 @@ export default function CotizacionesPage() {
     const blob = await generarPresupuestoPDF({
       numeroCotizacion: c.id,
       fechaCotizacion: fechaStr,
-      razonSocialCliente: c.cliente?.razonSocial ?? '',
+      razonSocialCliente: c.cliente?.razonSocial ?? c.nombreProspecto ?? '',
       cuitCliente: c.cliente?.cuit || undefined,
       detalles: detallesPDF,
       costoFlete: c.incluyeFlete ? c.costoFlete : undefined,
@@ -87,6 +89,7 @@ export default function CotizacionesPage() {
   const filtradas = cotizaciones?.filter(c => {
     const matchBusqueda =
       c.cliente?.razonSocial.toLowerCase().includes(busqueda.toLowerCase()) ||
+      c.nombreProspecto?.toLowerCase().includes(busqueda.toLowerCase()) ||
       `#${c.id}`.includes(busqueda);
     const matchEstado =
       filtroEstado === 'todos' ||
@@ -108,26 +111,39 @@ export default function CotizacionesPage() {
           <h1 className="titulo-modulo">Cotizaciones</h1>
           <p className="text-sm text-gray-600 mt-1">{cotizaciones?.length || 0} cotizaciones en total</p>
         </div>
-        <button
-          onClick={() => setShowNueva(true)}
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: '6px',
-            background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
-            color: 'white', fontWeight: 500, fontSize: '0.875rem',
-            padding: '0.5rem 1rem', borderRadius: '0.25rem',
-            border: 'none', cursor: 'pointer', transition: 'all 0.2s'
-          }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, #5A3022 0%, #B07848 100%)';
-            (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)';
-            (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-          }}
-        >
-          <Plus size={16} /> Nueva cotización
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowNuevaRapida(true)}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '6px',
+              background: '#FEF3C7', color: '#92400E', fontWeight: 500, fontSize: '0.875rem',
+              padding: '0.5rem 1rem', borderRadius: '0.25rem',
+              border: '1px solid #FCD34D', cursor: 'pointer', transition: 'all 0.2s'
+            }}
+          >
+            <Zap size={15} /> Cotización rápida
+          </button>
+          <button
+            onClick={() => setShowNueva(true)}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '6px',
+              background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
+              color: 'white', fontWeight: 500, fontSize: '0.875rem',
+              padding: '0.5rem 1rem', borderRadius: '0.25rem',
+              border: 'none', cursor: 'pointer', transition: 'all 0.2s'
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, #5A3022 0%, #B07848 100%)';
+              (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)';
+              (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+            }}
+          >
+            <Plus size={16} /> Nueva cotización
+          </button>
+        </div>
       </div>
 
       {/* Filtros */}
@@ -199,7 +215,11 @@ export default function CotizacionesPage() {
                 <tr key={c.id}>
                   <td className="font-semibold text-gray-400 text-xs">#{c.id}</td>
                   <td>
-                    <p className="font-semibold text-gray-900 text-sm">{c.cliente?.razonSocial}</p>
+                    <p className="font-semibold text-gray-900 text-sm">
+                      {c.esRapida && !c.clienteId
+                        ? <span className="text-amber-600">⚡ {c.nombreProspecto ?? 'Prospecto'}</span>
+                        : c.cliente?.razonSocial}
+                    </p>
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       {c.incluyeFlete && (
                         <span className="flex items-center gap-1 text-xs text-gray-400">
@@ -367,6 +387,13 @@ export default function CotizacionesPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {showNuevaRapida && (
+        <NuevaCotizacionRapida
+          onClose={() => setShowNuevaRapida(false)}
+          onSuccess={() => setShowNuevaRapida(false)}
+        />
       )}
     </div>
   );

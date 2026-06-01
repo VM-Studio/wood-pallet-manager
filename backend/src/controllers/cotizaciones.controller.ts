@@ -10,6 +10,8 @@ import {
   convertirCotizacionAVentaService,
   generarTextoWhatsAppService,
   getCotizacionesPendientesService,
+  crearCotizacionRapidaService,
+  registrarClienteDesdeProspectoService,
 } from '../services/cotizaciones.service';
 import prisma from '../utils/prisma';
 import { enviarPresupuestoPorEmail } from '../utils/mailer';
@@ -219,5 +221,52 @@ export const eliminarCotizacion = async (req: AuthRequest, res: Response) => {
   } catch (err) {
     console.error('Error al eliminar cotización:', err);
     res.status(500).json({ error: 'No se pudo eliminar la cotización' });
+  }
+};
+
+export const crearCotizacionRapida = async (req: AuthRequest, res: Response) => {
+  try {
+    const schema = z.object({
+      nombreProspecto: z.string().min(1, 'El nombre es requerido'),
+      telefonoProspecto: z.string().optional(),
+      emailProspecto: z.string().email().optional().or(z.literal('')),
+      incluyeFlete: z.boolean().default(false),
+      costoFlete: z.number().optional(),
+      fleteIncluido: z.boolean().optional(),
+      requiereSenasa: z.boolean().default(false),
+      costoSenasa: z.number().optional(),
+      canalEnvio: z.enum(['whatsapp', 'email']).optional(),
+      observaciones: z.string().optional(),
+      detalles: z.array(detalleSchema).min(1, 'Debe haber al menos un producto'),
+    });
+    const datos = schema.parse(req.body);
+    const cotizacion = await crearCotizacionRapidaService(datos, req.user!.userId);
+    res.status(201).json(cotizacion);
+  } catch (error: any) {
+    if (error.name === 'ZodError') return res.status(400).json({ error: error.issues[0].message });
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const registrarClienteDesdeProspecto = async (req: AuthRequest, res: Response) => {
+  try {
+    const id = parseId(req.params.id);
+    const schema = z.object({
+      razonSocial: z.string().min(1, 'La razón social es requerida'),
+      cuit: z.string().optional(),
+      nombreContacto: z.string().optional(),
+      telefonoContacto: z.string().optional(),
+      emailContacto: z.string().optional(),
+      canalEntrada: z.enum(['whatsapp', 'formulario_web', 'llamada', 'recomendacion', 'otro']).optional(),
+      direccionEntrega: z.string().optional(),
+      localidad: z.string().optional(),
+      observaciones: z.string().optional(),
+    });
+    const datos = schema.parse(req.body);
+    const cliente = await registrarClienteDesdeProspectoService(id, datos, req.user!.userId);
+    res.status(201).json(cliente);
+  } catch (error: any) {
+    if (error.name === 'ZodError') return res.status(400).json({ error: error.issues[0].message });
+    res.status(400).json({ error: error.message });
   }
 };

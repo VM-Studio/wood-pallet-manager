@@ -487,3 +487,165 @@ export const getCotizacionesPendientesService = async () => {
     orderBy: { fechaCotizacion: 'asc' },
   });
 };
+
+export const crearCotizacionRapidaService = async (
+  datos: {
+    nombreProspecto: string;
+    telefonoProspecto?: string;
+    emailProspecto?: string;
+    incluyeFlete: boolean;
+    costoFlete?: number;
+    fleteIncluido?: boolean;
+    requiereSenasa: boolean;
+    costoSenasa?: number;
+    canalEnvio?: 'whatsapp' | 'email';
+    observaciones?: string;
+    detalles: {
+      productoId: number;
+      cantidad: number;
+      precioUnitario?: number;
+      esAMedida?: boolean;
+      especificacion?: {
+        largoMm?: number;
+        anchoMm?: number;
+        altoMm?: number;
+        cargaMaximaKg?: number;
+        tipoMadera?: string;
+        observacionesCliente?: string;
+      };
+    }[];
+  },
+  usuarioId: number
+) => {
+  let totalSinIva = 0;
+  const detallesConPrecio: {
+    productoId: number;
+    cantidad: number;
+    precioUnitario: number;
+    subtotal: number;
+    esAMedida?: boolean;
+    especificacion?: {
+      largoMm?: number;
+      anchoMm?: number;
+      altoMm?: number;
+      cargaMaximaKg?: number;
+      tipoMadera?: string;
+      observacionesCliente?: string;
+    };
+  }[] = [];
+
+  let productoMedidaId: number | null = null;
+  const getProductoMedidaId = async (): Promise<number> => {
+    if (productoMedidaId !== null) return productoMedidaId;
+    const existing = await prisma.producto.findFirst({ where: { tipo: 'a_medida' } });
+    if (existing) { productoMedidaId = existing.id; return existing.id; }
+    const created = await prisma.producto.create({
+      data: {
+        nombre: 'Pallet a medida',
+        tipo: 'a_medida',
+        condicion: 'nuevo',
+        propietarioId: usuarioId,
+        descripcion: 'Producto genérico para cotizaciones con medidas personalizadas',
+      },
+    });
+    productoMedidaId = created.id;
+    return created.id;
+  };
+
+  for (const detalle of datos.detalles) {
+    let precioUnit: number;
+    const productoIdReal = detalle.esAMedida ? await getProductoMedidaId() : detalle.productoId;
+    if (detalle.precioUnitario !== undefined && detalle.precioUnitario > 0) {
+      precioUnit = detalle.precioUnitario;
+    } else {
+      const precio = await calcularPrecioService(detalle.productoId, detalle.cantidad);
+      precioUnit = Number(precio.precioUnitario);
+    }
+    const subtotal = precioUnit * detalle.cantidad;
+    totalSinIva += subtotal;
+    detallesConPrecio.push({ ...detalle, productoId: productoIdReal, precioUnitario: precioUnit, subtotal });
+  }
+
+  if (datos.incluyeFlete && datos.costoFlete && datos.fleteIncluido) totalSinIva += datos.costoFlete;
+  if (datos.requiereSenasa && datos.costoSenasa) totalSinIva += datos.costoSenasa;
+
+  const totalConIva = totalSinIva * 1.21;
+  const fechaVencimiento = new Date();
+  fechaVencimiento.setDate(fechaVencimiento.getDate() + 7);
+
+  return prisma.cotizacion.create({
+    data: {
+      usuarioId,
+      esRapida: true,
+      nombreProspecto: datos.nombreProspecto,
+      telefonoProspecto: datos.telefonoProspecto,
+      emailProspecto: datos.emailProspecto,
+      fechaVencimiento,
+      incluyeFlete: datos.incluyeFlete,
+      costoFlete: datos.costoFlete,
+      fleteIncluido: datos.fleteIncluido ?? true,
+      requiereSenasa: datos.requiereSenasa,
+      costoSenasa: datos.costoSenasa,
+      totalSinIva,
+      totalConIva,
+      canalEnvio: datos.canalEnvio,
+      observaciones: datos.observaciones,
+      detalles: {
+        create: detallesConPrecio.map((d) => ({
+          productoId: d.productoId,
+          cantidad: d.cantidad,
+          precioUnitario: d.precioUnitario,
+          subtotal: d.subtotal,
+          esAMedida: d.esAMedida ?? false,
+          especificacion: d.especificacion ? { create: d.especificacion } : undefined,
+        })),
+      },
+    },
+    include: {
+      detalles: { include: { producto: true } },
+    },
+  });
+};
+
+export const registrarClienteDesdeProspectoService = async (
+  cotizacionId: number,
+  datosCliente: {
+    razonSocial: string;
+    cuit?: string;
+    nombreContacto?: string;
+    telefonoContacto?: string;
+    emailContacto?: string;
+    canalEntrada?: 'whatsapp' | 'formulario_web' | 'llamada' | 'recomendacion' | 'otro';
+    direccionEntrega?: string;
+    localidad?: string;
+    observaciones?: string;
+  },
+  usuarioId: number
+) => {
+  const cotizacion = await prisma.cotizacion.findUnique({ where: { id: cotizacionId } });
+  if (!cotizacion) throw new Error('Cotización no encontrada');
+  if (!cotizacion.esRapida) throw new Error('Esta cotización ya tiene un cliente registrado');
+  if (cotizacion.clienteId) throw new Error('Esta cotización ya tiene un cliente asignado');
+
+  const cliente = await prisma.cliente.create({
+    data: {
+      razonSocial: datosCliente.razonSocial,
+      cuit: datosCliente.cuit,
+      nombreContacto: datosCliente.nombreContacto,
+      telefonoContacto: datosCliente.telefonoContacto,
+      emailContacto: datosCliente.emailContacto,
+      canalEntrada: datosCliente.canalEntrada,
+      direccionEntrega: datosCliente.direccionEntrega,
+      localidad: datosCliente.localidad,
+      observaciones: datosCliente.observaciones,
+      usuarioAsignadoId: usuarioId,
+    },
+  });
+
+  await prisma.cotizacion.update({
+    where: { id: cotizacionId },
+    data: { clienteId: cliente.id },
+  });
+
+  return cliente;
+};
