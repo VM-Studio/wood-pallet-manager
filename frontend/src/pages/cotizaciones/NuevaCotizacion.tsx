@@ -92,6 +92,9 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
   const [productos, setProductos] = useState<{ id: number; nombre: string; condicion: string; tipo: string }[]>([]);
   const [error, setError] = useState('');
 
+  const isPersonalizado = (productoId: number) =>
+    productos.find(p => p.id === productoId)?.tipo === 'personalizado';
+
   const [form, setForm] = useState({
     clienteId: 0,
     incluyeFlete: false,
@@ -128,8 +131,12 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
       const nuevo = prev.map((d, i) => {
         if (i !== idx) return d;
         const updated = { ...d, [key]: value };
-        if (key === 'productoId' && value === -1 && !updated.medida) {
-          updated.medida = defaultMedida();
+        if (key === 'productoId') {
+          if (isPersonalizado(value) && !updated.medida) {
+            updated.medida = defaultMedida();
+          } else if (!isPersonalizado(value)) {
+            updated.medida = undefined;
+          }
         }
         return updated;
       });
@@ -168,7 +175,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
 
   // Total de unidades para multiplicar el costo SENASA por unidad
   const totalUnidades = detalles.reduce((acc, d) => {
-    if (d.productoId === -1 && d.medida) {
+    if (isPersonalizado(d.productoId) && d.medida) {
       return acc + (typeof d.medida.cantidadUnidades === 'number' && d.medida.cantidadUnidades > 0 ? d.medida.cantidadUnidades : 0);
     }
     return acc + (d.cantidad > 0 ? d.cantidad : 0);
@@ -176,7 +183,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
   const costoSenasaTotal = form.requiereSenasa && totalUnidades > 0 ? form.costoSenasa * totalUnidades : form.costoSenasa;
 
   const totalSinIva = detalles.reduce((acc, d) => {
-    if (d.productoId === -1 && d.medida) {
+    if (isPersonalizado(d.productoId) && d.medida) {
       // costoUnitario + ganancia = precio por unidad × cantidad
       // (se calcula en el render pero necesitamos el mismo valor aquí)
       // No podemos usar totalPies aquí directamente, lo recalculamos inline
@@ -202,7 +209,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
     setError('');
     if (!form.clienteId) { setError('Seleccioná un cliente'); return; }
     const detalleInvalido = detalles.some(d => {
-      if (d.productoId === -1) {
+      if (isPersonalizado(d.productoId)) {
         return !d.medida || typeof d.medida.cantidadUnidades !== 'number' || d.medida.cantidadUnidades <= 0;
       }
       return !d.productoId || !d.cantidad;
@@ -215,7 +222,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
         ...form,
         detalles: detalles
           .map(d => {
-            if (d.productoId === -1) {
+            if (isPersonalizado(d.productoId)) {
               const piesTotal = COMPONENTES_MADERA.reduce(
                 (s, comp) => s + calcularPiesComponente(d.medida![comp.key]), 0
               );
@@ -224,7 +231,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
               const precioUnit = costoUnit + ganancia;
               const cantidad   = typeof d.medida!.cantidadUnidades === 'number' && d.medida!.cantidadUnidades > 0 ? d.medida!.cantidadUnidades : 1;
               return {
-                productoId: 0,       // el backend lo resuelve al ver esAMedida: true
+                productoId: d.productoId,
                 cantidad,
                 precioUnitario: precioUnit,
                 esAMedida: true,
@@ -257,9 +264,9 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
       const fechaStr = new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
       const detallesPDF = detalles
-        .filter(d => d.productoId > 0 || (d.productoId === -1 && d.medida))
+        .filter(d => d.productoId > 0 || (isPersonalizado(d.productoId) && d.medida))
         .map(d => {
-          if (d.productoId === -1 && d.medida) {
+          if (isPersonalizado(d.productoId) && d.medida) {
             const piesTotal = COMPONENTES_MADERA.reduce(
               (s, comp) => s + calcularPiesComponente(d.medida![comp.key]), 0
             );
@@ -267,9 +274,8 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
             const ganancia   = typeof d.medida.gananciaPorPalet === 'number' ? d.medida.gananciaPorPalet : 0;
             const precioUnit = costoUnit + ganancia;
             const cantidad   = typeof d.medida.cantidadUnidades === 'number' && d.medida.cantidadUnidades > 0 ? d.medida.cantidadUnidades : 1;
-            // Armar medidas para el PDF
-            const medidasPallet = COMPONENTES_MADERA
-              .map(comp => {
+            const prod = productos.find(p => p.id === d.productoId);
+            const medidasPallet = COMPONENTES_MADERA              .map(comp => {
                 const cData = d.medida![comp.key];
                 const pies = calcularPiesComponente(cData);
                 if (pies <= 0) return null;
@@ -283,7 +289,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
                 };
               })
               .filter(Boolean) as { label: string; tablas?: number; largo?: number; ancho?: number; espesor?: number; pies: number }[];
-            return { nombreProducto: 'Pallet a medida', condicion: 'A medida', cantidad, precioUnitario: precioUnit, subtotal: precioUnit * cantidad, medidasPallet };
+            return { nombreProducto: prod?.nombre ?? 'Producto personalizado', condicion: prod?.condicion ?? 'Personalizado', cantidad, precioUnitario: precioUnit, subtotal: precioUnit * cantidad, medidasPallet };
           }
           const prod = productos.find((p: { id: number }) => p.id === d.productoId);
           const precioUnit = getPrecioEfectivo(d);
@@ -422,7 +428,6 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
                           style={{ borderRadius: '0.25rem' }}
                         >
                           <option value={0}>Seleccioná un producto...</option>
-                          <option value={-1}>📐 Pallet a medida (calculadora)</option>
                           {productos.map((p: { id: number; nombre: string; condicion: string }) => (
                             <option key={p.id} value={p.id}>{p.nombre} — {p.condicion}</option>
                           ))}
@@ -439,8 +444,8 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
                       )}
                     </div>
 
-                    {/* ── Modo A MEDIDA ── */}
-                    {d.productoId === -1 && d.medida && (() => {
+                    {/* ── Modo A MEDIDA (producto personalizado) ── */}
+                    {isPersonalizado(d.productoId) && d.medida && (() => {
                       const totalPies = COMPONENTES_MADERA.reduce(
                         (acc, comp) => acc + calcularPiesComponente(d.medida![comp.key]), 0
                       );
@@ -601,7 +606,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
                     })()}
 
                     {/* ── Modo PRODUCTO NORMAL ── */}
-                    {d.productoId > 0 && (() => (
+                    {d.productoId > 0 && !isPersonalizado(d.productoId) && (() => (
                       <>
                         <div className="grid grid-cols-12 gap-2 items-center">
                           <div className="col-span-5">
