@@ -7,6 +7,7 @@ import { useAuthStore } from '../../store/auth.store';
 import type { Cliente } from '../../types';
 import ClienteForm from './ClienteForm';
 import ClienteHistorial from './ClienteHistorial';
+import CargarHistorialModal from './CargarHistorialModal';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
 import { clsx } from 'clsx';
@@ -29,6 +30,7 @@ export default function ClientesPage() {
   const [showForm, setShowForm] = useState(() => searchParams.get('nuevo') === 'true');
   const [clienteEditar, setClienteEditar] = useState<Cliente | null>(null);
   const [clienteHistorial, setClienteHistorial] = useState<number | null>(null);
+  const [clienteCargarHistorial, setClienteCargarHistorial] = useState<Cliente | null>(null);
 
   const clientesFiltrados = clientes?.filter((c) => {
     const matchBusqueda =
@@ -160,7 +162,7 @@ export default function ClientesPage() {
                     <p className="text-xs text-gray-400 mt-0.5">CUIT: {cliente.cuit}</p>
                   )}
                 </div>
-                <div className="flex items-center gap-2 ml-2 shrink-0">
+                <div className="flex flex-col items-end gap-1.5 ml-2 shrink-0">
                   {cliente.esExportador && (
                     <span className="badge-blue">Exportador</span>
                   )}
@@ -171,6 +173,14 @@ export default function ClientesPage() {
                   >
                     <History size={13} />
                     Historial
+                  </button>
+                  <button
+                    onClick={() => setClienteCargarHistorial(cliente)}
+                    className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded hover:bg-purple-100 transition-colors"
+                    title="Cargar historial histórico"
+                  >
+                    <History size={13} />
+                    Cargar historial
                   </button>
                 </div>
               </div>
@@ -266,6 +276,15 @@ export default function ClientesPage() {
         <ClienteHistorial
           clienteId={clienteHistorial}
           onClose={() => setClienteHistorial(null)}
+        />
+      )}
+
+      {/* Modal cargar historial histórico */}
+      {clienteCargarHistorial && (
+        <CargarHistorialModal
+          clienteId={clienteCargarHistorial.id}
+          razonSocial={clienteCargarHistorial.razonSocial}
+          onClose={() => setClienteCargarHistorial(null)}
         />
       )}
 

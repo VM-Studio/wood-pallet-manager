@@ -1,12 +1,12 @@
 import prisma from '../utils/prisma';
 
 export const getVentasService = async (usuarioId: number, rol: string) => {
-  const where = rol === 'admin' ? {} : { usuarioId };
+  const where = rol === 'admin' ? { esHistorica: false } : { usuarioId, esHistorica: false };
 
   return prisma.venta.findMany({
     where,
     include: {
-      cliente: { select: { id: true, razonSocial: true, telefonoContacto: true } },
+      cliente: { select: { id: true, razonSocial: true, nombreContacto: true, telefonoContacto: true } },
       usuario: { select: { id: true, nombre: true, apellido: true, rol: true } },
       detalles: {
         include: {

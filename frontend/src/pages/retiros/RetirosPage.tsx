@@ -280,6 +280,11 @@ function DetalleRetiroModal({ retiro, onClose }: { retiro: RetiroRow; onClose: (
     await cambiar.mutateAsync({ id: retiro.id, estado: 'confirmado' });
   };
 
+  const handleCompletarRetiro = async () => {
+    await cambiar.mutateAsync({ id: retiro.id, estado: 'completado' });
+    onClose();
+  };
+
   const isPendienteOConfirmado = retiro.estadoRetiro === 'pendiente' || retiro.estadoRetiro === 'confirmado';
 
   return (
@@ -337,11 +342,11 @@ function DetalleRetiroModal({ retiro, onClose }: { retiro: RetiroRow; onClose: (
                     Marcar como Confirmado
                   </button>
                 )}
-                <button onClick={() => setShowConfirmar(true)}
+                <button onClick={handleCompletarRetiro} disabled={cambiar.isPending}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-colors"
                   style={{ background: '#16A34A' }}>
                   <ShieldCheck className="w-4 h-4" />
-                  Confirmar retiro completado
+                  {cambiar.isPending ? 'Confirmando...' : 'Confirmar retiro completado'}
                 </button>
                 <button onClick={() => setShowCancelar(true)}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border border-red-200 text-red-600 hover:bg-red-50 transition-colors">

@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../types';
 import prisma from '../utils/prisma';
+import { parseFechaLocal } from '../utils/fecha';
 import {
   getDashboardService,
   getReporteVentasService,
@@ -41,8 +42,8 @@ export const getReporteVentas = async (req: AuthRequest, res: Response) => {
   }
 
   const reporte = await getReporteVentasService(
-    new Date(desde as string),
-    new Date(hasta as string),
+    parseFechaLocal(desde as string),
+    parseFechaLocal(hasta as string),
     resolvedUsuarioId
   );
   res.json(reporte);
@@ -63,8 +64,8 @@ export const getReporteCobranzas = async (req: AuthRequest, res: Response) => {
   }
 
   const reporte = await getReporteCobranzasService(
-    new Date(desde as string),
-    new Date(hasta as string)
+    parseFechaLocal(desde as string),
+    parseFechaLocal(hasta as string)
   );
   res.json(reporte);
 };

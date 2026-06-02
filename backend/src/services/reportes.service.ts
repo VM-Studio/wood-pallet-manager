@@ -2,18 +2,33 @@ import prisma from '../utils/prisma';
 
 export const getVentasUltimos12MesesService = async (usuarioId?: number) => {
   const meses: { mes: string; ventas: number; pallets: number; facturacion: number }[] = [];
-  // Arrancar siempre desde Abril 2026 y generar 12 meses consecutivos hacia adelante
-  const mesInicio = new Date(2026, 3, 1); // Abril 2026 (mes 3 = abril, base 0)
 
-  for (let i = 0; i < 12; i++) {
-    const inicio = new Date(mesInicio.getFullYear(), mesInicio.getMonth() + i, 1);
-    const fin = new Date(mesInicio.getFullYear(), mesInicio.getMonth() + i + 1, 0);
+  // Buscar la venta más antigua (incluyendo históricas) para saber desde qué mes arrancar
+  const primeraVenta = await prisma.venta.findFirst({
+    where: usuarioId !== undefined ? { usuarioId } : undefined,
+    orderBy: { fechaVenta: 'asc' },
+    select: { fechaVenta: true },
+  });
 
-    const where: any = { fechaVenta: { gte: inicio, lte: fin } };
-    if (usuarioId !== undefined) where.usuarioId = usuarioId;
+  // Si no hay ventas, usar el mes actual
+  const hoyLocal = new Date();
+  const mesInicioRef = primeraVenta
+    ? new Date(primeraVenta.fechaVenta.getFullYear(), primeraVenta.fechaVenta.getMonth(), 1)
+    : new Date(hoyLocal.getFullYear(), hoyLocal.getMonth(), 1);
+
+  // Mostrar siempre 12 meses consecutivos desde el primer mes con datos
+  const cantMeses = 12;
+
+  for (let i = 0; i < cantMeses; i++) {
+    const inicio = new Date(mesInicioRef.getFullYear(), mesInicioRef.getMonth() + i, 1);
+    const fin = new Date(mesInicioRef.getFullYear(), mesInicioRef.getMonth() + i + 1, 0, 23, 59, 59);
+
+    // Incluir TODAS las ventas (históricas + operativas) para reflejar la realidad del negocio
+    const whereQuery: any = { fechaVenta: { gte: inicio, lte: fin } };
+    if (usuarioId !== undefined) whereQuery.usuarioId = usuarioId;
 
     const ventas = await prisma.venta.findMany({
-      where,
+      where: whereQuery,
       include: { detalles: true },
     });
 
@@ -74,6 +89,7 @@ export const getDashboardService = async () => {
       include: {
         detalles: true,
         usuario: { select: { id: true, rol: true, nombre: true } },
+        cliente: { select: { id: true, razonSocial: true } },
       },
     }),
     prisma.venta.findMany({
@@ -196,6 +212,32 @@ export const getDashboardService = async () => {
   const grafico12MesesCarlos = await getVentasUltimos12MesesService(idCarlos);
   const grafico12MesesJuanCruz = await getVentasUltimos12MesesService(idJuanCruz);
 
+  // Cotizaciones activas con cliente
+  const cotizacionesActivas = await prisma.cotizacion.findMany({
+    where: { estado: { in: ['enviada', 'en_seguimiento'] } },
+    select: {
+      id: true,
+      estado: true,
+      totalConIva: true,
+      fechaCotizacion: true,
+      cliente: { select: { razonSocial: true } },
+      nombreProspecto: true,
+    },
+    orderBy: { fechaCotizacion: 'desc' },
+  });
+
+  // Resumen ventas del mes por cliente (para detalle del dashboard)
+  const ventasMesResumenMap = new Map<number, { razonSocial: string; pallets: number; facturacion: number }>();
+  for (const v of ventasMesActual) {
+    const key = v.cliente.id;
+    const existing = ventasMesResumenMap.get(key) ?? { razonSocial: v.cliente.razonSocial, pallets: 0, facturacion: 0 };
+    existing.pallets += v.detalles.reduce((a, d) => a + d.cantidadPedida, 0);
+    existing.facturacion += Number(v.totalConIva || 0);
+    ventasMesResumenMap.set(key, existing);
+  }
+  const ventasMesDetalle = Array.from(ventasMesResumenMap.values())
+    .sort((a, b) => b.pallets - a.pallets);
+
   // Compras pagadas del mes actual (para calcular ganancias)
   const comprasMesActual = await prisma.compra.findMany({
     where: {
@@ -290,6 +332,14 @@ export const getDashboardService = async () => {
       },
     },
     graficos: { ventasUltimos12Meses },
+    ventasMesDetalle,
+    cotizacionesActivas: cotizacionesActivas.map(c => ({
+      id: c.id,
+      estado: c.estado,
+      totalConIva: Number(c.totalConIva || 0),
+      fechaCotizacion: c.fechaCotizacion,
+      razonSocial: c.cliente?.razonSocial ?? c.nombreProspecto ?? 'Prospecto',
+    })),
   };
 };
 

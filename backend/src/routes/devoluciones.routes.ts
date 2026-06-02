@@ -7,6 +7,8 @@ import {
   confirmarDeposito,
   cancelarDevolucion,
   getEstadisticasDevoluciones,
+  restaurarStockManual,
+  registrarTransferenciaDevuelta,
 } from '../controllers/devoluciones.controller';
 
 const router = Router();
@@ -17,6 +19,8 @@ router.get('/estadisticas', getEstadisticasDevoluciones);
 router.get('/:id', getDevolucionById);
 router.post('/', crearDevolucion);
 router.put('/:id/confirmar-deposito', confirmarDeposito);
+router.put('/:id/restaurar-stock', restaurarStockManual);
+router.put('/:id/transferencia-devuelta', registrarTransferenciaDevuelta);
 router.put('/:id/cancelar', cancelarDevolucion);
 
 export default router;

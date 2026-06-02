@@ -33,35 +33,41 @@ interface KpiProps {
   subtitulo?: string;
   icono: React.ReactNode;
   onClick?: () => void;
+  children?: React.ReactNode;
+  isOpen?: boolean;
+  onToggle?: () => void;
 }
 
-function KpiCard({ titulo, valor, variacion, subtitulo, icono, onClick }: KpiProps) {
+function KpiCard({ titulo, valor, variacion, subtitulo, icono, onClick, children, isOpen, onToggle }: KpiProps) {
   const positivo = variacion !== undefined && variacion > 0;
   const negativo = variacion !== undefined && variacion < 0;
+  const hasDetail = !!children;
+  const open = isOpen ?? false;
+  const toggle = onToggle ?? (() => {});
 
   return (
     <div
       className={clsx(
         'card-kpi',
-        onClick && 'cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-0.5'
+        (onClick || hasDetail) && 'cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-0.5'
       )}
-      onClick={onClick}
     >
       {/* Título + ícono en la misma fila */}
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex items-center gap-2 mb-2" onClick={hasDetail ? toggle : onClick}>
         <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
           {icono}
         </div>
         <p className="titulo-card flex-1">{titulo}</p>
+        {hasDetail && (open ? <ChevronUp size={14} className="text-gray-400" /> : <ChevronDown size={14} className="text-gray-400" />)}
       </div>
 
       {/* Valor */}
-      <p className="text-2xl font-bold text-gray-900 leading-none mb-1">
+      <p className="text-2xl font-bold text-gray-900 leading-none mb-1" onClick={hasDetail ? toggle : onClick}>
         {valor}
       </p>
 
       {/* Subtítulo + variación */}
-      <div className="flex items-center justify-between mt-1">
+      <div className="flex items-center justify-between mt-1" onClick={hasDetail ? toggle : onClick}>
         {subtitulo && (
           <p className="text-xs text-gray-400">{subtitulo}</p>
         )}
@@ -77,6 +83,13 @@ function KpiCard({ titulo, valor, variacion, subtitulo, icono, onClick }: KpiPro
           </div>
         )}
       </div>
+
+      {/* Detalle expandible */}
+      {open && children && (
+        <div className="mt-3 pt-3 border-t border-gray-100">
+          {children}
+        </div>
+      )}
     </div>
   );
 }
@@ -111,7 +124,7 @@ function AlertaItem({ urgencia, titulo, detalle, onClick }: {
   );
 }
 
-function GananciasCard({ gananciasData }: {
+function GananciasCard({ gananciasData, isOpen, onToggle }: {
   gananciasData?: {
     cantidadVentas: number;
     facturadoMes: number;
@@ -121,15 +134,18 @@ function GananciasCard({ gananciasData }: {
     totalCompras: number;
     gananciaNeta: number;
   };
+  isOpen?: boolean;
+  onToggle?: () => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const open = isOpen ?? false;
+  const toggle = onToggle ?? (() => {});
   const neta = gananciasData?.gananciaNeta ?? 0;
   const positivo = neta >= 0;
 
   return (
     <div className={clsx('card-kpi', 'cursor-pointer transition-all duration-200')}>
       {/* Header — click toggles detail */}
-      <div className="flex items-center gap-2 mb-2" onClick={() => setOpen(o => !o)}>
+      <div className="flex items-center gap-2 mb-2" onClick={toggle}>
         <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
           <TrendingUp size={18} />
         </div>
@@ -141,11 +157,11 @@ function GananciasCard({ gananciasData }: {
       <p
         className="text-2xl font-bold leading-none mb-1"
         style={{ color: positivo ? '#15803d' : '#dc2626' }}
-        onClick={() => setOpen(o => !o)}
+        onClick={toggle}
       >
         {formatPesos(neta)}
       </p>
-      <p className="text-xs text-gray-400 mb-1" onClick={() => setOpen(o => !o)}>
+      <p className="text-xs text-gray-400 mb-1" onClick={toggle}>
         {gananciasData ? `${gananciasData.cantidadVentas} venta${gananciasData.cantidadVentas !== 1 ? 's' : ''} · cobrado real` : 'Calculando...'}
       </p>
 
@@ -210,6 +226,11 @@ export default function DashboardPage() {
   const { data: alertasData, isLoading: loadingAlertas } = useAlertas();
   const { data: graficoData } = useEstacionalidad();
   const { data: gananciasData } = useGanancias();
+
+  const [openCard, setOpenCard] = useState<'pallets' | 'facturacion' | 'ganancias' | 'cotizaciones' | null>(null);
+  const toggleCard = (card: 'pallets' | 'facturacion' | 'ganancias' | 'cotizaciones') =>
+    setOpenCard(prev => prev === card ? null : card);
+
   if (loadingDash) return <LoadingSpinner text="Cargando dashboard..." />;
   if (errorDash) return <ErrorMessage message="No se pudo cargar el dashboard." />;
 
@@ -239,7 +260,7 @@ export default function DashboardPage() {
   const variacionPallets = palletsMesAnt > 0 ? Math.round(((palletsMes - palletsMesAnt) / palletsMesAnt) * 100) : 0;
   const variacionFact    = facturacionMesAnt > 0 ? Math.round(((facturacionMes - facturacionMesAnt) / facturacionMesAnt) * 100) : 0;
 
-  const grafico   = graficoData ?? dashboard?.graficos?.ventasUltimos12Meses ?? [];
+  const grafico   = propData?.grafico12Meses ?? graficoData ?? dashboard?.graficos?.ventasUltimos12Meses ?? [];
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -269,31 +290,88 @@ export default function DashboardPage() {
       </div>
 
       {/* KPIs fila 1 — 4 tarjetas */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 items-start">
         <KpiCard
           titulo="Pallets este mes"
           valor={formatNumero(palletsMes)}
           variacion={variacionPallets}
           subtitulo={`${formatNumero(palletsMesAnt)} el mes pasado`}
           icono={<Package size={18} />}
-          onClick={() => navigate('/ventas')}
-        />
+          isOpen={openCard === 'pallets'}
+          onToggle={() => toggleCard('pallets')}
+        >
+          {(dashboard?.ventasMesDetalle?.length ?? 0) > 0 && (
+            <div className="space-y-1.5">
+              {dashboard!.ventasMesDetalle!.map((v, i) => (
+                <div key={i} className="flex items-center justify-between text-xs">
+                  <span className="text-gray-600 truncate flex-1 mr-2">{v.razonSocial}</span>
+                  <span className="font-semibold text-gray-800 shrink-0">{formatNumero(v.pallets)} u.</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </KpiCard>
+
         <KpiCard
           titulo="Facturación del mes"
           valor={formatPesos(facturacionMes)}
           variacion={variacionFact}
           subtitulo={`${formatPesos(facturacionMesAnt)} el mes pasado`}
           icono={<DollarSign size={18} />}
-          onClick={() => navigate('/reportes')}
+          isOpen={openCard === 'facturacion'}
+          onToggle={() => toggleCard('facturacion')}
+        >
+          {(dashboard?.ventasMesDetalle?.length ?? 0) > 0 && (
+            <div className="space-y-1.5">
+              {dashboard!.ventasMesDetalle!.map((v, i) => (
+                <div key={i} className="flex items-center justify-between text-xs">
+                  <span className="text-gray-600 truncate flex-1 mr-2">{v.razonSocial}</span>
+                  <span className="font-semibold text-gray-800 shrink-0">{formatPesos(v.facturacion)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </KpiCard>
+
+        <GananciasCard
+          gananciasData={gananciasData}
+          isOpen={openCard === 'ganancias'}
+          onToggle={() => toggleCard('ganancias')}
         />
-        <GananciasCard gananciasData={gananciasData} />
+
         <KpiCard
           titulo="Cotizaciones activas"
           valor={cotizacionesVal}
           subtitulo="Enviadas o en seguimiento"
           icono={<FileText size={18} />}
-          onClick={() => navigate('/cotizaciones')}
-        />
+          isOpen={openCard === 'cotizaciones'}
+          onToggle={() => toggleCard('cotizaciones')}
+        >
+          {(dashboard?.cotizacionesActivas?.length ?? 0) > 0 && (
+            <div className="space-y-2">
+              {dashboard!.cotizacionesActivas!.map(c => {
+                const estadoLabel: Record<string, string> = { enviada: 'Enviada', en_seguimiento: 'Seguimiento' };
+                const estadoColor: Record<string, string> = { enviada: 'text-blue-600', en_seguimiento: 'text-amber-600' };
+                return (
+                  <button
+                    key={c.id}
+                    className="w-full flex items-center gap-2 text-left hover:bg-gray-50 rounded-lg px-1 py-0.5 transition-colors group"
+                    onClick={() => navigate(`/cotizaciones?id=${c.id}`)}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-gray-700 truncate">{c.razonSocial}</p>
+                      <p className={`text-xs font-medium ${estadoColor[c.estado] ?? 'text-gray-500'}`}>{estadoLabel[c.estado] ?? c.estado}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      {c.totalConIva > 0 && <p className="text-xs font-semibold text-gray-700">{formatPesos(c.totalConIva)}</p>}
+                      <ArrowRight size={12} className="text-gray-300 group-hover:text-gray-500 ml-auto" />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </KpiCard>
       </div>
 
       {/* Accesos rápidos — 3 tarjetas */}
@@ -388,7 +466,7 @@ export default function DashboardPage() {
                 contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #E5E7EB', fontFamily: 'Inter' }}
                 cursor={{ fill: '#F9FAFB' }}
               />
-              <Bar dataKey="pallets" radius={[4, 4, 0, 0]} fill="url(#colorBrand)" />
+              <Bar dataKey="pallets" radius={[4, 4, 0, 0]} fill="url(#colorBrand)" maxBarSize={40} />
             </BarChart>
           </ResponsiveContainer>
         </div>

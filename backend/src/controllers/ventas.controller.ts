@@ -11,6 +11,7 @@ import {
   getVentasPorPeriodoService,
 } from '../services/ventas.service';
 import prisma from '../utils/prisma';
+import { parseFechaLocal } from '../utils/fecha';
 
 const actualizarEstadoSchema = z.object({
   estado: z.enum([
@@ -105,8 +106,8 @@ export const getVentasPorPeriodo = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'Los parámetros desde y hasta son requeridos' });
     }
     const resultado = await getVentasPorPeriodoService(
-      new Date(desde as string),
-      new Date(hasta as string),
+      parseFechaLocal(desde as string),
+      parseFechaLocal(hasta as string),
       usuarioId ? parseInt(usuarioId as string) : undefined
     );
     res.json(resultado);

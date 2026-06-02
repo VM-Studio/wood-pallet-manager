@@ -60,16 +60,18 @@ export default function ConvertirVentaModal({
     }
   }, [cotizacion]);
 
-  const handleRegistrarCliente = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleRegistrarCliente = async () => {
     setErrorRegistro('');
     setRegistrandoCliente(true);
     try {
       await api.post(`/cotizaciones/${cotizacionId}/registrar-cliente`, formCliente);
-      queryClient.invalidateQueries({ queryKey: ['cotizacion', cotizacionId] });
+      await queryClient.invalidateQueries({ queryKey: ['cotizacion', cotizacionId] });
+      await queryClient.invalidateQueries({ queryKey: ['cotizaciones'] });
+      await queryClient.invalidateQueries({ queryKey: ['clientes'] });
       setClienteRegistrado(true);
     } catch (err: unknown) {
-      setErrorRegistro((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Error al registrar el cliente');
+      const e = err as { response?: { data?: { error?: string; message?: string } } };
+      setErrorRegistro(e?.response?.data?.error ?? e?.response?.data?.message ?? 'Error al registrar el cliente');
     } finally {
       setRegistrandoCliente(false);
     }
@@ -193,7 +195,7 @@ export default function ConvertirVentaModal({
                   Para generar una venta necesitás registrarlo como cliente.
                 </p>
                 {errorRegistro && <p className="text-xs text-red-600">{errorRegistro}</p>}
-                <form onSubmit={handleRegistrarCliente} className="space-y-2">
+                <div className="space-y-2">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
                       <label className="label text-xs">Razón social *</label>
@@ -244,12 +246,13 @@ export default function ConvertirVentaModal({
                         onChange={e => setFormCliente(p => ({ ...p, localidad: e.target.value }))} />
                     </div>
                   </div>
-                  <button type="submit" disabled={registrandoCliente}
+                  <button type="button" disabled={registrandoCliente}
+                    onClick={handleRegistrarCliente}
                     className="btn-primary w-full text-sm flex items-center justify-center gap-2">
                     <UserPlus size={14} />
                     {registrandoCliente ? 'Registrando...' : 'Registrar cliente y continuar'}
                   </button>
-                </form>
+                </div>
               </div>
             )}
 

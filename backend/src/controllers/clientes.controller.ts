@@ -9,6 +9,7 @@ import {
   desactivarClienteService,
   getHistorialClienteService,
   buscarClientesService,
+  cargarHistorialClienteService,
 } from '../services/clientes.service';
 
 const crearClienteSchema = z.object({
@@ -111,5 +112,19 @@ export const buscarClientes = async (req: AuthRequest, res: Response) => {
     res.json(clientes);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+export const cargarHistorialCliente = async (req: AuthRequest, res: Response) => {
+  try {
+    const id = parseId(req.params.id);
+    const { ventas } = req.body;
+    if (!Array.isArray(ventas) || ventas.length === 0) {
+      return res.status(400).json({ error: 'Debés enviar al menos una venta histórica' });
+    }
+    const resultado = await cargarHistorialClienteService(id, req.user!.userId, ventas);
+    res.status(201).json(resultado);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
   }
 };

@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { z } from 'zod';
 import { AuthRequest, parseId } from '../types';
+import { parseFechaLocal } from '../utils/fecha';
 import {
   getCotizacionesService,
   getCotizacionByIdService,
@@ -58,9 +59,9 @@ const convertirSchema = z.object({
   metodoPago: z.enum(['transferencia', 'e_check', 'efectivo']),
   cuentaDestino: z.string().optional(),
   modalidadPago: z.enum(['adelantado', 'contra_entrega', 'por_partes']),
-  fechaRetiro: z.string().optional().transform(v => v ? new Date(v) : undefined),
+  fechaRetiro: z.string().optional().transform(v => v ? parseFechaLocal(v) : undefined),
   lugarEntrega: z.string().optional(),
-  fechaEntrega: z.string().optional().transform(v => v ? new Date(v) : undefined),
+  fechaEntrega: z.string().optional().transform(v => v ? parseFechaLocal(v) : undefined),
   horaEntrega: z.string().optional(), // "HH:MM"
   horaEstimadaRetiro: z.string().optional(), // "HH:MM" — para retiro en galpón
   galponRetiro: z.string().optional(),
@@ -121,7 +122,7 @@ export const registrarSeguimiento = async (req: AuthRequest, res: Response) => {
       id,
       {
         ...datos,
-        proximoContacto: datos.proximoContacto ? new Date(datos.proximoContacto) : undefined,
+        proximoContacto: datos.proximoContacto ? parseFechaLocal(datos.proximoContacto) : undefined,
       },
       req.user!.userId
     );

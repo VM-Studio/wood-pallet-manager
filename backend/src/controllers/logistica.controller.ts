@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { AuthRequest, parseId } from '../types';
+import { parseFechaLocal } from '../utils/fecha';
 import {
   getLogisticasService,
   getLogisticaByVentaService,
@@ -32,9 +33,9 @@ export const crearLogistica = async (req: AuthRequest, res: Response) => {
     ventaId: z.number().int().positive(),
     nombreTransportista: z.string().optional(),
     telefonoTransp: z.string().optional(),
-    fechaRetiroGalpon: z.string().optional().transform(v => v ? new Date(v) : undefined),
-    horaRetiro: z.string().optional().transform(v => v ? new Date(v) : undefined),
-    horaEstimadaEntrega: z.string().optional().transform(v => v ? new Date(v) : undefined),
+    fechaRetiroGalpon: z.string().optional().transform(v => v ? parseFechaLocal(v) : undefined),
+    horaRetiro: z.string().optional().transform(v => v ? parseFechaLocal(v) : undefined),
+    horaEstimadaEntrega: z.string().optional().transform(v => v ? parseFechaLocal(v) : undefined),
     costoFlete: z.number().optional(),
     observaciones: z.string().optional(),
   });
@@ -122,8 +123,8 @@ export const avanzarLogistica = async (req: AuthRequest, res: Response) => {
   try {
     const ventaId = parseId(req.params.ventaId);
     const { accion } = req.body;
-    if (!['consultando', 'aceptada', 'entregada'].includes(accion)) {
-      res.status(400).json({ error: 'Acción debe ser "consultando", "aceptada" o "entregada"' });
+    if (!['consultando', 'aceptada', 'en_camino', 'entregada'].includes(accion)) {
+      res.status(400).json({ error: 'Acción debe ser "consultando", "aceptada", "en_camino" o "entregada"' });
       return;
     }
     const data = await avanzarLogisticaService(ventaId, accion, req.user!.rol);

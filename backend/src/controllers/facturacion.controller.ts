@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { z } from 'zod';
 import { AuthRequest, parseId } from '../types';
+import { parseFechaLocal } from '../utils/fecha';
 import {
   getFacturasService,
   getFacturaByIdService,
@@ -29,6 +30,7 @@ const cobroSchema = z.object({
   nroComprobante: z.string().optional(),
   esAdelanto: z.boolean().optional(),
   observaciones: z.string().optional(),
+  fechaPago: z.string().optional(),
 });
 
 const notaCreditoSchema = z.object({
@@ -59,7 +61,7 @@ export const crearFactura = async (req: AuthRequest, res: Response) => {
     {
       ...parsed.data,
       fechaVencimiento: parsed.data.fechaVencimiento
-        ? new Date(parsed.data.fechaVencimiento)
+        ? parseFechaLocal(parsed.data.fechaVencimiento)
         : undefined,
     },
     req.user!.userId
@@ -74,7 +76,10 @@ export const registrarCobro = async (req: AuthRequest, res: Response) => {
     res.status(400).json({ error: parsed.error.flatten() });
     return;
   }
-  const resultado = await registrarCobroService(id, parsed.data, req.user!.userId);
+  const resultado = await registrarCobroService(id, {
+    ...parsed.data,
+    fechaPago: parsed.data.fechaPago ? parseFechaLocal(parsed.data.fechaPago) : undefined,
+  }, req.user!.userId);
   res.status(201).json(resultado);
 };
 

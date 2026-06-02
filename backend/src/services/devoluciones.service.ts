@@ -1,13 +1,13 @@
 import prisma from '../utils/prisma';
 
 const devolucionInclude = {
-  cliente: { select: { id: true, razonSocial: true } },
+  cliente: { select: { id: true, razonSocial: true, nombreContacto: true, telefonoContacto: true } },
   usuario: { select: { id: true, nombre: true, apellido: true } },
   venta: {
     include: {
-      detalles: { include: { producto: true } },
-      facturas: true,
-      logistica: true,
+      detalles: { include: { producto: { select: { id: true, nombre: true, tipo: true, condicion: true } } } },
+      facturas: { select: { id: true, totalConIva: true, totalNeto: true, iva: true, estadoCobro: true } },
+      logistica: { select: { id: true, estadoEntrega: true } },
     },
   },
   detalles: { include: { producto: true, detalleVenta: true } },
@@ -281,6 +281,74 @@ export const cancelarDevolucionService = async (id: number) => {
   return prisma.devolucion.update({
     where: { id },
     data: { estado: 'cancelada' },
+    include: devolucionInclude,
+  });
+};
+
+// ── RESTAURAR STOCK MANUALMENTE ───────────────────────────────────────────────
+export const restaurarStockManualService = async (id: number, usuarioId: number) => {
+  const devolucion = await prisma.devolucion.findUnique({
+    where: { id },
+    include: {
+      venta: { include: { detalles: true, facturas: true, compras: { include: { detalles: true } } } },
+      detalles: { include: { producto: true } },
+    },
+  });
+  if (!devolucion) throw new Error('Devolución no encontrada');
+  if (devolucion.stockRestaurado) throw new Error('El stock ya fue restaurado');
+  if (devolucion.estado === 'cancelada') throw new Error('Devolución cancelada');
+
+  return prisma.$transaction(async (tx) => {
+    for (const detalle of devolucion.detalles) {
+      const movimientoOriginal = await tx.movimientoStock.findFirst({
+        where: {
+          tipoMovimiento: 'salida',
+          motivo: 'venta',
+          idReferencia: devolucion.ventaId,
+          stock: { productoId: detalle.productoId },
+        },
+        include: { stock: true },
+      });
+      if (movimientoOriginal) {
+        await tx.stock.update({
+          where: { id: movimientoOriginal.stockId },
+          data: { cantidadDisponible: { increment: detalle.cantidadDevuelta } },
+        });
+        await tx.movimientoStock.create({
+          data: {
+            stockId: movimientoOriginal.stockId,
+            tipoMovimiento: 'entrada',
+            cantidad: detalle.cantidadDevuelta,
+            motivo: 'devolucion',
+            idReferencia: devolucion.id,
+            registradoPorId: usuarioId,
+          },
+        });
+      }
+    }
+    return tx.devolucion.update({
+      where: { id },
+      data: { stockRestaurado: true, fechaStockRestaurado: new Date() },
+      include: devolucionInclude,
+    });
+  });
+};
+
+// ── REGISTRAR TRANSFERENCIA DEVUELTA ─────────────────────────────────────────
+export const registrarTransferenciaDevueltaService = async (id: number) => {
+  const devolucion = await prisma.devolucion.findUnique({ where: { id } });
+  if (!devolucion) throw new Error('Devolución no encontrada');
+  if (!devolucion.stockRestaurado && devolucion.tipoCaso !== 'cancelacion_anticipada')
+    throw new Error('Primero confirmá que el stock llegó al galpón');
+  if (devolucion.transferenciaDevuelta) throw new Error('La transferencia ya fue registrada');
+
+  return prisma.devolucion.update({
+    where: { id },
+    data: {
+      transferenciaDevuelta: true,
+      fechaTransferenciaDevuelta: new Date(),
+      estado: 'procesada',
+    },
     include: devolucionInclude,
   });
 };

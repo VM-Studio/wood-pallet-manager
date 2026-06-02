@@ -135,14 +135,17 @@ export interface Venta {
   fechaVenta: string;
   estadoPedido: 'confirmado' | 'en_preparacion' | 'listo_para_envio' | 'en_transito' | 'entregado' | 'entregado_parcial' | 'cancelado';
   tipoEntrega: 'retira_cliente' | 'envio_woodpallet';
+  incluyeFlete?: boolean;
   requiereSenasa: boolean;
   fechaEstimEntrega?: string;
   fechaEntregaReal?: string;
   totalSinIva?: number;
   totalConIva?: number;
   costoFlete?: number;
+  metodoPago?: string;
+  modalidadPago?: string;
   observaciones?: string;
-  cliente?: { razonSocial: string; cuit?: string };
+  cliente?: { id?: number; razonSocial: string; cuit?: string; nombreContacto?: string; telefonoContacto?: string };
   usuario?: { nombre: string; apellido: string; rol: string };
   detalles?: DetalleVenta[];
   facturas?: Factura[];
@@ -151,6 +154,7 @@ export interface Venta {
   lugarEntrega?: string;
   costoSenasa?: number;
   origenStock?: string;
+  esHistorica?: boolean;
 }
 
 export interface DetalleVenta {
@@ -161,8 +165,11 @@ export interface DetalleVenta {
   cantidadEntregada: number;
   precioUnitario: number;
   subtotal: number;
-  producto?: { nombre: string; tipo: string };
+  producto?: { nombre: string; tipo: string; condicion?: string };
   retiros?: RetiroParcial[];
+  costoUnitarioHistorico?: number;
+  proveedorHistoricoId?: number;
+  tipoCompraHistorico?: string;
 }
 
 export interface RetiroParcial {
@@ -170,6 +177,26 @@ export interface RetiroParcial {
   detalleVentaId: number;
   fechaRetiro: string;
   cantidadRetirada: number;
+}
+
+export interface VentaHistoricaPayload {
+  fechaVenta: string;
+  fechaEntregaReal?: string;
+  productos: {
+    productoId: number;
+    cantidad: number;
+    precioUnitario: number;
+    costoUnitario?: number;
+    proveedorId?: number;
+    tipoCompra?: string;
+  }[];
+  incluyeIva?: boolean;
+  tipoEntrega?: string;
+  estadoCobro?: 'pendiente' | 'cobrada_parcial' | 'cobrada_total';
+  montoCobrado?: number;
+  medioPago?: string;
+  fechaPago?: string;
+  observaciones?: string;
 }
 
 // Compra
@@ -357,6 +384,8 @@ export interface DashboardData {
       facturacion: number;
     }[];
   };
+  ventasMesDetalle?: { razonSocial: string; pallets: number; facturacion: number }[];
+  cotizacionesActivas?: { id: number; razonSocial: string; estado: string; totalConIva: number; fechaCotizacion: string }[];
 }
 
 // Solicitud Logística

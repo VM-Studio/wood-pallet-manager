@@ -86,6 +86,7 @@ export const getAlertasActivasService = async () => {
   // 4. Pedidos activos con fecha de entrega vencida
   const pedidosAtrasados = await prisma.venta.findMany({
     where: {
+      esHistorica: false,
       estadoPedido: {
         in: ['confirmado', 'en_preparacion', 'listo_para_envio', 'en_transito'],
       },

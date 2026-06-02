@@ -111,7 +111,7 @@ interface Venta {
   id: number; fechaVenta: string; estadoPedido: string; tipoEntrega: string;
   requiereSenasa: boolean; fechaEstimEntrega?: string; fechaEntregaReal?: string;
   lugarEntrega?: string; totalConIva?: number; metodoPago?: string;
-  modalidadPago?: string; observaciones?: string;
+  modalidadPago?: string; observaciones?: string; esHistorica?: boolean;
   usuario: { nombre: string; apellido: string; rol: string };
   detalles: DetalleVenta[]; facturas: Factura[];
   logistica?: Logistica; retiroGalpon?: RetiroGalpon;
@@ -161,6 +161,11 @@ function VentaCard({ venta }: { venta: Venta }) {
             </div>
           </div>
           <div className="flex items-center gap-3 shrink-0">
+            {venta.esHistorica && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
+                Histórico
+              </span>
+            )}
             <Badge estado={venta.estadoPedido} config={estadoPedidoConfig} />
             <p className="text-sm font-bold text-gray-900">{formatPesos(Number(venta.totalConIva || 0))}</p>
             {open ? <ChevronUp size={14} className="text-gray-400" /> : <ChevronDown size={14} className="text-gray-400" />}

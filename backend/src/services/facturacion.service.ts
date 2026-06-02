@@ -1,7 +1,9 @@
 import prisma from '../utils/prisma';
 
 export const getFacturasService = async (usuarioId: number, rol: string) => {
-  const where = rol === 'admin' ? {} : { usuarioId };
+  const where = rol === 'admin'
+    ? { venta: { esHistorica: false } }
+    : { usuarioId, venta: { esHistorica: false } };
 
   return prisma.factura.findMany({
     where,
@@ -84,6 +86,7 @@ export const registrarCobroService = async (
     nroComprobante?: string;
     esAdelanto?: boolean;
     observaciones?: string;
+    fechaPago?: Date;
   },
   usuarioId: number
 ) => {
@@ -116,6 +119,7 @@ export const registrarCobroService = async (
       esAdelanto: datos.esAdelanto ?? false,
       registradoPorId: usuarioId,
       observaciones: datos.observaciones,
+      fechaPago: datos.fechaPago ?? new Date(),
     },
   });
 
@@ -199,6 +203,7 @@ export const crearNotaCreditoService = async (
 export const getCobrosPendientesService = async (usuarioId: number, rol: string) => {
   const where: any = {
     estadoCobro: { in: ['pendiente', 'cobrada_parcial'] },
+    venta: { esHistorica: false },
   };
   if (rol !== 'admin') where.usuarioId = usuarioId;
 

@@ -432,6 +432,7 @@ model Venta {
   modalidadPago     ModalidadPago?
   observaciones     String?
   origenStock       String?        @default("stock_propio")
+  esHistorica       Boolean        @default(false)
 
   cotizacion           Cotizacion?          @relation(fields: [cotizacionId], references: [id])
   cliente              Cliente              @relation(fields: [clienteId], references: [id])
@@ -465,14 +466,17 @@ enum TipoEntrega {
 
 // ─── DETALLE VENTA ───────────────────────────────────────
 model DetalleVenta {
-  id                Int     @id @default(autoincrement())
-  ventaId           Int
-  productoId        Int
-  cantidadPedida    Int
-  cantidadEntregada Int     @default(0)
-  precioUnitario    Decimal @db.Decimal(12, 2)
-  subtotal          Decimal @db.Decimal(12, 2)
-  observaciones     String?
+  id                     Int      @id @default(autoincrement())
+  ventaId                Int
+  productoId             Int
+  cantidadPedida         Int
+  cantidadEntregada      Int      @default(0)
+  precioUnitario         Decimal  @db.Decimal(12, 2)
+  subtotal               Decimal  @db.Decimal(12, 2)
+  observaciones          String?
+  costoUnitarioHistorico Decimal? @db.Decimal(12, 2)
+  proveedorHistoricoId   Int?
+  tipoCompraHistorico    String?
 
   venta          Venta                 @relation(fields: [ventaId], references: [id])
   producto       Producto              @relation(fields: [productoId], references: [id])
@@ -799,6 +803,9 @@ model Devolucion {
   depositoConfirmo             Boolean            @default(false)
   fechaConfirmacionDeposito    DateTime?
   stockRestaurado              Boolean            @default(false)
+  fechaStockRestaurado         DateTime?
+  transferenciaDevuelta        Boolean            @default(false)
+  fechaTransferenciaDevuelta   DateTime?
   compensaEnSiguientePedido    Boolean            @default(false)
   metodoPago                   MetodoPago?
   cuentaDestino                String?

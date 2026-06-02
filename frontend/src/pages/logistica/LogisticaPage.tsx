@@ -27,7 +27,7 @@ interface LogisticaRow {
     fechaEstimEntrega?: string;
     lugarEntrega?: string;
     tipoEntrega?: string;
-    cliente?: { razonSocial: string; direccionEntrega?: string; localidad?: string };
+    cliente?: { razonSocial: string; nombreContacto?: string; telefonoContacto?: string; direccionEntrega?: string; localidad?: string };
     usuario?: { nombre: string; apellido: string; rol: string };
     detalles?: { id: number; cantidadPedida: number; producto?: { nombre: string } }[];
   };
@@ -36,8 +36,12 @@ interface LogisticaRow {
 const fmt = (v?: number) =>
   v != null ? new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(v) : '—';
 
-const fmtFecha = (s?: string) =>
-  s ? new Date(s).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
+const fmtFecha = (s?: string) => {
+  if (!s) return '—';
+  // Parsear como fecha local para evitar off-by-one por UTC
+  const [y, m, d] = s.slice(0, 10).split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+};
 
 const estadoEntregaStyle = (e: EstadoEntrega) => ({
   bg:    e === 'pendiente' ? '#FEF3E2' : e === 'en_camino' ? '#EFF6FF' : e === 'entregado' ? '#DCFCE7' : '#FEE2E2',
@@ -72,6 +76,17 @@ function LogisticaCard({
   const costoFlete  = l.venta?.costoFlete ?? l.costoFlete;
   const fechaEntrega = l.venta?.fechaEstimEntrega ?? l.fechaRetiroGalpon;
 
+  // Hora: extraer de horaEstimadaEntrega (campo del registro logística)
+  const fmtHora = (s?: string) => {
+    if (!s) return null;
+    const d = new Date(s);
+    const hh = d.getHours().toString().padStart(2, '0');
+    const mm = d.getMinutes().toString().padStart(2, '0');
+    if (hh === '00' && mm === '00') return null;
+    return `${hh}:${mm} hs`;
+  };
+  const horaEntrega = fmtHora(l.horaEstimadaEntrega);
+
   return (
     <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '0.5rem', overflow: 'hidden' }}>
       {/* Cabecera */}
@@ -89,9 +104,19 @@ function LogisticaCard({
             </span>
           )}
         </div>
-        <p style={{ fontSize: '0.92rem', fontWeight: 700, color: '#1F2937', margin: 0 }}>
+        {/* Empresa */}
+        <p style={{ fontSize: '0.92rem', fontWeight: 700, color: '#1F2937', margin: '0 0 2px' }}>
           {l.venta?.cliente?.razonSocial ?? '—'}
         </p>
+        {/* Nombre de contacto */}
+        {l.venta?.cliente?.nombreContacto && (
+          <p style={{ fontSize: '0.78rem', color: '#6B7280', margin: 0 }}>
+            👤 {l.venta.cliente.nombreContacto}
+            {l.venta.cliente.telefonoContacto && (
+              <span style={{ marginLeft: 8 }}>· 📞 {l.venta.cliente.telefonoContacto}</span>
+            )}
+          </p>
+        )}
       </div>
 
       {/* Datos */}
@@ -102,7 +127,7 @@ function LogisticaCard({
         </div>
         <div>
           <p style={{ fontSize: '0.67rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 2px' }}>Fecha de entrega</p>
-          <p style={{ fontSize: '0.82rem', color: '#374151', margin: 0 }}>📅 {fmtFecha(fechaEntrega)}</p>
+          <p style={{ fontSize: '0.82rem', color: '#374151', margin: 0 }}>📅 {fmtFecha(fechaEntrega)}{horaEntrega && <span style={{ marginLeft: 6 }}>🕐 {horaEntrega}</span>}</p>
         </div>
         <div>
           <p style={{ fontSize: '0.67rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 2px' }}>Costo flete</p>
@@ -161,6 +186,22 @@ function LogisticaCard({
                 opacity: avanzarMutation.isPending ? 0.6 : 1,
               }}>
               Aceptada
+            </button>
+
+            {/* En camino */}
+            <button
+              onClick={() => avanzarMutation.mutate({ ventaId: l.ventaId, accion: 'en_camino' })}
+              disabled={avanzarMutation.isPending || l.estadoEntrega === 'en_camino'}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 4,
+                background: l.estadoEntrega === 'en_camino' ? '#DBEAFE' : '#F3F4F6',
+                color: l.estadoEntrega === 'en_camino' ? '#1D4ED8' : '#374151',
+                border: l.estadoEntrega === 'en_camino' ? '1px solid #93C5FD' : '1px solid #E5E7EB',
+                borderRadius: '0.25rem', padding: '0.4rem 0.75rem', fontSize: '0.78rem', fontWeight: 600,
+                cursor: l.estadoEntrega === 'en_camino' ? 'default' : 'pointer',
+                opacity: avanzarMutation.isPending ? 0.6 : 1,
+              }}>
+              En camino
             </button>
 
             {/* Entregada */}

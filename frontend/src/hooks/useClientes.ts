@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
-import type { Cliente } from '../types';
+import type { Cliente, VentaHistoricaPayload } from '../types';
 
 export const useClientes = () => {
   return useQuery<Cliente[]>({
@@ -81,5 +81,19 @@ export const useEliminarCliente = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clientes'] });
     }
+  });
+};
+
+export const useCargarHistorial = (clienteId: number) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (ventas: VentaHistoricaPayload[]) => {
+      const res = await api.post(`/clientes/${clienteId}/historial-ventas`, { ventas });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clientes'] });
+      queryClient.invalidateQueries({ queryKey: ['historial-cliente', clienteId] });
+    },
   });
 };

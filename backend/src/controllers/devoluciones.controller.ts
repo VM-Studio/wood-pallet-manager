@@ -8,6 +8,8 @@ import {
   confirmarDepositoService,
   cancelarDevolucionService,
   getEstadisticasDevolucionesService,
+  restaurarStockManualService,
+  registrarTransferenciaDevueltaService,
 } from '../services/devoluciones.service';
 
 const detalleSchema = z.object({
@@ -94,5 +96,27 @@ export const getEstadisticasDevoluciones = async (req: AuthRequest, res: Respons
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Error al obtener estadísticas' });
+  }
+};
+
+export const restaurarStockManual = async (req: AuthRequest, res: Response) => {
+  try {
+    const id = parseId(req.params.id);
+    const devolucion = await restaurarStockManualService(id, req.user!.userId);
+    res.json(devolucion);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Error al restaurar stock' });
+  }
+};
+
+export const registrarTransferenciaDevuelta = async (req: AuthRequest, res: Response) => {
+  try {
+    const id = parseId(req.params.id);
+    const devolucion = await registrarTransferenciaDevueltaService(id);
+    res.json(devolucion);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Error al registrar transferencia' });
   }
 };

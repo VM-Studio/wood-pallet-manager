@@ -16,6 +16,7 @@ export const getVentasParaCompraDirectaService = async (usuarioId: number, rol: 
   const ventas = await prisma.venta.findMany({
     where: {
       ...where,
+      esHistorica: false,
       estadoPedido: { notIn: ['cancelado'] },
     },
     include: {

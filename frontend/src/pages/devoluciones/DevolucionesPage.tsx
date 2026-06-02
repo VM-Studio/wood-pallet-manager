@@ -9,6 +9,8 @@ import {
   useCrearDevolucion,
   useConfirmarDeposito,
   useCancelarDevolucion,
+  useRestaurarStock,
+  useRegistrarTransferenciaDevuelta,
   type Devolucion,
   type CrearDevolucionPayload,
 } from '../../hooks/useDevoluciones';
@@ -60,6 +62,7 @@ function NuevaDevolucionModal({ onClose }: { onClose: () => void }) {
     detalleVentaId?: number;
     productoId: number;
     nombre: string;
+    condicion: string;
     cantidadDisponible: number;
     cantidadDevuelta: number;
     precioUnitario: number;
@@ -76,6 +79,7 @@ function NuevaDevolucionModal({ onClose }: { onClose: () => void }) {
         detalleVentaId: d.id,
         productoId: d.productoId,
         nombre: d.producto?.nombre ?? `Producto #${d.productoId}`,
+        condicion: d.producto?.condicion ?? '',
         cantidadDisponible: d.cantidadEntregada || d.cantidadPedida,
         cantidadDevuelta: 0,
         precioUnitario: Number(d.precioUnitario),
@@ -88,6 +92,9 @@ function NuevaDevolucionModal({ onClose }: { onClose: () => void }) {
   const montoPallets = detalles.reduce((acc, d) => acc + d.cantidadDevuelta * d.precioUnitario, 0);
   const montoFlete = devuelveFlete ? Number(ventaSeleccionada?.costoFlete ?? 0) : 0;
   const montoTotal = montoPallets + montoFlete;
+  const incluyeIva = ventaSeleccionada
+    ? Math.abs(Number(ventaSeleccionada.totalConIva ?? 0) - Number(ventaSeleccionada.totalSinIva ?? 0)) > 1
+    : false;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,7 +128,7 @@ function NuevaDevolucionModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="modal-overlay">
-      <div className="modal" style={{ maxWidth: '600px' }}>
+      <div className="modal" style={{ maxWidth: '640px' }}>
         <div className="modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <div style={{ width: 36, height: 36, background: '#F3EDE8', borderRadius: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -138,33 +145,84 @@ function NuevaDevolucionModal({ onClose }: { onClose: () => void }) {
         <form onSubmit={handleSubmit}>
           <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
+            {/* Selector de venta */}
             <div>
               <label className="label">Venta asociada *</label>
               <select className="select" value={ventaId} onChange={e => handleSelectVenta(Number(e.target.value))} required>
                 <option value="">— Seleccioná una venta —</option>
                 {ventas.filter(v => v.estadoPedido !== 'cancelado').map(v => (
                   <option key={v.id} value={v.id}>
-                    #{v.id} — {v.cliente?.razonSocial} — {formatPesos(Number(v.totalConIva ?? 0))}
+                    #{v.id} — {v.cliente?.razonSocial}{v.cliente?.nombreContacto ? ` (${v.cliente.nombreContacto})` : ''} — {formatPesos(Number(v.totalConIva ?? 0))}
                   </option>
                 ))}
               </select>
             </div>
 
+            {/* Detalle de la venta seleccionada */}
+            {ventaSeleccionada && (
+              <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.5rem', padding: '0.875rem', display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                <p style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Detalle de la venta #{ventaSeleccionada.id}</p>
+
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#111827' }}>{ventaSeleccionada.cliente?.razonSocial}</span>
+                  {ventaSeleccionada.cliente?.nombreContacto && (
+                    <span style={{ fontSize: '0.8rem', color: '#6B7280' }}>· {ventaSeleccionada.cliente.nombreContacto}</span>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
+                  <span style={{ fontSize: '0.75rem', background: '#EFF6FF', color: '#1D4ED8', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 500 }}>
+                    📅 {formatFecha(ventaSeleccionada.fechaVenta)}
+                  </span>
+                  <span style={{ fontSize: '0.75rem', background: ventaSeleccionada.incluyeFlete ? '#EFF6FF' : '#F3F4F6', color: ventaSeleccionada.incluyeFlete ? '#1D4ED8' : '#6B7280', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 500 }}>
+                    🚛 Flete: {ventaSeleccionada.incluyeFlete ? `Sí (${formatPesos(Number(ventaSeleccionada.costoFlete ?? 0))})` : 'No'}
+                  </span>
+                  <span style={{ fontSize: '0.75rem', background: ventaSeleccionada.requiereSenasa ? '#F0FDF4' : '#F3F4F6', color: ventaSeleccionada.requiereSenasa ? '#15803D' : '#6B7280', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 500 }}>
+                    🌿 SENASA: {ventaSeleccionada.requiereSenasa ? 'Sí' : 'No'}
+                  </span>
+                  <span style={{ fontSize: '0.75rem', background: incluyeIva ? '#FEF3C7' : '#F3F4F6', color: incluyeIva ? '#92400E' : '#6B7280', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 500 }}>
+                    💰 IVA: {incluyeIva ? 'Incluido' : 'Sin IVA'}
+                  </span>
+                  <span style={{ fontSize: '0.75rem', background: ventaSeleccionada.origenStock === 'stock_propio' ? '#F0FDF4' : '#EFF6FF', color: ventaSeleccionada.origenStock === 'stock_propio' ? '#15803D' : '#1D4ED8', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 500 }}>
+                    📦 {ventaSeleccionada.origenStock === 'stock_propio' ? 'Stock propio' : 'Compra reventa'}
+                  </span>
+                </div>
+
+                <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: '0.625rem' }}>
+                  <p style={{ fontSize: '0.72rem', fontWeight: 600, color: '#9CA3AF', marginBottom: '0.375rem' }}>PRODUCTOS DE LA VENTA</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    {ventaSeleccionada.detalles?.map(d => (
+                      <div key={d.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#374151' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <Package size={12} color="#9CA3AF" />
+                          {d.producto?.nombre}
+                          {d.producto?.condicion && <span style={{ fontSize: '0.7rem', color: '#9CA3AF' }}>({d.producto.condicion})</span>}
+                        </span>
+                        <span style={{ color: '#6B7280' }}>
+                          {d.cantidadEntregada || d.cantidadPedida} u. × {formatPesos(Number(d.precioUnitario))}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: '0.5rem', display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                  <span style={{ color: '#6B7280' }}>Total venta:</span>
+                  <strong style={{ color: '#111827' }}>{formatPesos(Number(ventaSeleccionada.totalConIva ?? 0))}</strong>
+                </div>
+              </div>
+            )}
+
+            {/* Tipo de devolución */}
             <div>
               <label className="label">Tipo de devolución *</label>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                 {Object.entries(CASO_CONFIG).map(([key, val]) => {
                   const s = CASO_STYLE[key];
                   return (
-                    <button
-                      key={key}
-                      type="button"
+                    <button key={key} type="button"
                       onClick={() => setTipoCaso(key as CrearDevolucionPayload['tipoCaso'])}
-                      style={{
-                        padding: '0.625rem 0.75rem', borderRadius: '0.25rem', textAlign: 'left', cursor: 'pointer', transition: 'all 0.15s',
-                        border: tipoCaso === key ? '2px solid #6B3A2A' : '2px solid #E5E7EB',
-                        background: tipoCaso === key ? '#FDF5F0' : '#fff',
-                      }}
+                      style={{ padding: '0.625rem 0.75rem', borderRadius: '0.25rem', textAlign: 'left', cursor: 'pointer', border: tipoCaso === key ? '2px solid #6B3A2A' : '2px solid #E5E7EB', background: tipoCaso === key ? '#FDF5F0' : '#fff' }}
                     >
                       <span style={{ display: 'inline-block', marginBottom: 4, padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontSize: '0.72rem', fontWeight: 600, background: s.bg, color: s.color }}>{val.label}</span>
                       <p style={{ fontSize: '0.71rem', color: '#6B7280', margin: 0 }}>{val.desc}</p>
@@ -176,20 +234,11 @@ function NuevaDevolucionModal({ onClose }: { onClose: () => void }) {
 
             {(tipoCaso === 'cliente_no_quiere' || tipoCaso === 'devolucion_parcial') && (
               <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '0.25rem', padding: '0.75rem', fontSize: '0.8rem', color: '#92400E' }}>
-                <strong>Requiere confirmación del depósito:</strong> El reintegro se procesa recién cuando Brian / Todo Pallets confirma la recepción.
-              </div>
-            )}
-            {tipoCaso === 'cancelacion_anticipada' && (
-              <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '0.25rem', padding: '0.75rem', fontSize: '0.8rem', color: '#1E40AF' }}>
-                <strong>Cancelación anticipada:</strong> Si el flete aún no fue ejecutado marcá "Devolver flete". Si ya fue, solo se devuelven pallets.
-              </div>
-            )}
-            {tipoCaso === 'pallet_danado' && (
-              <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: '0.25rem', padding: '0.75rem', fontSize: '0.8rem', color: '#9A3412' }}>
-                <strong>Pallets dañados:</strong> WoodPallet asume responsabilidad. Si el cliente seguirá comprando, podés compensar en el siguiente pedido.
+                <strong>Requiere confirmación del depósito:</strong> El reintegro se procesa recién cuando el galpón confirma la recepción.
               </div>
             )}
 
+            {/* Cantidades */}
             {detalles.length > 0 && (
               <div>
                 <label className="label">Cantidad a devolver por producto *</label>
@@ -198,17 +247,16 @@ function NuevaDevolucionModal({ onClose }: { onClose: () => void }) {
                     <div key={d.productoId} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#F9FAFB', borderRadius: '0.25rem', padding: '0.625rem 0.75rem' }}>
                       <div style={{ flex: 1 }}>
                         <p style={{ fontSize: '0.875rem', fontWeight: 500, color: '#111827', margin: 0 }}>{d.nombre}</p>
-                        <p style={{ fontSize: '0.72rem', color: '#9CA3AF', margin: 0 }}>{formatPesos(d.precioUnitario)} / u · máx {d.cantidadDisponible} u.</p>
+                        <p style={{ fontSize: '0.72rem', color: '#9CA3AF', margin: 0 }}>
+                          {d.condicion && `${d.condicion} · `}{formatPesos(d.precioUnitario)} / u · máx {d.cantidadDisponible} u.
+                        </p>
                       </div>
-                      <input
-                        type="number" min={0} max={d.cantidadDisponible}
-                        className="input" style={{ width: '5rem', textAlign: 'center' }}
-                        value={d.cantidadDevuelta || ''}
-                        placeholder="0"
+                      <input type="number" min={0} max={d.cantidadDisponible} className="input"
+                        style={{ width: '5rem', textAlign: 'center' }}
+                        value={d.cantidadDevuelta || ''} placeholder="0"
                         onChange={e => setDetalles(prev => prev.map((x, j) =>
                           j === i ? { ...x, cantidadDevuelta: Math.max(0, Math.min(d.cantidadDisponible, parseInt(e.target.value) || 0)) } : x
-                        ))}
-                      />
+                        ))} />
                       <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151', width: '5.5rem', textAlign: 'right', margin: 0 }}>
                         {formatPesos(d.cantidadDevuelta * d.precioUnitario)}
                       </p>
@@ -313,6 +361,8 @@ function DevolucionRow({ dev }: { dev: Devolucion }) {
   const [expanded, setExpanded] = useState(false);
   const confirmar = useConfirmarDeposito();
   const cancelar = useCancelarDevolucion();
+  const restaurar = useRestaurarStock();
+  const transferencia = useRegistrarTransferenciaDevuelta();
 
   const estado = ESTADO_CONFIG[dev.estado] ?? { label: dev.estado, badgeClass: 'badge-gray' };
   const caso = CASO_CONFIG[dev.tipoCaso] ?? { label: dev.tipoCaso, desc: '' };
@@ -336,6 +386,9 @@ function DevolucionRow({ dev }: { dev: Devolucion }) {
             )}
           </div>
           <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#111827', margin: 0 }}>{dev.cliente.razonSocial}</p>
+          {dev.cliente.nombreContacto && (
+            <p style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: 1 }}>👤 {dev.cliente.nombreContacto}{dev.cliente.telefonoContacto ? ` · ${dev.cliente.telefonoContacto}` : ''}</p>
+          )}
           <p style={{ fontSize: '0.75rem', color: '#9CA3AF', marginTop: 2 }}>
             Venta #{dev.ventaId} · {formatFecha(dev.fechaSolicitud)}
             {dev.metodoPago && ` · ${dev.metodoPago}`}
@@ -354,11 +407,33 @@ function DevolucionRow({ dev }: { dev: Devolucion }) {
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #F3F4F6' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #F3F4F6', flexWrap: 'wrap' }}>
         {dev.estado === 'esperando_confirmacion_deposito' && (
           <button className="btn-brand-sm" disabled={confirmar.isPending} onClick={e => { e.stopPropagation(); confirmar.mutate(dev.id); }}>
             <CheckCircle size={13} />
             {confirmar.isPending ? 'Confirmando...' : 'Confirmar recepción en depósito'}
+          </button>
+        )}
+        {!dev.stockRestaurado && (dev.estado === 'confirmada' || dev.estado === 'esperando_confirmacion_deposito') && (
+          <button
+            className="btn-brand-sm"
+            style={{ background: '#F0FDF4', color: '#15803D', border: '1px solid #BBF7D0' }}
+            disabled={restaurar.isPending}
+            onClick={e => { e.stopPropagation(); restaurar.mutate(dev.id); }}
+          >
+            <Package size={13} />
+            {restaurar.isPending ? 'Registrando...' : 'Devolución restaurada'}
+          </button>
+        )}
+        {dev.stockRestaurado && !dev.transferenciaDevuelta && !dev.compensaEnSiguientePedido && (
+          <button
+            className="btn-brand-sm"
+            style={{ background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE' }}
+            disabled={transferencia.isPending}
+            onClick={e => { e.stopPropagation(); transferencia.mutate(dev.id); }}
+          >
+            <DollarSign size={13} />
+            {transferencia.isPending ? 'Registrando...' : 'Transferencia devuelta'}
           </button>
         )}
         {(dev.estado === 'pendiente' || dev.estado === 'esperando_confirmacion_deposito') && (
@@ -374,31 +449,102 @@ function DevolucionRow({ dev }: { dev: Devolucion }) {
       </div>
 
       {expanded && (
-        <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #F3F4F6' }}>
-          <p style={{ fontSize: '0.72rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Productos devueltos</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-            {dev.detalles.map(d => (
-              <div key={d.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: '#374151' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                  <Package size={13} color="#9CA3AF" /> {d.producto.nombre}
+        <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #F3F4F6', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
+          {/* ── Detalle de la venta original ── */}
+          <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.5rem', padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+            <p style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Venta #{dev.ventaId} — detalle original</p>
+
+            {/* Chips de info */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
+              <span style={{ fontSize: '0.73rem', background: '#EFF6FF', color: '#1D4ED8', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 500 }}>
+                📅 Compra: {dev.venta?.fechaVenta ? formatFecha(dev.venta.fechaVenta) : '—'}
+              </span>
+              <span style={{ fontSize: '0.73rem', background: dev.venta?.incluyeFlete ? '#EFF6FF' : '#F3F4F6', color: dev.venta?.incluyeFlete ? '#1D4ED8' : '#6B7280', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 500 }}>
+                🚛 Flete: {dev.venta?.incluyeFlete ? `Sí (${formatPesos(Number(dev.venta.costoFlete ?? 0))})` : 'No'}
+              </span>
+              <span style={{ fontSize: '0.73rem', background: dev.venta?.requiereSenasa ? '#F0FDF4' : '#F3F4F6', color: dev.venta?.requiereSenasa ? '#15803D' : '#6B7280', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 500 }}>
+                🌿 SENASA: {dev.venta?.requiereSenasa ? 'Sí' : 'No'}
+              </span>
+              {(() => {
+                const conIva = Number(dev.venta?.totalConIva ?? 0);
+                const sinIva = Number(dev.venta?.totalSinIva ?? 0);
+                const tieneIva = Math.abs(conIva - sinIva) > 1;
+                return (
+                  <span style={{ fontSize: '0.73rem', background: tieneIva ? '#FEF3C7' : '#F3F4F6', color: tieneIva ? '#92400E' : '#6B7280', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 500 }}>
+                    💰 IVA: {tieneIva ? `Incluido (+${formatPesos(conIva - sinIva)})` : 'Sin IVA'}
+                  </span>
+                );
+              })()}
+              <span style={{ fontSize: '0.73rem', background: dev.venta?.origenStock === 'stock_propio' ? '#F0FDF4' : '#EFF6FF', color: dev.venta?.origenStock === 'stock_propio' ? '#15803D' : '#1D4ED8', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 500 }}>
+                📦 {dev.venta?.origenStock === 'stock_propio' ? 'Stock propio' : 'Compra reventa'}
+              </span>
+              {dev.venta?.metodoPago && (
+                <span style={{ fontSize: '0.73rem', background: '#FAF5FF', color: '#7E22CE', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 500 }}>
+                  💳 {dev.venta.metodoPago}
                 </span>
-                <span style={{ color: '#6B7280' }}>
-                  {d.cantidadDevuelta} u. × {formatPesos(Number(d.precioUnitario))} = <strong>{formatPesos(Number(d.subtotal))}</strong>
+              )}
+              {dev.venta?.modalidadPago && (
+                <span style={{ fontSize: '0.73rem', background: '#FFF7ED', color: '#C2410C', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 500 }}>
+                  🕐 {dev.venta.modalidadPago.replace('_', ' ')}
                 </span>
+              )}
+            </div>
+
+            {/* Productos de la venta */}
+            <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: '0.5rem' }}>
+              <p style={{ fontSize: '0.72rem', fontWeight: 600, color: '#9CA3AF', marginBottom: '0.375rem' }}>PRODUCTOS COMPRADOS</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                {dev.venta?.detalles?.map(d => (
+                  <div key={d.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: '#374151' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <Package size={12} color="#9CA3AF" />
+                      {d.producto?.nombre}
+                      {d.producto?.condicion && <span style={{ fontSize: '0.7rem', color: '#9CA3AF', marginLeft: 2 }}>({d.producto.condicion})</span>}
+                    </span>
+                    <span style={{ color: '#6B7280', fontSize: '0.78rem' }}>
+                      {d.cantidadEntregada || d.cantidadPedida} u. × {formatPesos(Number(d.precioUnitario))} = <strong>{formatPesos(Number(d.subtotal))}</strong>
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))}
-            {dev.devuelveFlete && dev.montoFlete && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#1D4ED8' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}><Truck size={13} /> Flete</span>
-                <strong>{formatPesos(Number(dev.montoFlete))}</strong>
-              </div>
+            </div>
+
+            {/* Total venta */}
+            <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: '0.375rem', display: 'flex', justifyContent: 'space-between', fontSize: '0.83rem' }}>
+              <span style={{ color: '#6B7280' }}>Total venta:</span>
+              <strong style={{ color: '#111827' }}>{formatPesos(Number(dev.venta?.totalConIva ?? 0))}</strong>
+            </div>
+          </div>
+
+          {/* ── Productos devueltos ── */}
+          <div>
+            <p style={{ fontSize: '0.72rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Productos devueltos</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+              {dev.detalles.map(d => (
+                <div key={d.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: '#374151' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                    <Package size={13} color="#9CA3AF" /> {d.producto.nombre}
+                  </span>
+                  <span style={{ color: '#6B7280' }}>
+                    {d.cantidadDevuelta} u. × {formatPesos(Number(d.precioUnitario))} = <strong>{formatPesos(Number(d.subtotal))}</strong>
+                  </span>
+                </div>
+              ))}
+              {dev.devuelveFlete && dev.montoFlete && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#1D4ED8' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}><Truck size={13} /> Flete</span>
+                  <strong>{formatPesos(Number(dev.montoFlete))}</strong>
+                </div>
+              )}
+            </div>
+            {dev.cuentaDestino && (
+              <p style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: '#6B7280', marginTop: '0.5rem' }}>
+                <DollarSign size={12} /> Cuenta destino: <strong>{dev.cuentaDestino}</strong>
+              </p>
             )}
           </div>
-          {dev.cuentaDestino && (
-            <p style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: '#6B7280', marginTop: '0.5rem' }}>
-              <DollarSign size={12} /> Cuenta destino: <strong>{dev.cuentaDestino}</strong>
-            </p>
-          )}
+
         </div>
       )}
     </div>

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { AuthRequest, parseId } from '../types';
+import { parseFechaLocal } from '../utils/fecha';
 import {
   getRemitosService,
   getRemitoByIdService,
@@ -16,7 +17,7 @@ import {
 const crearRemitoSchema = z.object({
   ventaId:          z.number().int().positive(),
   firmaPropietario: z.string().optional(),
-  fechaEntrega:     z.string().optional().transform(v => v ? new Date(v) : undefined),
+  fechaEntrega:     z.string().optional().transform(v => v ? parseFechaLocal(v) : undefined),
   observaciones:    z.string().optional(),
 });
 

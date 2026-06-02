@@ -31,18 +31,29 @@ export interface Devolucion {
   depositoConfirmo: boolean
   fechaConfirmacionDeposito?: string
   stockRestaurado: boolean
+  fechaStockRestaurado?: string
+  transferenciaDevuelta: boolean
+  fechaTransferenciaDevuelta?: string
   compensaEnSiguientePedido: boolean
   metodoPago?: string
   cuentaDestino?: string
   observaciones?: string
-  cliente: { id: number; razonSocial: string }
+  cliente: { id: number; razonSocial: string; nombreContacto?: string; telefonoContacto?: string }
   usuario: { id: number; nombre: string; apellido: string }
   venta: {
     id: number
-    detalles: { id: number; productoId: number; cantidadPedida: number; cantidadEntregada: number; precioUnitario: number; subtotal: number; producto: { nombre: string } }[]
-    facturas: { id: number; totalConIva: number; estadoCobro: string }[]
-    logistica?: { estadoEntrega: string }
+    fechaVenta: string
+    incluyeFlete: boolean
+    requiereSenasa: boolean
+    totalSinIva?: number
+    totalConIva?: number
     costoFlete?: number
+    metodoPago?: string
+    modalidadPago?: string
+    origenStock?: string
+    detalles: { id: number; productoId: number; cantidadPedida: number; cantidadEntregada: number; precioUnitario: number; subtotal: number; producto: { nombre: string; tipo: string; condicion: string } }[]
+    facturas: { id: number; totalConIva: number; totalNeto: number; iva: number; estadoCobro: string }[]
+    logistica?: { estadoEntrega: string }
   }
   detalles: DetalleDevolucion[]
 }
@@ -121,6 +132,31 @@ export const useCancelarDevolucion = () => {
     mutationFn: (id: number) => api.put(`/devoluciones/${id}/cancelar`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['devoluciones'] })
+    },
+  })
+}
+
+// ── Restaurar stock manualmente ───────────────────────────────────────────────
+export const useRestaurarStock = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api.put(`/devoluciones/${id}/restaurar-stock`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['devoluciones'] })
+      qc.invalidateQueries({ queryKey: ['inventario'] })
+      qc.invalidateQueries({ queryKey: ['inventario-consolidado'] })
+    },
+  })
+}
+
+// ── Registrar transferencia devuelta ─────────────────────────────────────────
+export const useRegistrarTransferenciaDevuelta = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api.put(`/devoluciones/${id}/transferencia-devuelta`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['devoluciones'] })
+      qc.invalidateQueries({ queryKey: ['devoluciones-stats'] })
     },
   })
 }

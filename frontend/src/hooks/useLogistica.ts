@@ -182,7 +182,7 @@ export const useConfirmarLogisticaCarlos = () => {
 export const useAvanzarLogistica = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ ventaId, accion }: { ventaId: number; accion: 'consultando' | 'aceptada' | 'entregada' }) => {
+    mutationFn: async ({ ventaId, accion }: { ventaId: number; accion: 'consultando' | 'aceptada' | 'en_camino' | 'entregada' }) => {
       const { data } = await api.put(`/logistica/venta/${ventaId}/avanzar`, { accion });
       return data;
     },

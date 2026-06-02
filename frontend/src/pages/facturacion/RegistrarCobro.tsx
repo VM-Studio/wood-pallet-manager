@@ -32,7 +32,8 @@ export default function RegistrarCobro({
     medioPago: 'transferencia',
     nroComprobante: '',
     esAdelanto: false,
-    observaciones: ''
+    observaciones: '',
+    fechaPago: new Date().toISOString().split('T')[0],
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -129,6 +130,17 @@ export default function RegistrarCobro({
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Fecha del cobro */}
+            <div>
+              <label className="label">Fecha del cobro</label>
+              <input type="date" value={form.fechaPago}
+                onChange={e => setForm({ ...form, fechaPago: e.target.value })}
+                className="input" />
+              {form.fechaPago !== new Date().toISOString().split('T')[0] && (
+                <p className="text-xs text-amber-600 mt-1">⚠ Fecha retroactiva: el cobro se registrará en el mes {new Date(form.fechaPago + 'T12:00:00').toLocaleDateString('es-AR', { month: 'long', year: 'numeric' })}</p>
+              )}
             </div>
 
             {/* Comprobante */}

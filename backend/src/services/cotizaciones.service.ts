@@ -3,6 +3,16 @@ import { calcularPrecioService } from './precios.service';
 import { crearRemitoService } from './remitos.service';
 import { crearRetiroService } from './retiros.service';
 
+// Parsea "YYYY-MM-DD" o un Date como fecha local (evita el off-by-one de UTC)
+const parseFechaLocal = (s: string | Date): Date => {
+  if (s instanceof Date) {
+    // Si ya es Date, reconstruir con los componentes locales para evitar drift
+    return new Date(s.getFullYear(), s.getMonth(), s.getDate());
+  }
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y, m - 1, d);
+};
+
 export const getCotizacionesService = async (usuarioId: number, rol: string) => {
   const where = rol === 'admin' ? {} : { usuarioId };
 
@@ -253,9 +263,9 @@ export const convertirCotizacionAVentaService = async (
       metodoPago: datos.metodoPago as any,
       cuentaDestino: datos.cuentaDestino as any,
       modalidadPago: datos.modalidadPago as any,
-      fechaRetiro: datos.fechaRetiro as any,
+      fechaRetiro: datos.fechaRetiro ? parseFechaLocal(datos.fechaRetiro) as any : undefined,
       lugarEntrega: datos.lugarEntrega as any,
-      fechaEstimEntrega: datos.fechaEntrega as any,
+      fechaEstimEntrega: datos.fechaEntrega ? parseFechaLocal(datos.fechaEntrega) as any : undefined,
       totalSinIva: cotizacion.totalSinIva != null ? Number(cotizacion.totalSinIva) : undefined,
       totalConIva: cotizacion.totalConIva != null ? Number(cotizacion.totalConIva) : undefined,
       costoFlete: cotizacion.costoFlete != null ? Number(cotizacion.costoFlete) : undefined,
@@ -330,7 +340,7 @@ export const convertirCotizacionAVentaService = async (
     let horaEstimadaRetiro: Date | undefined;
     if (datos.fechaRetiro && datos.horaEstimadaRetiro) {
       const [hh, mm] = datos.horaEstimadaRetiro.split(':').map(Number);
-      const combined = new Date(datos.fechaRetiro);
+      const combined = parseFechaLocal(datos.fechaRetiro);
       combined.setHours(hh, mm, 0, 0);
       horaEstimadaRetiro = combined;
     }
@@ -365,10 +375,10 @@ export const convertirCotizacionAVentaService = async (
     const esJuanCruz = usuarioVenta?.rol === 'propietario_juancruz';
 
     // Combinar fecha + hora si se proveyeron ambas
-    let horaEstimadaEntrega: Date | undefined = datos.fechaEntrega;
+    let horaEstimadaEntrega: Date | undefined = datos.fechaEntrega ? parseFechaLocal(datos.fechaEntrega) : undefined;
     if (datos.fechaEntrega && datos.horaEntrega) {
       const [hh, mm] = datos.horaEntrega.split(':').map(Number);
-      const combined = new Date(datos.fechaEntrega);
+      const combined = parseFechaLocal(datos.fechaEntrega);
       combined.setHours(hh, mm, 0, 0);
       horaEstimadaEntrega = combined;
     }

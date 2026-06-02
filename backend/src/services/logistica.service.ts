@@ -2,6 +2,7 @@ import prisma from '../utils/prisma';
 
 export const getLogisticasService = async () => {
   return prisma.logistica.findMany({
+    where: { venta: { esHistorica: false } },
     include: {
       venta: {
         include: {
@@ -158,7 +159,7 @@ const ventaLogisticaInclude = {
       fechaEstimEntrega: true,
       lugarEntrega: true,
       tipoEntrega: true,
-      cliente: { select: { razonSocial: true, direccionEntrega: true, localidad: true } },
+      cliente: { select: { razonSocial: true, nombreContacto: true, telefonoContacto: true, direccionEntrega: true, localidad: true } },
       usuario: { select: { nombre: true, apellido: true, rol: true } },
       detalles: { select: { id: true, cantidadPedida: true, producto: { select: { nombre: true } } } },
     },
@@ -282,10 +283,10 @@ export const responderConsultaLogisticaService = async (
 };
 
 // Avanza el estado de una logística desde el panel de Carlos.
-// Los 3 botones son: consultando → aceptada → entregada
+// Los 4 botones son: consultando → aceptada → en_camino → entregada
 export const avanzarLogisticaService = async (
   ventaId: number,
-  accion: 'consultando' | 'aceptada' | 'entregada',
+  accion: 'consultando' | 'aceptada' | 'en_camino' | 'entregada',
   rol: string
 ) => {
   if (rol !== 'propietario_carlos' && rol !== 'admin') {
@@ -303,10 +304,17 @@ export const avanzarLogisticaService = async (
   }
 
   if (accion === 'aceptada') {
+    return prisma.logistica.update({
+      where: { ventaId },
+      data: { estadoConsulta: 'aceptada' },
+    });
+  }
+
+  if (accion === 'en_camino') {
     return prisma.$transaction([
       prisma.logistica.update({
         where: { ventaId },
-        data: { estadoConsulta: 'aceptada', estadoEntrega: 'en_camino' },
+        data: { estadoEntrega: 'en_camino' },
       }),
       prisma.venta.update({
         where: { id: ventaId },
