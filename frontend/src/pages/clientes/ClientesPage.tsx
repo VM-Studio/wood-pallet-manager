@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search, Plus, History, Pencil, MapPin, Phone, MessageCircle, Users, Trash2 } from 'lucide-react';
+import { Search, Plus, History, Pencil, MapPin, Phone, MessageCircle, Users, Trash2, Building2 } from 'lucide-react';
 import { useClientes } from '../../hooks/useClientes';
 import { useEliminarCliente } from '../../hooks/useClientes';
 import { useAuthStore } from '../../store/auth.store';
@@ -10,15 +10,7 @@ import ClienteHistorial from './ClienteHistorial';
 import CargarHistorialModal from './CargarHistorialModal';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
-import { clsx } from 'clsx';
 
-const canalLabel: Record<string, string> = {
-  whatsapp: 'WhatsApp',
-  formulario_web: 'Web',
-  llamada: 'Llamada',
-  recomendacion: 'Recomendación',
-  otro: 'Otro'
-};
 
 export default function ClientesPage() {
   const { usuario } = useAuthStore();
@@ -50,14 +42,14 @@ export default function ClientesPage() {
   if (error) return <ErrorMessage message="No se pudieron cargar los clientes." />;
 
   return (
-    <div className="space-y-5 animate-fade-in">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }} className="animate-fade-in">
 
-      {/* Header */}
-      <div className="flex items-start justify-between">
+      {/* ── Header ── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <h1 className="titulo-modulo">Clientes</h1>
-          <p className="text-sm text-gray-600 mt-1">
-            {clientes?.length || 0} clientes en total
+          <p style={{ fontSize: '0.8125rem', color: '#9E8878', marginTop: '0.2rem' }}>
+            {clientes?.length || 0} clientes registrados
           </p>
         </div>
         <button
@@ -65,17 +57,18 @@ export default function ClientesPage() {
           style={{
             display: 'inline-flex', alignItems: 'center', gap: '6px',
             background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
-            color: 'white', fontWeight: 500, fontSize: '0.875rem',
-            padding: '0.5rem 1rem', borderRadius: '0.25rem',
-            border: 'none', cursor: 'pointer', transition: 'all 0.2s'
+            color: 'white', fontWeight: 600, fontSize: '0.875rem',
+            padding: '0.6rem 1.25rem', borderRadius: 0,
+            border: 'none', cursor: 'pointer', transition: 'all 0.2s',
+            boxShadow: '0 2px 8px rgba(107,58,42,0.25)',
           }}
           onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, #5A3022 0%, #B07848 100%)';
             (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
+            (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 14px rgba(107,58,42,0.35)';
           }}
           onMouseLeave={e => {
-            (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)';
             (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+            (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 8px rgba(107,58,42,0.25)';
           }}
         >
           <Plus size={16} />
@@ -83,186 +76,253 @@ export default function ClientesPage() {
         </button>
       </div>
 
-      {/* Filtros y búsqueda */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+      {/* ── Filtros y búsqueda ── */}
+      <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+        {/* Buscador */}
+        <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
+          <Search size={15} style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#B8A89A', pointerEvents: 'none' }} />
           <input
             type="text"
             placeholder="Buscar por razón social, CUIT, contacto o localidad..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            className="input-field pl-9"
+            style={{
+              width: '100%', padding: '0.6rem 0.875rem 0.6rem 2.375rem',
+              border: '1.5px solid #E8E2DA', borderRadius: 0,
+              fontSize: '0.875rem', color: '#1a1a1a', background: '#FAFAF8',
+              outline: 'none', transition: 'border-color 0.15s', boxSizing: 'border-box',
+            }}
+            onFocus={e => (e.currentTarget.style.borderColor = '#C4895A')}
+            onBlur={e => (e.currentTarget.style.borderColor = '#E8E2DA')}
           />
         </div>
-        <div className="flex border border-gray-200 overflow-hidden" style={{ borderRadius: '0.25rem' }}>
-          <button
-            onClick={() => setFiltro('todos')}
-            style={{
-              padding: '0.5rem 1rem',
-              fontSize: '0.875rem',
-              fontWeight: 500,
-              transition: 'all 0.15s',
-              background: filtro === 'todos'
-                ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)'
-                : '#fff',
-              color: filtro === 'todos' ? '#fff' : '#4B5563',
-              border: 'none',
-              cursor: 'pointer'
-            }}
-          >
-            Todos ({clientes?.length || 0})
-          </button>
-          <button
-            onClick={() => setFiltro('mios')}
-            style={{
-              padding: '0.5rem 1rem',
-              fontSize: '0.875rem',
-              fontWeight: 500,
-              transition: 'all 0.15s',
-              background: filtro === 'mios'
-                ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)'
-                : '#fff',
-              color: filtro === 'mios' ? '#fff' : '#4B5563',
-              borderLeft: '1px solid #E5E7EB',
-              cursor: 'pointer'
-            }}
-          >
-            Mis clientes ({clientes?.filter(c => c.usuarioAsignadoId === usuario?.id).length || 0})
-          </button>
+        {/* Toggle tabs */}
+        <div style={{ display: 'flex', background: '#FAFAF8', border: '1.5px solid #E8E2DA', borderRadius: 0, overflow: 'hidden' }}>
+          {(['todos', 'mios'] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFiltro(f)}
+              style={{
+                padding: '0.6rem 1.1rem',
+                fontSize: '0.8375rem', fontWeight: 500,
+                border: 'none', cursor: 'pointer', transition: 'all 0.15s',
+                background: filtro === f ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' : 'transparent',
+                color: filtro === f ? '#fff' : '#6B7280',
+                borderRight: f === 'todos' ? '1px solid #E8E2DA' : 'none',
+              }}
+            >
+              {f === 'todos'
+                ? `Todos (${clientes?.length || 0})`
+                : `Mis clientes (${clientes?.filter(c => c.usuarioAsignadoId === usuario?.id).length || 0})`}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Lista de clientes */}
+      {/* ── Lista de clientes ── */}
       {!clientesFiltrados?.length ? (
-        <div className="card-base flex flex-col items-center justify-center py-12 text-center">
-          <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center mx-auto mb-3">
-            <Users size={22} className="text-gray-400" />
+        <div style={{
+          background: '#FAFAF8', border: '1.5px solid #E8E2DA', borderRadius: 0,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          padding: '3rem 1rem', textAlign: 'center',
+        }}>
+          <div style={{ width: 48, height: 48, background: '#F0E8DF', borderRadius: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.875rem' }}>
+            <Users size={22} style={{ color: '#C4895A' }} />
           </div>
-          <p className="titulo-card">No se encontraron clientes</p>
-          <p className="text-xs text-gray-400 mt-1">
+          <p style={{ fontWeight: 600, color: '#3D2B1F', fontSize: '0.9375rem' }}>No se encontraron clientes</p>
+          <p style={{ fontSize: '0.8125rem', color: '#9E8878', marginTop: '0.25rem' }}>
             {busqueda ? 'Probá con otro término de búsqueda' : 'Creá el primer cliente con el botón de arriba'}
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           {clientesFiltrados.map((cliente) => (
             <div
               key={cliente.id}
-              className={clsx(
-                'card-base transition-all hover:shadow-md',
-                esAsignado(cliente) && 'border-l-4 border-l-[#C4895A]'
-              )}
+              style={{
+                background: '#FAFAF8',
+                border: '1.5px solid #E8E2DA',
+                borderRadius: 0,
+                padding: '0.875rem 1rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '1rem',
+                transition: 'background 0.15s, box-shadow 0.15s',
+                cursor: 'default',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.background = '#F5EFE8';
+                (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 10px rgba(107,58,42,0.08)';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.background = '#FAFAF8';
+                (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+              }}
             >
-              {/* Header */}
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1 min-w-0">
-                  <h3 className="titulo-card truncate" style={{ fontSize: '1.15rem', fontWeight: 800 }}>{cliente.razonSocial}</h3>
-                  {cliente.cuit && (
-                    <p className="text-xs text-gray-400 mt-0.5">CUIT: {cliente.cuit}</p>
-                  )}
-                </div>
-                <div className="flex flex-col items-end gap-1.5 ml-2 shrink-0">
-                  {cliente.esExportador && (
-                    <span className="badge-blue">Exportador</span>
-                  )}
-                  <button
-                    onClick={() => setClienteHistorial(cliente.id)}
-                    className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded hover:bg-amber-100 transition-colors"
-                    title="Ver historial del cliente"
-                  >
-                    <History size={13} />
-                    Historial
-                  </button>
-                  <button
-                    onClick={() => setClienteCargarHistorial(cliente)}
-                    className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded hover:bg-purple-100 transition-colors"
-                    title="Cargar historial histórico"
-                  >
-                    <History size={13} />
-                    Cargar historial
-                  </button>
-                </div>
+              {/* Avatar */}
+              <div style={{
+                width: 40, height: 40, borderRadius: 0, flexShrink: 0,
+                background: esAsignado(cliente)
+                  ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)'
+                  : 'linear-gradient(135deg, #6B7280 0%, #9CA3AF 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'white', fontWeight: 700, fontSize: '1rem',
+              }}>
+                {cliente.razonSocial[0].toUpperCase()}
               </div>
 
-              {/* Info de contacto */}
-              <div className="space-y-1.5 mb-4">
+              {/* Nombre + CUIT */}
+              <div style={{ flex: '0 0 220px', minWidth: 0 }}>
+                <p style={{
+                  fontWeight: 700, fontSize: '0.9rem', color: '#1a1a1a',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>
+                  {cliente.razonSocial}
+                </p>
+                <p style={{ fontSize: '0.72rem', color: '#9E8878', marginTop: '0.1rem' }}>
+                  {cliente.cuit ? `CUIT ${cliente.cuit}` : <span style={{ fontStyle: 'italic' }}>Sin CUIT</span>}
+                </p>
+              </div>
+
+              {/* Contacto */}
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                 {cliente.nombreContacto && (
-                  <p className="text-sm text-gray-600 flex items-center gap-1.5">
-                    <Users size={12} className="text-gray-400 shrink-0" />
-                    {cliente.nombreContacto}
-                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <Users size={11} style={{ color: '#B8A89A', flexShrink: 0 }} />
+                    <span style={{ fontSize: '0.8rem', color: '#4B5563', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {cliente.nombreContacto}
+                    </span>
+                  </div>
                 )}
-                {cliente.telefonoContacto && (
-                  <p className="text-sm text-gray-600 flex items-center gap-1.5">
-                    <Phone size={12} className="text-gray-400 shrink-0" />
-                    {cliente.telefonoContacto}
-                  </p>
-                )}
-                {cliente.localidad && (
-                  <p className="text-sm text-gray-600 flex items-center gap-1.5">
-                    <MapPin size={12} className="text-gray-400 shrink-0" />
-                    {cliente.localidad}
-                  </p>
-                )}
-                {cliente.canalEntrada && (
-                  <p className="text-xs text-gray-400">
-                    {canalLabel[cliente.canalEntrada] || cliente.canalEntrada}
-                  </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  {cliente.telefonoContacto && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <Phone size={11} style={{ color: '#B8A89A', flexShrink: 0 }} />
+                      <span style={{ fontSize: '0.78rem', color: '#6B7280' }}>{cliente.telefonoContacto}</span>
+                    </div>
+                  )}
+                  {cliente.localidad && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <MapPin size={11} style={{ color: '#B8A89A', flexShrink: 0 }} />
+                      <span style={{ fontSize: '0.78rem', color: '#6B7280' }}>{cliente.localidad}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Badges */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
+                {cliente.esExportador && (
+                  <span style={{
+                    fontSize: '0.65rem', fontWeight: 600, padding: '0.2rem 0.55rem',
+                    borderRadius: 0, background: '#DBEAFE', color: '#1D4ED8',
+                  }}>Exportador</span>
                 )}
               </div>
 
-              {/* Footer */}
-              <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-5 h-5 rounded flex items-center justify-center text-white text-xs font-bold"
-                    style={{ background: esAsignado(cliente) ? '#C4895A' : '#6B3A2A' }}>
-                    {cliente.usuarioAsignado?.nombre[0]}
-                  </div>
-                  <span className="text-xs text-gray-400">
-                    {esAsignado(cliente) ? 'Tuyo' : cliente.usuarioAsignado?.nombre}
-                  </span>
+              {/* Propietario */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0, minWidth: 72 }}>
+                <div style={{
+                  width: 20, height: 20, borderRadius: 0,
+                  background: esAsignado(cliente)
+                    ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)'
+                    : '#9CA3AF',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'white', fontSize: '0.58rem', fontWeight: 700,
+                }}>
+                  {cliente.usuarioAsignado?.nombre[0]}
                 </div>
-                <div className="flex items-center gap-1">
-                  {esAsignado(cliente) && (
-                    <button
-                      onClick={() => { setClienteEditar(cliente); setShowForm(true); }}
-                      className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
-                      title="Editar cliente"
-                    >
-                      <Pencil size={15} />
-                    </button>
-                  )}
+                <span style={{ fontSize: '0.72rem', color: '#9E8878', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                  {esAsignado(cliente) ? 'Tuyo' : cliente.usuarioAsignado?.nombre}
+                </span>
+              </div>
+
+              {/* Acciones */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flexShrink: 0 }}>
+                <button
+                  onClick={() => setClienteHistorial(cliente.id)}
+                  title="Ver historial"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '0.3rem',
+                    padding: '0.3rem 0.55rem', borderRadius: 0,
+                    border: '1px solid #E8D5C0', background: '#FEF3E8',
+                    color: '#92400E', fontSize: '0.68rem', fontWeight: 600,
+                    cursor: 'pointer', transition: 'background 0.15s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#FDE8CC'}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = '#FEF3E8'}
+                >
+                  <History size={12} /> Historial
+                </button>
+                <button
+                  onClick={() => setClienteCargarHistorial(cliente)}
+                  title="Cargar historial"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '0.3rem',
+                    padding: '0.3rem 0.55rem', borderRadius: 0,
+                    border: '1px solid #A0623A', background: '#7C4A2D',
+                    color: '#fff', fontSize: '0.68rem', fontWeight: 600,
+                    cursor: 'pointer', transition: 'background 0.15s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#5E3520'}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = '#7C4A2D'}
+                >
+                  <Building2 size={12} /> Cargar historial
+                </button>
+                <div style={{ width: 1, height: 18, background: '#E8E2DA', margin: '0 0.1rem' }} />
+                {esAsignado(cliente) && (
                   <button
-                    onClick={() => {
-                      if (window.confirm(`¿Eliminar a "${cliente.razonSocial}"? Esta acción no se puede deshacer.`)) {
-                        eliminarCliente.mutate(cliente.id);
-                      }
+                    onClick={() => { setClienteEditar(cliente); setShowForm(true); }}
+                    title="Editar"
+                    style={{
+                      padding: '0.35rem', borderRadius: 0, border: 'none',
+                      background: 'transparent', color: '#B8A89A', cursor: 'pointer', transition: 'all 0.15s',
                     }}
-                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                    title="Eliminar cliente"
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#E8E2DA'; (e.currentTarget as HTMLElement).style.color = '#1a1a1a'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#B8A89A'; }}
                   >
-                    <Trash2 size={15} />
+                    <Pencil size={14} />
                   </button>
-                  {cliente.telefonoContacto && (
-                    <a
-                      href={`https://wa.me/${cliente.telefonoContacto.replace(/\D/g, '')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors"
-                      title="Abrir WhatsApp"
-                    >
-                      <MessageCircle size={15} />
-                    </a>
-                  )}
-                </div>
+                )}
+                <button
+                  onClick={() => {
+                    if (window.confirm(`¿Eliminar a "${cliente.razonSocial}"? Esta acción no se puede deshacer.`)) {
+                      eliminarCliente.mutate(cliente.id);
+                    }
+                  }}
+                  title="Eliminar"
+                  style={{
+                    padding: '0.35rem', borderRadius: 0, border: 'none',
+                    background: 'transparent', color: '#B8A89A', cursor: 'pointer', transition: 'all 0.15s',
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#FEE2E2'; (e.currentTarget as HTMLElement).style.color = '#DC2626'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#B8A89A'; }}
+                >
+                  <Trash2 size={14} />
+                </button>
+                {cliente.telefonoContacto && (
+                  <a
+                    href={`https://wa.me/${cliente.telefonoContacto.replace(/\D/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Abrir WhatsApp"
+                    style={{
+                      padding: '0.35rem', borderRadius: 0,
+                      color: '#B8A89A', display: 'flex', transition: 'all 0.15s',
+                    }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#DCFCE7'; (e.currentTarget as HTMLElement).style.color = '#16A34A'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#B8A89A'; }}
+                  >
+                    <MessageCircle size={14} />
+                  </a>
+                )}
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Modal formulario */}
+      {/* Modales — sin cambios */}
       {showForm && (
         <ClienteForm
           cliente={clienteEditar || undefined}
@@ -270,16 +330,12 @@ export default function ClientesPage() {
           onSuccess={() => { setShowForm(false); setClienteEditar(null); }}
         />
       )}
-
-      {/* Modal historial */}
       {clienteHistorial && (
         <ClienteHistorial
           clienteId={clienteHistorial}
           onClose={() => setClienteHistorial(null)}
         />
       )}
-
-      {/* Modal cargar historial histórico */}
       {clienteCargarHistorial && (
         <CargarHistorialModal
           clienteId={clienteCargarHistorial.id}
@@ -287,7 +343,6 @@ export default function ClientesPage() {
           onClose={() => setClienteCargarHistorial(null)}
         />
       )}
-
     </div>
   );
 }

@@ -106,14 +106,14 @@
   .select:focus { border-color: #16A34A; }
 
   /* ── Badges ── */
-  .badge        { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.625rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 600; }
-  .badge-green  { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.625rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 600; background: #F0FDF4; color: #15803D; border: 1px solid #BBF7D0; }
-  .badge-yellow { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.625rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 600; background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; }
-  .badge-red    { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.625rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 600; background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; }
-  .badge-blue   { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.625rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 600; background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; }
-  .badge-gray   { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.625rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 600; background: #F3F4F6; color: #4B5563; border: 1px solid #E5E7EB; }
-  .badge-teal   { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.625rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 600; background: #F0FDFA; color: #0F766E; border: 1px solid #99F6E4; }
-  .badge-purple { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.625rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 600; background: #FAF5FF; color: #7E22CE; border: 1px solid #E9D5FF; }
+  .badge        { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.625rem; border-radius: 0; font-size: 0.75rem; font-weight: 600; }
+  .badge-green  { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.625rem; border-radius: 0; font-size: 0.75rem; font-weight: 600; background: #F0FDF4; color: #15803D; border: 1px solid #BBF7D0; }
+  .badge-yellow { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.625rem; border-radius: 0; font-size: 0.75rem; font-weight: 600; background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; }
+  .badge-red    { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.625rem; border-radius: 0; font-size: 0.75rem; font-weight: 600; background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; }
+  .badge-blue   { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.625rem; border-radius: 0; font-size: 0.75rem; font-weight: 600; background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; }
+  .badge-gray   { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.625rem; border-radius: 0; font-size: 0.75rem; font-weight: 600; background: #F3F4F6; color: #4B5563; border: 1px solid #E5E7EB; }
+  .badge-teal   { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.625rem; border-radius: 0; font-size: 0.75rem; font-weight: 600; background: #F0FDFA; color: #0F766E; border: 1px solid #99F6E4; }
+  .badge-purple { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.625rem; border-radius: 0; font-size: 0.75rem; font-weight: 600; background: #FAF5FF; color: #7E22CE; border: 1px solid #E9D5FF; }
 
   /* ── Tabla ── */
   .table-container { background: #fff; border-radius: 1rem; border: 1px solid #F3F4F6; box-shadow: var(--shadow-card); overflow-x: auto; }

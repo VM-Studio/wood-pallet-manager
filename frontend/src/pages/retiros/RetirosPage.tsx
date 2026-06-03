@@ -69,8 +69,8 @@ function KpiCard({ label, value, icon: Icon, color }: { label: string; value: nu
 function EstadoBadge({ estado }: { estado: EstadoRetiro }) {
   const s = ESTADO_STYLE[estado];
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
-      style={{ background: s.bg, color: s.color }}>
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold"
+      style={{ background: s.bg, color: s.color, borderRadius: 0 }}>
       {s.label}
     </span>
   );

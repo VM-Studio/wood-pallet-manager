@@ -4,7 +4,7 @@ import {
   Truck, Receipt,
   ClipboardList, Package, Warehouse, Building2,
   BarChart3, LogOut, DollarSign, RotateCcw, FileCheck, Mail,
-  UserCircle, X } from 'lucide-react';
+  X } from 'lucide-react';
 import { useAuthStore } from '../../store/auth.store';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -47,8 +47,20 @@ const grupos = [
   },
 ];
 
+// Paleta
+const C = {
+  bg:         '#FAFAF8',
+  border:     '#E8E2DA',
+  accent:     '#7C4A2D',
+  accentSoft: '#F0E8DF',
+  accentMid:  '#C4895A',
+  text:       '#111111',   // negro
+  textMuted:  '#444444',   // gris oscuro
+  label:      '#999999',   // etiquetas de grupo
+};
+
 export default function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { logout, usuario } = useAuthStore();
+  const { logout } = useAuthStore();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -59,37 +71,112 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
   };
 
   return (
-    <aside className={`fixed top-0 left-0 h-screen w-[260px] bg-[#3c250f] flex flex-col z-30 transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
-      {/* Logo + close button on mobile */}
-      <div className="flex items-center justify-between border-b border-white/10 shrink-0 py-4 px-4">
-        <span className="text-white tracking-tight text-center" style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic', fontWeight: 600, fontSize: '1.6rem', lineHeight: 1.2 }}>Wood Pallet</span>
-        <button onClick={onClose} className="md:hidden text-white/60 hover:text-white p-1" aria-label="Cerrar menú">
-          <X size={20} />
+    <aside
+      style={{ background: C.bg, borderRight: `1px solid ${C.border}` }}
+      className={`fixed top-0 left-0 h-screen w-[252px] flex flex-col z-30 transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}
+    >
+      {/* ── Header / Logo ── */}
+      <div
+        style={{ borderBottom: `1px solid ${C.border}`, padding: '1.1rem 1.125rem 1rem' }}
+        className="flex items-center justify-between shrink-0"
+      >
+        <div className="flex items-center gap-2.5">
+          <div style={{
+            width: 32, height: 32, borderRadius: '0.375rem',
+            background: `linear-gradient(135deg, ${C.accent} 0%, ${C.accentMid} 100%)`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 2px 6px rgba(124,74,45,0.25)',
+          }}>
+            <Package size={16} color="white" />
+          </div>
+          <span style={{
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontStyle: 'italic',
+            fontWeight: 700,
+            fontSize: '1.35rem',
+            color: '#111111',
+            letterSpacing: '-0.01em',
+            lineHeight: 1,
+          }}>
+            WoodPallet
+          </span>
+        </div>
+        <button
+          onClick={onClose}
+          className="md:hidden p-1 rounded-md transition-colors"
+          style={{ color: C.textMuted }}
+          aria-label="Cerrar menú"
+        >
+          <X size={18} />
         </button>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      {/* ── Nav ── */}
+      <nav
+        className="flex-1 overflow-y-auto py-3 px-2.5"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
         <style>{`aside nav::-webkit-scrollbar{display:none}`}</style>
-        {grupos.map(grupo => (
-          <div key={grupo.label} className="mb-5">
-            <p className="text-white/30 text-[10px] font-semibold uppercase tracking-widest px-3 mb-2">
+
+        {grupos.map((grupo, gi) => (
+          <div key={grupo.label} style={{ marginBottom: gi < grupos.length - 1 ? '1.25rem' : 0 }}>
+            {/* Etiqueta de grupo */}
+            <p style={{
+              color: C.label,
+              fontSize: '0.6rem',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              padding: '0 0.625rem',
+              marginBottom: '0.25rem',
+            }}>
               {grupo.label}
             </p>
-            <div className="space-y-0.5">
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
               {grupo.items.map(item => (
-                <NavLink key={item.path} to={item.path}
+                <NavLink
+                  key={item.path}
+                  to={item.path}
                   onClick={onClose}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
-                      isActive
-                        ? 'bg-white/15 text-white'
-                        : 'text-white/60 hover:bg-white/8 hover:text-white'
-                    }`
-                  }
+                  style={({ isActive }) => ({
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.625rem',
+                    padding: '0.5rem 0.625rem',
+                    borderRadius: '0.375rem',
+                    fontSize: '0.8375rem',
+                    fontWeight: isActive ? 600 : 450,
+                    color: isActive ? C.accent : C.textMuted,
+                    background: isActive ? C.accentSoft : 'transparent',
+                    transition: 'all 0.13s',
+                    textDecoration: 'none',
+                    borderLeft: isActive ? `2.5px solid ${C.accentMid}` : '2.5px solid transparent',
+                  })}
+                  onMouseEnter={e => {
+                    const el = e.currentTarget as HTMLElement;
+                    if (!el.style.borderLeftColor.includes('rgb(196')) {
+                      el.style.background = '#F5EFE8';
+                      el.style.color = C.text;
+                    }
+                  }}
+                  onMouseLeave={e => {
+                    const el = e.currentTarget as HTMLElement;
+                    if (!el.style.borderLeftColor.includes('rgb(196')) {
+                      el.style.background = 'transparent';
+                      el.style.color = C.textMuted;
+                    }
+                  }}
                 >
-                  <item.icon className="w-4.5 h-4.5 shrink-0" />
-                  {item.label}
+                  {({ isActive }) => (
+                    <>
+                      <item.icon
+                        size={15}
+                        style={{ color: isActive ? C.accentMid : C.label, flexShrink: 0 }}
+                      />
+                      {item.label}
+                    </>
+                  )}
                 </NavLink>
               ))}
             </div>
@@ -97,38 +184,32 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
         ))}
       </nav>
 
-      {/* Mi Cuenta + Cerrar sesión */}
-      <div className="shrink-0 border-t border-white/10 p-3 space-y-1">
-        {/* Mi Cuenta — con avatar */}
-        <NavLink to="/mi-cuenta"
-          onClick={onClose}
-          className={({ isActive }) =>
-            `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 ${
-              isActive ? 'bg-white/15 text-white' : 'text-white/60 hover:bg-white/8 hover:text-white'
-            }`
-          }
-        >
-          <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0 flex items-center justify-center bg-white/10">
-            {usuario?.fotoPerfil
-              ? <img src={usuario.fotoPerfil} alt="foto" className="w-full h-full object-cover" />
-              : <UserCircle className="w-4 h-4" />
-            }
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-medium leading-tight truncate">
-              {usuario ? `${usuario.nombre} ${usuario.apellido}` : 'Mi Cuenta'}
-            </p>
-            <p className="text-[10px] text-white/40 leading-tight">Mi Cuenta</p>
-          </div>
-        </NavLink>
-
-        {/* Cerrar sesión */}
+      {/* ── Footer: solo Cerrar sesión ── */}
+      <div style={{ borderTop: `1px solid ${C.border}`, padding: '0.625rem 0.625rem 0.75rem' }}>
         <button
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
-          style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic', fontWeight: 600, fontSize: '1.05rem' }}
+          style={{
+            width: '100%',
+            display: 'flex', alignItems: 'center', gap: '0.5rem',
+            padding: '0.5rem 0.625rem',
+            borderRadius: '0.375rem',
+            border: 'none', cursor: 'pointer',
+            background: 'transparent',
+            color: C.textMuted,
+            fontSize: '0.8125rem',
+            fontWeight: 500,
+            transition: 'all 0.13s',
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLElement).style.background = '#FEF2F2';
+            (e.currentTarget as HTMLElement).style.color = '#B91C1C';
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLElement).style.background = 'transparent';
+            (e.currentTarget as HTMLElement).style.color = C.textMuted;
+          }}
         >
-          <LogOut className="w-4 h-4 shrink-0" />
+          <LogOut size={14} style={{ flexShrink: 0 }} />
           Cerrar sesión
         </button>
       </div>

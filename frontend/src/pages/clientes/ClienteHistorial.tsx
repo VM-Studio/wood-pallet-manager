@@ -72,7 +72,7 @@ const estadoRetiroConfig: Record<string, { label: string; color: string }> = {
 function Badge({ estado, config }: { estado: string; config: Record<string, { label: string; color: string }> }) {
   const c = config[estado] ?? { label: estado, color: 'bg-gray-100 text-gray-600' };
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${c.color}`}>
+    <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium ${c.color}`} style={{ borderRadius: 0 }}>
       {c.label}
     </span>
   );

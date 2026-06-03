@@ -33,8 +33,8 @@ function EstadoBadge({ estado }: { estado: EstadoCotizacionWeb }) {
   const cfg = ESTADO_CONFIG[estado];
   return (
     <span
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
-      style={{ background: cfg.bg, color: cfg.color }}
+      className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold"
+      style={{ background: cfg.bg, color: cfg.color, borderRadius: 0 }}
     >
       {cfg.icon} {cfg.label}
     </span>

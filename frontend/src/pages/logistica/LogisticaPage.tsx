@@ -95,11 +95,11 @@ function LogisticaCard({
           <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '2px 7px', background: '#6B3A2A', color: '#fff', borderRadius: '0.25rem' }}>
             Venta #{l.ventaId}
           </span>
-          <span style={{ fontSize: '0.7rem', fontWeight: 600, padding: '2px 8px', borderRadius: 999, background: est.bg, color: est.color }}>
+          <span style={{ fontSize: '0.7rem', fontWeight: 600, padding: '2px 8px', borderRadius: 0, background: est.bg, color: est.color }}>
             {est.label}
           </span>
           {l.estadoConsulta && l.estadoConsulta !== 'no_aplica' && (
-            <span style={{ fontSize: '0.7rem', fontWeight: 600, padding: '2px 8px', borderRadius: 999, background: badge.bg, color: badge.color }}>
+            <span style={{ fontSize: '0.7rem', fontWeight: 600, padding: '2px 8px', borderRadius: 0, background: badge.bg, color: badge.color }}>
               {badge.label}
             </span>
           )}
