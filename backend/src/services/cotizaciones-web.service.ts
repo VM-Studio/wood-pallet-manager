@@ -6,11 +6,11 @@ export interface NuevaCotizacionWebInput {
   nombre: string;
   empresa?: string;
   email: string;
-  telefono: string;
-  tipoPallet: string;
-  cantidad: number;
+  telefono?: string;
+  tipoPallet?: string;
+  cantidad?: number;
   fechaNecesidad?: string;
-  tipoEntrega: string;
+  tipoEntrega?: string;
   localidadEntrega?: string;
   requiereSenasa?: boolean;
   observaciones?: string;
@@ -25,11 +25,11 @@ export const crearCotizacionWebService = async (input: NuevaCotizacionWebInput) 
       nombre: input.nombre,
       empresa: input.empresa,
       email: input.email,
-      telefono: input.telefono,
-      tipoPallet: input.tipoPallet,
-      cantidad: input.cantidad,
-      fechaNecesidad: input.fechaNecesidad ? new Date(input.fechaNecesidad) : null,
-      tipoEntrega: input.tipoEntrega,
+      telefono: input.telefono ?? undefined,
+      tipoPallet: input.tipoPallet ?? undefined,
+      cantidad: input.cantidad ?? undefined,
+      fechaNecesidad: input.fechaNecesidad ? new Date(input.fechaNecesidad) : undefined,
+      tipoEntrega: input.tipoEntrega ?? undefined,
       localidadEntrega: input.localidadEntrega,
       requiereSenasa: input.requiereSenasa ?? false,
       observaciones: input.observaciones,

@@ -962,11 +962,11 @@ model CotizacionWeb {
   nombre                String
   empresa               String?
   email                 String
-  telefono              String
-  tipoPallet            String
-  cantidad              Int
+  telefono              String?
+  tipoPallet            String?
+  cantidad              Int?
   fechaNecesidad        DateTime?
-  tipoEntrega           String // 'retira' | 'envio'
+  tipoEntrega           String? // 'retira' | 'envio'
   localidadEntrega      String?
   requiereSenasa        Boolean             @default(false)
   observaciones         String?
