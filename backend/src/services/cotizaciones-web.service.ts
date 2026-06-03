@@ -135,12 +135,14 @@ export const convertirCotizacionWebService = async (
   if (cw.estado === 'descartada') throw new Error('Está descartada');
 
   // Resolver producto: buscar por tipo de pallet o usar el primer producto disponible
-  let producto = await prisma.producto.findFirst({
-    where: {
-      activo: true,
-      nombre: { contains: cw.tipoPallet, mode: 'insensitive' },
-    },
-  });
+  let producto = cw.tipoPallet
+    ? await prisma.producto.findFirst({
+        where: {
+          activo: true,
+          nombre: { contains: cw.tipoPallet, mode: 'insensitive' },
+        },
+      })
+    : null;
   if (!producto) {
     producto = await prisma.producto.findFirst({ where: { activo: true } });
   }
@@ -166,7 +168,8 @@ export const convertirCotizacionWebService = async (
     if (!clienteIdFinal) throw new Error('Debés seleccionar o crear un cliente');
 
     // 2. Calcular totales
-    const subtotal = datos.precioUnitario * cw.cantidad;
+    const cantidadFinal = cw.cantidad ?? 1;
+    const subtotal = datos.precioUnitario * cantidadFinal;
     const flete = datos.incluyeFlete && datos.costoFlete ? datos.costoFlete : 0;
     const totalSinIva = subtotal + flete;
     const totalConIva = totalSinIva * 1.21;
@@ -189,7 +192,7 @@ export const convertirCotizacionWebService = async (
           create: [
             {
               productoId: producto!.id,
-              cantidad: cw.cantidad,
+              cantidad: cantidadFinal,
               precioUnitario: datos.precioUnitario,
               subtotal,
             },

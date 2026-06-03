@@ -503,11 +503,11 @@ export const enviarNotificacionCotizacionWeb = async (params: {
   nombre: string;
   empresa?: string;
   email: string;
-  telefono: string;
-  tipoPallet: string;
-  cantidad: number;
+  telefono?: string;
+  tipoPallet?: string;
+  cantidad?: number;
   fechaNecesidad?: string;
-  tipoEntrega: string;
+  tipoEntrega?: string;
   localidadEntrega?: string;
   requiereSenasa: boolean;
   observaciones?: string;
@@ -515,7 +515,7 @@ export const enviarNotificacionCotizacionWeb = async (params: {
   const transporter = crearTransporter();
   const from = process.env.SMTP_FROM || process.env.SMTP_USER;
 
-  const entregaLabel = params.tipoEntrega === 'envio' ? 'Envío a domicilio' : 'Retira en galpón';
+  const entregaLabel = params.tipoEntrega === 'envio' ? 'Envío a domicilio' : params.tipoEntrega === 'retira' ? 'Retira en galpón' : 'No especificado';
   const fechaStr = params.fechaNecesidad
     ? new Date(params.fechaNecesidad).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
     : '—';
@@ -540,9 +540,9 @@ export const enviarNotificacionCotizacionWeb = async (params: {
               <tr style="background:#F9FAFB;"><td style="padding:9px 12px;color:#6B7280;border:1px solid #E5E7EB;width:150px;">Nombre</td><td style="padding:9px 12px;color:#111827;font-weight:600;border:1px solid #E5E7EB;">${params.nombre}</td></tr>
               ${params.empresa ? `<tr><td style="padding:9px 12px;color:#6B7280;border:1px solid #E5E7EB;">Empresa</td><td style="padding:9px 12px;color:#111827;border:1px solid #E5E7EB;">${params.empresa}</td></tr>` : ''}
               <tr style="background:#F9FAFB;"><td style="padding:9px 12px;color:#6B7280;border:1px solid #E5E7EB;">Email</td><td style="padding:9px 12px;color:#111827;border:1px solid #E5E7EB;"><a href="mailto:${params.email}" style="color:#C4895A;">${params.email}</a></td></tr>
-              <tr><td style="padding:9px 12px;color:#6B7280;border:1px solid #E5E7EB;">Teléfono</td><td style="padding:9px 12px;color:#111827;border:1px solid #E5E7EB;"><a href="https://wa.me/549${params.telefono.replace(/\D/g, '')}" style="color:#25D366;">${params.telefono} 💬</a></td></tr>
-              <tr style="background:#F9FAFB;"><td style="padding:9px 12px;color:#6B7280;border:1px solid #E5E7EB;">Tipo de pallet</td><td style="padding:9px 12px;color:#111827;font-weight:600;border:1px solid #E5E7EB;">${params.tipoPallet}</td></tr>
-              <tr><td style="padding:9px 12px;color:#6B7280;border:1px solid #E5E7EB;">Cantidad</td><td style="padding:9px 12px;color:#111827;font-weight:600;border:1px solid #E5E7EB;">${params.cantidad} unidades</td></tr>
+              ${params.telefono ? `<tr><td style="padding:9px 12px;color:#6B7280;border:1px solid #E5E7EB;">Teléfono</td><td style="padding:9px 12px;color:#111827;border:1px solid #E5E7EB;"><a href="https://wa.me/549${params.telefono.replace(/\D/g, '')}" style="color:#25D366;">${params.telefono} 💬</a></td></tr>` : ''}
+              ${params.tipoPallet ? `<tr style="background:#F9FAFB;"><td style="padding:9px 12px;color:#6B7280;border:1px solid #E5E7EB;">Tipo de pallet</td><td style="padding:9px 12px;color:#111827;font-weight:600;border:1px solid #E5E7EB;">${params.tipoPallet}</td></tr>` : ''}
+              ${params.cantidad != null ? `<tr><td style="padding:9px 12px;color:#6B7280;border:1px solid #E5E7EB;">Cantidad</td><td style="padding:9px 12px;color:#111827;font-weight:600;border:1px solid #E5E7EB;">${params.cantidad} unidades</td></tr>` : ''}
               <tr style="background:#F9FAFB;"><td style="padding:9px 12px;color:#6B7280;border:1px solid #E5E7EB;">Lo necesita para</td><td style="padding:9px 12px;color:#111827;border:1px solid #E5E7EB;">${fechaStr}</td></tr>
               <tr><td style="padding:9px 12px;color:#6B7280;border:1px solid #E5E7EB;">Entrega</td><td style="padding:9px 12px;color:#111827;border:1px solid #E5E7EB;">${entregaLabel}${params.localidadEntrega ? ` · ${params.localidadEntrega}` : ''}</td></tr>
               ${params.requiereSenasa ? `<tr style="background:#FEF3C7;"><td style="padding:9px 12px;color:#92400E;font-weight:600;border:1px solid #FCD34D;">SENASA</td><td style="padding:9px 12px;color:#92400E;font-weight:600;border:1px solid #FCD34D;">⚠️ Requiere certificación SENASA</td></tr>` : ''}
