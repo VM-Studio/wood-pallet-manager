@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, ShoppingCart, CheckCircle, Package, Truck, Building2, Trash2 } from 'lucide-react';
 import { useVentas, useVentasActivas, useEliminarVenta } from '../../hooks/useVentas';
 import EstadoBadge from '../../components/ui/EstadoBadge';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
+import Pagination from '../../components/ui/Pagination';
 import VentaDetalle from './VentaDetalle';
+
+const POR_PAGINA = 10;
 
 const formatPesos = (v: number) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(v);
@@ -33,6 +36,7 @@ export default function VentasPage() {
   const eliminarVenta = useEliminarVenta();
   const [estadoFiltro, setEstadoFiltro] = useState('todos');
   const [busqueda, setBusqueda] = useState('');
+  const [pagina, setPagina] = useState(1);
   const [ventaSeleccionada, setVentaSeleccionada] = useState<number | null>(null);
   const [confirmEliminar, setConfirmEliminar] = useState<number | null>(null);
 
@@ -44,6 +48,10 @@ export default function VentasPage() {
       String(v.id).includes(busqueda);
     return matchEstado && matchBusqueda;
   });
+
+  const ventasPaginadas = filtradas.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
+
+  useEffect(() => { setPagina(1); }, [busqueda, estadoFiltro]);
 
   const totalPallets = (ventas || []).reduce((acc, v) => {
     return acc + (v.detalles?.reduce((a, d) => a + d.cantidadPedida, 0) || 0);
@@ -155,7 +163,7 @@ export default function VentasPage() {
                   No hay ventas con los filtros seleccionados
                 </td>
               </tr>
-            ) : filtradas.map(v => (
+            ) : ventasPaginadas.map(v => (
               <tr key={v.id} className="cursor-pointer hover:bg-gray-50 transition-colors"
                 onClick={() => setVentaSeleccionada(v.id)}>
                 <td className="font-mono text-xs text-gray-400">#{v.id}</td>
@@ -200,6 +208,13 @@ export default function VentasPage() {
             ))}
           </tbody>
         </table>
+        <Pagination
+          total={filtradas.length}
+          pagina={pagina}
+          porPagina={POR_PAGINA}
+          onCambiar={setPagina}
+          nombreItems="ventas"
+        />
       </div>
 
       {ventaSeleccionada && (

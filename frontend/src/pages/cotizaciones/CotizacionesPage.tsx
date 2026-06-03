@@ -14,9 +14,12 @@ import CotizacionesWebModal from './CotizacionesWebModal';
 import EstadoBadge from '../../components/ui/EstadoBadge';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
+import Pagination from '../../components/ui/Pagination';
 import { generarPresupuestoPDF } from '../../utils/generarPresupuestoPDF';
 import { useAuthStore } from '../../store/auth.store';
 import type { Cotizacion } from '../../types';
+
+const POR_PAGINA = 10;
 
 const formatPesos = (v: number) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(v);
@@ -38,6 +41,7 @@ export default function CotizacionesPage() {
   const { usuario } = useAuthStore();
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('todos');
+  const [pagina, setPagina] = useState(1);
   const [searchParams] = useSearchParams();
   const [showNueva, setShowNueva] = useState(() => searchParams.get('nueva') === 'true');
   const [showNuevaRapida, setShowNuevaRapida] = useState(false);
@@ -104,6 +108,10 @@ export default function CotizacionesPage() {
     return matchBusqueda && matchEstado;
   });
 
+  const filtradas_paginadas = filtradas?.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
+
+  useEffect(() => { setPagina(1); }, [busqueda, filtroEstado]);
+
   if (isLoading) return <LoadingSpinner text="Cargando cotizaciones..." />;
   if (error) return <ErrorMessage message="No se pudieron cargar las cotizaciones." />;
 
@@ -169,42 +177,108 @@ export default function CotizacionesPage() {
         </div>
       </div>
 
-      {/* Filtros */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Buscar por cliente o número..."
-            value={busqueda}
-            onChange={e => setBusqueda(e.target.value)}
-            className="input-field pl-10"
-          />
-        </div>
-        <div className="flex border border-gray-200 overflow-hidden" style={{ borderRadius: '0.25rem' }}>
-          {estadoFiltros.map((f, i) => (
+      {/* Tarjetas filtro — estilo KpiCard dashboard */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
+        {[
+          {
+            key: 'todos',
+            label: 'Total cotizaciones',
+            sublabel: 'todas las registradas',
+            count: cotizaciones?.length ?? 0,
+            icono: <FileText size={15} />,
+            iconBg: '#F3F4F6', iconColor: '#6B7280',
+            accentColor: '#C4895A',
+            accentBg: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
+          },
+          {
+            key: 'en_seguimiento',
+            label: 'En seguimiento',
+            sublabel: 'enviadas o en curso',
+            count: cotizaciones?.filter(c => c.estado === 'enviada' || c.estado === 'en_seguimiento').length ?? 0,
+            icono: <Truck size={15} />,
+            iconBg: '#FFFBEB', iconColor: '#D97706',
+            accentColor: '#D97706',
+            accentBg: '#F59E0B',
+          },
+          {
+            key: 'aceptada',
+            label: 'Aceptadas',
+            sublabel: 'convertidas a venta',
+            count: cotizaciones?.filter(c => c.estado === 'aceptada').length ?? 0,
+            icono: <CheckCircle size={15} />,
+            iconBg: '#F0FDF4', iconColor: '#16A34A',
+            accentColor: '#16A34A',
+            accentBg: '#16A34A',
+          },
+          {
+            key: 'rechazada',
+            label: 'Rechazadas',
+            sublabel: 'no concretadas',
+            count: cotizaciones?.filter(c => c.estado === 'rechazada').length ?? 0,
+            icono: <XCircle size={15} />,
+            iconBg: '#FFF1F2', iconColor: '#DC2626',
+            accentColor: '#DC2626',
+            accentBg: '#DC2626',
+          },
+        ].map(f => {
+          const activo = filtroEstado === f.key;
+          return (
             <button
               key={f.key}
               onClick={() => setFiltroEstado(f.key)}
+              className={`card-kpi${activo ? '' : ' hover:shadow-md hover:-translate-y-0.5 transition-all duration-200'}`}
               style={{
-                padding: '0.5rem 0.75rem',
-                fontSize: '0.75rem',
-                fontWeight: 500,
-                whiteSpace: 'nowrap',
-                transition: 'all 0.15s',
-                background: filtroEstado === f.key
-                  ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)'
-                  : '#fff',
-                color: filtroEstado === f.key ? '#fff' : '#6B7280',
-                border: 'none',
-                borderLeft: i > 0 ? '1px solid #E5E7EB' : 'none',
-                cursor: 'pointer'
+                textAlign: 'left',
+                cursor: 'pointer',
+                border: activo ? `1.5px solid ${f.accentColor}` : undefined,
+                boxShadow: activo ? `0 4px 14px rgba(0,0,0,0.10)` : undefined,
+                position: 'relative',
+                overflow: 'hidden',
               }}
             >
-              {f.label}
+              {/* Barra superior activo */}
+              {activo && (
+                <div style={{
+                  position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
+                  background: f.accentBg,
+                }} />
+              )}
+              {/* Ícono + título — idéntico a KpiCard */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', marginTop: activo ? '0.25rem' : 0 }}>
+                <div style={{
+                  width: 28, height: 28, borderRadius: '0.25rem',
+                  background: activo ? f.iconBg : '#F3F4F6',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: activo ? f.accentColor : f.iconColor,
+                  flexShrink: 0,
+                }}>
+                  {f.icono}
+                </div>
+                <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6B7280', lineHeight: 1.2, flex: 1 }}>
+                  {f.label}
+                </p>
+              </div>
+              {/* Número — idéntico a KpiCard */}
+              <p style={{ fontSize: '1.5rem', fontWeight: 700, color: activo ? f.accentColor : '#111827', lineHeight: 1, marginBottom: '0.25rem' }}>
+                {f.count}
+              </p>
+              {/* Subtítulo */}
+              <p style={{ fontSize: '0.72rem', color: '#9CA3AF' }}>{f.sublabel}</p>
             </button>
-          ))}
-        </div>
+          );
+        })}
+      </div>
+
+      {/* Buscador */}
+      <div className="relative">
+        <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Buscar por cliente o número..."
+          value={busqueda}
+          onChange={e => setBusqueda(e.target.value)}
+          className="input-field pl-10"
+        />
       </div>
 
       {/* Tabla o empty state */}
@@ -234,7 +308,7 @@ export default function CotizacionesPage() {
               </tr>
             </thead>
             <tbody>
-              {filtradas.map(c => (
+              {filtradas_paginadas!.map(c => (
                 <tr key={c.id}>
                   <td className="font-semibold text-gray-400 text-xs">#{c.id}</td>
                   <td>
@@ -353,6 +427,13 @@ export default function CotizacionesPage() {
               ))}
             </tbody>
           </table>
+          <Pagination
+            total={filtradas?.length ?? 0}
+            pagina={pagina}
+            porPagina={POR_PAGINA}
+            onCambiar={setPagina}
+            nombreItems="cotizaciones"
+          />
         </div>
       )}
 

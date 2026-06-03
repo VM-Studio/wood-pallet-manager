@@ -16,6 +16,7 @@ import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
 import { clsx } from 'clsx';
 import DropdownVista from '../../components/ui/DropdownVista';
+import NuevaCotizacionRapida from '../cotizaciones/NuevaCotizacionRapida';
 
 const formatPesos = (valor: number) =>
   new Intl.NumberFormat('es-AR', {
@@ -230,6 +231,7 @@ export default function DashboardPage() {
   const [openCard, setOpenCard] = useState<'pallets' | 'facturacion' | 'ganancias' | 'cotizaciones' | null>(null);
   const toggleCard = (card: 'pallets' | 'facturacion' | 'ganancias' | 'cotizaciones') =>
     setOpenCard(prev => prev === card ? null : card);
+  const [showRapida, setShowRapida] = useState(false);
 
   if (loadingDash) return <LoadingSpinner text="Cargando dashboard..." />;
   if (errorDash) return <ErrorMessage message="No se pudo cargar el dashboard." />;
@@ -374,8 +376,8 @@ export default function DashboardPage() {
         </KpiCard>
       </div>
 
-      {/* Accesos rápidos — 3 tarjetas */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+      {/* Accesos rápidos — 4 tarjetas */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <button
           onClick={() => navigate('/clientes?nuevo=true')}
           className="text-left hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-pointer p-4"
@@ -424,6 +426,23 @@ export default function DashboardPage() {
           <p className="text-sm text-white/70">Marcá facturas como cobradas o parciales</p>
           <div className="flex items-center gap-1 mt-3 text-xs font-medium text-white/90">
             <ArrowRight size={12} /> Ver pendientes
+          </div>
+        </button>
+
+        <button
+          onClick={() => setShowRapida(true)}
+          className="text-left hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-pointer p-4"
+          style={{ background: 'linear-gradient(135deg, #6B3A2A, #C4895A)', borderRadius: 0 }}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 bg-white/20 flex items-center justify-center text-white shrink-0">
+              <Layers size={15} />
+            </div>
+            <p className="flex-1 text-white font-semibold" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '17px', fontStyle: 'italic' }}>Cotización rápida</p>
+          </div>
+          <p className="text-sm text-white/70">Presupuesto express sin cliente registrado</p>
+          <div className="flex items-center gap-1 mt-3 text-xs font-medium text-white/90">
+            <Plus size={12} /> Generar ahora
           </div>
         </button>
       </div>
@@ -519,6 +538,13 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {showRapida && (
+        <NuevaCotizacionRapida
+          onClose={() => setShowRapida(false)}
+          onSuccess={() => setShowRapida(false)}
+        />
+      )}
 
     </div>
   );

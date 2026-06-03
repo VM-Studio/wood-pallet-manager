@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, DollarSign, AlertTriangle, Clock, CheckCircle, Receipt, X, Plus } from 'lucide-react';
 import { useFacturas, useFacturasVencidas, useCobrosPendientes, useActualizarNroFactura, useCargarNroArca } from '../../hooks/useFacturacion';
@@ -8,6 +8,9 @@ import NuevaFactura from './NuevaFactura';
 import EstadoBadge from '../../components/ui/EstadoBadge';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
+import Pagination from '../../components/ui/Pagination';
+
+const POR_PAGINA = 10;
 
 interface FacturaVencida extends Factura {
   saldoPendiente: number;
@@ -47,6 +50,7 @@ export default function FacturacionPage() {
   const [filtroEstado, setFiltroEstado] = useState(() =>
     searchParams.get('cobro') === 'true' ? 'pendiente' : 'todos'
   );
+  const [pagina, setPagina] = useState(1);
   const [cobroData, setCobroData] = useState<CobroData | null>(null);
   const [nroFacturaModal, setNroFacturaModal] = useState<{ id: number; clienteNombre: string } | null>(null);
   const [nroFacturaInput, setNroFacturaInput] = useState('');
@@ -64,6 +68,10 @@ export default function FacturacionPage() {
     const matchEstado = filtroEstado === 'todos' || f.estadoCobro === filtroEstado;
     return matchBusqueda && matchEstado;
   });
+
+  const facturasPaginadas = filtradas?.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
+
+  useEffect(() => { setPagina(1); }, [busqueda, filtroEstado]);
 
   const totalPendiente = pendientes?.reduce((acc, f) => {
     const cobrado = f.pagos?.reduce((a, p) => a + Number(p.monto), 0) ?? 0;
@@ -269,7 +277,7 @@ export default function FacturacionPage() {
               </tr>
             </thead>
             <tbody>
-              {filtradas.map(f => {
+              {facturasPaginadas!.map(f => {
                 const totalCobrado = f.pagos?.reduce((acc, p) => acc + Number(p.monto), 0) ?? 0;
                 const saldo = Number(f.totalConIva) - totalCobrado;
                 const hoy = new Date();
@@ -400,6 +408,13 @@ export default function FacturacionPage() {
               })}
             </tbody>
           </table>
+          <Pagination
+            total={filtradas?.length ?? 0}
+            pagina={pagina}
+            porPagina={POR_PAGINA}
+            onCambiar={setPagina}
+            nombreItems="facturas"
+          />
         </div>
       )}
 
