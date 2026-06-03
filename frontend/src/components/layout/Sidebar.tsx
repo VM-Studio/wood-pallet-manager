@@ -5,6 +5,7 @@ import {
   ClipboardList, Package, Warehouse, Building2,
   BarChart3, LogOut, DollarSign, RotateCcw, FileCheck, Mail,
   X } from 'lucide-react';
+import logoWood from '/logowood.png';
 import { useAuthStore } from '../../store/auth.store';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -81,14 +82,11 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
         className="flex items-center justify-between shrink-0"
       >
         <div className="flex items-center gap-2.5">
-          <div style={{
-            width: 32, height: 32, borderRadius: '0.375rem',
-            background: `linear-gradient(135deg, ${C.accent} 0%, ${C.accentMid} 100%)`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 2px 6px rgba(124,74,45,0.25)',
-          }}>
-            <Package size={16} color="white" />
-          </div>
+          <img
+            src={logoWood}
+            alt="Wood Pallet logo"
+            style={{ width: 32, height: 32, objectFit: 'contain', borderRadius: '0.25rem' }}
+          />
           <span style={{
             fontFamily: "'Cormorant Garamond', Georgia, serif",
             fontStyle: 'italic',

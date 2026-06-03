@@ -133,60 +133,40 @@ export const crearCompraService = async (
     }
   });
 
-  // Actualizar el stock del producto
+  // Actualizar el stock del producto — upsert garantiza que nunca se creen duplicados
   for (const detalle of datos.detalles) {
-    const stockEntry = await prisma.stock.findFirst({
-      where: { productoId: detalle.productoId, proveedorId: datos.proveedorId }
-    });
-
-    if (stockEntry) {
-      if (datos.tipoCompra === 'stock_propio') {
-        await prisma.stock.update({
-          where: { id: stockEntry.id },
-          data: {
-            cantidadDisponible: { increment: detalle.cantidad },
-            cantidadDeudora: { increment: detalle.cantidad }
-          }
-        });
-      } else {
-        await prisma.stock.update({
-          where: { id: stockEntry.id },
-          data: { cantidadDeudora: { increment: detalle.cantidad } }
-        });
-      }
-
-      await prisma.movimientoStock.create({
-        data: {
-          stockId: stockEntry.id,
-          tipoMovimiento: 'entrada',
-          cantidad: detalle.cantidad,
-          motivo: 'compra',
-          idReferencia: compra.id,
-          registradoPorId: usuarioId
-        }
-      });
-    } else {
-      const nuevoStock = await prisma.stock.create({
-        data: {
+    const stockRecord = await prisma.stock.upsert({
+      where: {
+        productoId_proveedorId: {
           productoId: detalle.productoId,
           proveedorId: datos.proveedorId,
-          cantidadDisponible: datos.tipoCompra === 'stock_propio' ? detalle.cantidad : 0,
-          cantidadDeudora: detalle.cantidad,
-          cantidadMinima: 20
-        }
-      });
+        },
+      },
+      update: {
+        cantidadDisponible: datos.tipoCompra === 'stock_propio'
+          ? { increment: detalle.cantidad }
+          : undefined,
+        cantidadDeudora: { increment: detalle.cantidad },
+      },
+      create: {
+        productoId: detalle.productoId,
+        proveedorId: datos.proveedorId,
+        cantidadDisponible: datos.tipoCompra === 'stock_propio' ? detalle.cantidad : 0,
+        cantidadDeudora: detalle.cantidad,
+        cantidadMinima: 20,
+      },
+    });
 
-      await prisma.movimientoStock.create({
-        data: {
-          stockId: nuevoStock.id,
-          tipoMovimiento: 'entrada',
-          cantidad: detalle.cantidad,
-          motivo: 'compra',
-          idReferencia: compra.id,
-          registradoPorId: usuarioId
-        }
-      });
-    }
+    await prisma.movimientoStock.create({
+      data: {
+        stockId: stockRecord.id,
+        tipoMovimiento: 'entrada',
+        cantidad: detalle.cantidad,
+        motivo: 'compra',
+        idReferencia: compra.id,
+        registradoPorId: usuarioId,
+      },
+    });
   }
 
   return compra;

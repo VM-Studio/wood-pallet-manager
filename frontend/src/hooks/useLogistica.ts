@@ -61,6 +61,31 @@ export const useEntregasHoy = () => {
   });
 };
 
+export interface RutaHoy {
+  orden: number;
+  logisticaId: number;
+  ventaId: number;
+  destino: string;
+  estadoEntrega: string;
+  unidades: number;
+  fechaRetiroGalpon: string | null;
+  horaEstimadaEntrega: string | null;
+  lat: number | null;
+  lng: number | null;
+}
+
+export const useRutasHoy = () => {
+  return useQuery({
+    queryKey: ['rutas-hoy'],
+    queryFn: async () => {
+      const { data } = await api.get('/logistica/rutas-hoy');
+      console.log('[useRutasHoy] Rutas recibidas del backend:', data);
+      return data as RutaHoy[];
+    },
+    refetchInterval: 1000 * 60 * 5, // refrescar cada 5 min
+  });
+};
+
 export const useLogisticaByVenta = (ventaId: number) => {
   return useQuery({
     queryKey: ['logistica-venta', ventaId],

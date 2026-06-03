@@ -615,6 +615,8 @@ model Logistica {
   registradoPorId     Int
   observaciones       String?
   lugarEntrega        String?
+  latEntrega          Float?
+  lngEntrega          Float?
   estadoConsulta      EstadoConsulta @default(no_aplica)
   fechaConsulta       DateTime?
   consultadaPorId     Int?

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import {
-  Mail, Plus, History, FileText, Zap, Send, Eye, Trash2,
-  ToggleLeft, ToggleRight, ChevronDown, ChevronUp, Users, CheckCircle, XCircle, Clock
+  Plus, History, FileText, Zap, Send, Eye, Trash2,
+  ToggleLeft, ToggleRight, ChevronDown, ChevronUp, Users,
+  CheckCircle, XCircle, Clock, X,
 } from 'lucide-react';
 import {
   usePlantillas, useHistorialCampanas, useReglas,
@@ -17,60 +18,86 @@ import PreviewEmailModal from '../../components/seguimientos/PreviewEmailModal';
 type Tab = 'campana' | 'historial' | 'plantillas' | 'automatizaciones';
 
 const SEGMENTOS: { value: SegmentoTipo; label: string; desc: string }[] = [
-  { value: 'todos', label: 'Todos los clientes', desc: 'Envía a todos los clientes activos' },
-  { value: 'con_cotizacion_pendiente', label: 'Cotizaciones pendientes', desc: 'Clientes con cotizaciones sin convertir' },
-  { value: 'sin_compras_recientes', label: 'Sin compras recientes', desc: 'Clientes inactivos en los últimos N días' },
-  { value: 'clientes_frecuentes', label: 'Clientes frecuentes', desc: 'Compraron más de una vez' },
-  { value: 'deudores', label: 'Deudores', desc: 'Clientes con saldo deudor pendiente' },
-  { value: 'manual', label: 'Selección manual', desc: 'Elegís los clientes desde una lista' },
+  { value: 'todos',                    label: 'Todos los clientes',       desc: 'Envía a todos los clientes activos' },
+  { value: 'con_cotizacion_pendiente', label: 'Cotizaciones pendientes',  desc: 'Clientes con cotizaciones sin convertir' },
+  { value: 'sin_compras_recientes',    label: 'Sin compras recientes',    desc: 'Clientes inactivos en los últimos N días' },
+  { value: 'clientes_frecuentes',      label: 'Clientes frecuentes',      desc: 'Compraron más de una vez' },
+  { value: 'deudores',                 label: 'Deudores',                 desc: 'Clientes con saldo deudor pendiente' },
+  { value: 'manual',                   label: 'Selección manual',         desc: 'Elegís los clientes desde una lista' },
 ];
 
 const EVENTOS_REGLA = [
   { value: 'cotizacion_pendiente', label: 'Cotización pendiente' },
-  { value: 'sin_compras', label: 'Sin compras en N días' },
-  { value: 'post_venta', label: 'Post-venta (N días después)' },
+  { value: 'sin_compras',          label: 'Sin compras en N días' },
+  { value: 'post_venta',           label: 'Post-venta (N días después)' },
 ];
 
-// ─── Componente principal ────────────────────────────────────────────────────
+const TABS: { key: Tab; label: string; icon: React.ComponentType<{ size?: number }> }[] = [
+  { key: 'campana',          label: 'Nueva campaña',    icon: Send },
+  { key: 'historial',        label: 'Historial',        icon: History },
+  { key: 'plantillas',       label: 'Plantillas',       icon: FileText },
+  { key: 'automatizaciones', label: 'Automatizaciones', icon: Zap },
+];
 
+// ─── Helpers de UI ───────────────────────────────────────────────────────────
+function BtnPrimario({ children, onClick, disabled, type = 'button' }: {
+  children: React.ReactNode; onClick?: () => void; disabled?: boolean; type?: 'button' | 'submit';
+}) {
+  return (
+    <button type={type} onClick={onClick} disabled={disabled} style={{
+      background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
+      color: '#fff', border: 'none', borderRadius: '0.25rem',
+      padding: '0.45rem 1rem', fontSize: '0.8rem', fontWeight: 600,
+      cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.55 : 1,
+      display: 'flex', alignItems: 'center', gap: 6,
+    }}>{children}</button>
+  );
+}
+function BtnSecundario({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) {
+  return (
+    <button type="button" onClick={onClick} style={{
+      background: '#fff', color: '#374151', border: '1.5px solid #E8E2DA',
+      borderRadius: '0.25rem', padding: '0.45rem 1rem', fontSize: '0.8rem', fontWeight: 600,
+      cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+    }}>{children}</button>
+  );
+}
+function Campo({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: 4 }}>{label}</label>
+      {children}
+    </div>
+  );
+}
+const inputStyle: React.CSSProperties = {
+  width: '100%', border: '1.5px solid #E8E2DA', borderRadius: '0.25rem',
+  padding: '0.4rem 0.625rem', fontSize: '0.82rem', background: '#fff',
+  color: '#1F2937', outline: 'none', boxSizing: 'border-box',
+};
+
+// ─── Componente principal ────────────────────────────────────────────────────
 export default function SeguimientosPage() {
   const [tab, setTab] = useState<Tab>('campana');
-
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <Mail className="text-amber-700" size={28} />
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Seguimientos</h1>
-          <p className="text-sm text-gray-500">Email marketing y automatizaciones CRM</p>
-        </div>
+    <div className="space-y-6 animate-fade-in">
+      <div>
+        <h1 className="titulo-modulo">Seguimientos</h1>
+        <p className="text-sm text-gray-500 mt-1">Email marketing y automatizaciones CRM</p>
       </div>
-
-      {/* Tabs */}
-      <div className="flex gap-1 mb-6 border-b border-gray-200">
-        {([
-          { key: 'campana',        label: 'Nueva campaña',     icon: Send },
-          { key: 'historial',      label: 'Historial',         icon: History },
-          { key: 'plantillas',     label: 'Plantillas',        icon: FileText },
-          { key: 'automatizaciones', label: 'Automatizaciones', icon: Zap },
-        ] as { key: Tab; label: string; icon: React.ComponentType<{ size?: number }> }[]).map(({ key, label, icon: Icon }) => (
-          <button
-            key={key}
-            onClick={() => setTab(key)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-              tab === key
-                ? 'border-amber-700 text-amber-700'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <Icon size={15} />
-            {label}
+      <div style={{ display: 'flex', gap: 2, background: '#F3EDE8', borderRadius: '0.375rem', padding: 3 }}>
+        {TABS.map(({ key, label, icon: Icon }) => (
+          <button key={key} onClick={() => setTab(key)} style={{
+            flex: 1, padding: '0.45rem 0.5rem', fontSize: '0.78rem', fontWeight: 600,
+            border: 'none', borderRadius: '0.25rem', cursor: 'pointer', transition: 'all 0.15s',
+            background: tab === key ? '#6B3A2A' : 'transparent',
+            color: tab === key ? '#fff' : '#9E8878',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+          }}>
+            <Icon size={13} />{label}
           </button>
         ))}
       </div>
-
-      {/* Contenido */}
       {tab === 'campana'          && <TabNuevaCampana />}
       {tab === 'historial'        && <TabHistorial />}
       {tab === 'plantillas'       && <TabPlantillas />}
@@ -80,324 +107,246 @@ export default function SeguimientosPage() {
 }
 
 // ─── Tab: Nueva campaña ──────────────────────────────────────────────────────
+const BLOQUES_DEFAULT: BloqueEmail[] = [
+  { tipo: 'header', contenido: 'Hola {{nombre_cliente}}', colorFondo: '#6B3A2A' },
+  { tipo: 'texto',  contenido: 'Te escribimos desde WoodPallet...' },
+  { tipo: 'footer', contenido: 'WoodPallet Manager · contacto@woodpallet.com.ar' },
+];
+const STEP_LABELS = ['Segmento', 'Contenido', 'Confirmar'];
 
 function TabNuevaCampana() {
-  const [step, setStep] = useState(1);
-  const [segmento, setSegmento] = useState<SegmentoTipo>('todos');
-  const [diasCondicion, setDiasCondicion] = useState(30);
-  const [nombre, setNombre] = useState('');
-  const [asunto, setAsunto] = useState('');
-  const [bloques, setBloques] = useState<BloqueEmail[]>([
-    { tipo: 'header', contenido: 'Hola {{nombre_cliente}}' },
-    { tipo: 'texto',  contenido: 'Te escribimos desde WoodPallet...' },
-    { tipo: 'footer', contenido: 'WoodPallet Manager · contacto@woodpallet.com.ar' },
-  ]);
-  const [usarPlantilla, setUsarPlantilla] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
+  const [step, setStep]             = useState(1);
+  const [segmento, setSegmento]     = useState<SegmentoTipo>('todos');
+  const [diasCondicion, setDias]    = useState(30);
+  const [nombre, setNombre]         = useState('');
+  const [asunto, setAsunto]         = useState('');
+  const [bloques, setBloques]       = useState<BloqueEmail[]>(BLOQUES_DEFAULT);
+  const [usarPlantilla, setUsarP]   = useState(false);
+  const [showPreview, setShowPrev]  = useState(false);
 
   const previewMut = usePreviewSegmento();
   const enviarMut  = useEnviarCampana();
   const { data: plantillas } = usePlantillas();
-
   const needsDias = segmento === 'sin_compras_recientes' || segmento === 'con_cotizacion_pendiente';
-
-  const handlePreview = () => {
-    previewMut.mutate({ segmento, diasCondicion: needsDias ? diasCondicion : undefined });
-  };
 
   const handleEnviar = async () => {
     if (!nombre || !asunto) return;
-    await enviarMut.mutateAsync({
-      nombre, asunto, segmento,
-      diasCondicion: needsDias ? diasCondicion : undefined,
-      bloques,
-    });
-    // reset
-    setStep(1);
-    setNombre('');
-    setAsunto('');
-    setBloques([
-      { tipo: 'header', contenido: 'Hola {{nombre_cliente}}' },
-      { tipo: 'texto',  contenido: 'Te escribimos desde WoodPallet...' },
-      { tipo: 'footer', contenido: 'WoodPallet Manager · contacto@woodpallet.com.ar' },
-    ]);
-  };
-
-  const cargarPlantilla = (p: PlantillaEmail) => {
-    setAsunto(p.asunto);
-    setBloques(p.bloques);
-    setUsarPlantilla(false);
+    await enviarMut.mutateAsync({ nombre, asunto, segmento, diasCondicion: needsDias ? diasCondicion : undefined, bloques });
+    setStep(1); setNombre(''); setAsunto(''); setBloques(BLOQUES_DEFAULT);
   };
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       {/* Steps */}
-      <div className="flex items-center gap-2 text-sm">
-        {[1,2,3].map(s => (
-          <div key={s} className="flex items-center gap-2">
-            <button
-              onClick={() => setStep(s)}
-              className={`w-7 h-7 flex items-center justify-center font-bold text-xs ${
-                step === s ? 'bg-amber-700 text-white' : step > s ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500'
-              }`}
-            >
-              {step > s ? '✓' : s}
-            </button>
-            <span className={step === s ? 'font-semibold text-gray-800' : 'text-gray-400'}>
-              {s === 1 ? 'Segmento' : s === 2 ? 'Contenido' : 'Confirmar'}
-            </span>
-            {s < 3 && <span className="text-gray-300 mx-1">→</span>}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        {[1, 2, 3].map(s => (
+          <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <button onClick={() => setStep(s)} style={{
+              width: 26, height: 26, borderRadius: '50%', border: 'none',
+              fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer',
+              background: step === s ? '#6B3A2A' : step > s ? '#C4895A' : '#E8E2DA',
+              color: step >= s ? '#fff' : '#9CA3AF',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>{step > s ? '✓' : s}</button>
+            <span style={{ fontSize: '0.78rem', fontWeight: step === s ? 700 : 400, color: step === s ? '#1F2937' : '#9CA3AF' }}>{STEP_LABELS[s - 1]}</span>
+            {s < 3 && <span style={{ color: '#D1D5DB' }}>→</span>}
           </div>
         ))}
       </div>
 
-      {/* Paso 1: Segmento */}
+      {/* Paso 1 */}
       {step === 1 && (
-        <div className="bg-white border border-gray-200 p-5">
-          <h2 className="font-semibold text-gray-700 mb-4">¿A quién enviás la campaña?</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+        <div style={{ background: '#fff', border: '1.5px solid #E8E2DA', borderRadius: '0.375rem', padding: '1.25rem' }}>
+          <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1F2937', marginBottom: '0.875rem' }}>¿A quién enviás la campaña?</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.625rem', marginBottom: '0.875rem' }}>
             {SEGMENTOS.map(s => (
-              <button
-                key={s.value}
-                onClick={() => setSegmento(s.value)}
-                className={`text-left p-3 border-2 transition-colors ${
-                  segmento === s.value ? 'border-amber-700 bg-amber-50' : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <p className="font-medium text-sm text-gray-800">{s.label}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{s.desc}</p>
+              <button key={s.value} onClick={() => setSegmento(s.value)} style={{
+                textAlign: 'left', padding: '0.75rem',
+                border: `1.5px solid ${segmento === s.value ? '#6B3A2A' : '#E8E2DA'}`,
+                borderRadius: '0.25rem', background: segmento === s.value ? '#F3EDE8' : '#fff', cursor: 'pointer',
+              }}>
+                <p style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1F2937', margin: '0 0 2px' }}>{s.label}</p>
+                <p style={{ fontSize: '0.72rem', color: '#9CA3AF', margin: 0 }}>{s.desc}</p>
               </button>
             ))}
           </div>
-
           {needsDias && (
-            <div className="flex items-center gap-3 mb-4">
-              <label className="text-sm text-gray-600 w-48">Días de condición:</label>
-              <input
-                type="number"
-                value={diasCondicion}
-                onChange={e => setDiasCondicion(Number(e.target.value))}
-                className="border border-gray-300 px-2 py-1 w-24 text-sm"
-                min={1}
-              />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: '0.875rem' }}>
+              <label style={{ fontSize: '0.78rem', color: '#6B7280' }}>Días de condición:</label>
+              <input type="number" value={diasCondicion} onChange={e => setDias(Number(e.target.value))} min={1} style={{ ...inputStyle, width: 80 }} />
             </div>
           )}
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handlePreview}
-              disabled={previewMut.isPending}
-              className="bg-amber-700 text-white px-4 py-2 text-sm font-medium hover:bg-amber-800 disabled:opacity-50"
-            >
-              {previewMut.isPending ? 'Consultando...' : 'Ver destinatarios'}
-            </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <BtnPrimario onClick={() => previewMut.mutate({ segmento, diasCondicion: needsDias ? diasCondicion : undefined })} disabled={previewMut.isPending}>
+              <Users size={13} />{previewMut.isPending ? 'Consultando...' : 'Ver destinatarios'}
+            </BtnPrimario>
             {previewMut.data && (
-              <div className="flex items-center gap-2 text-sm text-gray-700">
-                <Users size={14} className="text-amber-700" />
-                <span><strong>{previewMut.data.total}</strong> destinatarios</span>
-                <span className="text-gray-400">
-                  ({previewMut.data.preview.slice(0, 3).map(c => c.razonSocial).join(', ')}{previewMut.data.total > 3 ? '...' : ''})
+              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: previewMut.data.total > 0 ? '#6B3A2A' : '#9CA3AF' }}>
+                {previewMut.data.total} {previewMut.data.total === 1 ? 'destinatario' : 'destinatarios'}
+              </span>
+            )}
+          </div>
+
+          {/* Lista desplegable de destinatarios */}
+          {previewMut.data && previewMut.data.total > 0 && (
+            <div style={{ marginTop: 4, border: '1.5px solid #E8E2DA', borderRadius: '0.25rem', overflow: 'hidden' }}>
+              <div style={{ background: '#FAFAF8', padding: '0.45rem 0.75rem', borderBottom: '1px solid #E8E2DA', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Destinatarios filtrados ({previewMut.data.total})
                 </span>
               </div>
-            )}
-          </div>
-
+              <div style={{ maxHeight: 200, overflowY: 'auto' }}>
+                {previewMut.data.preview.map((c: { id: number; razonSocial: string; email?: string }) => (
+                  <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.4rem 0.75rem', borderBottom: '1px solid #F9FAFB' }}>
+                    <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#1F2937' }}>{c.razonSocial}</span>
+                    {c.email && <span style={{ fontSize: '0.72rem', color: '#9CA3AF' }}>{c.email}</span>}
+                  </div>
+                ))}
+                {previewMut.data.total > previewMut.data.preview.length && (
+                  <div style={{ padding: '0.4rem 0.75rem', background: '#F3EDE8' }}>
+                    <span style={{ fontSize: '0.72rem', color: '#6B3A2A', fontWeight: 600 }}>
+                      + {previewMut.data.total - previewMut.data.preview.length} clientes más en esta segmentación
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          {previewMut.data && previewMut.data.total === 0 && (
+            <p style={{ fontSize: '0.78rem', color: '#DC2626', margin: 0 }}>No hay clientes en este segmento con los filtros actuales.</p>
+          )}
           {previewMut.data && previewMut.data.total > 0 && (
-            <button
-              onClick={() => setStep(2)}
-              className="mt-4 bg-gray-800 text-white px-5 py-2 text-sm font-medium hover:bg-gray-900"
-            >
-              Continuar →
-            </button>
+            <div style={{ marginTop: 4 }}><BtnSecundario onClick={() => setStep(2)}>Continuar →</BtnSecundario></div>
           )}
         </div>
       )}
 
-      {/* Paso 2: Contenido */}
+      {/* Paso 2 */}
       {step === 2 && (
-        <div className="bg-white border border-gray-200 p-5 space-y-4">
-          <h2 className="font-semibold text-gray-700 mb-2">Diseñá el email</h2>
-
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <label className="text-sm text-gray-600 block mb-1">Nombre de campaña</label>
-              <input
-                value={nombre}
-                onChange={e => setNombre(e.target.value)}
-                placeholder="Ej: Promo Mayo 2026"
-                className="w-full border border-gray-300 px-3 py-2 text-sm"
-              />
-            </div>
-            <div className="flex-1">
-              <label className="text-sm text-gray-600 block mb-1">Asunto del email</label>
-              <input
-                value={asunto}
-                onChange={e => setAsunto(e.target.value)}
-                placeholder="Ej: ¡Tenemos pallets para vos!"
-                className="w-full border border-gray-300 px-3 py-2 text-sm"
-              />
-            </div>
+        <div style={{ background: '#fff', border: '1.5px solid #E8E2DA', borderRadius: '0.375rem', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+          <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1F2937', margin: 0 }}>Diseñá el email</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <Campo label="Nombre de campaña"><input value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Promo Junio 2026" style={inputStyle} /></Campo>
+            <Campo label="Asunto del email"><input value={asunto} onChange={e => setAsunto(e.target.value)} placeholder="Ej: ¡Tenemos pallets para vos!" style={inputStyle} /></Campo>
           </div>
-
-          {/* Cargar plantilla */}
           <div>
-            <button
-              onClick={() => setUsarPlantilla(v => !v)}
-              className="text-sm text-amber-700 underline flex items-center gap-1"
-            >
-              {usarPlantilla ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-              Cargar desde plantilla guardada
+            <button onClick={() => setUsarP(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.78rem', color: '#6B3A2A', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600, padding: 0 }}>
+              {usarPlantilla ? <ChevronUp size={13} /> : <ChevronDown size={13} />} Cargar desde plantilla guardada
             </button>
             {usarPlantilla && plantillas && (
-              <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <div style={{ marginTop: 8, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+                {plantillas.length === 0 && <p style={{ fontSize: '0.78rem', color: '#9CA3AF', gridColumn: '1/-1' }}>No hay plantillas guardadas</p>}
                 {plantillas.map(p => (
-                  <button
-                    key={p.id}
-                    onClick={() => cargarPlantilla(p)}
-                    className="text-left border border-gray-200 p-2 hover:border-amber-700 text-sm"
-                  >
-                    <p className="font-medium">{p.nombre}</p>
-                    <p className="text-xs text-gray-400">{p.asunto}</p>
+                  <button key={p.id} onClick={() => { setAsunto(p.asunto); setBloques(p.bloques); setUsarP(false); }} style={{ textAlign: 'left', border: '1.5px solid #E8E2DA', borderRadius: '0.25rem', padding: '0.5rem 0.625rem', cursor: 'pointer', background: '#FAFAF8' }}>
+                    <p style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1F2937', margin: '0 0 2px' }}>{p.nombre}</p>
+                    <p style={{ fontSize: '0.7rem', color: '#9CA3AF', margin: 0 }}>{p.asunto}</p>
                   </button>
                 ))}
-                {plantillas.length === 0 && <p className="text-sm text-gray-400 col-span-3">No hay plantillas guardadas</p>}
               </div>
             )}
           </div>
-
           <EmailEditor bloques={bloques} onChange={setBloques} />
-
-          <div className="flex gap-3">
-            <button
-              onClick={() => setShowPreview(true)}
-              className="flex items-center gap-2 border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50"
-            >
-              <Eye size={14} /> Vista previa
-            </button>
-            <button
-              onClick={() => setStep(3)}
-              disabled={!nombre || !asunto}
-              className="bg-gray-800 text-white px-5 py-2 text-sm font-medium hover:bg-gray-900 disabled:opacity-40"
-            >
-              Continuar →
-            </button>
-            <button onClick={() => setStep(1)} className="text-sm text-gray-500 hover:text-gray-700">← Volver</button>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            <BtnPrimario onClick={() => setStep(3)} disabled={!nombre || !asunto}>Continuar →</BtnPrimario>
+            <BtnSecundario onClick={() => setShowPrev(true)}><Eye size={13} />Vista previa</BtnSecundario>
+            <button onClick={() => setStep(1)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.78rem', color: '#9CA3AF' }}>← Volver</button>
           </div>
         </div>
       )}
 
-      {/* Paso 3: Confirmar */}
+      {/* Paso 3 */}
       {step === 3 && (
-        <div className="bg-white border border-gray-200 p-5 space-y-4">
-          <h2 className="font-semibold text-gray-700">Confirmar envío</h2>
-          <div className="bg-gray-50 border border-gray-200 p-4 space-y-2 text-sm">
-            <p><span className="text-gray-500">Campaña:</span> <strong>{nombre}</strong></p>
-            <p><span className="text-gray-500">Asunto:</span> {asunto}</p>
-            <p><span className="text-gray-500">Segmento:</span> {SEGMENTOS.find(s => s.value === segmento)?.label}</p>
-            <p><span className="text-gray-500">Destinatarios:</span> <strong>{previewMut.data?.total ?? '—'}</strong></p>
-            <p><span className="text-gray-500">Bloques:</span> {bloques.length} bloques de contenido</p>
+        <div style={{ background: '#fff', border: '1.5px solid #E8E2DA', borderRadius: '0.375rem', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+          <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1F2937', margin: 0 }}>Confirmar envío</p>
+          <div style={{ background: '#FAFAF8', border: '1.5px solid #E8E2DA', borderRadius: '0.25rem', padding: '0.875rem', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {([['Campaña', nombre], ['Asunto', asunto], ['Segmento', SEGMENTOS.find(s => s.value === segmento)?.label ?? '—'], ['Destinatarios', String(previewMut.data?.total ?? '—')], ['Bloques', `${bloques.length} bloques`]] as [string,string][]).map(([k, v]) => (
+              <p key={k} style={{ fontSize: '0.82rem', color: '#374151', margin: 0 }}><span style={{ color: '#9CA3AF', marginRight: 6 }}>{k}:</span><strong>{v}</strong></p>
+            ))}
           </div>
-          <div className="flex gap-3">
-            <button
-              onClick={handleEnviar}
-              disabled={enviarMut.isPending}
-              className="flex items-center gap-2 bg-amber-700 text-white px-5 py-2 text-sm font-semibold hover:bg-amber-800 disabled:opacity-50"
-            >
-              <Send size={14} />
-              {enviarMut.isPending ? 'Enviando...' : 'Enviar campaña'}
-            </button>
-            <button onClick={() => setStep(2)} className="text-sm text-gray-500 hover:text-gray-700">← Volver</button>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <BtnPrimario onClick={handleEnviar} disabled={enviarMut.isPending}>
+              <Send size={13} />{enviarMut.isPending ? 'Enviando...' : 'Enviar campaña'}
+            </BtnPrimario>
+            <button onClick={() => setStep(2)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.78rem', color: '#9CA3AF' }}>← Volver</button>
           </div>
-          {enviarMut.isSuccess && (
-            <p className="text-green-600 text-sm flex items-center gap-2"><CheckCircle size={14} /> Campaña enviada correctamente</p>
-          )}
-          {enviarMut.isError && (
-            <p className="text-red-600 text-sm flex items-center gap-2"><XCircle size={14} /> Error al enviar. Revisá la consola.</p>
-          )}
+          {enviarMut.isSuccess && <p style={{ fontSize: '0.8rem', color: '#15803D', display: 'flex', alignItems: 'center', gap: 6 }}><CheckCircle size={14} />Campaña enviada correctamente</p>}
+          {enviarMut.isError   && <p style={{ fontSize: '0.8rem', color: '#DC2626', display: 'flex', alignItems: 'center', gap: 6 }}><XCircle size={14} />Error al enviar. Revisá la consola.</p>}
         </div>
       )}
 
-      {showPreview && (
-        <PreviewEmailModal bloques={bloques} onClose={() => setShowPreview(false)} />
-      )}
+      {showPreview && <PreviewEmailModal bloques={bloques} onClose={() => setShowPrev(false)} />}
     </div>
   );
 }
 
 // ─── Tab: Historial ──────────────────────────────────────────────────────────
-
 function TabHistorial() {
   const { data, isLoading } = useHistorialCampanas();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const { data: detalle } = useDetalleCampana(selectedId);
 
-  if (isLoading) return <p className="text-sm text-gray-400">Cargando...</p>;
-  if (!data?.length) return <p className="text-sm text-gray-400">No hay campañas enviadas aún.</p>;
-
+  if (isLoading) return <p style={{ fontSize: '0.82rem', color: '#9CA3AF' }}>Cargando...</p>;
+  if (!data?.length) return (
+    <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#9CA3AF' }}>
+      <History size={32} style={{ opacity: 0.3, display: 'block', margin: '0 auto 8px' }} />
+      <p style={{ fontSize: '0.85rem' }}>No hay campañas enviadas aún</p>
+    </div>
+  );
   return (
-    <div className="flex gap-5">
-      <div className="w-80 space-y-2">
+    <div style={{ display: 'flex', gap: '1rem', alignItems: 'start' }}>
+      <div style={{ width: 260, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
         {data.map(c => (
-          <button
-            key={c.id}
-            onClick={() => setSelectedId(c.id)}
-            className={`w-full text-left border p-3 transition-colors ${
-              selectedId === c.id ? 'border-amber-700 bg-amber-50' : 'border-gray-200 hover:border-gray-300'
-            }`}
-          >
-            <p className="font-medium text-sm text-gray-800 truncate">{c.nombre}</p>
-            <p className="text-xs text-gray-500 truncate">{c.asunto}</p>
-            <div className="flex items-center justify-between mt-1">
-              <span className="text-xs text-gray-400">{new Date(c.enviadaEn).toLocaleDateString('es-AR')}</span>
-              <span className="text-xs bg-gray-100 px-2 py-0.5">{c.totalDestinatarios} dest.</span>
+          <button key={c.id} onClick={() => setSelectedId(c.id)} style={{
+            textAlign: 'left', padding: '0.625rem 0.75rem',
+            border: `1.5px solid ${selectedId === c.id ? '#6B3A2A' : '#E8E2DA'}`,
+            borderRadius: '0.25rem', background: selectedId === c.id ? '#F3EDE8' : '#fff', cursor: 'pointer',
+          }}>
+            <p style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1F2937', margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.nombre}</p>
+            <p style={{ fontSize: '0.72rem', color: '#9CA3AF', margin: '0 0 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.asunto}</p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: '0.68rem', color: '#9CA3AF' }}>{new Date(c.enviadaEn).toLocaleDateString('es-AR')}</span>
+              <span style={{ fontSize: '0.68rem', fontWeight: 600, padding: '1px 6px', background: '#F3EDE8', color: '#6B3A2A', borderRadius: '0.25rem' }}>{c.totalDestinatarios} dest.</span>
             </div>
           </button>
         ))}
       </div>
-
-      {detalle && (
-        <div className="flex-1 bg-white border border-gray-200 p-5">
-          <h2 className="font-semibold text-gray-800 mb-1">{detalle.nombre}</h2>
-          <p className="text-sm text-gray-500 mb-4">{detalle.asunto}</p>
-          <div className="flex gap-6 text-sm mb-4">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-gray-800">{detalle.totalDestinatarios}</p>
-              <p className="text-xs text-gray-500">Enviados</p>
-            </div>
-            {detalle.destinatarios && (
-              <>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-green-600">{detalle.destinatarios.filter(d => d.enviado).length}</p>
-                  <p className="text-xs text-gray-500">Exitosos</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-red-500">{detalle.destinatarios.filter(d => !d.enviado && d.error).length}</p>
-                  <p className="text-xs text-gray-500">Con error</p>
-                </div>
-              </>
-            )}
+      {detalle ? (
+        <div style={{ flex: 1, background: '#fff', border: '1.5px solid #E8E2DA', borderRadius: '0.375rem', padding: '1.25rem' }}>
+          <p style={{ fontSize: '0.92rem', fontWeight: 700, color: '#1F2937', margin: '0 0 2px' }}>{detalle.nombre}</p>
+          <p style={{ fontSize: '0.78rem', color: '#9CA3AF', margin: '0 0 1rem' }}>{detalle.asunto}</p>
+          <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1rem' }}>
+            {[
+              { val: detalle.totalDestinatarios, label: 'Enviados', color: '#6B3A2A' },
+              { val: detalle.destinatarios?.filter((d: { enviado: boolean }) => d.enviado).length ?? 0, label: 'Exitosos', color: '#15803D' },
+              { val: detalle.destinatarios?.filter((d: { enviado: boolean; error?: string }) => !d.enviado && d.error).length ?? 0, label: 'Con error', color: '#DC2626' },
+            ].map(s => (
+              <div key={s.label} style={{ textAlign: 'center' }}>
+                <p style={{ fontSize: '1.5rem', fontWeight: 800, color: s.color, margin: 0 }}>{s.val}</p>
+                <p style={{ fontSize: '0.7rem', color: '#9CA3AF', margin: 0 }}>{s.label}</p>
+              </div>
+            ))}
           </div>
           {detalle.destinatarios && (
-            <div className="max-h-64 overflow-y-auto">
-              <table className="w-full text-xs">
+            <div style={{ maxHeight: 260, overflowY: 'auto', border: '1px solid #E8E2DA', borderRadius: '0.25rem' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem' }}>
                 <thead>
-                  <tr className="border-b border-gray-100 text-gray-500">
-                    <th className="text-left py-1.5">Cliente</th>
-                    <th className="text-left py-1.5">Email</th>
-                    <th className="text-left py-1.5">Estado</th>
+                  <tr style={{ background: '#FAFAF8', borderBottom: '1px solid #E8E2DA' }}>
+                    {['Cliente', 'Email', 'Estado'].map(h => (
+                      <th key={h} style={{ textAlign: 'left', padding: '0.5rem 0.75rem', fontWeight: 600, color: '#9CA3AF', fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{h}</th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {detalle.destinatarios.map(d => (
-                    <tr key={d.id} className="border-b border-gray-50">
-                      <td className="py-1.5">{d.cliente.razonSocial}</td>
-                      <td className="py-1.5 text-gray-500">{d.email}</td>
-                      <td className="py-1.5">
+                  {detalle.destinatarios.map((d: { id: number; cliente: { razonSocial: string }; email: string; enviado: boolean; error?: string }) => (
+                    <tr key={d.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
+                      <td style={{ padding: '0.45rem 0.75rem', color: '#374151', fontWeight: 500 }}>{d.cliente.razonSocial}</td>
+                      <td style={{ padding: '0.45rem 0.75rem', color: '#9CA3AF' }}>{d.email}</td>
+                      <td style={{ padding: '0.45rem 0.75rem' }}>
                         {d.enviado
-                          ? <span className="flex items-center gap-1 text-green-600"><CheckCircle size={11} /> OK</span>
+                          ? <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#15803D', fontWeight: 600 }}><CheckCircle size={11} />OK</span>
                           : d.error
-                            ? <span className="flex items-center gap-1 text-red-500"><XCircle size={11} /> Error</span>
-                            : <span className="flex items-center gap-1 text-yellow-500"><Clock size={11} /> Pendiente</span>
+                            ? <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#DC2626', fontWeight: 600 }}><XCircle size={11} />Error</span>
+                            : <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#C4895A', fontWeight: 600 }}><Clock size={11} />Pendiente</span>
                         }
                       </td>
                     </tr>
@@ -407,127 +356,75 @@ function TabHistorial() {
             </div>
           )}
         </div>
+      ) : (
+        <div style={{ flex: 1, background: '#FAFAF8', border: '1.5px solid #E8E2DA', borderRadius: '0.375rem', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
+          <p style={{ fontSize: '0.82rem', color: '#9CA3AF' }}>Seleccioná una campaña para ver el detalle</p>
+        </div>
       )}
     </div>
   );
 }
 
 // ─── Tab: Plantillas ─────────────────────────────────────────────────────────
-
 function TabPlantillas() {
-  const { data, isLoading } = usePlantillas();
-  const crearMut    = useCrearPlantilla();
-  const actualizarMut = useActualizarPlantilla();
-  const eliminarMut   = useEliminarPlantilla();
-
-  const [editando, setEditando] = useState<PlantillaEmail | null>(null);
-  const [nueva, setNueva] = useState(false);
-  const [nombre, setNombre] = useState('');
-  const [asunto, setAsunto] = useState('');
+  const { data, isLoading }   = usePlantillas();
+  const crearMut              = useCrearPlantilla();
+  const actualizarMut         = useActualizarPlantilla();
+  const eliminarMut           = useEliminarPlantilla();
+  const [editando, setEdit]   = useState<PlantillaEmail | null>(null);
+  const [nueva, setNueva]     = useState(false);
+  const [nombre, setNombre]   = useState('');
+  const [asunto, setAsunto]   = useState('');
   const [bloques, setBloques] = useState<BloqueEmail[]>([
-    { tipo: 'header', contenido: 'Hola {{nombre_cliente}}' },
+    { tipo: 'header', contenido: 'Hola {{nombre_cliente}}', colorFondo: '#6B3A2A' },
     { tipo: 'texto',  contenido: '' },
     { tipo: 'footer', contenido: 'WoodPallet Manager' },
   ]);
-  const [showPreview, setShowPreview] = useState(false);
+  const [showPreview, setShowPrev] = useState(false);
 
-  const abrirEditar = (p: PlantillaEmail) => {
-    setEditando(p);
-    setNueva(false);
-    setNombre(p.nombre);
-    setAsunto(p.asunto);
-    setBloques(p.bloques);
-  };
-
-  const abrirNueva = () => {
-    setEditando(null);
-    setNueva(true);
-    setNombre('');
-    setAsunto('');
-    setBloques([
-      { tipo: 'header', contenido: 'Hola {{nombre_cliente}}' },
-      { tipo: 'texto',  contenido: '' },
-      { tipo: 'footer', contenido: 'WoodPallet Manager' },
-    ]);
-  };
-
+  const abrirEditar = (p: PlantillaEmail) => { setEdit(p); setNueva(false); setNombre(p.nombre); setAsunto(p.asunto); setBloques(p.bloques); };
+  const abrirNueva  = () => { setEdit(null); setNueva(true); setNombre(''); setAsunto(''); setBloques([{ tipo: 'header', contenido: 'Hola {{nombre_cliente}}', colorFondo: '#6B3A2A' }, { tipo: 'texto', contenido: '' }, { tipo: 'footer', contenido: 'WoodPallet Manager' }]); };
   const guardar = async () => {
-    if (editando) {
-      await actualizarMut.mutateAsync({ id: editando.id, nombre, asunto, bloques });
-    } else {
-      await crearMut.mutateAsync({ nombre, asunto, bloques });
-    }
-    setEditando(null);
-    setNueva(false);
+    if (editando) await actualizarMut.mutateAsync({ id: editando.id, nombre, asunto, bloques });
+    else          await crearMut.mutateAsync({ nombre, asunto, bloques });
+    setEdit(null); setNueva(false);
   };
 
-  if (isLoading) return <p className="text-sm text-gray-400">Cargando...</p>;
-
+  if (isLoading) return <p style={{ fontSize: '0.82rem', color: '#9CA3AF' }}>Cargando...</p>;
   return (
-    <div className="flex gap-5">
-      {/* Lista */}
-      <div className="w-72">
-        <button
-          onClick={abrirNueva}
-          className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-amber-300 text-amber-700 py-2.5 text-sm font-medium hover:bg-amber-50 mb-3"
-        >
-          <Plus size={14} /> Nueva plantilla
+    <div style={{ display: 'flex', gap: '1rem', alignItems: 'start' }}>
+      <div style={{ width: 240, flexShrink: 0 }}>
+        <button onClick={abrirNueva} style={{ width: '100%', padding: '0.5rem', fontSize: '0.78rem', fontWeight: 600, border: '1.5px dashed #C4895A', borderRadius: '0.25rem', background: '#FEFAF7', color: '#6B3A2A', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 8 }}>
+          <Plus size={13} />Nueva plantilla
         </button>
-        {data?.map(p => (
-          <div
-            key={p.id}
-            className={`border p-3 mb-2 cursor-pointer transition-colors ${
-              editando?.id === p.id ? 'border-amber-700 bg-amber-50' : 'border-gray-200 hover:border-gray-300'
-            }`}
-            onClick={() => abrirEditar(p)}
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm truncate">{p.nombre}</p>
-                <p className="text-xs text-gray-400 truncate">{p.asunto}</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          {data?.map(p => (
+            <div key={p.id} onClick={() => abrirEditar(p)} style={{ border: `1.5px solid ${editando?.id === p.id ? '#6B3A2A' : '#E8E2DA'}`, borderRadius: '0.25rem', padding: '0.5rem 0.625rem', background: editando?.id === p.id ? '#F3EDE8' : '#fff', cursor: 'pointer', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1F2937', margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.nombre}</p>
+                <p style={{ fontSize: '0.7rem', color: '#9CA3AF', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.asunto}</p>
               </div>
-              <button
-                onClick={e => { e.stopPropagation(); eliminarMut.mutate(p.id); }}
-                className="text-gray-400 hover:text-red-500 ml-2 shrink-0"
-              >
-                <Trash2 size={13} />
-              </button>
+              <button onClick={e => { e.stopPropagation(); eliminarMut.mutate(p.id); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: '#D1D5DB', flexShrink: 0 }}><Trash2 size={12} /></button>
             </div>
-          </div>
-        ))}
-        {!data?.length && !nueva && (
-          <p className="text-sm text-gray-400 text-center py-4">No hay plantillas</p>
-        )}
+          ))}
+          {!data?.length && !nueva && <p style={{ fontSize: '0.78rem', color: '#9CA3AF', textAlign: 'center', padding: '1rem 0' }}>No hay plantillas</p>}
+        </div>
       </div>
-
-      {/* Editor */}
       {(editando || nueva) && (
-        <div className="flex-1 bg-white border border-gray-200 p-5 space-y-4">
-          <h2 className="font-semibold text-gray-700">{editando ? 'Editar plantilla' : 'Nueva plantilla'}</h2>
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <label className="text-xs text-gray-500 block mb-1">Nombre de plantilla</label>
-              <input value={nombre} onChange={e => setNombre(e.target.value)} className="w-full border border-gray-300 px-3 py-1.5 text-sm" />
-            </div>
-            <div className="flex-1">
-              <label className="text-xs text-gray-500 block mb-1">Asunto</label>
-              <input value={asunto} onChange={e => setAsunto(e.target.value)} className="w-full border border-gray-300 px-3 py-1.5 text-sm" />
-            </div>
+        <div style={{ flex: 1, background: '#fff', border: '1.5px solid #E8E2DA', borderRadius: '0.375rem', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+          <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1F2937', margin: 0 }}>{editando ? 'Editar plantilla' : 'Nueva plantilla'}</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <Campo label="Nombre de plantilla"><input value={nombre} onChange={e => setNombre(e.target.value)} style={inputStyle} /></Campo>
+            <Campo label="Asunto"><input value={asunto} onChange={e => setAsunto(e.target.value)} style={inputStyle} /></Campo>
           </div>
           <EmailEditor bloques={bloques} onChange={setBloques} />
-          <div className="flex gap-3">
-            <button
-              onClick={guardar}
-              disabled={!nombre || !asunto || crearMut.isPending || actualizarMut.isPending}
-              className="bg-amber-700 text-white px-4 py-2 text-sm font-medium hover:bg-amber-800 disabled:opacity-50"
-            >
+          <div style={{ display: 'flex', gap: 8 }}>
+            <BtnPrimario onClick={guardar} disabled={!nombre || !asunto || crearMut.isPending || actualizarMut.isPending}>
               {crearMut.isPending || actualizarMut.isPending ? 'Guardando...' : 'Guardar plantilla'}
-            </button>
-            <button onClick={() => setShowPreview(true)} className="flex items-center gap-2 border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50">
-              <Eye size={13} /> Vista previa
-            </button>
+            </BtnPrimario>
+            <BtnSecundario onClick={() => setShowPrev(true)}><Eye size={13} />Vista previa</BtnSecundario>
           </div>
-          {showPreview && <PreviewEmailModal bloques={bloques} onClose={() => setShowPreview(false)} />}
+          {showPreview && <PreviewEmailModal bloques={bloques} onClose={() => setShowPrev(false)} />}
         </div>
       )}
     </div>
@@ -535,127 +432,84 @@ function TabPlantillas() {
 }
 
 // ─── Tab: Automatizaciones ───────────────────────────────────────────────────
-
 function TabAutomatizaciones() {
-  const { data, isLoading } = useReglas();
-  const { data: plantillas } = usePlantillas();
-  const crearMut    = useCrearRegla();
-  const toggleMut   = useToggleRegla();
-  const eliminarMut = useEliminarRegla();
-
-  const [showForm, setShowForm] = useState(false);
-  const [nombre, setNombre] = useState('');
-  const [evento, setEvento] = useState('cotizacion_pendiente');
-  const [dias, setDias] = useState(7);
-  const [asunto, setAsunto] = useState('');
-  const [plantillaId, setPlantillaId] = useState<number | ''>('');
+  const { data, isLoading }       = useReglas();
+  const { data: plantillas }      = usePlantillas();
+  const crearMut                  = useCrearRegla();
+  const toggleMut                 = useToggleRegla();
+  const eliminarMut               = useEliminarRegla();
+  const [showForm, setShowForm]   = useState(false);
+  const [nombre, setNombre]       = useState('');
+  const [evento, setEvento]       = useState('cotizacion_pendiente');
+  const [dias, setDias]           = useState(7);
+  const [asunto, setAsunto]       = useState('');
+  const [plantillaId, setPlantId] = useState<number | ''>('');
 
   const guardar = async () => {
-    await crearMut.mutateAsync({
-      nombre, evento, asunto,
-      diasCondicion: dias,
-      plantillaId: plantillaId ? Number(plantillaId) : undefined,
-    });
-    setShowForm(false);
-    setNombre(''); setAsunto(''); setPlantillaId('');
+    await crearMut.mutateAsync({ nombre, evento, asunto, diasCondicion: dias, plantillaId: plantillaId ? Number(plantillaId) : undefined });
+    setShowForm(false); setNombre(''); setAsunto(''); setPlantId('');
   };
 
-  if (isLoading) return <p className="text-sm text-gray-400">Cargando...</p>;
-
+  if (isLoading) return <p style={{ fontSize: '0.82rem', color: '#9CA3AF' }}>Cargando...</p>;
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">Las automatizaciones se ejecutan diariamente a las 8:10 AM</p>
-        <button
-          onClick={() => setShowForm(v => !v)}
-          className="flex items-center gap-2 bg-amber-700 text-white px-4 py-2 text-sm font-medium hover:bg-amber-800"
-        >
-          <Plus size={14} /> Nueva regla
-        </button>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <p style={{ fontSize: '0.78rem', color: '#9CA3AF', margin: 0 }}>Las automatizaciones se ejecutan diariamente a las 8:10 AM</p>
+        <BtnPrimario onClick={() => setShowForm(v => !v)}>{showForm ? <X size={13} /> : <Plus size={13} />}{showForm ? 'Cancelar' : 'Nueva regla'}</BtnPrimario>
       </div>
-
-      {/* Form */}
       {showForm && (
-        <div className="bg-white border border-amber-200 p-5 space-y-3">
-          <h3 className="font-semibold text-gray-700">Nueva regla de automatización</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-gray-500 block mb-1">Nombre de la regla</label>
-              <input value={nombre} onChange={e => setNombre(e.target.value)} className="w-full border border-gray-300 px-3 py-1.5 text-sm" />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 block mb-1">Evento disparador</label>
-              <select value={evento} onChange={e => setEvento(e.target.value)} className="w-full border border-gray-300 px-3 py-1.5 text-sm">
+        <div style={{ background: '#fff', border: '1.5px solid #E8E2DA', borderRadius: '0.375rem', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1F2937', margin: 0 }}>Nueva regla de automatización</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <Campo label="Nombre de la regla"><input value={nombre} onChange={e => setNombre(e.target.value)} style={inputStyle} /></Campo>
+            <Campo label="Evento disparador">
+              <select value={evento} onChange={e => setEvento(e.target.value)} style={inputStyle}>
                 {EVENTOS_REGLA.map(ev => <option key={ev.value} value={ev.value}>{ev.label}</option>)}
               </select>
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 block mb-1">Días de condición</label>
-              <input type="number" value={dias} onChange={e => setDias(Number(e.target.value))} className="w-full border border-gray-300 px-3 py-1.5 text-sm" min={1} />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 block mb-1">Asunto del email</label>
-              <input value={asunto} onChange={e => setAsunto(e.target.value)} className="w-full border border-gray-300 px-3 py-1.5 text-sm" />
-            </div>
-            <div className="col-span-2">
-              <label className="text-xs text-gray-500 block mb-1">Plantilla de email (opcional)</label>
-              <select value={plantillaId} onChange={e => setPlantillaId(e.target.value ? Number(e.target.value) : '')} className="w-full border border-gray-300 px-3 py-1.5 text-sm">
-                <option value="">— Sin plantilla (email vacío) —</option>
-                {plantillas?.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
-              </select>
+            </Campo>
+            <Campo label="Días de condición"><input type="number" value={dias} onChange={e => setDias(Number(e.target.value))} min={1} style={inputStyle} /></Campo>
+            <Campo label="Asunto del email"><input value={asunto} onChange={e => setAsunto(e.target.value)} style={inputStyle} /></Campo>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <Campo label="Plantilla de email (opcional)">
+                <select value={plantillaId} onChange={e => setPlantId(e.target.value ? Number(e.target.value) : '')} style={inputStyle}>
+                  <option value="">— Sin plantilla —</option>
+                  {plantillas?.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+                </select>
+              </Campo>
             </div>
           </div>
-          <div className="flex gap-3">
-            <button
-              onClick={guardar}
-              disabled={!nombre || !asunto || crearMut.isPending}
-              className="bg-amber-700 text-white px-4 py-2 text-sm font-medium hover:bg-amber-800 disabled:opacity-50"
-            >
-              {crearMut.isPending ? 'Guardando...' : 'Guardar regla'}
-            </button>
-            <button onClick={() => setShowForm(false)} className="text-sm text-gray-500">Cancelar</button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <BtnPrimario onClick={guardar} disabled={!nombre || !asunto || crearMut.isPending}>{crearMut.isPending ? 'Guardando...' : 'Guardar regla'}</BtnPrimario>
+            <BtnSecundario onClick={() => setShowForm(false)}>Cancelar</BtnSecundario>
           </div>
         </div>
       )}
-
-      {/* Lista de reglas */}
       {!data?.length ? (
-        <div className="text-center py-12 text-gray-400">
-          <Zap size={40} className="mx-auto mb-3 opacity-30" />
-          <p className="text-sm">No hay reglas de automatización</p>
+        <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#9CA3AF' }}>
+          <Zap size={36} style={{ opacity: 0.25, display: 'block', margin: '0 auto 8px' }} />
+          <p style={{ fontSize: '0.85rem' }}>No hay reglas de automatización configuradas</p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {data.map(r => (
-            <div key={r.id} className={`flex items-center justify-between border p-4 ${r.activa ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50 opacity-60'}`}>
-              <div className="flex-1">
-                <div className="flex items-center gap-3">
-                  <p className="font-medium text-sm text-gray-800">{r.nombre}</p>
-                  <span className={`text-xs px-2 py-0.5 ${r.activa ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'}`}>
-                    {r.activa ? 'Activa' : 'Inactiva'}
-                  </span>
+            <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: `1.5px solid ${r.activa ? '#E8E2DA' : '#F3F4F6'}`, borderRadius: '0.375rem', padding: '0.75rem 0.875rem', background: r.activa ? '#fff' : '#FAFAFA', opacity: r.activa ? 1 : 0.65 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                  <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1F2937', margin: 0 }}>{r.nombre}</p>
+                  <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '1px 7px', borderRadius: '0.25rem', background: r.activa ? '#DCFCE7' : '#F3F4F6', color: r.activa ? '#15803D' : '#9CA3AF' }}>{r.activa ? 'Activa' : 'Inactiva'}</span>
                 </div>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p style={{ fontSize: '0.72rem', color: '#9CA3AF', margin: 0 }}>
                   {EVENTOS_REGLA.find(e => e.value === r.evento)?.label}
                   {r.diasCondicion ? ` · ${r.diasCondicion} días` : ''}
-                  {r.plantilla ? ` · Plantilla: ${r.plantilla.nombre}` : ''}
+                  {r.plantilla ? ` · ${r.plantilla.nombre}` : ''}
+                  {' · '}<span style={{ fontStyle: 'italic' }}>{r.asunto}</span>
                 </p>
-                <p className="text-xs text-gray-400">Asunto: {r.asunto}</p>
               </div>
-              <div className="flex items-center gap-3 ml-4">
-                <button
-                  onClick={() => toggleMut.mutate(r.id)}
-                  className="text-gray-400 hover:text-amber-700 transition-colors"
-                  title={r.activa ? 'Desactivar' : 'Activar'}
-                >
-                  {r.activa ? <ToggleRight size={22} className="text-amber-700" /> : <ToggleLeft size={22} />}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 12 }}>
+                <button onClick={() => toggleMut.mutate(r.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }} title={r.activa ? 'Desactivar' : 'Activar'}>
+                  {r.activa ? <ToggleRight size={22} style={{ color: '#6B3A2A' }} /> : <ToggleLeft size={22} style={{ color: '#D1D5DB' }} />}
                 </button>
-                <button
-                  onClick={() => eliminarMut.mutate(r.id)}
-                  className="text-gray-400 hover:text-red-500 transition-colors"
-                >
-                  <Trash2 size={15} />
-                </button>
+                <button onClick={() => eliminarMut.mutate(r.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#D1D5DB', display: 'flex', alignItems: 'center' }}><Trash2 size={14} /></button>
               </div>
             </div>
           ))}

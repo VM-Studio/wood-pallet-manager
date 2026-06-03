@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Link2, Package, Phone, Mail, Pencil, MapPin } from 'lucide-react';
+import { Plus, Trash2, Link2, Package, Phone, Mail, Pencil, MapPin, Building2 } from 'lucide-react';
 import api from '../../services/api';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
@@ -300,117 +300,168 @@ export default function ProveedoresPage() {
   if (isLoading) return <LoadingSpinner text="Cargando proveedores..." />;
   if (errorMsg) return <ErrorMessage message={errorMsg} onRetry={cargarConDetalle} />;
 
+  // Iniciales del proveedor para el avatar
+
   return (
-    <div className="space-y-5 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div>
           <h1 className="titulo-modulo">Proveedores</h1>
-          <p className="text-sm text-gray-600 mt-1">{proveedores.length} proveedor{proveedores.length !== 1 ? 'es' : ''} registrado{proveedores.length !== 1 ? 's' : ''}</p>
+          <p className="text-sm text-gray-500 mt-1">
+            {proveedores.length} proveedor{proveedores.length !== 1 ? 'es' : ''} activo{proveedores.length !== 1 ? 's' : ''}
+          </p>
         </div>
         <button
           onClick={() => { setEditando(null); setShowModal(true); }}
           style={{
-            display: 'inline-flex', alignItems: 'center', gap: '6px',
+            display: 'inline-flex', alignItems: 'center', gap: 6,
             background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
-            color: 'white', fontWeight: 500, fontSize: '0.875rem',
-            padding: '0.5rem 1rem', borderRadius: '0.25rem',
-            border: 'none', cursor: 'pointer',
-          }}>
-          <Plus size={16} />
-          Nuevo proveedor
+            color: '#fff', border: 'none', borderRadius: '0.25rem',
+            padding: '0.5rem 1.1rem', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
+          }}
+        >
+          <Plus size={14} /> Nuevo proveedor
         </button>
       </div>
 
       {/* Lista vacía */}
       {proveedores.length === 0 && (
-        <div className="card p-12 text-center">
-          <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Package className="w-8 h-8 text-amber-600" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Sin proveedores</h3>
-          <p className="text-gray-500 text-sm mb-6">Agregá tu primer proveedor para poder registrar compras.</p>
-          <button onClick={() => { setEditando(null); setShowModal(true); }} className="btn-primary">
-            <Plus size={15} /> Agregar proveedor
+        <div style={{ textAlign: 'center', padding: '4rem 1rem', background: '#fff', border: '1.5px solid #E8E2DA' }}>
+          <Building2 size={28} style={{ color: '#D1D5DB', marginBottom: 12, display: 'block', margin: '0 auto 12px' }} />
+          <p style={{ fontSize: '0.9rem', fontWeight: 600, color: '#374151', margin: '0 0 6px' }}>Sin proveedores</p>
+          <p style={{ fontSize: '0.8rem', color: '#9CA3AF', margin: '0 0 1.25rem' }}>Agregá tu primer proveedor para poder registrar compras.</p>
+          <button onClick={() => { setEditando(null); setShowModal(true); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', color: '#fff', border: 'none', borderRadius: '0.25rem', padding: '0.5rem 1rem', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer' }}>
+            <Plus size={13} /> Agregar proveedor
           </button>
         </div>
       )}
 
-      {/* Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      {/* Cards — 2 columnas fijas, perfectas para 2 proveedores */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
         {proveedores.map(p => {
-          const cantProductos = p.prodProveedores?.length ?? 0;
+          const prods = p.prodProveedores ?? [];
           return (
-            <div key={p.id} className="card p-5 space-y-4">
-              {/* Header card */}
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-gray-900 text-base truncate">{p.nombreEmpresa}</h3>
-                  <p className="text-sm text-gray-500 truncate">{p.nombreContacto}</p>
+            <div
+              key={p.id}
+              style={{
+                background: '#fff',
+                border: '1.5px solid #E8E2DA',
+                borderLeft: '3px solid #6B3A2A',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 0,
+              }}
+            >
+              {/* ── Encabezado ── */}
+              <div style={{ padding: '1.25rem 1.25rem 1rem', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  {/* Tipo badge — minimalista */}
+                  <span style={{ fontSize: '0.62rem', fontWeight: 700, color: '#C4895A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    {tipoLabel[p.tipoProducto]}
+                  </span>
+                  <p style={{ fontSize: '1.15rem', fontWeight: 700, color: '#1F2937', margin: '2px 0 0', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {p.nombreEmpresa}
+                  </p>
                 </div>
-                <span className={`shrink-0 text-xs font-medium px-2 py-1 rounded-full ${
-                  p.tipoProducto === 'seminuevo'
-                    ? 'bg-amber-100 text-amber-700'
-                    : p.tipoProducto === 'nuevo_medida'
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'bg-green-100 text-green-700'
-                }`}>
-                  {tipoLabel[p.tipoProducto]}
-                </span>
+                {/* Acciones */}
+                <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
+                  <button
+                    onClick={() => { setEditando(p); setShowModal(true); }}
+                    title="Editar"
+                    style={{ width: 30, height: 30, border: '1.5px solid #E8E2DA', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF' }}
+                  >
+                    <Pencil size={12} />
+                  </button>
+                  <button
+                    onClick={() => handleEliminar(p.id, p.nombreEmpresa)}
+                    title="Desactivar"
+                    style={{ width: 30, height: 30, border: '1.5px solid #FEE2E2', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FCA5A5' }}
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
               </div>
 
-              {/* Info */}
-              <div className="space-y-1.5">
+              {/* ── Contacto ── */}
+              <div style={{ padding: '0 1.25rem 1rem', display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {p.telefono && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Phone size={13} className="text-gray-400 shrink-0" />
-                    <span>{p.telefono}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Phone size={12} style={{ color: '#D1D5DB', flexShrink: 0 }} />
+                    <span style={{ fontSize: '0.8rem', color: '#6B7280' }}>{p.telefono}</span>
                   </div>
                 )}
                 {p.email && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Mail size={13} className="text-gray-400 shrink-0" />
-                    <span className="truncate">{p.email}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Mail size={12} style={{ color: '#D1D5DB', flexShrink: 0 }} />
+                    <span style={{ fontSize: '0.8rem', color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.email}</span>
                   </div>
                 )}
                 {p.ubicacion && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <MapPin size={13} className="text-gray-400 shrink-0" />
-                    <span className="truncate">{p.ubicacion}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <MapPin size={12} style={{ color: '#D1D5DB', flexShrink: 0 }} />
+                    <span style={{ fontSize: '0.8rem', color: '#6B7280' }}>{p.ubicacion}</span>
+                  </div>
+                )}
+                {!p.telefono && !p.email && !p.ubicacion && (
+                  <span style={{ fontSize: '0.78rem', color: '#D1D5DB', fontStyle: 'italic' }}>Sin datos de contacto</span>
+                )}
+              </div>
+
+              {/* ── Separador ── */}
+              <div style={{ height: 1, background: '#F3F4F6', margin: '0 1.25rem' }} />
+
+              {/* ── Productos ── */}
+              <div style={{ padding: '0.875rem 1.25rem', flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Productos · {prods.length}
+                  </span>
+                  <button
+                    onClick={() => setVinculando(p)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 600, color: '#6B3A2A', padding: 0 }}
+                  >
+                    <Link2 size={11} /> Gestionar
+                  </button>
+                </div>
+
+                {prods.length === 0 ? (
+                  <button
+                    onClick={() => setVinculando(p)}
+                    style={{ width: '100%', padding: '0.65rem', border: '1.5px dashed #E8E2DA', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, color: '#C4B4AA', fontSize: '0.78rem', fontWeight: 500 }}
+                  >
+                    <Plus size={12} /> Asignar productos
+                  </button>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {prods.map(v => (
+                      <div
+                        key={v.id}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0' }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ width: 4, height: 4, background: '#D1D5DB', flexShrink: 0 }} />
+                          <span style={{ fontSize: '0.8rem', color: '#374151', fontWeight: 500 }}>{v.producto.nombre}</span>
+                          <span style={{ fontSize: '0.7rem', color: '#D1D5DB' }}>{v.producto.tipo}</span>
+                        </div>
+                        <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1F2937' }}>{formatPesos(v.precioCosto)}</span>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
 
-              {/* Productos vinculados */}
-              <div
-                onClick={() => setVinculando(p)}
-                className="cursor-pointer flex items-center justify-between p-3 bg-gray-50 hover:bg-amber-50 border border-gray-200 hover:border-amber-300 rounded-xl transition-all">
-                <div className="flex items-center gap-2">
-                  <Package size={14} className="text-gray-500" />
-                  <span className="text-sm text-gray-700">
-                    {cantProductos === 0
-                      ? 'Sin productos asignados'
-                      : `${cantProductos} producto${cantProductos !== 1 ? 's' : ''} asignado${cantProductos !== 1 ? 's' : ''}`}
-                  </span>
-                </div>
-                <Link2 size={13} className="text-amber-600" />
-              </div>
-
-              {/* Acciones */}
-              <div className="flex gap-2 pt-1 border-t border-gray-100">
-                <button
-                  onClick={() => { setEditando(p); setShowModal(true); }}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-all">
-                  <Pencil size={13} />
-                  Editar
-                </button>
-                <button
-                  onClick={() => handleEliminar(p.id, p.nombreEmpresa)}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2 text-sm text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all">
-                  <Trash2 size={13} />
-                  Desactivar
-                </button>
-              </div>
+              {/* ── Observaciones ── */}
+              {p.observaciones && (
+                <>
+                  <div style={{ height: 1, background: '#F3F4F6', margin: '0 1.25rem' }} />
+                  <div style={{ padding: '0.625rem 1.25rem' }}>
+                    <p style={{ fontSize: '0.75rem', color: '#9CA3AF', margin: 0, lineHeight: 1.5 }}>
+                      {p.observaciones}
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           );
         })}
@@ -430,7 +481,6 @@ export default function ProveedoresPage() {
           onClose={() => setVinculando(null)}
           onSaved={() => {
             cargarConDetalle();
-            // Actualizar el proveedor en el estado local para reflejar cambios
           }}
         />
       )}

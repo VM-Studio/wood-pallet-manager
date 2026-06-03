@@ -380,3 +380,69 @@ export const getLogisticasAceptadasService = async () => {
     ],
   });
 };
+
+// ─── Rutas del día (Monitor de mapa) ─────────────────────────────────────────
+export const getRutasHoyService = async () => {
+  // Rango del día actual en hora local de Argentina (UTC-3)
+  const hoy = new Date();
+  const argOffset = -3 * 60; // minutos
+  const localMs   = hoy.getTime() + (hoy.getTimezoneOffset() + argOffset) * 60 * 1000;
+  const local      = new Date(localMs);
+  const yyyy = local.getFullYear();
+  const mm   = local.getMonth();
+  const dd   = local.getDate();
+
+  // Inicio y fin del día en UTC (Argentina UTC-3: medianoche local = 03:00 UTC)
+  const inicio = new Date(Date.UTC(yyyy, mm, dd, 3, 0, 0));   // 00:00 ARG
+  const fin    = new Date(Date.UTC(yyyy, mm, dd + 1, 3, 0, 0)); // 00:00 ARG del día siguiente
+
+  const rows = await prisma.logistica.findMany({
+    where: {
+      // Fecha de entrega al cliente coincide con hoy
+      venta: {
+        esHistorica: false,
+        fechaEstimEntrega: { gte: inicio, lt: fin },
+      },
+      // Solo logísticas aceptadas (consultada y aprobada por Carlos)
+      estadoConsulta: 'aceptada',
+      // Excluir ya entregadas
+      estadoEntrega: { not: 'entregado' },
+    },
+    include: {
+      venta: {
+        select: {
+          id: true,
+          lugarEntrega: true,
+          fechaEstimEntrega: true,
+          cliente: { select: { razonSocial: true, localidad: true, direccionEntrega: true } },
+          detalles: { select: { cantidadPedida: true } },
+        },
+      },
+    },
+    orderBy: [{ horaEstimadaEntrega: 'asc' }, { id: 'asc' }],
+  });
+
+  return rows.map((r, idx) => {
+    const unidades = r.venta?.detalles?.reduce((sum, d) => sum + d.cantidadPedida, 0) ?? 0;
+
+    // Prioridad: lugarEntrega del registro logística > lugarEntrega de la venta > dirección + localidad del cliente
+    const destino =
+      r.lugarEntrega ||
+      r.venta?.lugarEntrega ||
+      [r.venta?.cliente?.direccionEntrega, r.venta?.cliente?.localidad].filter(Boolean).join(', ') ||
+      'Sin destino';
+
+    return {
+      orden: idx + 1,
+      logisticaId: r.id,
+      ventaId: r.venta?.id,
+      destino,
+      estadoEntrega: r.estadoEntrega,
+      unidades,
+      fechaRetiroGalpon: r.fechaRetiroGalpon,
+      horaEstimadaEntrega: r.horaEstimadaEntrega,
+      lat: r.latEntrega ?? null,
+      lng: r.lngEntrega ?? null,
+    };
+  });
+};

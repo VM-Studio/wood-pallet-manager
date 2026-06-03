@@ -6,6 +6,7 @@ import { useStock } from '../../hooks/useInventario';
 import { useQueryClient } from '@tanstack/react-query';
 import SignaturePad from '../../components/ui/SignaturePad';
 import AgendaLogisticasModal from './AgendaLogisticasModal';
+import PlacesAutocomplete from '../../components/ui/PlacesAutocomplete';
 import api from '../../services/api';
 
 interface ConvertirVentaModalProps {
@@ -110,6 +111,8 @@ export default function ConvertirVentaModal({
     cuentaDestino: '',
     modalidadPago: '' as 'adelantado' | 'contra_entrega' | 'por_partes' | '',
     lugarEntrega: '',
+    latEntrega: null as number | null,
+    lngEntrega: null as number | null,
     fechaEntrega: '',
     horaEntrega: '',
     fechaRetiro: '',
@@ -141,6 +144,8 @@ export default function ConvertirVentaModal({
           cuentaDestino: form.cuentaDestino || undefined,
           modalidadPago: form.modalidadPago as 'adelantado' | 'contra_entrega' | 'por_partes',
           lugarEntrega: form.lugarEntrega || undefined,
+          latEntrega: form.latEntrega ?? undefined,
+          lngEntrega: form.lngEntrega ?? undefined,
           fechaEntrega: form.fechaEntrega || undefined,
           horaEntrega: form.horaEntrega || undefined,
           fechaRetiro: form.fechaRetiro || undefined,
@@ -287,9 +292,18 @@ export default function ConvertirVentaModal({
                 <div className="mt-3 space-y-3">
                   <div>
                     <label className="label">Lugar de entrega</label>
-                    <input type="text" value={form.lugarEntrega}
-                      onChange={e => setForm({ ...form, lugarEntrega: e.target.value })}
-                      className="input" placeholder="Dirección completa de entrega" />
+                    <PlacesAutocomplete
+                      value={form.lugarEntrega}
+                      onChange={val => setForm({ ...form, lugarEntrega: val, latEntrega: null, lngEntrega: null })}
+                      onSelect={place => setForm({ ...form, lugarEntrega: place.address, latEntrega: place.lat, lngEntrega: place.lng })}
+                      placeholder="Dirección completa de entrega"
+                      className="input"
+                    />
+                    {form.latEntrega && (
+                      <p style={{ fontSize: '0.7rem', color: '#6B3A2A', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <MapPin size={11} /> Ubicación confirmada por Google Maps
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="label">Fecha estimada de entrega</label>

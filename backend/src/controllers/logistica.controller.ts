@@ -15,6 +15,7 @@ import {
   confirmarLogisticaCarlosService,
   avanzarLogisticaService,
   getLogisticasAceptadasService,
+  getRutasHoyService,
 } from '../services/logistica.service';
 
 export const getLogisticas = async (_req: Request, res: Response) => {
@@ -136,5 +137,10 @@ export const avanzarLogistica = async (req: AuthRequest, res: Response) => {
 
 export const getLogisticasAceptadas = async (_req: Request, res: Response) => {
   const data = await getLogisticasAceptadasService();
+  res.json(data);
+};
+
+export const getRutasHoy = async (_req: Request, res: Response) => {
+  const data = await getRutasHoyService();
   res.json(data);
 };

@@ -227,6 +227,8 @@ export const convertirCotizacionAVentaService = async (
     modalidadPago: 'adelantado' | 'contra_entrega' | 'por_partes';
     fechaRetiro?: Date;
     lugarEntrega?: string;
+    latEntrega?: number;
+    lngEntrega?: number;
     fechaEntrega?: Date;
     horaEntrega?: string; // formato "HH:MM", ej: "14:30"
     horaEstimadaRetiro?: string; // formato "HH:MM" — para retiro en galpón
@@ -393,6 +395,8 @@ export const convertirCotizacionAVentaService = async (
         estadoConsulta: esJuanCruz ? 'pendiente_consulta' : 'no_aplica',
         registradoPorId: usuarioId,
         lugarEntrega: datos.lugarEntrega,
+        latEntrega: datos.latEntrega,
+        lngEntrega: datos.lngEntrega,
       },
     });
   }

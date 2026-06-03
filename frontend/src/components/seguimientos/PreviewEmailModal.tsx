@@ -11,7 +11,7 @@ export default function PreviewEmailModal({ bloques, onClose }: Props) {
     switch (b.tipo) {
       case 'header':
         return (
-          <div key={i} style={{ background: b.colorFondo ?? '#92400e', padding: '24px', textAlign: 'center' }}>
+          <div key={i} style={{ background: b.colorFondo ?? '#6B3A2A', padding: '24px', textAlign: 'center' }}>
             <p style={{ color: '#fff', fontSize: '20px', fontWeight: 700, margin: 0 }}>
               {b.contenido?.replace('{{nombre_cliente}}', 'Juan García') ?? ''}
             </p>
@@ -37,7 +37,7 @@ export default function PreviewEmailModal({ bloques, onClose }: Props) {
             <a
               href={b.url ?? '#'}
               style={{
-                background: '#92400e', color: '#fff', padding: '10px 28px',
+                background: '#6B3A2A', color: '#fff', padding: '10px 28px',
                 textDecoration: 'none', fontWeight: 600, fontSize: '14px', display: 'inline-block'
               }}
             >

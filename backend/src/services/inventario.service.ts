@@ -1,41 +1,70 @@
 import prisma from '../utils/prisma';
 
-// Stock consolidado con distinción de stock propio vs deudor
+// Stock consolidado: TODOS los productos activos, con o sin stock registrado.
+// Un producto NUNCA aparece duplicado. Stock nunca puede ser negativo.
 export const getStockConsolidadoService = async () => {
-  const stock = await prisma.stock.findMany({
+  // 1. Todos los productos activos del catálogo
+  const productos = await prisma.producto.findMany({
+    where: { activo: true },
+    select: { id: true, nombre: true, tipo: true, condicion: true },
+    orderBy: { nombre: 'asc' },
+  });
+
+  // 2. Todos los registros de stock (puede haber varios por producto si tiene múltiples proveedores)
+  const stocks = await prisma.stock.findMany({
     where: { producto: { activo: true } },
     include: {
       producto: { select: { id: true, nombre: true, tipo: true, condicion: true } },
-      proveedor: { select: { id: true, nombreEmpresa: true } }
-    }
+      proveedor: { select: { id: true, nombreEmpresa: true } },
+    },
   });
 
+  // 3. Consolidar stock por productoId (1 entrada por producto, sin duplicados)
   const consolidado: Record<number, any> = {};
 
-  for (const s of stock) {
-    const prodId = s.producto.id;
-    if (!consolidado[prodId]) {
-      consolidado[prodId] = {
+  for (const s of stocks) {
+    const pid = s.productoId;
+    if (!consolidado[pid]) {
+      consolidado[pid] = {
         producto: s.producto,
         stockTotalPropio: 0,
         stockTotalDeudor: 0,
-        porGalpon: []
+        porGalpon: [],
       };
     }
-    consolidado[prodId].stockTotalPropio += s.cantidadDisponible;
-    consolidado[prodId].stockTotalDeudor += s.cantidadDeudora;
-    consolidado[prodId].porGalpon.push({
+    // Nunca sumar valores negativos al total
+    const disponibleSaneado = Math.max(0, s.cantidadDisponible);
+    consolidado[pid].stockTotalPropio += disponibleSaneado;
+    consolidado[pid].stockTotalDeudor += Math.max(0, s.cantidadDeudora);
+    consolidado[pid].porGalpon.push({
       stockId: s.id,
       proveedor: s.proveedor,
-      cantidadDisponible: s.cantidadDisponible,
-      cantidadDeudora: s.cantidadDeudora,
+      cantidadDisponible: disponibleSaneado,
+      cantidadDeudora: Math.max(0, s.cantidadDeudora),
       cantidadMinima: s.cantidadMinima,
-      bajoMinimo: s.cantidadMinima !== null && s.cantidadDisponible <= s.cantidadMinima,
-      tieneSaldoDeudor: s.cantidadDeudora > 0
+      bajoMinimo: s.cantidadMinima !== null && disponibleSaneado <= s.cantidadMinima,
+      tieneSaldoDeudor: s.cantidadDeudora > 0,
     });
   }
 
-  return Object.values(consolidado);
+  // 4. Agregar productos SIN ningún registro de stock (aparecen con stock = 0)
+  for (const prod of productos) {
+    if (!consolidado[prod.id]) {
+      consolidado[prod.id] = {
+        producto: prod,
+        stockTotalPropio: 0,
+        stockTotalDeudor: 0,
+        porGalpon: [],
+      };
+    }
+  }
+
+  // 5. Ordenar: primero los que tienen stock > 0, luego alfabéticamente
+  return Object.values(consolidado).sort((a: any, b: any) => {
+    if (a.stockTotalPropio > 0 && b.stockTotalPropio === 0) return -1;
+    if (a.stockTotalPropio === 0 && b.stockTotalPropio > 0) return 1;
+    return a.producto.nombre.localeCompare(b.producto.nombre, 'es');
+  });
 };
 
 // Stock completo sin consolidar

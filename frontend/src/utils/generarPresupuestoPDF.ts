@@ -65,7 +65,7 @@ export async function generarPresupuestoPDF(datos: DatosPresupuesto): Promise<Bl
 
   // ── Logo (si está disponible) ─────────────────────────────────────────────
   try {
-    const response = await fetch('/palletlogo.png');
+    const response = await fetch('/logowood.png');
     const blob = await response.blob();
     const logoBase64 = await new Promise<string>((resolve) => {
       const reader = new FileReader();

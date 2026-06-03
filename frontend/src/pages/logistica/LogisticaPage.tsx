@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Truck, Calendar, Clock, CheckCircle, AlertCircle, X, MapPin, Package, CreditCard } from 'lucide-react';
+import { Truck, Calendar, Clock, AlertCircle, X, MapPin, Package, CreditCard } from 'lucide-react';
 import { useLogisticasPorRol, useEntregasHoy, useConsultarLogistica, useAvanzarLogistica } from '../../hooks/useLogistica';
 import { useAuthStore } from '../../store/auth.store';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
+import RouteMonitorCard from './RouteMonitorCard';
 
 type EstadoConsulta = 'no_aplica' | 'pendiente_consulta' | 'consultada' | 'aceptada' | 'rechazada';
 type EstadoEntrega = 'pendiente' | 'en_camino' | 'entregado' | 'con_problema';
@@ -76,156 +77,135 @@ function LogisticaCard({
   const costoFlete  = l.venta?.costoFlete ?? l.costoFlete;
   const fechaEntrega = l.venta?.fechaEstimEntrega ?? l.fechaRetiroGalpon;
 
-  // Hora: extraer de horaEstimadaEntrega (campo del registro logística)
   const fmtHora = (s?: string) => {
     if (!s) return null;
     const d = new Date(s);
     const hh = d.getHours().toString().padStart(2, '0');
     const mm = d.getMinutes().toString().padStart(2, '0');
     if (hh === '00' && mm === '00') return null;
-    return `${hh}:${mm} hs`;
+    return `${hh}:${mm}`;
   };
   const horaEntrega = fmtHora(l.horaEstimadaEntrega);
 
   return (
-    <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '0.5rem', overflow: 'hidden' }}>
-      {/* Cabecera */}
-      <div style={{ padding: '0.875rem 1rem 0.625rem', borderBottom: '1px solid #F3F4F6' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 5 }}>
-          <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '2px 7px', background: '#6B3A2A', color: '#fff', borderRadius: '0.25rem' }}>
-            Venta #{l.ventaId}
+    <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '0.375rem', overflow: 'hidden' }}>
+      {/* Fila principal */}
+      <div style={{ padding: '0.625rem 0.875rem', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        {/* Badge venta */}
+        <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '2px 6px', background: '#6B3A2A', color: '#fff', borderRadius: '0.2rem', flexShrink: 0 }}>
+          #{l.ventaId}
+        </span>
+
+        {/* Estado entrega */}
+        <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '2px 7px', background: est.bg, color: est.color, borderRadius: '0.2rem', flexShrink: 0 }}>
+          {est.label}
+        </span>
+
+        {/* Estado consulta */}
+        {l.estadoConsulta && l.estadoConsulta !== 'no_aplica' && (
+          <span style={{ fontSize: '0.65rem', fontWeight: 600, padding: '2px 7px', background: badge.bg, color: badge.color, borderRadius: '0.2rem', flexShrink: 0 }}>
+            {badge.label}
           </span>
-          <span style={{ fontSize: '0.7rem', fontWeight: 600, padding: '2px 8px', borderRadius: 0, background: est.bg, color: est.color }}>
-            {est.label}
-          </span>
-          {l.estadoConsulta && l.estadoConsulta !== 'no_aplica' && (
-            <span style={{ fontSize: '0.7rem', fontWeight: 600, padding: '2px 8px', borderRadius: 0, background: badge.bg, color: badge.color }}>
-              {badge.label}
-            </span>
-          )}
-        </div>
-        {/* Empresa */}
-        <p style={{ fontSize: '0.92rem', fontWeight: 700, color: '#1F2937', margin: '0 0 2px' }}>
+        )}
+
+        {/* Empresa — flex grow */}
+        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {l.venta?.cliente?.razonSocial ?? '—'}
-        </p>
-        {/* Nombre de contacto */}
-        {l.venta?.cliente?.nombreContacto && (
-          <p style={{ fontSize: '0.78rem', color: '#6B7280', margin: 0 }}>
-            👤 {l.venta.cliente.nombreContacto}
-            {l.venta.cliente.telefonoContacto && (
-              <span style={{ marginLeft: 8 }}>· 📞 {l.venta.cliente.telefonoContacto}</span>
-            )}
-          </p>
+        </span>
+
+        {/* Fecha */}
+        {fechaEntrega && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+            <Calendar size={11} style={{ color: '#9CA3AF' }} />
+            <span style={{ fontSize: '0.75rem', color: '#6B7280', whiteSpace: 'nowrap' }}>
+              {fmtFecha(fechaEntrega)}{horaEntrega && ` · ${horaEntrega}hs`}
+            </span>
+          </div>
         )}
       </div>
 
-      {/* Datos */}
-      <div style={{ padding: '0.625rem 1rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem 1rem' }}>
-        <div>
-          <p style={{ fontSize: '0.67rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 2px' }}>Lugar de entrega</p>
-          <p style={{ fontSize: '0.82rem', color: '#374151', margin: 0 }}>📍 {lugarEntrega}</p>
+      {/* Fila secundaria: lugar + flete + vendedor */}
+      <div style={{ padding: '0 0.875rem 0.5rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', borderTop: '1px solid #F3F4F6' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, flex: 1 }}>
+          <MapPin size={11} style={{ color: '#9CA3AF', flexShrink: 0 }} />
+          <span style={{ fontSize: '0.75rem', color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lugarEntrega}</span>
         </div>
-        <div>
-          <p style={{ fontSize: '0.67rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 2px' }}>Fecha de entrega</p>
-          <p style={{ fontSize: '0.82rem', color: '#374151', margin: 0 }}>📅 {fmtFecha(fechaEntrega)}{horaEntrega && <span style={{ marginLeft: 6 }}>🕐 {horaEntrega}</span>}</p>
-        </div>
-        <div>
-          <p style={{ fontSize: '0.67rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 2px' }}>Costo flete</p>
-          <p style={{ fontSize: '0.82rem', fontWeight: 700, color: '#6B3A2A', margin: 0 }}>{fmt(costoFlete)}</p>
-        </div>
+        {costoFlete != null && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+            <CreditCard size={11} style={{ color: '#9CA3AF' }} />
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6B3A2A' }}>{fmt(costoFlete)}</span>
+          </div>
+        )}
         {esCarlos && l.venta?.usuario && (
-          <div>
-            <p style={{ fontSize: '0.67rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 2px' }}>Vendedor</p>
-            <p style={{ fontSize: '0.82rem', color: '#374151', margin: 0 }}>{l.venta.usuario.nombre} {l.venta.usuario.apellido}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+            <Package size={11} style={{ color: '#9CA3AF' }} />
+            <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>{l.venta.usuario.nombre} {l.venta.usuario.apellido}</span>
           </div>
         )}
       </div>
 
       {/* Acciones */}
-      <div style={{ padding: '0 1rem 0.875rem' }}>
-        {/* Juan: consultar a Carlos */}
-        {!esCarlos && l.venta?.tipoEntrega === 'envio_woodpallet' && l.estadoConsulta === 'no_aplica' && (
-          <button
-            onClick={() => consultarMutation.mutate(l.ventaId)}
-            disabled={consultarMutation.isPending}
-            style={{ background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', color: '#fff', border: 'none', borderRadius: '0.25rem', padding: '0.4rem 0.875rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>
-            Consultar a Carlos
-          </button>
-        )}
-
-        {/* Carlos: 3 botones de progresión en TODAS las tarjetas */}
-        {esCarlos && l.estadoEntrega !== 'entregado' && (
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
-            {/* Consultando */}
+      {(!esCarlos && l.venta?.tipoEntrega === 'envio_woodpallet' && l.estadoConsulta === 'no_aplica') || (esCarlos && l.estadoEntrega !== 'entregado') ? (
+        <div style={{ padding: '0.375rem 0.875rem 0.625rem', borderTop: '1px solid #F3F4F6', display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+          {/* Juan: consultar */}
+          {!esCarlos && l.estadoConsulta === 'no_aplica' && (
             <button
-              onClick={() => avanzarMutation.mutate({ ventaId: l.ventaId, accion: 'consultando' })}
-              disabled={avanzarMutation.isPending || l.estadoConsulta === 'consultada' || l.estadoConsulta === 'aceptada'}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 4,
-                background: (l.estadoConsulta === 'consultada' || l.estadoConsulta === 'aceptada') ? '#DBEAFE' : 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
-                color: (l.estadoConsulta === 'consultada' || l.estadoConsulta === 'aceptada') ? '#1D4ED8' : '#fff',
-                border: (l.estadoConsulta === 'consultada' || l.estadoConsulta === 'aceptada') ? '1px solid #93C5FD' : 'none',
-                borderRadius: '0.25rem', padding: '0.4rem 0.75rem', fontSize: '0.78rem', fontWeight: 600,
-                cursor: (l.estadoConsulta === 'consultada' || l.estadoConsulta === 'aceptada') ? 'default' : 'pointer',
-                opacity: avanzarMutation.isPending ? 0.6 : 1,
-              }}>
-              Consultando
+              onClick={() => consultarMutation.mutate(l.ventaId)}
+              disabled={consultarMutation.isPending}
+              style={{ background: '#6B3A2A', color: '#fff', border: 'none', borderRadius: '0.2rem', padding: '0.3rem 0.75rem', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}>
+              Consultar a Carlos
             </button>
+          )}
 
-            {/* Aceptada */}
-            <button
-              onClick={() => avanzarMutation.mutate({ ventaId: l.ventaId, accion: 'aceptada' })}
-              disabled={avanzarMutation.isPending || l.estadoConsulta === 'aceptada'}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 4,
-                background: l.estadoConsulta === 'aceptada' ? '#DCFCE7' : '#F3F4F6',
-                color: l.estadoConsulta === 'aceptada' ? '#15803D' : '#374151',
-                border: l.estadoConsulta === 'aceptada' ? '1px solid #86EFAC' : '1px solid #E5E7EB',
-                borderRadius: '0.25rem', padding: '0.4rem 0.75rem', fontSize: '0.78rem', fontWeight: 600,
-                cursor: l.estadoConsulta === 'aceptada' ? 'default' : 'pointer',
-                opacity: avanzarMutation.isPending ? 0.6 : 1,
-              }}>
-              Aceptada
-            </button>
-
-            {/* En camino */}
-            <button
-              onClick={() => avanzarMutation.mutate({ ventaId: l.ventaId, accion: 'en_camino' })}
-              disabled={avanzarMutation.isPending || l.estadoEntrega === 'en_camino'}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 4,
-                background: l.estadoEntrega === 'en_camino' ? '#DBEAFE' : '#F3F4F6',
-                color: l.estadoEntrega === 'en_camino' ? '#1D4ED8' : '#374151',
-                border: l.estadoEntrega === 'en_camino' ? '1px solid #93C5FD' : '1px solid #E5E7EB',
-                borderRadius: '0.25rem', padding: '0.4rem 0.75rem', fontSize: '0.78rem', fontWeight: 600,
-                cursor: l.estadoEntrega === 'en_camino' ? 'default' : 'pointer',
-                opacity: avanzarMutation.isPending ? 0.6 : 1,
-              }}>
-              En camino
-            </button>
-
-            {/* Entregada */}
-            <button
-              onClick={() => avanzarMutation.mutate({ ventaId: l.ventaId, accion: 'entregada' })}
-              disabled={avanzarMutation.isPending}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 4,
-                background: '#F3F4F6', color: '#374151',
-                border: '1px solid #E5E7EB',
-                borderRadius: '0.25rem', padding: '0.4rem 0.75rem', fontSize: '0.78rem', fontWeight: 600,
-                cursor: 'pointer',
-                opacity: avanzarMutation.isPending ? 0.6 : 1,
-              }}>
-              Entregada
-            </button>
-          </div>
-        )}
-
-        {/* Carlos: entregada — estado final */}
-        {esCarlos && l.estadoEntrega === 'entregado' && (
-          <p style={{ fontSize: '0.78rem', color: '#15803D', fontWeight: 600, margin: 0 }}>Entregada</p>
-        )}
-      </div>
+          {/* Carlos */}
+          {esCarlos && (
+            <>
+              <button
+                onClick={() => avanzarMutation.mutate({ ventaId: l.ventaId, accion: 'consultando' })}
+                disabled={avanzarMutation.isPending || l.estadoConsulta === 'consultada' || l.estadoConsulta === 'aceptada'}
+                style={{
+                  fontSize: '0.72rem', fontWeight: 600, padding: '0.275rem 0.65rem', borderRadius: '0.2rem', cursor: 'pointer',
+                  background: (l.estadoConsulta === 'consultada' || l.estadoConsulta === 'aceptada') ? '#DBEAFE' : '#6B3A2A',
+                  color: (l.estadoConsulta === 'consultada' || l.estadoConsulta === 'aceptada') ? '#1D4ED8' : '#fff',
+                  border: (l.estadoConsulta === 'consultada' || l.estadoConsulta === 'aceptada') ? '1px solid #93C5FD' : 'none',
+                  opacity: avanzarMutation.isPending ? 0.6 : 1,
+                }}>Consultando</button>
+              <button
+                onClick={() => avanzarMutation.mutate({ ventaId: l.ventaId, accion: 'aceptada' })}
+                disabled={avanzarMutation.isPending || l.estadoConsulta === 'aceptada'}
+                style={{
+                  fontSize: '0.72rem', fontWeight: 600, padding: '0.275rem 0.65rem', borderRadius: '0.2rem', cursor: 'pointer',
+                  background: l.estadoConsulta === 'aceptada' ? '#DCFCE7' : '#F3F4F6',
+                  color: l.estadoConsulta === 'aceptada' ? '#15803D' : '#374151',
+                  border: l.estadoConsulta === 'aceptada' ? '1px solid #86EFAC' : '1px solid #E5E7EB',
+                  opacity: avanzarMutation.isPending ? 0.6 : 1,
+                }}>Aceptada</button>
+              <button
+                onClick={() => avanzarMutation.mutate({ ventaId: l.ventaId, accion: 'en_camino' })}
+                disabled={avanzarMutation.isPending || l.estadoEntrega === 'en_camino'}
+                style={{
+                  fontSize: '0.72rem', fontWeight: 600, padding: '0.275rem 0.65rem', borderRadius: '0.2rem', cursor: 'pointer',
+                  background: l.estadoEntrega === 'en_camino' ? '#DBEAFE' : '#F3F4F6',
+                  color: l.estadoEntrega === 'en_camino' ? '#1D4ED8' : '#374151',
+                  border: l.estadoEntrega === 'en_camino' ? '1px solid #93C5FD' : '1px solid #E5E7EB',
+                  opacity: avanzarMutation.isPending ? 0.6 : 1,
+                }}>En camino</button>
+              <button
+                onClick={() => avanzarMutation.mutate({ ventaId: l.ventaId, accion: 'entregada' })}
+                disabled={avanzarMutation.isPending}
+                style={{
+                  fontSize: '0.72rem', fontWeight: 600, padding: '0.275rem 0.65rem', borderRadius: '0.2rem', cursor: 'pointer',
+                  background: '#F3F4F6', color: '#374151', border: '1px solid #E5E7EB',
+                  opacity: avanzarMutation.isPending ? 0.6 : 1,
+                }}>Entregada</button>
+            </>
+          )}
+        </div>
+      ) : esCarlos && l.estadoEntrega === 'entregado' ? (
+        <div style={{ padding: '0.3rem 0.875rem 0.5rem', borderTop: '1px solid #F3F4F6' }}>
+          <span style={{ fontSize: '0.72rem', color: '#15803D', fontWeight: 600 }}>Entregada</span>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -242,7 +222,59 @@ function EmptyState({ esCarlos, label }: { esCarlos: boolean; label?: string }) 
   );
 }
 
+const PAGE_SIZE = 5;
+
 type FiltroKpi = 'pendiente' | 'en_camino' | 'entregado' | 'hoy' | null;
+
+// ── Lista paginada de tarjetas ──────────────────────────────────────
+function LogisticaList({
+  items, esCarlos, consultarMutation, avanzarMutation, emptyLabel,
+}: {
+  items: LogisticaRow[];
+  esCarlos: boolean;
+  consultarMutation: ReturnType<typeof useConsultarLogistica>;
+  avanzarMutation: ReturnType<typeof useAvanzarLogistica>;
+  emptyLabel?: string;
+}) {
+  const [visibles, setVisibles] = useState(PAGE_SIZE);
+
+  // Reiniciar cuando cambie la lista (sin useEffect para evitar warning del React Compiler)
+  const itemsKey = items.length;
+  const [lastKey, setLastKey] = useState(itemsKey);
+  if (itemsKey !== lastKey) {
+    setLastKey(itemsKey);
+    setVisibles(PAGE_SIZE);
+  }
+
+  if (!items.length) return <EmptyState esCarlos={esCarlos} label={emptyLabel} />;
+
+  const mostrados = items.slice(0, visibles);
+  const hayMas    = visibles < items.length;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {mostrados.map(l => (
+        <LogisticaCard key={l.id} l={l} esCarlos={esCarlos} consultarMutation={consultarMutation} avanzarMutation={avanzarMutation} />
+      ))}
+      {hayMas && (
+        <button
+          onClick={() => setVisibles(v => v + PAGE_SIZE)}
+          style={{
+            marginTop: 2, padding: '0.45rem 1rem', fontSize: '0.78rem', fontWeight: 600,
+            background: '#F9FAFB', color: '#6B3A2A', border: '1.5px solid #E8E2DA',
+            borderRadius: '0.375rem', cursor: 'pointer', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', gap: 6,
+          }}
+        >
+          Ver más
+          <span style={{ fontSize: '0.7rem', color: '#9CA3AF' }}>
+            ({items.length - visibles} restante{items.length - visibles !== 1 ? 's' : ''})
+          </span>
+        </button>
+      )}
+    </div>
+  );
+}
 
 // ── Modal de KPI ────────────────────────────────────────────────────
 function KpiModal({
@@ -438,6 +470,7 @@ export default function LogisticaPage() {
   const esCarlos = usuario?.rol === 'propietario_carlos';
 
   const [filtroActivo, setFiltroActivo] = useState<FiltroKpi>(null);
+  const [vistaCarlos, setVistaCarlos] = useState<'mis' | 'juan'>('mis');
 
   const consultarMutation = useConsultarLogistica();
   const avanzarMutation   = useAvanzarLogistica();
@@ -453,15 +486,13 @@ export default function LogisticaPage() {
   // KPIs
   const pendientes = logisticas?.filter(l => l.estadoEntrega === 'pendiente').length ?? 0;
   const enCamino   = logisticas?.filter(l => l.estadoEntrega === 'en_camino').length ?? 0;
-  const entregadas = logisticas?.filter(l => l.estadoEntrega === 'entregado').length ?? 0;
 
   const cardProps = { esCarlos, consultarMutation, avanzarMutation };
+  void cardProps; // usado anteriormente, ahora reemplazado por LogisticaList
 
   const kpis = [
-    { icon: Clock,       color: '#C4895A', bg: '#FEF3E2', val: pendientes,              label: 'Pendientes',  filtro: 'pendiente' as FiltroKpi },
-    { icon: Truck,       color: '#6B3A2A', bg: '#F3EDE8', val: enCamino,                label: 'En camino',   filtro: 'en_camino' as FiltroKpi },
-    { icon: CheckCircle, color: '#15803D', bg: '#DCFCE7', val: entregadas,              label: 'Entregadas',  filtro: 'entregado' as FiltroKpi },
-    ...(esCarlos ? [{ icon: Calendar, color: '#6B3A2A', bg: '#F3EDE8', val: entregasHoy?.length ?? 0, label: 'Hoy', filtro: 'hoy' as FiltroKpi }] : []),
+    { icon: Clock, color: '#C4895A', bg: '#FEF3E2', val: pendientes, label: 'Pendientes', filtro: 'pendiente' as FiltroKpi },
+    { icon: Truck, color: '#6B3A2A', bg: '#F3EDE8', val: enCamino,   label: 'En camino',  filtro: 'en_camino' as FiltroKpi },
   ];
 
   return (
@@ -476,7 +507,7 @@ export default function LogisticaPage() {
       </div>
 
       {/* KPIs clicables */}
-      <div className={`grid ${esCarlos ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3'} gap-4`}>
+      <div className={`grid ${esCarlos ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-2'} gap-4`}>
         {kpis.map(({ icon: Icon, color, bg, val, label, filtro }) => (
           <button
             key={label}
@@ -522,47 +553,88 @@ export default function LogisticaPage() {
 
       {/* Vista Juan */}
       {!esCarlos && (
-        !logisticas?.length
-          ? <EmptyState esCarlos={false} />
-          : <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {logisticas.map(l => <LogisticaCard key={l.id} l={l} {...cardProps} />)}
-            </div>
+        <LogisticaList
+          items={logisticas ?? []}
+          esCarlos={false}
+          consultarMutation={consultarMutation}
+          avanzarMutation={avanzarMutation}
+        />
       )}
 
       {/* Vista Carlos: dos columnas */}
       {esCarlos && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', alignItems: 'start' }}>
 
-          {/* Mis logísticas */}
+          {/* Columna izquierda: selector + lista */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, paddingBottom: 8, borderBottom: '2px solid #6B3A2A' }}>
-              <Truck size={15} style={{ color: '#6B3A2A' }} />
-              <h2 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#6B3A2A', margin: 0 }}>
-                Mis logísticas{misLogisticas.length > 0 ? ` (${misLogisticas.length})` : ''}
-              </h2>
+            {/* Selector tipo tab/dropdown */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 12, border: '1px solid #E5E7EB', borderRadius: '0.375rem', overflow: 'hidden', background: '#F9FAFB' }}>
+              <button
+                onClick={() => setVistaCarlos('mis')}
+                style={{
+                  flex: 1, padding: '0.5rem 0.75rem', fontSize: '0.78rem', fontWeight: 700,
+                  border: 'none', cursor: 'pointer', transition: 'all 0.15s',
+                  background: vistaCarlos === 'mis' ? '#6B3A2A' : 'transparent',
+                  color: vistaCarlos === 'mis' ? '#fff' : '#6B7280',
+                  borderRight: '1px solid #E5E7EB',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                }}
+              >
+                <Truck size={12} />
+                Mis logísticas
+                {misLogisticas.length > 0 && (
+                  <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '1px 5px', borderRadius: '0.875rem', background: vistaCarlos === 'mis' ? 'rgba(255,255,255,0.25)' : '#E5E7EB', color: vistaCarlos === 'mis' ? '#fff' : '#6B7280' }}>
+                    {misLogisticas.length}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => setVistaCarlos('juan')}
+                style={{
+                  flex: 1, padding: '0.5rem 0.75rem', fontSize: '0.78rem', fontWeight: 700,
+                  border: 'none', cursor: 'pointer', transition: 'all 0.15s',
+                  background: vistaCarlos === 'juan' ? '#6B3A2A' : 'transparent',
+                  color: vistaCarlos === 'juan' ? '#fff' : '#6B7280',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                }}
+              >
+                <AlertCircle size={12} style={{ color: consultasPendientes > 0 && vistaCarlos !== 'juan' ? '#C4895A' : 'inherit' }} />
+                Juan Cruz
+                {logisticasJuan.length > 0 && (
+                  <span style={{
+                    fontSize: '0.65rem', fontWeight: 700, padding: '1px 5px', borderRadius: '0.875rem',
+                    background: vistaCarlos === 'juan' ? 'rgba(255,255,255,0.25)' : (consultasPendientes > 0 ? '#FEF3E2' : '#E5E7EB'),
+                    color: vistaCarlos === 'juan' ? '#fff' : (consultasPendientes > 0 ? '#C4895A' : '#6B7280'),
+                  }}>
+                    {logisticasJuan.length}
+                  </span>
+                )}
+              </button>
             </div>
-            {!misLogisticas.length
-              ? <EmptyState esCarlos label="Sin logísticas propias" />
-              : <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {misLogisticas.map(l => <LogisticaCard key={l.id} l={l} {...cardProps} />)}
-                </div>
-            }
+
+            {/* Lista según vista activa */}
+            {vistaCarlos === 'mis' ? (
+              <LogisticaList
+                items={misLogisticas}
+                esCarlos={esCarlos}
+                consultarMutation={consultarMutation}
+                avanzarMutation={avanzarMutation}
+                emptyLabel="Sin logísticas propias"
+              />
+            ) : (
+              <LogisticaList
+                items={logisticasJuan}
+                esCarlos={esCarlos}
+                consultarMutation={consultarMutation}
+                avanzarMutation={avanzarMutation}
+                emptyLabel="Juan no tiene logísticas registradas"
+              />
+            )}
           </div>
 
-          {/* Consultas de Juan */}
+          {/* Columna derecha: solo Monitor de rutas */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, paddingBottom: 8, borderBottom: `2px solid ${consultasPendientes > 0 ? '#C4895A' : '#E5E7EB'}` }}>
-              <AlertCircle size={15} style={{ color: consultasPendientes > 0 ? '#C4895A' : '#9CA3AF' }} />
-              <h2 style={{ fontSize: '0.875rem', fontWeight: 700, margin: 0, color: consultasPendientes > 0 ? '#C4895A' : '#6B7280' }}>
-                Consultas de Juan Cruz{logisticasJuan.length > 0 ? ` (${logisticasJuan.length})` : ''}
-              </h2>
-            </div>
-            {!logisticasJuan.length
-              ? <EmptyState esCarlos label="Juan no tiene logísticas registradas" />
-              : <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {logisticasJuan.map(l => <LogisticaCard key={l.id} l={l} {...cardProps} />)}
-                </div>
-            }
+            <RouteMonitorCard />
           </div>
 
         </div>

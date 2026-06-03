@@ -13,6 +13,7 @@ import {
   confirmarLogisticaCarlos,
   avanzarLogistica,
   getLogisticasAceptadas,
+  getRutasHoy,
 } from '../controllers/logistica.controller';
 
 const router = Router();
@@ -20,6 +21,7 @@ const router = Router();
 router.use(authenticate);
 
 router.get('/entregas-hoy', getEntregasHoy);
+router.get('/rutas-hoy', getRutasHoy);
 router.get('/por-rol', getLogisticasPorRol);
 router.get('/aceptadas', getLogisticasAceptadas);
 router.get('/', getLogisticas);

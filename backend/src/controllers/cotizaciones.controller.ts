@@ -61,6 +61,8 @@ const convertirSchema = z.object({
   modalidadPago: z.enum(['adelantado', 'contra_entrega', 'por_partes']),
   fechaRetiro: z.string().optional().transform(v => v ? parseFechaLocal(v) : undefined),
   lugarEntrega: z.string().optional(),
+  latEntrega: z.number().optional(),
+  lngEntrega: z.number().optional(),
   fechaEntrega: z.string().optional().transform(v => v ? parseFechaLocal(v) : undefined),
   horaEntrega: z.string().optional(), // "HH:MM"
   horaEstimadaRetiro: z.string().optional(), // "HH:MM" — para retiro en galpón
