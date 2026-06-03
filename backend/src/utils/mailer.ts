@@ -495,3 +495,70 @@ export const sendPasswordRecoveryLink = async (params: {
     `,
   });
 };
+
+// ─── Nueva cotización web: notificación interna a propietarios ────────────────
+
+export const enviarNotificacionCotizacionWeb = async (params: {
+  destinatarios: string[];
+  nombre: string;
+  empresa?: string;
+  email: string;
+  telefono: string;
+  tipoPallet: string;
+  cantidad: number;
+  fechaNecesidad?: string;
+  tipoEntrega: string;
+  localidadEntrega?: string;
+  requiereSenasa: boolean;
+  observaciones?: string;
+}) => {
+  const transporter = crearTransporter();
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+
+  const entregaLabel = params.tipoEntrega === 'envio' ? 'Envío a domicilio' : 'Retira en galpón';
+  const fechaStr = params.fechaNecesidad
+    ? new Date(params.fechaNecesidad).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    : '—';
+
+  await transporter.sendMail({
+    from: `"Wood Pallet" <${from}>`,
+    to: params.destinatarios.join(', '),
+    subject: `🌐 Nueva consulta desde woodpallets.com.ar — ${params.nombre}`,
+    html: `
+      <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#F9F7F5;padding:40px 20px;">
+        <div style="max-width:560px;margin:0 auto;background:#FFFFFF;border-radius:8px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.08);">
+          <div style="background:linear-gradient(135deg,#6B3A2A 0%,#C4895A 100%);padding:24px 28px;">
+            <p style="color:rgba(255,255,255,0.7);font-size:12px;margin:0 0 4px;text-transform:uppercase;letter-spacing:0.08em;">woodpallets.com.ar</p>
+            <h1 style="color:#FFFFFF;font-size:19px;font-weight:700;margin:0;">Nueva solicitud de cotización web</h1>
+          </div>
+          <div style="padding:28px;">
+            <p style="color:#374151;font-size:14px;margin:0 0 20px;">
+              Un cliente completó el formulario de cotización. <strong>Entrá al sistema para atenderlo.</strong>
+            </p>
+
+            <table style="width:100%;border-collapse:collapse;margin-bottom:20px;font-size:13px;">
+              <tr style="background:#F9FAFB;"><td style="padding:9px 12px;color:#6B7280;border:1px solid #E5E7EB;width:150px;">Nombre</td><td style="padding:9px 12px;color:#111827;font-weight:600;border:1px solid #E5E7EB;">${params.nombre}</td></tr>
+              ${params.empresa ? `<tr><td style="padding:9px 12px;color:#6B7280;border:1px solid #E5E7EB;">Empresa</td><td style="padding:9px 12px;color:#111827;border:1px solid #E5E7EB;">${params.empresa}</td></tr>` : ''}
+              <tr style="background:#F9FAFB;"><td style="padding:9px 12px;color:#6B7280;border:1px solid #E5E7EB;">Email</td><td style="padding:9px 12px;color:#111827;border:1px solid #E5E7EB;"><a href="mailto:${params.email}" style="color:#C4895A;">${params.email}</a></td></tr>
+              <tr><td style="padding:9px 12px;color:#6B7280;border:1px solid #E5E7EB;">Teléfono</td><td style="padding:9px 12px;color:#111827;border:1px solid #E5E7EB;"><a href="https://wa.me/549${params.telefono.replace(/\D/g, '')}" style="color:#25D366;">${params.telefono} 💬</a></td></tr>
+              <tr style="background:#F9FAFB;"><td style="padding:9px 12px;color:#6B7280;border:1px solid #E5E7EB;">Tipo de pallet</td><td style="padding:9px 12px;color:#111827;font-weight:600;border:1px solid #E5E7EB;">${params.tipoPallet}</td></tr>
+              <tr><td style="padding:9px 12px;color:#6B7280;border:1px solid #E5E7EB;">Cantidad</td><td style="padding:9px 12px;color:#111827;font-weight:600;border:1px solid #E5E7EB;">${params.cantidad} unidades</td></tr>
+              <tr style="background:#F9FAFB;"><td style="padding:9px 12px;color:#6B7280;border:1px solid #E5E7EB;">Lo necesita para</td><td style="padding:9px 12px;color:#111827;border:1px solid #E5E7EB;">${fechaStr}</td></tr>
+              <tr><td style="padding:9px 12px;color:#6B7280;border:1px solid #E5E7EB;">Entrega</td><td style="padding:9px 12px;color:#111827;border:1px solid #E5E7EB;">${entregaLabel}${params.localidadEntrega ? ` · ${params.localidadEntrega}` : ''}</td></tr>
+              ${params.requiereSenasa ? `<tr style="background:#FEF3C7;"><td style="padding:9px 12px;color:#92400E;font-weight:600;border:1px solid #FCD34D;">SENASA</td><td style="padding:9px 12px;color:#92400E;font-weight:600;border:1px solid #FCD34D;">⚠️ Requiere certificación SENASA</td></tr>` : ''}
+              ${params.observaciones ? `<tr style="background:#F9FAFB;"><td style="padding:9px 12px;color:#6B7280;border:1px solid #E5E7EB;vertical-align:top;">Observaciones</td><td style="padding:9px 12px;color:#374151;border:1px solid #E5E7EB;">${params.observaciones}</td></tr>` : ''}
+            </table>
+
+            <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:4px;padding:14px 16px;font-size:13px;color:#1E40AF;margin-bottom:16px;">
+              📌 Esta solicitud ya fue registrada en el sistema. Ingresá a <strong>Cotizaciones → Cotizaciones web</strong> para procesarla.
+            </div>
+
+            <p style="color:#9CA3AF;font-size:12px;margin:0;">
+              Wood Pallet Manager · Notificación automática
+            </p>
+          </div>
+        </div>
+      </div>
+    `,
+  });
+};

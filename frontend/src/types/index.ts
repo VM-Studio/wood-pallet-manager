@@ -406,3 +406,37 @@ export interface SolicitudLogistica {
   solicitante: { id: number; nombre: string; apellido: string; rol: string };
   destinatario: { id: number; nombre: string; apellido: string; rol: string };
 }
+
+// ─── Cotizaciones Web ─────────────────────────────────────────────────────────
+
+export type EstadoCotizacionWeb = 'pendiente' | 'vista' | 'convertida' | 'descartada';
+
+export interface CotizacionWeb {
+  id: number;
+  nombre: string;
+  empresa?: string;
+  email: string;
+  telefono: string;
+  tipoPallet: string;
+  cantidad: number;
+  fechaNecesidad?: string;
+  tipoEntrega: string;
+  localidadEntrega?: string;
+  requiereSenasa: boolean;
+  observaciones?: string;
+  estado: EstadoCotizacionWeb;
+  propietarioAsignadoId?: number;
+  cotizacionId?: number;
+  motivoDescarte?: string;
+  ipOrigen?: string;
+  creadoEn: string;
+  actualizadoEn: string;
+  propietarioAsignado?: { id: number; nombre: string; apellido: string; rol: string };
+  cotizacion?: { id: number; estado: string; totalConIva?: number };
+}
+
+export interface ContadorCotizacionesWeb {
+  total: number;
+  pendiente: number;
+  vista: number;
+}

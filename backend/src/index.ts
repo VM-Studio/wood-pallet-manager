@@ -18,6 +18,7 @@ import devolucionesRoutes from './routes/devoluciones.routes';
 import remitosRoutes from './routes/remitos.routes';
 import seguimientosRoutes from './routes/seguimientos.routes';
 import retirosRoutes from './routes/retiros.routes';
+import cotizacionesWebRoutes from './routes/cotizaciones-web.routes';
 import { iniciarTareasProgramadas } from './utils/cron';
 
 dotenv.config();
@@ -27,9 +28,15 @@ const PORT = process.env.PORT || 3001;
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Permitir sin origin (apps móviles, Postman) y cualquier localhost/IP local
-    // En producción reemplazar por lista de dominios permitidos
-    callback(null, true);
+    const permitidos = [
+      'https://woodpallets.com.ar',
+      'https://www.woodpallets.com.ar',
+    ];
+    // Permitir sin origin (apps móviles, Postman, server-to-server) y cualquier localhost
+    if (!origin || origin.includes('localhost') || origin.includes('127.0.0.1') || permitidos.includes(origin)) {
+      return callback(null, true);
+    }
+    callback(null, true); // En producción cambiar a: callback(new Error('CORS no permitido'))
   },
   credentials: true,
 }));
@@ -53,6 +60,7 @@ app.use('/api/devoluciones', devolucionesRoutes);
 app.use('/api/remitos', remitosRoutes);
 app.use('/api/seguimientos', seguimientosRoutes);
 app.use('/api/retiros', retirosRoutes);
+app.use('/api/cotizaciones-web', cotizacionesWebRoutes);
 
 app.get('/health', (_req, res) => {
   res.json({

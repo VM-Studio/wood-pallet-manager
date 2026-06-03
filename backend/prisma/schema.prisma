@@ -48,6 +48,7 @@ model Usuario {
   verificacionesCodigo VerificacionCodigo[]
   retirosConfirmados   Retiro[]                 @relation("RetirosConfirmados")
   reenviosRetiro       HistorialReenvioRetiro[]
+  cotizacionesWeb      CotizacionWeb[]          @relation("CotizacionesWebAsignadas")
 
   @@map("usuarios")
 }
@@ -319,11 +320,12 @@ model Cotizacion {
   telefonoProspecto String?
   emailProspecto    String?
 
-  cliente      Cliente?                @relation(fields: [clienteId], references: [id])
-  usuario      Usuario                 @relation(fields: [usuarioId], references: [id])
-  detalles     DetalleCotizacion[]
-  venta        Venta?
-  seguimientos SeguimientoCotizacion[]
+  cliente       Cliente?                @relation(fields: [clienteId], references: [id])
+  usuario       Usuario                 @relation(fields: [usuarioId], references: [id])
+  detalles      DetalleCotizacion[]
+  venta         Venta?
+  seguimientos  SeguimientoCotizacion[]
+  cotizacionWeb CotizacionWeb?
 
   @@map("cotizaciones")
 }
@@ -952,4 +954,39 @@ model ReglaAutomatizacion {
   creadaPor Usuario        @relation(fields: [creadaPorId], references: [id])
 
   @@map("reglas_automatizacion")
+}
+
+// ─── COTIZACIONES WEB (formulario woodpallets.com.ar) ────
+model CotizacionWeb {
+  id                    Int                 @id @default(autoincrement())
+  nombre                String
+  empresa               String?
+  email                 String
+  telefono              String
+  tipoPallet            String
+  cantidad              Int
+  fechaNecesidad        DateTime?
+  tipoEntrega           String // 'retira' | 'envio'
+  localidadEntrega      String?
+  requiereSenasa        Boolean             @default(false)
+  observaciones         String?
+  estado                EstadoCotizacionWeb @default(pendiente)
+  propietarioAsignadoId Int?
+  cotizacionId          Int?                @unique
+  motivoDescarte        String?
+  ipOrigen              String?
+  creadoEn              DateTime            @default(now())
+  actualizadoEn         DateTime            @updatedAt
+
+  propietarioAsignado Usuario?    @relation("CotizacionesWebAsignadas", fields: [propietarioAsignadoId], references: [id])
+  cotizacion          Cotizacion? @relation(fields: [cotizacionId], references: [id])
+
+  @@map("cotizaciones_web")
+}
+
+enum EstadoCotizacionWeb {
+  pendiente
+  vista
+  convertida
+  descartada
 }

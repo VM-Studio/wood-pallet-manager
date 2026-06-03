@@ -2,13 +2,15 @@ import { useState, useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Plus, MoreHorizontal,
-  CheckCircle, XCircle, Search, FileText, Truck, Leaf, Trash2, MessageCircle, Zap
+  CheckCircle, XCircle, Search, FileText, Truck, Leaf, Trash2, MessageCircle, Zap, Globe
 } from 'lucide-react';
 import { useCotizaciones, useActualizarEstadoCotizacion, useEliminarCotizacion } from '../../hooks/useCotizaciones';
+import { useContadorCotizacionesWeb } from '../../hooks/useCotizacionesWeb';
 import NuevaCotizacion from './NuevaCotizacion';
 import NuevaCotizacionRapida from './NuevaCotizacionRapida';
 import WhatsAppModal from './WhatsAppModal';
 import ConvertirVentaModal from './ConvertirVentaModal';
+import CotizacionesWebModal from './CotizacionesWebModal';
 import EstadoBadge from '../../components/ui/EstadoBadge';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
@@ -39,6 +41,9 @@ export default function CotizacionesPage() {
   const [searchParams] = useSearchParams();
   const [showNueva, setShowNueva] = useState(() => searchParams.get('nueva') === 'true');
   const [showNuevaRapida, setShowNuevaRapida] = useState(false);
+  const [showWebModal, setShowWebModal] = useState(false);
+  const { data: contadorWeb } = useContadorCotizacionesWeb();
+  const pendientesWeb = (contadorWeb?.pendiente ?? 0) + (contadorWeb?.vista ?? 0);
   const [whatsappId, setWhatsappId] = useState<number | null>(null);
   const [convertirId, setConvertirId] = useState<number | null>(null);
   const [confirmEliminar, setConfirmEliminar] = useState<number | null>(null);
@@ -112,6 +117,24 @@ export default function CotizacionesPage() {
           <p className="text-sm text-gray-600 mt-1">{cotizaciones?.length || 0} cotizaciones en total</p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowWebModal(true)}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '6px',
+              background: '#EFF6FF', color: '#2563EB', fontWeight: 500, fontSize: '0.875rem',
+              padding: '0.5rem 1rem', borderRadius: '0.25rem',
+              border: '1px solid #BFDBFE', cursor: 'pointer', position: 'relative'
+            }}
+          >
+            <Globe size={15} /> Cotizaciones web
+            {pendientesWeb > 0 && (
+              <span style={{
+                position: 'absolute', top: '-8px', right: '-8px',
+                background: '#EF4444', color: 'white', borderRadius: '9999px',
+                fontSize: '0.65rem', fontWeight: 700, padding: '1px 6px', lineHeight: '1.4'
+              }}>{pendientesWeb}</span>
+            )}
+          </button>
           <button
             onClick={() => setShowNuevaRapida(true)}
             style={{
@@ -394,6 +417,10 @@ export default function CotizacionesPage() {
           onClose={() => setShowNuevaRapida(false)}
           onSuccess={() => setShowNuevaRapida(false)}
         />
+      )}
+
+      {showWebModal && (
+        <CotizacionesWebModal onClose={() => setShowWebModal(false)} />
       )}
     </div>
   );
