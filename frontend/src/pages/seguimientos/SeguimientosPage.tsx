@@ -90,7 +90,7 @@ export default function SeguimientosPage() {
           <button key={key} onClick={() => setTab(key)} style={{
             flex: 1, padding: '0.45rem 0.5rem', fontSize: '0.78rem', fontWeight: 600,
             border: 'none', borderRadius: '0.25rem', cursor: 'pointer', transition: 'all 0.15s',
-            background: tab === key ? '#6B3A2A' : 'transparent',
+            background: tab === key ? '#7c4b2c' : 'transparent',
             color: tab === key ? '#fff' : '#9E8878',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
           }}>
@@ -108,7 +108,7 @@ export default function SeguimientosPage() {
 
 // ─── Tab: Nueva campaña ──────────────────────────────────────────────────────
 const BLOQUES_DEFAULT: BloqueEmail[] = [
-  { tipo: 'header', contenido: 'Hola {{nombre_cliente}}', colorFondo: '#6B3A2A' },
+  { tipo: 'header', contenido: 'Hola {{nombre_cliente}}', colorFondo: '#7c4b2c' },
   { tipo: 'texto',  contenido: 'Te escribimos desde WoodPallet...' },
   { tipo: 'footer', contenido: 'WoodPallet Manager · contacto@woodpallet.com.ar' },
 ];
@@ -144,7 +144,7 @@ function TabNuevaCampana() {
             <button onClick={() => setStep(s)} style={{
               width: 26, height: 26, borderRadius: '50%', border: 'none',
               fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer',
-              background: step === s ? '#6B3A2A' : step > s ? '#C4895A' : '#E8E2DA',
+              background: step === s ? '#7c4b2c' : step > s ? '#C4895A' : '#E8E2DA',
               color: step >= s ? '#fff' : '#9CA3AF',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>{step > s ? '✓' : s}</button>
@@ -376,14 +376,14 @@ function TabPlantillas() {
   const [nombre, setNombre]   = useState('');
   const [asunto, setAsunto]   = useState('');
   const [bloques, setBloques] = useState<BloqueEmail[]>([
-    { tipo: 'header', contenido: 'Hola {{nombre_cliente}}', colorFondo: '#6B3A2A' },
+    { tipo: 'header', contenido: 'Hola {{nombre_cliente}}', colorFondo: '#7c4b2c' },
     { tipo: 'texto',  contenido: '' },
     { tipo: 'footer', contenido: 'WoodPallet Manager' },
   ]);
   const [showPreview, setShowPrev] = useState(false);
 
   const abrirEditar = (p: PlantillaEmail) => { setEdit(p); setNueva(false); setNombre(p.nombre); setAsunto(p.asunto); setBloques(p.bloques); };
-  const abrirNueva  = () => { setEdit(null); setNueva(true); setNombre(''); setAsunto(''); setBloques([{ tipo: 'header', contenido: 'Hola {{nombre_cliente}}', colorFondo: '#6B3A2A' }, { tipo: 'texto', contenido: '' }, { tipo: 'footer', contenido: 'WoodPallet Manager' }]); };
+  const abrirNueva  = () => { setEdit(null); setNueva(true); setNombre(''); setAsunto(''); setBloques([{ tipo: 'header', contenido: 'Hola {{nombre_cliente}}', colorFondo: '#7c4b2c' }, { tipo: 'texto', contenido: '' }, { tipo: 'footer', contenido: 'WoodPallet Manager' }]); };
   const guardar = async () => {
     if (editando) await actualizarMut.mutateAsync({ id: editando.id, nombre, asunto, bloques });
     else          await crearMut.mutateAsync({ nombre, asunto, bloques });

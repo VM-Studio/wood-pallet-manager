@@ -180,7 +180,7 @@ function InfoPersonalSection() {
             <button
               onClick={() => fotoInputRef.current?.click()}
               className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-colors"
-              style={{ background: '#3c250f', color: 'white' }}
+              style={{ background: '#7c4b2c', color: 'white' }}
               title="Cambiar foto"
             >
               {subirFotoMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
@@ -213,7 +213,7 @@ function InfoPersonalSection() {
                     onClick={() => guardarPerfilMutation.mutate({ nombre, apellido })}
                     disabled={guardarPerfilMutation.isPending}
                     className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors"
-                    style={{ background: '#3c250f' }}
+                    style={{ background: '#7c4b2c' }}
                   >
                     {guardarPerfilMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                     Guardar
@@ -319,7 +319,7 @@ function InfoPersonalSection() {
             <div className="flex gap-2">
               <button onClick={confirmarCambioEmail} disabled={emailLoading || emailCodigo.length !== 6}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity disabled:opacity-50"
-                style={{ background: '#3c250f' }}>
+                style={{ background: '#7c4b2c' }}>
                 {emailLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
                 Confirmar cambio
               </button>
@@ -378,7 +378,7 @@ function InfoPersonalSection() {
             <div className="flex gap-2">
               <button onClick={solicitarCodigoTel} disabled={telLoading}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity"
-                style={{ background: '#3c250f' }}>
+                style={{ background: '#7c4b2c' }}>
                 {telLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
                 Enviar código
               </button>
@@ -398,7 +398,7 @@ function InfoPersonalSection() {
             <div className="flex gap-2">
               <button onClick={confirmarCambioTel} disabled={telLoading || telCodigo.length !== 6}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity disabled:opacity-50"
-                style={{ background: '#3c250f' }}>
+                style={{ background: '#7c4b2c' }}>
                 {telLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
                 Confirmar cambio
               </button>
@@ -475,9 +475,9 @@ function CodigoInput({ value, onChange }: { value: string; onChange: (v: string)
           onPaste={i === 0 ? handlePaste : undefined}
           className="w-11 h-12 text-center text-lg font-bold rounded-xl border-2 focus:outline-none transition-colors"
           style={{
-            borderColor: value[i] ? '#3c250f' : '#E5E7EB',
+            borderColor: value[i] ? '#7c4b2c' : '#E5E7EB',
             background: value[i] ? '#FDF6EE' : 'white',
-            color: '#3c250f',
+            color: '#7c4b2c',
           }}
           inputMode="numeric"
         />
@@ -549,7 +549,7 @@ function SeguridadSection() {
           </p>
           <button onClick={solicitarCodigo} disabled={loading}
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-opacity"
-            style={{ background: '#3c250f' }}>
+            style={{ background: '#7c4b2c' }}>
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
             Enviar código de verificación
           </button>
@@ -574,7 +574,7 @@ function SeguridadSection() {
           <div className="flex gap-2">
             <button onClick={validarCodigo} disabled={codigo.length !== 6}
               className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity disabled:opacity-50"
-              style={{ background: '#3c250f' }}>
+              style={{ background: '#7c4b2c' }}>
               <CheckCircle className="w-3.5 h-3.5" />
               Continuar
             </button>
@@ -632,7 +632,7 @@ function SeguridadSection() {
           <div className="flex gap-2">
             <button onClick={cambiarPassword} disabled={loading}
               className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity"
-              style={{ background: '#3c250f' }}>
+              style={{ background: '#7c4b2c' }}>
               {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Lock className="w-3.5 h-3.5" />}
               Guardar contraseña
             </button>
@@ -810,13 +810,13 @@ function FirmaSection() {
           <div className="flex gap-1 p-0.5 rounded-lg" style={{ background: '#F5F0EC' }}>
             <button onClick={() => setModo('canvas')}
               className="px-3 py-1.5 rounded-md text-xs font-semibold transition-all"
-              style={modo === 'canvas' ? { background: '#3c250f', color: 'white' } : { color: '#6B7280' }}>
+              style={modo === 'canvas' ? { background: '#7c4b2c', color: 'white' } : { color: '#6B7280' }}>
               <PenTool className="w-3.5 h-3.5 inline mr-1" />
               Dibujar
             </button>
             <button onClick={() => setModo('upload')}
               className="px-3 py-1.5 rounded-md text-xs font-semibold transition-all"
-              style={modo === 'upload' ? { background: '#3c250f', color: 'white' } : { color: '#6B7280' }}>
+              style={modo === 'upload' ? { background: '#7c4b2c', color: 'white' } : { color: '#6B7280' }}>
               <Upload className="w-3.5 h-3.5 inline mr-1" />
               Subir
             </button>
@@ -851,7 +851,7 @@ function FirmaSection() {
               <button onClick={handleGuardar}
                 disabled={!tieneTrazos || guardarFirmaMutation.isPending}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity disabled:opacity-40"
-                style={{ background: '#3c250f' }}>
+                style={{ background: '#7c4b2c' }}>
                 {guardarFirmaMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                 Guardar firma
               </button>
@@ -956,7 +956,7 @@ export default function MiCuentaPage() {
     <div>
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-stone-800">Mi Cuenta</h1>
+        <h1 className="titulo-modulo">Mi Cuenta</h1>
         <p className="text-stone-500 text-sm mt-1">Gestioná tu perfil, seguridad y firma digital</p>
       </div>
 
@@ -968,7 +968,7 @@ export default function MiCuentaPage() {
               className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-all ${
                 tab === t.id ? 'shadow-sm' : 'hover:bg-stone-50'
               }`}
-              style={tab === t.id ? { background: '#3c250f', color: 'white' } : { color: '#6B7280' }}
+              style={tab === t.id ? { background: '#7c4b2c', color: 'white' } : { color: '#6B7280' }}
             >
               <t.icon className="w-4 h-4 shrink-0" />
               <div>
