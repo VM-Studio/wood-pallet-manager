@@ -4,7 +4,7 @@ import {
   Truck, Receipt,
   ClipboardList, Package, Warehouse, Building2,
   BarChart3, LogOut, DollarSign, RotateCcw, FileCheck, Mail,
-  X } from 'lucide-react';
+  X, UserCircle } from 'lucide-react';
 import logoWood from '/logowood.png';
 import { useAuthStore } from '../../store/auth.store';
 import { useQueryClient } from '@tanstack/react-query';
@@ -182,8 +182,47 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
         ))}
       </nav>
 
-      {/* ── Footer: solo Cerrar sesión ── */}
-      <div style={{ borderTop: `1px solid ${C.border}`, padding: '0.625rem 0.625rem 0.75rem' }}>
+      {/* ── Footer: Mi Cuenta + Cerrar sesión ── */}
+      <div style={{ borderTop: `1px solid ${C.border}`, padding: '0.625rem 0.625rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '1px' }}>
+        <NavLink
+          to="/mi-cuenta"
+          onClick={onClose}
+          style={({ isActive }) => ({
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.625rem',
+            padding: '0.5rem 0.625rem',
+            borderRadius: '0.375rem',
+            fontSize: '0.8375rem',
+            fontWeight: isActive ? 600 : 450,
+            color: isActive ? C.accent : C.textMuted,
+            background: isActive ? C.accentSoft : 'transparent',
+            transition: 'all 0.13s',
+            textDecoration: 'none',
+            borderLeft: isActive ? `2.5px solid ${C.accentMid}` : '2.5px solid transparent',
+          })}
+          onMouseEnter={e => {
+            const el = e.currentTarget as HTMLElement;
+            if (!el.style.borderLeftColor.includes('rgb(196')) {
+              el.style.background = '#F5EFE8';
+              el.style.color = C.text;
+            }
+          }}
+          onMouseLeave={e => {
+            const el = e.currentTarget as HTMLElement;
+            if (!el.style.borderLeftColor.includes('rgb(196')) {
+              el.style.background = 'transparent';
+              el.style.color = C.textMuted;
+            }
+          }}
+        >
+          {({ isActive }) => (
+            <>
+              <UserCircle size={15} style={{ color: isActive ? C.accentMid : C.label, flexShrink: 0 }} />
+              Mi cuenta
+            </>
+          )}
+        </NavLink>
         <button
           onClick={handleLogout}
           style={{

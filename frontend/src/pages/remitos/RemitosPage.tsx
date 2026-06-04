@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   FileText, Plus, Search, ChevronDown, ChevronUp,
   Send, CheckCircle, AlertCircle, Clock, X,
-  Hash, Package, Mail, Ban, PenLine
+  Hash, Package, Mail, Ban, PenLine, Pen
 } from 'lucide-react';
 import {
   useRemitos,
@@ -16,6 +16,7 @@ import { useVentas } from '../../hooks/useVentas';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
 import SignaturePad from '../../components/ui/SignaturePad';
+import { useAuthStore } from '../../store/auth.store';
 
 // ─── Helpers ──────────────────────────────────────────────
 
@@ -41,6 +42,8 @@ function NuevoRemitoModal({ onClose }: { onClose: () => void }) {
   const { data: ventas = [] } = useVentas();
   const { data: remitos = [] } = useRemitos();
   const enviar = useEnviarRemito();
+  const { usuario } = useAuthStore();
+  const firmaGuardada = usuario?.firma ?? null;
 
   const [ventaId, setVentaId] = useState<number | ''>('');
   const [firma, setFirma] = useState<string | null>(null);
@@ -48,6 +51,7 @@ function NuevoRemitoModal({ onClose }: { onClose: () => void }) {
   const [fechaEntrega, setFechaEntrega] = useState('');
   const [error, setError] = useState('');
   const [step, setStep] = useState<'form' | 'firma'>('form');
+  const [usarGuardada, setUsarGuardada] = useState(!!firmaGuardada);
 
   // Ventas que NO tienen remito aún
   const remitosVentaIds = new Set(remitos.map(r => r.ventaId));
@@ -58,6 +62,9 @@ function NuevoRemitoModal({ onClose }: { onClose: () => void }) {
   const handleContinuar = () => {
     if (!ventaId) { setError('Seleccioná una venta'); return; }
     setError('');
+    // Si hay firma guardada y se optó por usarla, pre-cargarla
+    if (usarGuardada && firmaGuardada) setFirma(firmaGuardada);
+    else setFirma(null);
     setStep('firma');
   };
 
@@ -144,12 +151,61 @@ function NuevoRemitoModal({ onClose }: { onClose: () => void }) {
               <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: '0.25rem', padding: '0.75rem', fontSize: '0.8rem', color: '#92400E' }}>
                 <strong>Firma obligatoria:</strong> El remito será enviado al cliente con tu firma. Él lo recibirá por email para firmarlo digitalmente.
               </div>
-              <SignaturePad
-                label="Tu firma (propietario)"
-                required
-                onSignature={setFirma}
-                height={140}
-              />
+
+              {/* Toggle firma guardada / firma manual */}
+              {firmaGuardada && (
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => { setUsarGuardada(true); setFirma(firmaGuardada); }}
+                    style={{
+                      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+                      padding: '0.55rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.8rem', fontWeight: 600,
+                      border: `2px solid ${usarGuardada ? '#7c4b2c' : '#E5E7EB'}`,
+                      background: usarGuardada ? '#FDF6EE' : 'white',
+                      color: usarGuardada ? '#7c4b2c' : '#6B7280',
+                      cursor: 'pointer', transition: 'all 0.15s',
+                    }}
+                  >
+                    <CheckCircle size={14} />
+                    Usar firma guardada
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setUsarGuardada(false); setFirma(null); }}
+                    style={{
+                      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+                      padding: '0.55rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.8rem', fontWeight: 600,
+                      border: `2px solid ${!usarGuardada ? '#7c4b2c' : '#E5E7EB'}`,
+                      background: !usarGuardada ? '#FDF6EE' : 'white',
+                      color: !usarGuardada ? '#7c4b2c' : '#6B7280',
+                      cursor: 'pointer', transition: 'all 0.15s',
+                    }}
+                  >
+                    <Pen size={14} />
+                    Firmar ahora
+                  </button>
+                </div>
+              )}
+
+              {usarGuardada && firmaGuardada ? (
+                <div>
+                  <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6B7280', marginBottom: '0.5rem' }}>Vista previa de tu firma guardada:</p>
+                  <div style={{ border: '2px dashed #E8E2DA', borderRadius: '0.375rem', padding: '1rem', background: '#FAFAF9', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 90 }}>
+                    <img src={firmaGuardada} alt="Firma guardada" style={{ maxHeight: 72, maxWidth: '100%', objectFit: 'contain' }} />
+                  </div>
+                  <p style={{ fontSize: '0.7rem', color: '#9CA3AF', marginTop: 6 }}>
+                    Podés cambiar tu firma guardada en <strong>Mi cuenta → Firma digital</strong>.
+                  </p>
+                </div>
+              ) : (
+                <SignaturePad
+                  label="Tu firma (propietario)"
+                  required
+                  onSignature={setFirma}
+                  height={140}
+                />
+              )}
             </>
           )}
 
@@ -241,7 +297,11 @@ function AsignarNumeroModal({ remito, onClose }: { remito: Remito; onClose: () =
 function FirmarPropietarioModal({ remito, onClose }: { remito: Remito; onClose: () => void }) {
   const firmar = useFirmarPropietario();
   const enviar = useEnviarRemito();
-  const [firma, setFirma] = useState<string | null>(null);
+  const { usuario } = useAuthStore();
+  const firmaGuardada = usuario?.firma ?? null;
+
+  const [firma, setFirma] = useState<string | null>(firmaGuardada ?? null);
+  const [usarGuardada, setUsarGuardada] = useState(!!firmaGuardada);
   const [error, setError] = useState('');
 
   const handleFirmarYEnviar = async () => {
@@ -266,7 +326,57 @@ function FirmarPropietarioModal({ remito, onClose }: { remito: Remito; onClose: 
           <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '0.25rem', padding: '0.75rem', fontSize: '0.8rem', color: '#1E40AF' }}>
             Cliente: <strong>{remito.cliente.razonSocial}</strong> · {remito.cliente.emailContacto ?? 'Sin email'}
           </div>
-          <SignaturePad label="Tu firma (propietario)" required onSignature={setFirma} height={140} />
+
+          {/* Toggle firma guardada / firma manual */}
+          {firmaGuardada && (
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button
+                type="button"
+                onClick={() => { setUsarGuardada(true); setFirma(firmaGuardada); }}
+                style={{
+                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+                  padding: '0.55rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.8rem', fontWeight: 600,
+                  border: `2px solid ${usarGuardada ? '#7c4b2c' : '#E5E7EB'}`,
+                  background: usarGuardada ? '#FDF6EE' : 'white',
+                  color: usarGuardada ? '#7c4b2c' : '#6B7280',
+                  cursor: 'pointer', transition: 'all 0.15s',
+                }}
+              >
+                <CheckCircle size={14} />
+                Usar firma guardada
+              </button>
+              <button
+                type="button"
+                onClick={() => { setUsarGuardada(false); setFirma(null); }}
+                style={{
+                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+                  padding: '0.55rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.8rem', fontWeight: 600,
+                  border: `2px solid ${!usarGuardada ? '#7c4b2c' : '#E5E7EB'}`,
+                  background: !usarGuardada ? '#FDF6EE' : 'white',
+                  color: !usarGuardada ? '#7c4b2c' : '#6B7280',
+                  cursor: 'pointer', transition: 'all 0.15s',
+                }}
+              >
+                <Pen size={14} />
+                Firmar ahora
+              </button>
+            </div>
+          )}
+
+          {usarGuardada && firmaGuardada ? (
+            <div>
+              <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6B7280', marginBottom: '0.5rem' }}>Vista previa de tu firma guardada:</p>
+              <div style={{ border: '2px dashed #E8E2DA', borderRadius: '0.375rem', padding: '1rem', background: '#FAFAF9', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 90 }}>
+                <img src={firmaGuardada} alt="Firma guardada" style={{ maxHeight: 72, maxWidth: '100%', objectFit: 'contain' }} />
+              </div>
+              <p style={{ fontSize: '0.7rem', color: '#9CA3AF', marginTop: 6 }}>
+                Podés cambiar tu firma guardada en <strong>Mi cuenta → Firma digital</strong>.
+              </p>
+            </div>
+          ) : (
+            <SignaturePad label="Tu firma (propietario)" required onSignature={setFirma} height={140} />
+          )}
+
           {error && <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#B91C1C', fontSize: '0.8rem', padding: '0.5rem 0.75rem', borderRadius: '0.25rem' }}>{error}</div>}
         </div>
         <div className="modal-footer">

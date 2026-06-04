@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Outlet, Navigate } from 'react-router-dom';
+import { Outlet, Navigate, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/auth.store';
 import Sidebar from './Sidebar';
 import { Menu, UserCircle } from 'lucide-react';
@@ -7,6 +7,7 @@ import { Menu, UserCircle } from 'lucide-react';
 export default function MainLayout() {
   const { token, usuario } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const navigate = useNavigate();
   if (!token) return <Navigate to="/login" replace />;
 
   return (
@@ -43,8 +44,12 @@ export default function MainLayout() {
           {/* Espacio vacío en desktop para empujar usuario a la derecha */}
           <div className="hidden md:block" />
 
-          {/* Derecha: usuario */}
-          <div className="flex items-center gap-2.5">
+          {/* Derecha: usuario — clic abre Mi Cuenta */}
+          <button
+            onClick={() => navigate('/mi-cuenta')}
+            className="flex items-center gap-2.5 rounded-lg px-2 py-1 transition-colors hover:bg-stone-100"
+            style={{ cursor: 'pointer', border: 'none', background: 'transparent' }}
+          >
             <div style={{
               width: 30, height: 30, borderRadius: '50%',
               overflow: 'hidden', flexShrink: 0,
@@ -57,15 +62,15 @@ export default function MainLayout() {
                 : <UserCircle size={17} style={{ color: '#C4895A' }} />
               }
             </div>
-            <div>
+            <div className="text-left">
               <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#111111', lineHeight: 1.2 }}>
                 {usuario ? `${usuario.nombre} ${usuario.apellido}` : 'Usuario'}
               </p>
               <p style={{ fontSize: '0.65rem', color: '#777', lineHeight: 1 }}>
-                {usuario?.rol === 'admin' ? 'Administrador' : 'Usuario'}
+                Mi cuenta
               </p>
             </div>
-          </div>
+          </button>
         </div>
 
         <div className="p-4 md:p-8 max-w-[1400px] mx-auto animate-fade-in">
