@@ -167,7 +167,7 @@ export default function InventarioPage() {
                   <Tooltip
                     contentStyle={{ fontSize: 11, borderRadius: 4, border: '1px solid #E8E2DA' }}
                     formatter={(v: number) => [formatNumero(v), 'Unidades']} />
-                  <Bar dataKey="stock" radius={[0, 3, 3, 0]} maxBarSize={14}>
+                  <Bar dataKey="stock" fill="#7c4b2c" radius={[0, 3, 3, 0]} maxBarSize={14} isAnimationActive={false}>
                     {dataStockPropio.map((_: any, i: number) => (
                       <Cell key={i} fill={['#6B3A2A', '#7c4b2c', '#9B5535', '#C4895A'][i % 4]} />
                     ))}

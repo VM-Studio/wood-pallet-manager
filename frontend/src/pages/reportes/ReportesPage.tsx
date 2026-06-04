@@ -295,7 +295,7 @@ export default function ReportesPage() {
                       <XAxis dataKey="tipo" tick={{ fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
                       <YAxis tick={{ fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
                       <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${formatNumero(v)} u`, 'Unidades']} />
-                      <Bar dataKey="cantidad" radius={[3, 3, 0, 0]} maxBarSize={40}>
+                      <Bar dataKey="cantidad" fill="#7c4b2c" radius={[3, 3, 0, 0]} maxBarSize={40} isAnimationActive={false}>
                         {dataTipo.map((_, i) => <Cell key={i} fill={BRAND[i % BRAND.length]} />)}
                       </Bar>
                     </BarChart>
@@ -448,7 +448,7 @@ export default function ReportesPage() {
                       <YAxis type="category" dataKey="name" width={90}
                         tick={{ fontSize: 10, fill: '#374151' }} axisLine={false} tickLine={false} />
                       <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [v + ' facturas', '']} />
-                      <Bar dataKey="value" radius={[0, 3, 3, 0]} maxBarSize={16}>
+                      <Bar dataKey="value" fill="#7c4b2c" radius={[0, 3, 3, 0]} maxBarSize={16} isAnimationActive={false}>
                         {dataCobranzasEstado.map((_, i) => <Cell key={i} fill={BRAND[i % BRAND.length]} />)}
                       </Bar>
                     </BarChart>
@@ -510,7 +510,7 @@ export default function ReportesPage() {
                         tick={{ fontSize: 10, fill: '#374151' }} axisLine={false} tickLine={false} />
                       <Tooltip contentStyle={tooltipStyle}
                         formatter={(v: number) => [formatNumero(v) + ' u', 'Pallets']} />
-                      <Bar dataKey="pallets" radius={[0, 3, 3, 0]} maxBarSize={14}>
+                      <Bar dataKey="pallets" fill="#7c4b2c" radius={[0, 3, 3, 0]} maxBarSize={14} isAnimationActive={false}>
                         {dataTopClientesChart.map((_, i) => <Cell key={i} fill={BRAND[i % BRAND.length]} />)}
                       </Bar>
                     </BarChart>
@@ -529,7 +529,7 @@ export default function ReportesPage() {
                         tick={{ fontSize: 10, fill: '#374151' }} axisLine={false} tickLine={false} />
                       <Tooltip contentStyle={tooltipStyle}
                         formatter={(v: number) => [formatPesosCompleto(v), 'Facturación']} />
-                      <Bar dataKey="facturacion" radius={[0, 3, 3, 0]} maxBarSize={14}>
+                      <Bar dataKey="facturacion" fill="#C4895A" radius={[0, 3, 3, 0]} maxBarSize={14} isAnimationActive={false}>
                         {dataTopClientesChart.map((_, i) => <Cell key={i} fill={BRAND[i % BRAND.length]} />)}
                       </Bar>
                     </BarChart>
@@ -639,7 +639,7 @@ export default function ReportesPage() {
                     tickFormatter={v => formatPesos(v as number)} />
                   <Tooltip contentStyle={tooltipStyle}
                     formatter={(v: number) => [formatPesosCompleto(v), 'Facturación']} />
-                  <Bar dataKey="facturacion" radius={[3, 3, 0, 0]} maxBarSize={36}>
+                  <Bar dataKey="facturacion" fill="#7c4b2c" radius={[3, 3, 0, 0]} maxBarSize={36} isAnimationActive={false}>
                     {dataEst.map((_, i) => <Cell key={i} fill={MONTH_COLORS[i % 12]} />)}
                   </Bar>
                 </BarChart>

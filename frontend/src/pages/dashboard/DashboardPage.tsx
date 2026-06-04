@@ -479,9 +479,9 @@ export default function DashboardPage() {
                 contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #E5E7EB', fontFamily: 'Inter' }}
                 cursor={{ fill: '#F9FAFB' }}
               />
-              <Bar dataKey="pallets" radius={[4, 4, 0, 0]} maxBarSize={40}>
+              <Bar dataKey="pallets" fill="#7c4b2c" radius={[4, 4, 0, 0]} maxBarSize={40} isAnimationActive={false}>
                 {grafico.map((_: unknown, i: number) => (
-                  <Cell key={i} fill={['#6B3A2A', '#C4895A', '#9B5535'][i % 3]} />
+                  <Cell key={i} fill={['#7c4b2c', '#C4895A', '#9B5535'][i % 3]} />
                 ))}
               </Bar>
             </BarChart>

@@ -701,7 +701,7 @@ export default function DevolucionesPage() {
                     tick={{ fontSize: 10, fill: '#374151' }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={{ fontSize: 11, borderRadius: 4, border: '1px solid #E8E2DA' }}
                     formatter={(v: number) => [v + ' u.', 'Devueltos']} />
-                  <Bar dataKey="value" radius={[0, 3, 3, 0]} maxBarSize={14}>
+                  <Bar dataKey="value" fill="#7c4b2c" radius={[0, 3, 3, 0]} maxBarSize={14} isAnimationActive={false}>
                     {dataProductos.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                   </Bar>
                 </BarChart>
