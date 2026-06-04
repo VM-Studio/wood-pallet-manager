@@ -42,6 +42,7 @@ const crearCotizacionSchema = z.object({
   fleteIncluido: z.boolean().optional(),
   requiereSenasa: z.boolean().default(false),
   costoSenasa: z.number().optional(),
+  incluyeIva: z.boolean().optional().default(true),
   canalEnvio: z.enum(['whatsapp', 'email']).optional(),
   observaciones: z.string().optional(),
   detalles: z.array(detalleSchema).min(1, 'Debe haber al menos un producto'),

@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type React from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell,
-  AreaChart, Area
+  LineChart, Line,
 } from 'recharts';
 import { Calendar, TrendingUp, Users, DollarSign, Package, Clock, CheckCircle, Receipt } from 'lucide-react';
 import {
@@ -28,7 +28,17 @@ const formatPesosCompleto = (v: number) =>
 
 const formatNumero = (v: number) => new Intl.NumberFormat('es-AR').format(v);
 
-const COLORS = ['#16A34A', '#0D9488', '#2563EB', '#7C3AED', '#D97706', '#DC2626'];
+const tooltipStyle = { fontSize: 11, borderRadius: 4, border: '1px solid #E8E2DA' };
+
+// ── Paleta del sistema ────────────────────────────────────────────────────────
+const BRAND = ['#6B3A2A', '#7c4b2c', '#9B5535', '#C4895A', '#E8C9A0'];
+
+// ── 12 colores únicos para meses (Ene → Dic) ─────────────────────────────────
+const MONTH_COLORS = [
+  '#3B82F6', '#EF4444', '#10B981', '#F59E0B',
+  '#8B5CF6', '#06B6D4', '#F97316', '#EC4899',
+  '#6366F1', '#84CC16', '#7c4b2c', '#C4895A',
+];
 
 const hoy = new Date();
 const primerDiaMes  = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-01`;
@@ -72,49 +82,93 @@ export default function ReportesPage() {
     if (p === 'anio') { setDesde(primerDiaAnio); setHasta(ultimoDiaAnio); }
   };
 
-  const dataPropietario = reporteVentas?.porPropietario
-    ? Object.entries(reporteVentas.porPropietario).map(([rol, d]) => ({
-        name: rol === 'propietario_carlos' ? 'Carlos' : 'Juan Cruz',
-        value: d.pallets,
-        facturacion: d.facturacion
-      }))
-    : [];
-
-  const dataTipo = reporteVentas?.porTipoPallet
-    ? Object.entries(reporteVentas.porTipoPallet)
-        .map(([tipo, cantidad]) => ({
-          tipo: tipo.charAt(0).toUpperCase() + tipo.slice(1),
-          cantidad: cantidad as number
+  const dataPropietario = useMemo(() =>
+    reporteVentas?.porPropietario
+      ? Object.entries(reporteVentas.porPropietario).map(([rol, d]) => ({
+          name: rol === 'propietario_carlos' ? 'Carlos' : 'Juan Cruz',
+          value: (d as { pallets: number; facturacion: number }).pallets,
+          facturacion: (d as { pallets: number; facturacion: number }).facturacion,
         }))
-        .sort((a, b) => b.cantidad - a.cantidad)
-    : [];
+      : []
+  , [reporteVentas]);
+
+  const dataTipo = useMemo(() =>
+    reporteVentas?.porTipoPallet
+      ? Object.entries(reporteVentas.porTipoPallet)
+          .map(([tipo, cantidad]) => ({
+            tipo: tipo.charAt(0).toUpperCase() + tipo.slice(1),
+            cantidad: cantidad as number,
+          }))
+          .sort((a, b) => b.cantidad - a.cantidad)
+      : []
+  , [reporteVentas]);
 
   const totalPropietario = dataPropietario.reduce((a, b) => a + b.value, 0) || 1;
+
+  const dataCobranzasDonut = useMemo(() => {
+    if (!reporteCobranzas?.resumen) return [];
+    const cobrado   = reporteCobranzas.resumen.totalCobrado   ?? 0;
+    const pendiente = reporteCobranzas.resumen.pendienteCobro ?? 0;
+    return [
+      { name: 'Cobrado',   value: cobrado   },
+      { name: 'Pendiente', value: pendiente },
+    ].filter(d => d.value > 0);
+  }, [reporteCobranzas]);
+
+  const dataCobranzasEstado = useMemo(() => {
+    if (!reporteCobranzas?.porEstado) return [];
+    const labels: Record<string, string> = {
+      cobrada_total:   'Cobrada total',
+      cobrada_parcial: 'Cobro parcial',
+      pendiente:       'Pendiente',
+      vencida:         'Vencida',
+    };
+    return Object.entries(reporteCobranzas.porEstado)
+      .map(([k, v]) => ({ name: labels[k] ?? k, value: v as number }))
+      .filter(d => d.value > 0);
+  }, [reporteCobranzas]);
+
+  const dataTopClientesChart = useMemo(() =>
+    (topClientes ?? [])
+      .slice(0, 8)
+      .map((c: { razonSocial: string; totalPallets: number; totalFacturado: number }) => ({
+        name: c.razonSocial.length > 14 ? c.razonSocial.slice(0, 14) + '…' : c.razonSocial,
+        pallets:     c.totalPallets,
+        facturacion: c.totalFacturado,
+      }))
+  , [topClientes]);
+
+  const dataEst = useMemo(() =>
+    (estacionalidad ?? []).map((m: EstacionalidadMes, i: number) => ({ ...m, idx: i }))
+  , [estacionalidad]);
 
   return (
     <div className="space-y-6 animate-fade-in">
 
       {/* Header */}
-      <div>
-        <h1 className="titulo-modulo">Reportes</h1>
-        <p className="text-sm text-gray-500 mt-1">Análisis consolidado del negocio</p>
+      <div className="page-header">
+        <div>
+          <h1 className="titulo-modulo">Reportes</h1>
+          <p className="text-sm text-gray-500 mt-1">Análisis consolidado del negocio</p>
+        </div>
       </div>
 
       {/* Selector de período */}
-      <div className="card-base">
+      <div className="card-kpi">
         <div className="flex flex-wrap items-center gap-4">
-          <div className="flex gap-1 p-1" style={{ background: '#F3EDE8', borderRadius: '0.25rem' }}>
+          <div className="flex gap-1 p-1" style={{ background: '#F3EDE8', borderRadius: '0.375rem' }}>
             {([
               { key: 'mes',    label: 'Este mes' },
               { key: 'anio',   label: 'Este año' },
               { key: 'custom', label: 'Personalizado' },
             ] as { key: Periodo; label: string }[]).map(p => (
               <button key={p.key} onClick={() => cambiarPeriodo(p.key)}
-                style={periodo === p.key
-                  ? { background: '#7c4b2c', color: '#fff', borderRadius: '0.25rem' }
-                  : { borderRadius: '0.25rem' }
-                }
-                className="px-4 py-2 text-sm font-medium transition-all text-gray-600">
+                className="px-4 py-2 text-sm font-medium transition-all"
+                style={{
+                  background: periodo === p.key ? '#7c4b2c' : 'transparent',
+                  color: periodo === p.key ? '#fff' : '#6B7280',
+                  borderRadius: '0.25rem', border: 'none', cursor: 'pointer',
+                }}>
                 {p.label}
               </button>
             ))}
@@ -124,21 +178,21 @@ export default function ReportesPage() {
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
                 <Calendar size={15} className="text-gray-400" />
-                <input type="date" value={desde} onChange={e => setDesde(e.target.value)} className="input-field w-40 py-2" />
+                <input type="date" value={desde} onChange={e => setDesde(e.target.value)} className="input w-40" />
               </div>
               <span className="text-gray-400">→</span>
-              <input type="date" value={hasta} onChange={e => setHasta(e.target.value)} className="input-field w-40 py-2" />
+              <input type="date" value={hasta} onChange={e => setHasta(e.target.value)} className="input w-40" />
             </div>
           )}
 
-          <div className="ml-auto text-sm text-gray-400">
-            {new Date(desde).toLocaleDateString('es-AR')} al {new Date(hasta).toLocaleDateString('es-AR')}
+          <div className="ml-auto text-xs text-gray-400">
+            {new Date(desde).toLocaleDateString('es-AR')} → {new Date(hasta).toLocaleDateString('es-AR')}
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1" style={{ background: '#fff', borderRadius: '0.25rem', border: '1px solid #e5e7eb' }}>
+      <div className="flex gap-1 p-1" style={{ background: '#F3EDE8', borderRadius: '0.375rem' }}>
         {([
           { key: 'ventas',         label: 'Ventas',         icon: <Package size={14} /> },
           { key: 'cobranzas',      label: 'Cobranzas',      icon: <DollarSign size={14} /> },
@@ -146,11 +200,12 @@ export default function ReportesPage() {
           { key: 'estacionalidad', label: 'Estacionalidad', icon: <TrendingUp size={14} /> },
         ] as { key: TabActivo; label: string; icon: React.ReactNode }[]).map(t => (
           <button key={t.key} onClick={() => setTabActivo(t.key)}
-            style={tabActivo === t.key
-              ? { background: '#7c4b2c', color: '#fff', borderRadius: '0.25rem' }
-              : { borderRadius: '0.25rem' }
-            }
-            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-all text-gray-500 hover:bg-gray-50">
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-all"
+            style={{
+              background: tabActivo === t.key ? '#7c4b2c' : 'transparent',
+              color: tabActivo === t.key ? '#fff' : '#9E8878',
+              borderRadius: '0.25rem', border: 'none', cursor: 'pointer',
+            }}>
             {t.icon}{t.label}
           </button>
         ))}
@@ -161,17 +216,18 @@ export default function ReportesPage() {
         loadingVentas
           ? <div className="p-8"><LoadingSpinner text="Cargando reporte de ventas..." /></div>
           : (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: 'Ventas totales',   valor: reporteVentas?.resumen?.totalVentas ?? 0,                sub: 'operaciones',   icono: <TrendingUp size={16} /> },
-                { label: 'Pallets vendidos', valor: formatNumero(reporteVentas?.resumen?.totalPallets ?? 0), sub: 'unidades',       icono: <Package size={16} /> },
-                { label: 'Facturación',      valor: formatPesos(reporteVentas?.resumen?.totalFacturado ?? 0), sub: 'con IVA',       icono: <DollarSign size={16} /> },
-                { label: 'Pendiente cobro',  valor: formatPesos(reporteVentas?.resumen?.pendienteCobro ?? 0), sub: 'por cobrar',    icono: <Clock size={16} /> },
+                { label: 'Ventas totales',   valor: reporteVentas?.resumen?.totalVentas ?? 0,                 sub: 'operaciones',  icono: <TrendingUp size={15} /> },
+                { label: 'Pallets vendidos', valor: formatNumero(reporteVentas?.resumen?.totalPallets ?? 0),  sub: 'unidades',     icono: <Package size={15} /> },
+                { label: 'Facturación',      valor: formatPesos(reporteVentas?.resumen?.totalFacturado ?? 0), sub: 'con IVA',      icono: <DollarSign size={15} /> },
+                { label: 'Pendiente cobro',  valor: formatPesos(reporteVentas?.resumen?.pendienteCobro ?? 0), sub: 'por cobrar',   icono: <Clock size={15} /> },
               ].map((k, i) => (
                 <div key={i} className="card-kpi">
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">{k.icono}</div>
+                    <div className="w-7 h-7 rounded flex items-center justify-center shrink-0"
+                      style={{ background: '#F3EDE8', color: '#7c4b2c' }}>{k.icono}</div>
                     <p className="titulo-card flex-1">{k.label}</p>
                   </div>
                   <p className="text-2xl font-bold text-gray-900 leading-none mb-1">{k.valor}</p>
@@ -180,125 +236,109 @@ export default function ReportesPage() {
               ))}
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              {/* Torta por propietario */}
-              <div className="card-base">
-                <h3 className="text-sm font-semibold mb-4" style={{ color: '#6B3A2A' }}>Pallets vendidos por propietario</h3>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              {/* Donut por propietario */}
+              <div className="card-kpi flex flex-col" style={{ minHeight: 200 }}>
+                <p className="titulo-card mb-3">Pallets vendidos por propietario</p>
                 {dataPropietario.length > 0 ? (
-                  <div className="flex items-center gap-6">
-                    <ResponsiveContainer width="55%" height={200}>
-                      <PieChart>
-                        <Pie data={dataPropietario} dataKey="value" cx="50%" cy="50%"
-                          outerRadius={80} innerRadius={40} paddingAngle={3}>
-                          {dataPropietario.map((_, i) => (
-                            <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          formatter={(v: number) => [`${formatNumero(v)} u`, 'Pallets']}
-                          contentStyle={{ fontSize: 12, borderRadius: 4 }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div className="flex-1 space-y-3">
-                      {dataPropietario.map((d, i) => (
-                        <div key={i}>
-                          <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-2">
-                              <div className="w-3 h-3" style={{ background: COLORS[i], borderRadius: '0.25rem' }} />
-                              <span className="text-sm font-medium text-gray-900">{d.name}</span>
+                  <div className="flex-1 flex items-center gap-5">
+                    <div style={{ width: 130, height: 130, flexShrink: 0, position: 'relative' }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie data={dataPropietario} dataKey="value"
+                            cx="50%" cy="50%" innerRadius={38} outerRadius={56}
+                            paddingAngle={3} strokeWidth={0}>
+                            {dataPropietario.map((_, i) => <Cell key={i} fill={BRAND[i % BRAND.length]} />)}
+                          </Pie>
+                          <Tooltip contentStyle={tooltipStyle}
+                            formatter={(v: number) => [`${formatNumero(v)} u`, 'Pallets']} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', textAlign: 'center', pointerEvents: 'none' }}>
+                        <p style={{ fontSize: '0.65rem', color: '#9CA3AF', lineHeight: 1.2 }}>Total</p>
+                        <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', lineHeight: 1.2 }}>{formatNumero(totalPropietario)}</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-3 flex-1 min-w-0">
+                      {dataPropietario.map((d, i) => {
+                        const pct = Math.round((d.value / totalPropietario) * 100);
+                        return (
+                          <div key={i}>
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex items-center gap-1.5">
+                                <div style={{ width: 8, height: 8, borderRadius: 2, background: BRAND[i % BRAND.length], flexShrink: 0 }} />
+                                <p style={{ fontSize: '0.78rem', fontWeight: 600, color: '#374151' }}>{d.name}</p>
+                              </div>
+                              <p style={{ fontSize: '0.78rem', color: '#6B7280' }}>{formatNumero(d.value)} u</p>
                             </div>
-                            <span className="text-sm font-bold text-gray-900">{formatNumero(d.value)} u</span>
+                            <div style={{ height: 6, background: '#F3F4F6', borderRadius: 4, overflow: 'hidden' }}>
+                              <div style={{ height: '100%', width: `${pct}%`, background: BRAND[i % BRAND.length], borderRadius: 4, transition: 'width 0.6s ease' }} />
+                            </div>
+                            <p style={{ fontSize: '0.68rem', color: '#9CA3AF', marginTop: 2 }}>{formatPesosCompleto(d.facturacion)} · {pct}%</p>
                           </div>
-                          <div className="h-1.5 bg-gray-100 overflow-hidden" style={{ borderRadius: '0.25rem' }}>
-                            <div className="h-full"
-                              style={{ width: `${Math.round((d.value / totalPropietario) * 100)}%`, background: COLORS[i], borderRadius: '0.25rem' }} />
-                          </div>
-                          <p className="text-xs text-gray-400 mt-1">{formatPesosCompleto(d.facturacion)}</p>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center py-8 text-center">
-                    <p className="text-sm text-gray-400">Sin datos en el período seleccionado</p>
-                  </div>
+                  <p className="text-xs text-gray-400 m-auto text-center">Sin datos en el período seleccionado</p>
                 )}
               </div>
 
-              {/* Barras por tipo */}
-              <div className="card-base">
-                <h3 className="text-sm font-semibold mb-4" style={{ color: '#6B3A2A' }}>Ventas por tipo de pallet</h3>
+              {/* Barras por tipo de pallet */}
+              <div className="card-kpi flex flex-col" style={{ minHeight: 200 }}>
+                <p className="titulo-card mb-3">Ventas por tipo de pallet</p>
                 {dataTipo.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={dataTipo} margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis dataKey="tipo" tick={{ fontSize: 11, fill: '#9CA3AF' }} />
-                      <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} />
-                      <Tooltip
-                        formatter={(v: number) => [`${formatNumero(v)} u`, 'Unidades']}
-                        contentStyle={{ fontSize: 12, borderRadius: 4 }}
-                      />
-                      <Bar dataKey="cantidad" fill="#6B3A2A" radius={[4, 4, 0, 0]} />
+                  <ResponsiveContainer width="100%" height={180}>
+                    <BarChart data={dataTipo} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                      <XAxis dataKey="tipo" tick={{ fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${formatNumero(v)} u`, 'Unidades']} />
+                      <Bar dataKey="cantidad" radius={[3, 3, 0, 0]} maxBarSize={40}>
+                        {dataTipo.map((_, i) => <Cell key={i} fill={BRAND[i % BRAND.length]} />)}
+                      </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="flex flex-col items-center py-8 text-center">
-                    <p className="text-sm text-gray-400">Sin datos en el período seleccionado</p>
-                  </div>
+                  <p className="text-xs text-gray-400 m-auto text-center">Sin datos en el período seleccionado</p>
                 )}
               </div>
             </div>
 
             {/* Tabla ventas */}
             {(reporteVentas?.ventas?.length ?? 0) > 0 && (
-              <div className="card-base" style={{ padding: 0, overflow: 'hidden' }}>
-                <div className="p-4 border-b border-gray-100">
-                  <h3 className="text-sm font-semibold" style={{ color: '#6B3A2A' }}>
-                    Ventas del período ({reporteVentas!.ventas.length})
-                  </h3>
+              <div className="table-container">
+                <div className="p-3 border-b border-gray-100 flex items-center justify-between">
+                  <p className="titulo-card">Ventas del período ({reporteVentas!.ventas.length})</p>
                 </div>
                 <table className="table">
                   <thead>
-                    <tr>
-                      <th>#</th><th>Cliente</th><th>Productos</th><th>Propietario</th><th>Total</th><th>Cobro</th>
-                    </tr>
+                    <tr><th>#</th><th>Cliente</th><th>Productos</th><th>Propietario</th><th>Total</th><th>Cobro</th></tr>
                   </thead>
                   <tbody>
                     {(reporteVentas!.ventas as VentaReporte[]).slice(0, 20).map(v => (
                       <tr key={v.id}>
-                        <td className="text-xs text-gray-400 font-semibold">#{v.id}</td>
-                        <td className="font-medium text-gray-900 text-sm">{v.cliente?.razonSocial}</td>
+                        <td className="text-xs text-gray-400 font-mono">#{v.id}</td>
+                        <td className="font-semibold text-gray-900 text-sm">{v.cliente?.razonSocial}</td>
                         <td>
-                          <div className="space-y-0.5">
-                            {v.detalles?.slice(0, 2).map(d => (
-                              <p key={d.id} className="text-xs text-gray-500">
-                                {d.producto?.nombre} — {d.cantidadPedida}u
-                              </p>
-                            ))}
-                          </div>
+                          {v.detalles?.slice(0, 2).map(d => (
+                            <p key={d.id} className="text-xs text-gray-500">{d.producto?.nombre} — {d.cantidadPedida}u</p>
+                          ))}
                         </td>
                         <td>
-                          <span className="text-xs font-medium px-2 py-0.5"
-                            style={{
-                              background: v.usuario?.rol === 'propietario_carlos' ? '#F3EDE8' : '#FEF3E2',
-                              color: '#6B3A2A',
-                              borderRadius: '0.25rem'
-                            }}>
+                          <span className="text-xs font-medium px-2 py-0.5" style={{ background: '#F3EDE8', color: '#7c4b2c', borderRadius: '0.25rem' }}>
                             {v.usuario?.nombre}
                           </span>
                         </td>
-                        <td className="font-semibold text-sm text-gray-900">
-                          {formatPesosCompleto(v.totalConIva ?? 0)}
-                        </td>
+                        <td className="font-semibold text-sm text-gray-900">{formatPesosCompleto(v.totalConIva ?? 0)}</td>
                         <td>
                           {v.facturas?.map(f => (
-                            <span key={f.id} className="text-xs font-medium px-2 py-0.5"
-                              style={{
-                                background: f.estadoCobro === 'cobrada_total' ? '#F0FDF4' : f.estadoCobro === 'vencida' ? '#FEF2F2' : '#FFFBEB',
-                                color: f.estadoCobro === 'cobrada_total' ? '#15803D' : f.estadoCobro === 'vencida' ? '#B91C1C' : '#B45309',
-                                borderRadius: '0.25rem'
-                              }}>
+                            <span key={f.id} className="text-xs font-medium px-2 py-0.5" style={{
+                              background: f.estadoCobro === 'cobrada_total' ? '#F0FDF4' : f.estadoCobro === 'vencida' ? '#FEF2F2' : '#FFFBEB',
+                              color: f.estadoCobro === 'cobrada_total' ? '#15803D' : f.estadoCobro === 'vencida' ? '#B91C1C' : '#B45309',
+                              borderRadius: '0.25rem',
+                            }}>
                               {f.estadoCobro === 'cobrada_total' ? 'Cobrada' : f.estadoCobro === 'vencida' ? 'Vencida' : 'Pendiente'}
                             </span>
                           ))}
@@ -323,17 +363,17 @@ export default function ReportesPage() {
         loadingCobr
           ? <div className="p-8"><LoadingSpinner text="Cargando reporte de cobranzas..." /></div>
           : (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: 'Total emitido',    valor: formatPesos(reporteCobranzas?.resumen?.totalEmitido ?? 0),   sub: 'facturado',        icono: <Receipt size={16} /> },
-                { label: 'Total cobrado',    valor: formatPesos(reporteCobranzas?.resumen?.totalCobrado ?? 0),   sub: 'cobros confirmados', icono: <CheckCircle size={16} /> },
-                { label: 'Pendiente cobrar', valor: formatPesos(reporteCobranzas?.resumen?.pendienteCobro ?? 0), sub: 'por cobrar',         icono: <Clock size={16} /> },
-                { label: 'Tasa de cobranza', valor: `${reporteCobranzas?.resumen?.tasaCobranza ?? 0}%`,          sub: 'del período',        icono: <TrendingUp size={16} /> },
+                { label: 'Total emitido',    valor: formatPesos(reporteCobranzas?.resumen?.totalEmitido ?? 0),   sub: 'facturado',          icono: <Receipt size={15} /> },
+                { label: 'Total cobrado',    valor: formatPesos(reporteCobranzas?.resumen?.totalCobrado ?? 0),   sub: 'cobros confirmados', icono: <CheckCircle size={15} /> },
+                { label: 'Pendiente cobrar', valor: formatPesos(reporteCobranzas?.resumen?.pendienteCobro ?? 0), sub: 'por cobrar',         icono: <Clock size={15} /> },
+                { label: 'Tasa de cobranza', valor: `${reporteCobranzas?.resumen?.tasaCobranza ?? 0}%`,          sub: 'del período',        icono: <TrendingUp size={15} /> },
               ].map((k, i) => (
                 <div key={i} className="card-kpi">
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">{k.icono}</div>
+                    <div className="w-7 h-7 rounded flex items-center justify-center shrink-0" style={{ background: '#F3EDE8', color: '#7c4b2c' }}>{k.icono}</div>
                     <p className="titulo-card flex-1">{k.label}</p>
                   </div>
                   <p className="text-2xl font-bold text-gray-900 leading-none mb-1">{k.valor}</p>
@@ -342,48 +382,105 @@ export default function ReportesPage() {
               ))}
             </div>
 
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              {/* Donut: Cobrado vs Pendiente */}
+              <div className="card-kpi flex flex-col" style={{ minHeight: 200 }}>
+                <p className="titulo-card mb-3">Cobrado vs pendiente</p>
+                {dataCobranzasDonut.length > 0 ? (
+                  <div className="flex-1 flex items-center gap-5">
+                    <div style={{ width: 130, height: 130, flexShrink: 0, position: 'relative' }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie data={dataCobranzasDonut} dataKey="value"
+                            cx="50%" cy="50%" innerRadius={38} outerRadius={56}
+                            paddingAngle={3} strokeWidth={0}>
+                            <Cell fill="#7c4b2c" />
+                            <Cell fill="#C4895A" />
+                          </Pie>
+                          <Tooltip contentStyle={tooltipStyle}
+                            formatter={(v: number) => [formatPesosCompleto(v), '']} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', textAlign: 'center', pointerEvents: 'none' }}>
+                        <p style={{ fontSize: '0.65rem', color: '#9CA3AF', lineHeight: 1.2 }}>Tasa</p>
+                        <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', lineHeight: 1.2 }}>
+                          {reporteCobranzas?.resumen?.tasaCobranza ?? 0}%
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-3 flex-1 min-w-0">
+                      {dataCobranzasDonut.map((d, i) => {
+                        const total = dataCobranzasDonut.reduce((a, x) => a + x.value, 0);
+                        const pct = total > 0 ? Math.round((d.value / total) * 100) : 0;
+                        const clr = i === 0 ? '#7c4b2c' : '#C4895A';
+                        return (
+                          <div key={d.name}>
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex items-center gap-1.5">
+                                <div style={{ width: 8, height: 8, borderRadius: 2, background: clr, flexShrink: 0 }} />
+                                <p style={{ fontSize: '0.78rem', fontWeight: 600, color: '#374151' }}>{d.name}</p>
+                              </div>
+                              <p style={{ fontSize: '0.78rem', color: '#6B7280' }}>{formatPesos(d.value)}</p>
+                            </div>
+                            <div style={{ height: 6, background: '#F3F4F6', borderRadius: 4, overflow: 'hidden' }}>
+                              <div style={{ height: '100%', width: `${pct}%`, background: clr, borderRadius: 4, transition: 'width 0.6s ease' }} />
+                            </div>
+                            <p style={{ fontSize: '0.68rem', color: '#9CA3AF', marginTop: 2 }}>{pct}%</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400 m-auto text-center">Sin datos en el período</p>
+                )}
+              </div>
+
+              {/* Barras por estado */}
+              <div className="card-kpi flex flex-col" style={{ minHeight: 200 }}>
+                <p className="titulo-card mb-3">Facturas por estado de cobro</p>
+                {dataCobranzasEstado.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={160}>
+                    <BarChart data={dataCobranzasEstado} layout="vertical"
+                      margin={{ top: 0, right: 20, bottom: 0, left: 4 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#F3F4F6" />
+                      <XAxis type="number" tick={{ fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+                      <YAxis type="category" dataKey="name" width={90}
+                        tick={{ fontSize: 10, fill: '#374151' }} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [v + ' facturas', '']} />
+                      <Bar dataKey="value" radius={[0, 3, 3, 0]} maxBarSize={16}>
+                        {dataCobranzasEstado.map((_, i) => <Cell key={i} fill={BRAND[i % BRAND.length]} />)}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p className="text-xs text-gray-400 m-auto text-center">Sin datos en el período</p>
+                )}
+              </div>
+            </div>
+
+            {/* Barra de progreso general */}
             {reporteCobranzas?.resumen && (
-              <div className="card-base">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold" style={{ color: '#6B3A2A' }}>Progreso de cobranza del período</h3>
+              <div className="card-kpi">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="titulo-card">Progreso de cobranza del período</p>
                   <span className="text-sm font-bold"
                     style={{ color: (reporteCobranzas.resumen.tasaCobranza ?? 0) >= 80 ? '#15803D' : '#B45309' }}>
                     {reporteCobranzas.resumen.tasaCobranza}%
                   </span>
                 </div>
-                <div className="h-4 bg-gray-100 overflow-hidden" style={{ borderRadius: '0.25rem' }}>
-                  <div
-                    className="h-full transition-all duration-500"
+                <div className="h-3 bg-gray-100 overflow-hidden" style={{ borderRadius: '0.25rem' }}>
+                  <div className="h-full transition-all duration-500"
                     style={{
                       width: `${reporteCobranzas.resumen.tasaCobranza ?? 0}%`,
-                      background: (reporteCobranzas.resumen.tasaCobranza ?? 0) >= 80
-                        ? '#7c4b2c'
-                        : '#F59E0B',
-                      borderRadius: '0.25rem'
-                    }}
-                  />
+                      background: (reporteCobranzas.resumen.tasaCobranza ?? 0) >= 80 ? '#7c4b2c' : '#F59E0B',
+                      borderRadius: '0.25rem',
+                    }} />
                 </div>
                 <div className="flex justify-between mt-2 text-xs text-gray-400">
                   <span>Cobrado: {formatPesosCompleto(reporteCobranzas.resumen.totalCobrado)}</span>
                   <span>Pendiente: {formatPesosCompleto(reporteCobranzas.resumen.pendienteCobro)}</span>
                 </div>
-              </div>
-            )}
-
-            {reporteCobranzas?.porEstado && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {[
-                  { key: 'cobrada_total',   label: 'Cobradas',      bg: '#F0FDF4', border: '#BBF7D0', color: '#15803D' },
-                  { key: 'cobrada_parcial', label: 'Cobro parcial', bg: '#EFF6FF', border: '#BFDBFE', color: '#1D4ED8' },
-                  { key: 'pendiente',       label: 'Pendientes',    bg: '#FFFBEB', border: '#FDE68A', color: '#B45309' },
-                  { key: 'vencida',         label: 'Vencidas',      bg: '#FEF2F2', border: '#FECACA', color: '#B91C1C' },
-                ].map(s => (
-                  <div key={s.key} className="p-4 text-center border"
-                    style={{ background: s.bg, borderColor: s.border, borderRadius: '0.25rem' }}>
-                    <p className="text-2xl font-bold" style={{ color: s.color }}>{reporteCobranzas.porEstado[s.key] ?? 0}</p>
-                    <p className="text-xs font-medium mt-1" style={{ color: s.color }}>{s.label}</p>
-                  </div>
-                ))}
               </div>
             )}
           </div>
@@ -396,54 +493,95 @@ export default function ReportesPage() {
           ? <div className="p-8"><LoadingSpinner text="Cargando top clientes..." /></div>
           : (
           <div className="space-y-4">
-            <p className="text-sm text-gray-500">
-              Clientes con mayor volumen de compra histórico (todos los períodos)
-            </p>
-            {!topClientes?.length ? (
-              <div className="card-base flex flex-col items-center justify-center py-16 text-center">
-                <div className="w-14 h-14 flex items-center justify-center mb-4" style={{ background: '#F3EDE8', borderRadius: '0.25rem' }}>
-                  <Users size={24} style={{ color: '#6B3A2A' }} />
+            <p className="text-sm text-gray-500">Clientes con mayor volumen de compra histórico (todos los períodos)</p>
+
+            {/* Gráficos barras horizontales */}
+            {dataTopClientesChart.length > 0 && (
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                <div className="card-kpi flex flex-col" style={{ minHeight: 220 }}>
+                  <p className="titulo-card mb-3">Top clientes — pallets comprados</p>
+                  <ResponsiveContainer width="100%" height={dataTopClientesChart.length * 30 + 16}>
+                    <BarChart data={dataTopClientesChart} layout="vertical"
+                      margin={{ top: 0, right: 24, bottom: 0, left: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#F3F4F6" />
+                      <XAxis type="number" tick={{ fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false}
+                        tickFormatter={v => formatNumero(v)} />
+                      <YAxis type="category" dataKey="name" width={100}
+                        tick={{ fontSize: 10, fill: '#374151' }} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={tooltipStyle}
+                        formatter={(v: number) => [formatNumero(v) + ' u', 'Pallets']} />
+                      <Bar dataKey="pallets" radius={[0, 3, 3, 0]} maxBarSize={14}>
+                        {dataTopClientesChart.map((_, i) => <Cell key={i} fill={BRAND[i % BRAND.length]} />)}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
-                <p className="titulo-card" style={{ color: '#6B3A2A' }}>Sin datos de clientes</p>
+
+                <div className="card-kpi flex flex-col" style={{ minHeight: 220 }}>
+                  <p className="titulo-card mb-3">Top clientes — facturación total</p>
+                  <ResponsiveContainer width="100%" height={dataTopClientesChart.length * 30 + 16}>
+                    <BarChart data={dataTopClientesChart} layout="vertical"
+                      margin={{ top: 0, right: 24, bottom: 0, left: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#F3F4F6" />
+                      <XAxis type="number" tick={{ fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false}
+                        tickFormatter={v => formatPesos(v)} />
+                      <YAxis type="category" dataKey="name" width={100}
+                        tick={{ fontSize: 10, fill: '#374151' }} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={tooltipStyle}
+                        formatter={(v: number) => [formatPesosCompleto(v), 'Facturación']} />
+                      <Bar dataKey="facturacion" radius={[0, 3, 3, 0]} maxBarSize={14}>
+                        {dataTopClientesChart.map((_, i) => <Cell key={i} fill={BRAND[i % BRAND.length]} />)}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            {/* Tabla detallada */}
+            {!topClientes?.length ? (
+              <div className="card-kpi flex flex-col items-center justify-center py-16 text-center">
+                <Users size={24} style={{ color: '#7c4b2c', marginBottom: 12 }} />
+                <p className="titulo-card">Sin datos de clientes</p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {topClientes.map((c, i) => {
-                  const maxPallets = topClientes[0]?.totalPallets || 1;
-                  const pct = Math.round((c.totalPallets / maxPallets) * 100);
-                  const medalBg = i === 0 ? '#FEF3E2' : i === 1 ? '#F3F4F6' : i === 2 ? '#FFF7ED' : '#F9FAFB';
-                  const medalColor = i === 0 ? '#B45309' : i === 1 ? '#6B7280' : i === 2 ? '#C2410C' : '#9CA3AF';
-                  return (
-                    <div key={c.id} className="card-base">
-                      <div className="flex items-center gap-4">
-                        <div className="w-9 h-9 flex items-center justify-center font-bold text-sm shrink-0"
-                          style={{ background: medalBg, color: medalColor, borderRadius: '0.25rem' }}>
-                          #{i + 1}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-2">
-                            <div>
-                              <p className="font-semibold text-gray-900 text-sm truncate">{c.razonSocial}</p>
-                              {c.localidad && <p className="text-xs text-gray-400">{c.localidad}</p>}
+              <div className="table-container">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>#</th><th>Cliente</th><th>Compras</th>
+                      <th style={{ textAlign: 'right' }}>Pallets</th>
+                      <th style={{ textAlign: 'right' }}>Facturación</th>
+                      <th>Participación</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {topClientes.map((c: { id: number; razonSocial: string; localidad?: string; totalVentas: number; totalPallets: number; totalFacturado: number }, i: number) => {
+                      const maxPallets = (topClientes[0] as typeof c)?.totalPallets || 1;
+                      const pct = Math.round((c.totalPallets / maxPallets) * 100);
+                      return (
+                        <tr key={c.id}>
+                          <td>
+                            <span style={{ fontWeight: 700, fontSize: '0.78rem', color: i < 3 ? '#7c4b2c' : '#9CA3AF' }}>#{i + 1}</span>
+                          </td>
+                          <td>
+                            <p className="font-semibold text-gray-900 text-sm">{c.razonSocial}</p>
+                            {c.localidad && <p className="text-xs text-gray-400">{c.localidad}</p>}
+                          </td>
+                          <td className="text-sm text-gray-600">{c.totalVentas} compra{c.totalVentas !== 1 ? 's' : ''}</td>
+                          <td className="text-sm font-bold text-right" style={{ color: '#7c4b2c' }}>{formatNumero(c.totalPallets)} u</td>
+                          <td className="text-sm font-semibold text-right text-gray-900">{formatPesos(c.totalFacturado)}</td>
+                          <td style={{ minWidth: 100 }}>
+                            <div style={{ height: 6, background: '#F3F4F6', borderRadius: 4, overflow: 'hidden' }}>
+                              <div style={{ height: '100%', width: `${pct}%`, background: BRAND[i % BRAND.length], borderRadius: 4, transition: 'width 0.6s ease' }} />
                             </div>
-                            <div className="text-right ml-4 shrink-0">
-                              <p className="text-sm font-bold" style={{ color: '#6B3A2A' }}>{formatNumero(c.totalPallets)} u</p>
-                              <p className="text-xs text-gray-400">{formatPesos(c.totalFacturado)}</p>
-                            </div>
-                          </div>
-                          <div className="h-2 bg-gray-100 overflow-hidden" style={{ borderRadius: '0.25rem' }}>
-                            <div className="h-full transition-all"
-                              style={{ width: `${pct}%`, background: '#7c4b2c', borderRadius: '0.25rem' }} />
-                          </div>
-                          <div className="flex justify-between mt-1.5 text-xs text-gray-400">
-                            <span>{c.totalVentas} compra{c.totalVentas !== 1 ? 's' : ''}</span>
-                            <span>{pct}% del máximo</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                            <p style={{ fontSize: '0.65rem', color: '#9CA3AF', marginTop: 2 }}>{pct}%</p>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
@@ -455,75 +593,85 @@ export default function ReportesPage() {
         loadingEst
           ? <div className="p-8"><LoadingSpinner text="Cargando estacionalidad..." /></div>
           : (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <p className="text-sm text-gray-500">
-              Ventas de los últimos 12 meses. Refleja el patrón estacional del negocio:
-              pico en Nov-Dic, secundario en Agosto, mínimo en Ene-Feb.
+              Ventas de los últimos 12 meses. Refleja el patrón estacional del negocio.
             </p>
 
-            <div className="card-base">
-              <h3 className="text-sm font-semibold mb-4" style={{ color: '#6B3A2A' }}>Pallets vendidos — últimos 12 meses</h3>
+            {/* Gráfico 1: Pallets — línea base + dots coloreados por mes */}
+            <div className="card-kpi">
+              <p className="titulo-card mb-3">Pallets vendidos — cada mes en su color</p>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {dataEst.map((m, i) => (
+                  <span key={i} className="flex items-center gap-1" style={{ fontSize: '0.68rem', color: '#374151' }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: MONTH_COLORS[i % 12], display: 'inline-block', flexShrink: 0 }} />
+                    {m.mes}
+                  </span>
+                ))}
+              </div>
               <ResponsiveContainer width="100%" height={280}>
-                <AreaChart data={estacionalidad ?? []} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorPallets" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor="#6B3A2A" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#6B3A2A" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="mes" tick={{ fontSize: 11, fill: '#9CA3AF' }} />
-                  <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} />
-                  <Tooltip
-                    formatter={(v: number) => [`${formatNumero(v)} u`, 'Pallets']}
-                    contentStyle={{ fontSize: 12, borderRadius: 4 }}
-                  />
-                  <Area type="monotone" dataKey="pallets" stroke="#6B3A2A" strokeWidth={2.5}
-                    fill="url(#colorPallets)" dot={{ fill: '#6B3A2A', r: 4 }} activeDot={{ r: 6 }} />
-                </AreaChart>
+                <LineChart data={dataEst} margin={{ top: 8, right: 10, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                  <XAxis dataKey="mes" tick={{ fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={tooltipStyle}
+                    formatter={(v: number) => [`${formatNumero(v)} u`, 'Pallets']} />
+                  <Line type="monotone" dataKey="pallets" stroke="#E8E2DA" strokeWidth={2} dot={false} />
+                  {dataEst.map((entry, i) => (
+                    <Line key={i} data={[entry]} dataKey="pallets"
+                      stroke={MONTH_COLORS[i % 12]} strokeWidth={0}
+                      dot={{ r: 7, fill: MONTH_COLORS[i % 12], stroke: '#fff', strokeWidth: 2 }}
+                      activeDot={{ r: 9, fill: MONTH_COLORS[i % 12] }}
+                      isAnimationActive={false} />
+                  ))}
+                </LineChart>
               </ResponsiveContainer>
             </div>
 
-            <div className="card-base">
-              <h3 className="text-sm font-semibold mb-4" style={{ color: '#6B3A2A' }}>Facturación mensual — últimos 12 meses</h3>
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={estacionalidad ?? []} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="mes" tick={{ fontSize: 11, fill: '#9CA3AF' }} />
-                  <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} tickFormatter={v => formatPesos(v as number)} />
-                  <Tooltip
-                    formatter={(v: number) => [formatPesosCompleto(v), 'Facturación']}
-                    contentStyle={{ fontSize: 12, borderRadius: 4 }}
-                  />
-                  <Bar dataKey="facturacion" fill="#C4895A" radius={[4, 4, 0, 0]} />
+            {/* Gráfico 2: Facturación — barras con color por mes */}
+            <div className="card-kpi">
+              <p className="titulo-card mb-3">Facturación mensual — cada mes en su color</p>
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={dataEst} margin={{ top: 4, right: 10, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                  <XAxis dataKey="mes" tick={{ fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false}
+                    tickFormatter={v => formatPesos(v as number)} />
+                  <Tooltip contentStyle={tooltipStyle}
+                    formatter={(v: number) => [formatPesosCompleto(v), 'Facturación']} />
+                  <Bar dataKey="facturacion" radius={[3, 3, 0, 0]} maxBarSize={36}>
+                    {dataEst.map((_, i) => <Cell key={i} fill={MONTH_COLORS[i % 12]} />)}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
 
-            {estacionalidad && (
-              <div className="card-base" style={{ padding: 0, overflow: 'hidden' }}>
+            {/* Tabla detalle */}
+            {dataEst.length > 0 && (
+              <div className="table-container">
                 <table className="table">
                   <thead>
-                    <tr>
-                      <th>Mes</th><th>Ventas</th><th>Pallets</th><th>Facturación</th><th>Tendencia</th>
-                    </tr>
+                    <tr><th>Mes</th><th>Ventas</th><th>Pallets</th><th>Facturación</th><th>Tendencia</th></tr>
                   </thead>
                   <tbody>
-                    {estacionalidad.map((m: EstacionalidadMes, i: number) => {
-                      const anterior = i > 0 ? estacionalidad[i - 1] : null;
+                    {dataEst.map((m, i) => {
+                      const anterior = i > 0 ? dataEst[i - 1] : null;
                       const tendencia = anterior
                         ? m.pallets > anterior.pallets ? 'up' : m.pallets < anterior.pallets ? 'down' : 'equal'
                         : 'equal';
                       return (
                         <tr key={i}>
-                          <td className="font-semibold text-gray-900">{m.mes}</td>
+                          <td>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span style={{ width: 10, height: 10, borderRadius: '50%', background: MONTH_COLORS[i % 12], display: 'inline-block', flexShrink: 0 }} />
+                              <span className="font-semibold text-gray-900">{m.mes}</span>
+                            </span>
+                          </td>
                           <td className="text-gray-700">{m.ventas}</td>
                           <td className="font-semibold text-gray-900">{formatNumero(m.pallets)} u</td>
                           <td className="font-semibold text-gray-900">{formatPesosCompleto(m.facturacion)}</td>
                           <td>
-                            <span className="text-sm" style={{
-                              color: tendencia === 'up' ? '#15803D' : tendencia === 'down' ? '#B91C1C' : '#9CA3AF'
-                            }}>
+                            <span style={{ fontSize: '1rem', color: tendencia === 'up' ? '#15803D' : tendencia === 'down' ? '#B91C1C' : '#9CA3AF' }}>
                               {tendencia === 'up' ? '↑' : tendencia === 'down' ? '↓' : '—'}
                             </span>
                           </td>
@@ -540,6 +688,3 @@ export default function ReportesPage() {
     </div>
   );
 }
-
-// Silence unused icon imports linter warnings
-void Calendar; void TrendingUp; void Users; void DollarSign; void Package;

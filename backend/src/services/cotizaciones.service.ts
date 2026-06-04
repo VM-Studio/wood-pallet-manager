@@ -60,6 +60,7 @@ export const crearCotizacionService = async (
     fleteIncluido?: boolean;
     requiereSenasa: boolean;
     costoSenasa?: number;
+    incluyeIva?: boolean;
     canalEnvio?: 'whatsapp' | 'email';
     observaciones?: string;
     detalles: {
@@ -144,7 +145,9 @@ export const crearCotizacionService = async (
     totalSinIva += datos.costoSenasa;
   }
 
-  const totalConIva = totalSinIva * 1.21;
+  // Si incluyeIva = false → venta sin factura (sin IVA): totalConIva = totalSinIva
+  const incluyeIva = datos.incluyeIva ?? true;
+  const totalConIva = incluyeIva ? totalSinIva * 1.21 : totalSinIva;
 
   const fechaVencimiento = new Date();
   fechaVencimiento.setDate(fechaVencimiento.getDate() + 7);
@@ -317,6 +320,8 @@ export const convertirCotizacionAVentaService = async (
   const totalConIva = Number(cotizacion.totalConIva ?? 0);
   const totalNeto = Number(cotizacion.totalSinIva ?? totalConIva / 1.21);
   const iva = totalConIva - totalNeto;
+  // Si totalConIva ≈ totalSinIva, la cotización se creó sin IVA → esSinFactura
+  const esSinFactura = Math.abs(totalConIva - totalNeto) < 1;
 
   await prisma.factura.create({
     data: {
@@ -326,6 +331,7 @@ export const convertirCotizacionAVentaService = async (
       totalNeto,
       iva,
       totalConIva,
+      esSinFactura,
       estadoCobro: 'pendiente',
       metodoPago: datos.metodoPago as any,
       cuentaDestino: (datos.cuentaDestino ?? undefined) as any,

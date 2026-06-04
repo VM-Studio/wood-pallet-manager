@@ -1,24 +1,84 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Search, AlertTriangle, History, Settings, Warehouse, Trash2 } from 'lucide-react';
-import { useStockConsolidado, useAlertasStock } from '../../hooks/useInventario';
+import { useStockConsolidado, useAlertasStock, useMovimientosStock } from '../../hooks/useInventario';
+import { useCompras } from '../../hooks/useCompras';
 import { useEliminarProducto } from '../../hooks/useProductos';
 import AjusteStockModal from './AjusteStockModal';
 import MovimientosModal from './MovimientosModal';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
 import { clsx } from 'clsx';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  Cell, AreaChart, Area,
+} from 'recharts';
 
 const formatNumero = (v: number) => new Intl.NumberFormat('es-AR').format(v);
 
 export default function InventarioPage() {
   const { data: consolidado, isLoading, error } = useStockConsolidado();
   const { data: alertas } = useAlertasStock();
+  const { data: compras } = useCompras();
+  const { data: movimientos } = useMovimientosStock();
   const [busqueda, setBusqueda] = useState('');
   const eliminarProducto = useEliminarProducto();
   const [confirmEliminar, setConfirmEliminar] = useState<number | null>(null);
   const [ajusteData, setAjusteData] = useState<any>(null);
   const [movimientosData, setMovimientosData] = useState<any>(null);
   const [vistaAlertasOnly, setVistaAlertasOnly] = useState(false);
+
+  // ── Chart 1: Stock propio actual por producto ──────────────────────────
+  const dataStockPropio = useMemo(() => {
+    if (!consolidado) return [];
+    return [...consolidado]
+      .filter((item: any) => item.stockTotalPropio > 0)
+      .map((item: any) => ({ name: item.producto.nombre, stock: item.stockTotalPropio }))
+      .sort((a: any, b: any) => b.stock - a.stock)
+      .slice(0, 10);
+  }, [consolidado]);
+
+  // ── Chart 2: Unidades compradas por producto — stock propio vs reventa ─
+  const dataComprasPorProducto = useMemo(() => {
+    if (!compras) return [];
+    const mapa: Record<string, { propio: number; reventa: number }> = {};
+    compras
+      .filter((c: any) => c.estado !== 'cancelada')
+      .forEach((c: any) => {
+        c.detalles?.forEach((d: any) => {
+          const nombre = d.producto?.nombre ?? 'Sin nombre';
+          if (!mapa[nombre]) mapa[nombre] = { propio: 0, reventa: 0 };
+          if (c.tipoCompra === 'stock_propio')      mapa[nombre].propio   += d.cantidad;
+          if (c.tipoCompra === 'reventa_inmediata') mapa[nombre].reventa  += d.cantidad;
+        });
+      });
+    return Object.entries(mapa)
+      .map(([name, v]) => ({ name, 'Stock propio': v.propio, 'Reventa directa': v.reventa }))
+      .filter(d => d['Stock propio'] + d['Reventa directa'] > 0)
+      .sort((a, b) => (b['Stock propio'] + b['Reventa directa']) - (a['Stock propio'] + a['Reventa directa']))
+      .slice(0, 8);
+  }, [compras]);
+
+  // ── Chart 3: Entradas vs salidas de stock por mes (últimos 6 meses) ───
+  const dataMovimientosMes = useMemo(() => {
+    if (!movimientos) return [];
+    const mapa: Record<string, { entradas: number; salidas: number }> = {};
+    (movimientos as any[]).forEach((m: any) => {
+      const d = new Date(m.fecha);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      if (!mapa[key]) mapa[key] = { entradas: 0, salidas: 0 };
+      if (m.tipoMovimiento === 'entrada') mapa[key].entradas += m.cantidad;
+      if (m.tipoMovimiento === 'salida')  mapa[key].salidas  += m.cantidad;
+    });
+    return Object.entries(mapa)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-6)
+      .map(([key, v]) => {
+        const [yr, mo] = key.split('-');
+        const label = new Date(parseInt(yr), parseInt(mo) - 1)
+          .toLocaleDateString('es-AR', { month: 'short', year: '2-digit' });
+        return { name: label, Entradas: v.entradas, Salidas: v.salidas };
+      });
+  }, [movimientos]);
 
   const filtrado = consolidado?.filter((item: any) =>
     item.producto.nombre.toLowerCase().includes(busqueda.toLowerCase())
@@ -43,7 +103,7 @@ export default function InventarioPage() {
         </div>
         <button
           onClick={() => setMovimientosData({ id: 0, nombre: 'Todos los productos' })}
-          className="btn-brand-outline"
+          className="btn-brand"
         >
           <History size={16} /> Ver movimientos
         </button>
@@ -86,6 +146,124 @@ export default function InventarioPage() {
           <p className="text-xs text-gray-400 mt-1">productos bajo el mínimo</p>
         </div>
       </div>
+
+      {/* ── Gráficos ──────────────────────────────────────────────────── */}
+      {consolidado && consolidado.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+          {/* Gráfico 1 — Stock actual por producto (horizontal) */}
+          <div className="card-kpi flex flex-col" style={{ minHeight: 220 }}>
+            <p className="titulo-card mb-3">Stock propio por producto</p>
+            {dataStockPropio.length > 0 ? (
+              <ResponsiveContainer width="100%" height={dataStockPropio.length * 28 + 16}>
+                <BarChart data={dataStockPropio} layout="vertical"
+                  margin={{ top: 0, right: 20, bottom: 0, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#F3F4F6" />
+                  <XAxis type="number" tick={{ fontSize: 10, fill: '#9CA3AF' }}
+                    axisLine={false} tickLine={false}
+                    tickFormatter={v => formatNumero(v)} />
+                  <YAxis type="category" dataKey="name" width={96}
+                    tick={{ fontSize: 10, fill: '#374151' }} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    contentStyle={{ fontSize: 11, borderRadius: 4, border: '1px solid #E8E2DA' }}
+                    formatter={(v: number) => [formatNumero(v), 'Unidades']} />
+                  <Bar dataKey="stock" radius={[0, 3, 3, 0]} maxBarSize={14}>
+                    {dataStockPropio.map((_: any, i: number) => (
+                      <Cell key={i} fill={['#6B3A2A', '#7c4b2c', '#9B5535', '#C4895A'][i % 4]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-xs text-gray-400 my-auto text-center">Sin stock propio registrado</p>
+            )}
+          </div>
+
+          {/* Gráfico 2 — Compras: stock propio vs reventa directa por producto */}
+          <div className="card-kpi flex flex-col" style={{ minHeight: 220 }}>
+            <p className="titulo-card mb-2">Compras: stock propio vs reventa</p>
+            <div className="flex items-center gap-3 mb-2">
+              <span className="flex items-center gap-1 text-xs text-gray-500">
+                <span style={{ width: 8, height: 8, borderRadius: 2, background: '#6B3A2A', display: 'inline-block' }} />
+                Stock propio
+              </span>
+              <span className="flex items-center gap-1 text-xs text-gray-500">
+                <span style={{ width: 8, height: 8, borderRadius: 2, background: '#C4895A', display: 'inline-block' }} />
+                Reventa directa
+              </span>
+            </div>
+            {dataComprasPorProducto.length > 0 ? (
+              <ResponsiveContainer width="100%" height={176}>
+                <BarChart data={dataComprasPorProducto}
+                  margin={{ top: 4, right: 8, bottom: 28, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                  <XAxis dataKey="name"
+                    tick={{ fontSize: 9, fill: '#9CA3AF' }}
+                    axisLine={false} tickLine={false}
+                    angle={-30} textAnchor="end" interval={0}
+                    tickFormatter={(v: string) => v.length > 10 ? v.slice(0, 10) + '…' : v} />
+                  <YAxis tick={{ fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false}
+                    tickFormatter={v => formatNumero(v)} />
+                  <Tooltip
+                    contentStyle={{ fontSize: 11, borderRadius: 4, border: '1px solid #E8E2DA' }}
+                    formatter={(v: number) => [formatNumero(v), '']} />
+                  <Bar dataKey="Stock propio"    fill="#6B3A2A" radius={[2, 2, 0, 0]} maxBarSize={16} />
+                  <Bar dataKey="Reventa directa" fill="#C4895A" radius={[2, 2, 0, 0]} maxBarSize={16} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-xs text-gray-400 my-auto text-center">Sin compras registradas</p>
+            )}
+          </div>
+
+          {/* Gráfico 3 — Entradas vs Salidas de stock por mes */}
+          <div className="card-kpi flex flex-col" style={{ minHeight: 220 }}>
+            <p className="titulo-card mb-2">Movimientos por mes</p>
+            <div className="flex items-center gap-3 mb-2">
+              <span className="flex items-center gap-1 text-xs text-gray-500">
+                <span style={{ width: 8, height: 8, borderRadius: 2, background: '#7c4b2c', display: 'inline-block' }} />
+                Entradas
+              </span>
+              <span className="flex items-center gap-1 text-xs text-gray-500">
+                <span style={{ width: 8, height: 8, borderRadius: 2, background: '#C4895A', display: 'inline-block' }} />
+                Salidas
+              </span>
+            </div>
+            {dataMovimientosMes.length > 0 ? (
+              <ResponsiveContainer width="100%" height={176}>
+                <AreaChart data={dataMovimientosMes}
+                  margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+                  <defs>
+                    <linearGradient id="gradEnt" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%"  stopColor="#7c4b2c" stopOpacity={0.22} />
+                      <stop offset="95%" stopColor="#7c4b2c" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="gradSal" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%"  stopColor="#C4895A" stopOpacity={0.18} />
+                      <stop offset="95%" stopColor="#C4895A" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                  <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#9CA3AF' }}
+                    axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false}
+                    tickFormatter={v => formatNumero(v)} />
+                  <Tooltip
+                    contentStyle={{ fontSize: 11, borderRadius: 4, border: '1px solid #E8E2DA' }}
+                    formatter={(v: number) => [formatNumero(v), '']} />
+                  <Area type="monotone" dataKey="Entradas"
+                    stroke="#7c4b2c" strokeWidth={2} fill="url(#gradEnt)" dot={{ r: 3, fill: '#7c4b2c' }} />
+                  <Area type="monotone" dataKey="Salidas"
+                    stroke="#C4895A" strokeWidth={2} fill="url(#gradSal)" dot={{ r: 3, fill: '#C4895A' }} />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-xs text-gray-400 my-auto text-center">Sin movimientos registrados</p>
+            )}
+          </div>
+
+        </div>
+      )}
 
       {/* Alertas */}
       {alertas && alertas.length > 0 && (

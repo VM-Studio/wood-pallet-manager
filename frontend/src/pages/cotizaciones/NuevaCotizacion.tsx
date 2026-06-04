@@ -630,9 +630,6 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
                                     : formatPesos(d.precioCalculado.precioUnitario)
                                   }
                                 </p>
-                                {d.precioCalculado.bonificaFlete && (
-                                  <p className="text-[10px] text-green-600 font-medium">Flete bonificado</p>
-                                )}
                               </div>
                             )}
                             {d.usarPrecioEspecial && d.precioEspecial ? (
