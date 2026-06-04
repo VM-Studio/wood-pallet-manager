@@ -316,7 +316,7 @@ export default function ProveedoresPage() {
           onClick={() => { setEditando(null); setShowModal(true); }}
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
-            background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
+            background: '#7c4b2c',
             color: '#fff', border: 'none', borderRadius: '0.25rem',
             padding: '0.5rem 1.1rem', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
           }}
@@ -331,7 +331,7 @@ export default function ProveedoresPage() {
           <Building2 size={28} style={{ color: '#D1D5DB', marginBottom: 12, display: 'block', margin: '0 auto 12px' }} />
           <p style={{ fontSize: '0.9rem', fontWeight: 600, color: '#374151', margin: '0 0 6px' }}>Sin proveedores</p>
           <p style={{ fontSize: '0.8rem', color: '#9CA3AF', margin: '0 0 1.25rem' }}>Agregá tu primer proveedor para poder registrar compras.</p>
-          <button onClick={() => { setEditando(null); setShowModal(true); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', color: '#fff', border: 'none', borderRadius: '0.25rem', padding: '0.5rem 1rem', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer' }}>
+          <button onClick={() => { setEditando(null); setShowModal(true); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#7c4b2c', color: '#fff', border: 'none', borderRadius: '0.25rem', padding: '0.5rem 1rem', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer' }}>
             <Plus size={13} /> Agregar proveedor
           </button>
         </div>

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer
+  Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
 import {
   Package, DollarSign, FileText,
@@ -381,7 +381,7 @@ export default function DashboardPage() {
         <button
           onClick={() => navigate('/clientes?nuevo=true')}
           className="text-left hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-pointer p-4"
-          style={{ background: 'linear-gradient(135deg, #6B3A2A, #C4895A)', borderRadius: 0 }}
+          style={{ background: '#7c4b2c', borderRadius: 0 }}
         >
           <div className="flex items-center gap-2 mb-2">
             <div className="w-7 h-7 bg-white/20 flex items-center justify-center text-white shrink-0">
@@ -398,7 +398,7 @@ export default function DashboardPage() {
         <button
           onClick={() => navigate('/cotizaciones?nueva=true')}
           className="text-left hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-pointer p-4"
-          style={{ background: 'linear-gradient(135deg, #6B3A2A, #C4895A)', borderRadius: 0 }}
+          style={{ background: '#7c4b2c', borderRadius: 0 }}
         >
           <div className="flex items-center gap-2 mb-2">
             <div className="w-7 h-7 bg-white/20 flex items-center justify-center text-white shrink-0">
@@ -415,7 +415,7 @@ export default function DashboardPage() {
         <button
           onClick={() => navigate('/facturacion?cobro=true')}
           className="text-left hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-pointer p-4"
-          style={{ background: 'linear-gradient(135deg, #6B3A2A, #C4895A)', borderRadius: 0 }}
+          style={{ background: '#7c4b2c', borderRadius: 0 }}
         >
           <div className="flex items-center gap-2 mb-2">
             <div className="w-7 h-7 bg-white/20 flex items-center justify-center text-white shrink-0">
@@ -432,7 +432,7 @@ export default function DashboardPage() {
         <button
           onClick={() => setShowRapida(true)}
           className="text-left hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-pointer p-4"
-          style={{ background: 'linear-gradient(135deg, #6B3A2A, #C4895A)', borderRadius: 0 }}
+          style={{ background: '#7c4b2c', borderRadius: 0 }}
         >
           <div className="flex items-center gap-2 mb-2">
             <div className="w-7 h-7 bg-white/20 flex items-center justify-center text-white shrink-0">
@@ -462,12 +462,6 @@ export default function DashboardPage() {
           </div>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={grafico} margin={{ top: 0, right: 0, left: -15, bottom: 0 }}>
-              <defs>
-                <linearGradient id="colorBrand" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#6B3A2A" />
-                  <stop offset="100%" stopColor="#C4895A" />
-                </linearGradient>
-              </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
               <XAxis
                 dataKey="mes"
@@ -485,7 +479,11 @@ export default function DashboardPage() {
                 contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #E5E7EB', fontFamily: 'Inter' }}
                 cursor={{ fill: '#F9FAFB' }}
               />
-              <Bar dataKey="pallets" radius={[4, 4, 0, 0]} fill="url(#colorBrand)" maxBarSize={40} />
+              <Bar dataKey="pallets" radius={[4, 4, 0, 0]} maxBarSize={40}>
+                {grafico.map((_: unknown, i: number) => (
+                  <Cell key={i} fill={['#6B3A2A', '#C4895A', '#9B5535'][i % 3]} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>

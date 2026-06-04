@@ -275,7 +275,7 @@ export default function NuevaLogistica({ onClose, onSuccess }: NuevaLogisticaPro
                 type="submit"
                 disabled={crearSolicitud.isPending || !solicForm.ventaId}
                 className="px-4 py-2 text-sm font-medium text-white transition-all disabled:opacity-50"
-                style={{ background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', borderRadius: '0.25rem' }}
+                style={{ background: '#7c4b2c', borderRadius: '0.25rem' }}
               >
                 {crearSolicitud.isPending ? 'Enviando...' : 'Pedir entrega'}
               </button>
@@ -315,7 +315,7 @@ export default function NuevaLogistica({ onClose, onSuccess }: NuevaLogisticaPro
                   onClick={() => { setOrigenFiltro('carlos'); setForm(f => ({ ...f, ventaId: 0 })); }}
                   className="flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-medium transition-all"
                   style={origenFiltro === 'carlos'
-                    ? { background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', color: '#fff', borderRadius: '0.25rem' }
+                    ? { background: '#7c4b2c', color: '#fff', borderRadius: '0.25rem' }
                     : { color: '#6B7280' }
                   }
                 >
@@ -326,7 +326,7 @@ export default function NuevaLogistica({ onClose, onSuccess }: NuevaLogisticaPro
                   onClick={() => { setOrigenFiltro('juan'); setForm(f => ({ ...f, ventaId: 0 })); }}
                   className="flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-medium transition-all"
                   style={origenFiltro === 'juan'
-                    ? { background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', color: '#fff', borderRadius: '0.25rem' }
+                    ? { background: '#7c4b2c', color: '#fff', borderRadius: '0.25rem' }
                     : { color: '#6B7280' }
                   }
                 >
@@ -467,7 +467,7 @@ export default function NuevaLogistica({ onClose, onSuccess }: NuevaLogisticaPro
               type="submit"
               disabled={crearLogistica.isPending || !form.ventaId}
               className="px-4 py-2 text-sm font-medium text-white transition-all disabled:opacity-50"
-              style={{ background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', borderRadius: '0.25rem' }}
+              style={{ background: '#7c4b2c', borderRadius: '0.25rem' }}
             >
               {crearLogistica.isPending ? 'Coordinando...' : 'Coordinar entrega'}
             </button>

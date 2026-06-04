@@ -97,7 +97,7 @@ function ProgressBar({ progress }: { progress: number }) {
           <div style={{
             height: '100%',
             width: `${progress}%`,
-            background: 'linear-gradient(90deg, #6B3A2A 0%, #C4895A 100%)',
+            background: '#7c4b2c',
             borderRadius: 99,
             transition: 'width 0.05s linear',
           }} />

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, DollarSign, AlertTriangle, Clock, CheckCircle, Receipt, X, Plus } from 'lucide-react';
 import { useFacturas, useFacturasVencidas, useCobrosPendientes, useActualizarNroFactura, useCargarNroArca } from '../../hooks/useFacturacion';
@@ -9,6 +9,10 @@ import EstadoBadge from '../../components/ui/EstadoBadge';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
 import Pagination from '../../components/ui/Pagination';
+import {
+  PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+} from 'recharts';
 
 const POR_PAGINA = 10;
 
@@ -27,14 +31,6 @@ interface CobroData {
 
 const formatPesos = (v: number) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(v);
-
-const estadoFiltros = [
-  { key: 'todos',           label: 'Todas' },
-  { key: 'pendiente',       label: 'Pendientes' },
-  { key: 'cobrada_parcial', label: 'Cobro parcial' },
-  { key: 'cobrada_total',   label: 'Cobradas' },
-  { key: 'vencida',         label: 'Vencidas' },
-];
 
 export default function FacturacionPage() {
   const { data: facturas, isLoading, isError } = useFacturas() as {
@@ -80,6 +76,36 @@ export default function FacturacionPage() {
 
   const totalVencidas = vencidas?.reduce((acc, f) => acc + (f.saldoPendiente ?? 0), 0) ?? 0;
 
+  // ── Gráfico 1: Con factura vs Sin factura ─────────────────────────
+  const dataConSinFactura = useMemo(() => {
+    if (!facturas?.length) return [];
+    const conFactura  = facturas.filter(f => !f.esSinFactura).length;
+    const sinFactura  = facturas.filter(f =>  f.esSinFactura).length;
+    return [
+      { name: 'Con factura',  value: conFactura },
+      { name: 'Sin factura',  value: sinFactura },
+    ];
+  }, [facturas]);
+
+  // ── Gráfico 2: Modalidad de pago ──────────────────────────────────
+  const dataModalidad = useMemo(() => {
+    if (!facturas?.length) return [];
+    const mapa: Record<string, number> = {};
+    facturas.forEach(f => {
+      const key = f.modalidadPago ?? 'sin_especificar';
+      mapa[key] = (mapa[key] || 0) + 1;
+    });
+    const labels: Record<string, string> = {
+      adelantado:      'Adelantado',
+      contra_entrega:  'Contra entrega',
+      por_partes:      'Por partes',
+      sin_especificar: 'Sin especificar',
+    };
+    return Object.entries(mapa)
+      .map(([key, value]) => ({ name: labels[key] ?? key, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [facturas]);
+
   if (isLoading) {
     return (
       <div className="p-8">
@@ -109,16 +135,20 @@ export default function FacturacionPage() {
           <button
             onClick={() => setShowNuevaFactura(true)}
             className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white"
-            style={{ background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', borderRadius: '0.375rem' }}
+            style={{ background: '#7c4b2c', borderRadius: '0.375rem' }}
           >
             <Plus size={14} /> Agregar facturación
           </button>
         </div>
       </div>
 
-      {/* KPIs */}
+      {/* KPIs — también funcionan como filtro */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="card-kpi">
+        <div
+          className="card-kpi cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+          onClick={() => setFiltroEstado(filtroEstado === 'pendiente' ? 'todos' : 'pendiente')}
+          style={filtroEstado === 'pendiente' ? { outline: '2px solid #C4895A', outlineOffset: '-2px' } : {}}
+        >
           <div className="flex items-center gap-2 mb-2">
             <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
               <Clock size={16} />
@@ -129,7 +159,11 @@ export default function FacturacionPage() {
           <p className="text-xs text-gray-400 mt-1">{pendientes?.length ?? 0} factura{(pendientes?.length ?? 0) !== 1 ? 's' : ''}</p>
         </div>
 
-        <div className="card-kpi">
+        <div
+          className="card-kpi cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+          onClick={() => setFiltroEstado(filtroEstado === 'vencida' ? 'todos' : 'vencida')}
+          style={filtroEstado === 'vencida' ? { outline: '2px solid #C4895A', outlineOffset: '-2px' } : {}}
+        >
           <div className="flex items-center gap-2 mb-2">
             <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
               <AlertTriangle size={16} />
@@ -140,7 +174,11 @@ export default function FacturacionPage() {
           <p className="text-xs text-gray-400 mt-1">{totalVencidas > 0 ? formatPesos(totalVencidas) : 'sin deuda vencida'}</p>
         </div>
 
-        <div className="card-kpi">
+        <div
+          className="card-kpi cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+          onClick={() => setFiltroEstado(filtroEstado === 'cobrada_total' ? 'todos' : 'cobrada_total')}
+          style={filtroEstado === 'cobrada_total' ? { outline: '2px solid #C4895A', outlineOffset: '-2px' } : {}}
+        >
           <div className="flex items-center gap-2 mb-2">
             <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
               <CheckCircle size={16} />
@@ -153,7 +191,11 @@ export default function FacturacionPage() {
           <p className="text-xs text-gray-400 mt-1">cobro total confirmado</p>
         </div>
 
-        <div className="card-kpi">
+        <div
+          className="card-kpi cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+          onClick={() => setFiltroEstado('todos')}
+          style={filtroEstado === 'todos' ? { outline: '2px solid #C4895A', outlineOffset: '-2px' } : {}}
+        >
           <div className="flex items-center gap-2 mb-2">
             <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
               <Receipt size={16} />
@@ -166,6 +208,103 @@ export default function FacturacionPage() {
           <p className="text-xs text-gray-400 mt-1">todas las facturas</p>
         </div>
       </div>
+
+      {/* Gráficos */}
+      {facturas && facturas.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          {/* Gráfico 1 — Donut: Con factura vs Sin factura */}
+          <div className="card-kpi flex flex-col" style={{ minHeight: 200 }}>
+            <p className="titulo-card mb-3">Ventas con factura vs sin factura</p>
+            <div className="flex-1 flex items-center gap-4">
+              <div style={{ width: 120, height: 120, flexShrink: 0, position: 'relative' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={dataConSinFactura}
+                      dataKey="value"
+                      cx="50%" cy="50%"
+                      innerRadius={34} outerRadius={52}
+                      paddingAngle={3}
+                      strokeWidth={0}
+                    >
+                      <Cell fill="#6B3A2A" />
+                      <Cell fill="#E8D5C4" />
+                    </Pie>
+                    <Tooltip
+                      formatter={(v: number) => [`${v} factura${v !== 1 ? 's' : ''}`, '']}
+                      contentStyle={{ fontSize: 11, borderRadius: 4, border: '1px solid #E8E2DA' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', textAlign: 'center', pointerEvents: 'none' }}>
+                  <p style={{ fontSize: '0.65rem', color: '#9CA3AF', lineHeight: 1.2 }}>Total</p>
+                  <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', lineHeight: 1.2 }}>{facturas.length}</p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-3 flex-1 min-w-0">
+                {dataConSinFactura.map((d, i) => {
+                  const pct = facturas.length > 0 ? Math.round((d.value / facturas.length) * 100) : 0;
+                  const colors = ['#6B3A2A', '#E8D5C4'];
+                  return (
+                    <div key={d.name}>
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-1.5">
+                          <div style={{ width: 8, height: 8, borderRadius: 2, background: colors[i], flexShrink: 0 }} />
+                          <p style={{ fontSize: '0.72rem', fontWeight: 600, color: '#374151' }}>{d.name}</p>
+                        </div>
+                        <p style={{ fontSize: '0.72rem', color: '#6B7280' }}>{d.value}</p>
+                      </div>
+                      <div style={{ height: 6, background: '#F3F4F6', borderRadius: 4, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${pct}%`, background: colors[i], borderRadius: 4, transition: 'width 0.6s ease' }} />
+                      </div>
+                      <p style={{ fontSize: '0.65rem', color: '#9CA3AF', marginTop: 2 }}>{pct}%</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Gráfico 2 — Barras: Modalidad de pago */}
+          <div className="card-kpi flex flex-col" style={{ minHeight: 200 }}>
+            <p className="titulo-card mb-3">Modalidad de pago</p>
+            <div className="flex-1" style={{ minHeight: 140 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={dataModalidad} layout="vertical" margin={{ top: 0, right: 12, bottom: 0, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" horizontal={false} />
+                  <XAxis
+                    type="number"
+                    tick={{ fontSize: 10, fill: '#9CA3AF' }}
+                    axisLine={false}
+                    tickLine={false}
+                    allowDecimals={false}
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    tick={{ fontSize: 11, fill: '#374151' }}
+                    axisLine={false}
+                    tickLine={false}
+                    width={90}
+                  />
+                  <Tooltip
+                    formatter={(v: number) => [`${v} factura${v !== 1 ? 's' : ''}`, 'Cantidad']}
+                    contentStyle={{ fontSize: 11, borderRadius: 4, border: '1px solid #E8E2DA', background: '#fff' }}
+                    cursor={{ fill: '#F9FAFB' }}
+                  />
+                  <Bar dataKey="value" radius={[0, 3, 3, 0]}>
+                    {dataModalidad.map((_, i) => (
+                      <Cell key={i} fill={['#6B3A2A', '#C4895A', '#E8D5C4', '#D1C4B8'][i % 4]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+        </div>
+      )}
 
       {/* Panel de alertas vencidas */}
       {vencidas && vencidas.length > 0 && (
@@ -217,26 +356,12 @@ export default function FacturacionPage() {
         </div>
       )}
 
-      {/* Filtros */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input type="text" placeholder="Buscar por cliente, N° factura..."
-            value={busqueda} onChange={e => setBusqueda(e.target.value)}
-            className="input-field pl-10" />
-        </div>
-        <div className="flex gap-1 p-1 overflow-x-auto" style={{ background: '#fff', borderRadius: '0.25rem', border: '1px solid #e5e7eb' }}>
-          {estadoFiltros.map(f => (
-            <button key={f.key} onClick={() => setFiltroEstado(f.key)}
-              style={filtroEstado === f.key
-                ? { background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', color: '#fff', borderRadius: '0.25rem' }
-                : { borderRadius: '0.25rem' }
-              }
-              className="px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-all text-gray-500 hover:bg-gray-50">
-              {f.label}
-            </button>
-          ))}
-        </div>
+      {/* Buscador */}
+      <div className="relative">
+        <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input type="text" placeholder="Buscar por cliente, N° factura..."
+          value={busqueda} onChange={e => setBusqueda(e.target.value)}
+          className="input-field pl-10" />
       </div>
 
       {/* Tabla */}

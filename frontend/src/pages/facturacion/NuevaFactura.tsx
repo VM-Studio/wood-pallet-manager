@@ -101,7 +101,7 @@ export default function NuevaFactura({ onClose, onSuccess }: NuevaFacturaProps) 
           <div className="flex items-center gap-2">
             <div
               className="w-8 h-8 flex items-center justify-center shrink-0"
-              style={{ background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', borderRadius: '0.375rem' }}
+              style={{ background: '#7c4b2c', borderRadius: '0.375rem' }}
             >
               <Receipt size={15} style={{ color: '#fff' }} />
             </div>
@@ -267,7 +267,7 @@ export default function NuevaFactura({ onClose, onSuccess }: NuevaFacturaProps) 
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: '6px',
                 background: form.ventaId
-                  ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)'
+                  ? '#7c4b2c'
                   : '#D1D5DB',
                 color: 'white', fontWeight: 500, fontSize: '0.875rem',
                 padding: '0.5rem 1.25rem', borderRadius: '0.375rem',

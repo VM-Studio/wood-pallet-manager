@@ -47,7 +47,7 @@ function Seccion({ icon: Icon, titulo, children, accent = false }: {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '1rem' }}>
         <div style={{
           width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: accent ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' : '#F3EDE8',
+          background: accent ? '#7c4b2c' : '#F3EDE8',
           borderRadius: '0.25rem', flexShrink: 0,
         }}>
           <Icon size={14} style={{ color: accent ? '#fff' : '#6B3A2A' }} />
@@ -107,7 +107,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
 
   const btnBrown: React.CSSProperties = {
     display: 'inline-flex', alignItems: 'center', gap: 6,
-    background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
+    background: '#7c4b2c',
     color: '#fff', fontWeight: 600, fontSize: '0.82rem',
     padding: '0.45rem 0.875rem', borderRadius: '0.25rem', border: 'none', cursor: 'pointer',
   };
@@ -204,7 +204,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                           <span style={{ color: pendiente > 0 ? '#D97706' : '#9CA3AF' }}>Pendiente: <strong>{pendiente} u</strong></span>
                         </div>
                         <div style={{ height: 4, background: '#E5E7EB', borderRadius: 2, overflow: 'hidden' }}>
-                          <div style={{ height: '100%', width: `${pct}%`, background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', borderRadius: 2, transition: 'width 0.3s' }} />
+                          <div style={{ height: '100%', width: `${pct}%`, background: '#7c4b2c', borderRadius: 2, transition: 'width 0.3s' }} />
                         </div>
                       </div>
                     );
@@ -226,7 +226,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                     </div>
                   ) : <div />}
                   <div style={{
-                    padding: '0.75rem', background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
+                    padding: '0.75rem', background: '#7c4b2c',
                     borderRadius: '0.25rem', textAlign: 'center',
                   }}>
                     <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', margin: '0 0 3px' }}>Total c/ IVA</p>
@@ -386,7 +386,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <div style={{
-                            width: 32, height: 32, background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
+                            width: 32, height: 32, background: '#7c4b2c',
                             borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                           }}>
                             <User size={15} style={{ color: '#fff' }} />
@@ -612,7 +612,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                             <p style={{ fontSize: '0.68rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', margin: '0 0 2px' }}>IVA 21%</p>
                             <p style={{ fontSize: '0.82rem', fontWeight: 700, color: '#374151', margin: 0 }}>{formatPesos(f.iva as number)}</p>
                           </div>
-                          <div style={{ padding: '0.5rem', background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', borderRadius: '0.25rem', textAlign: 'center' }}>
+                          <div style={{ padding: '0.5rem', background: '#7c4b2c', borderRadius: '0.25rem', textAlign: 'center' }}>
                             <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', margin: '0 0 2px' }}>Total</p>
                             <p style={{ fontSize: '0.875rem', fontWeight: 800, color: '#fff', margin: 0 }}>{formatPesos(f.totalConIva as number)}</p>
                           </div>

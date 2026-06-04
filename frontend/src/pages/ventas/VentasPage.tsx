@@ -131,7 +131,7 @@ export default function VentasPage() {
                 border: 'none',
                 cursor: 'pointer',
                 background: estadoFiltro === e
-                  ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)'
+                  ? '#7c4b2c'
                   : '#F3F4F6',
                 color: estadoFiltro === e ? '#fff' : '#4B5563',
               }}

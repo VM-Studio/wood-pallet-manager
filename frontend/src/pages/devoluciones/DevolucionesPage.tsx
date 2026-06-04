@@ -664,7 +664,7 @@ export default function DevolucionesPage() {
               style={{
                 padding: '0.25rem 0.75rem', fontSize: '0.75rem', fontWeight: 500,
                 borderRadius: '0.25rem', border: 'none', cursor: 'pointer', transition: 'all 0.15s',
-                background: filtroEstado === f.key ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' : '#F3F4F6',
+                background: filtroEstado === f.key ? '#7c4b2c' : '#F3F4F6',
                 color: filtroEstado === f.key ? '#fff' : '#4B5563',
               }}
             >

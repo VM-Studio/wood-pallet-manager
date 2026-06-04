@@ -301,7 +301,7 @@ export default function CotizacionesWebModal({ onClose }: Props) {
                     fontWeight: 500,
                     whiteSpace: 'nowrap',
                     transition: 'all 0.15s',
-                    background: filtroEstado === f.key ? 'linear-gradient(135deg,#6B3A2A,#C4895A)' : '#fff',
+                    background: filtroEstado === f.key ? '#7c4b2c' : '#fff',
                     color: filtroEstado === f.key ? '#fff' : '#6B7280',
                     border: 'none',
                     borderLeft: i > 0 ? '1px solid #E5E7EB' : 'none',

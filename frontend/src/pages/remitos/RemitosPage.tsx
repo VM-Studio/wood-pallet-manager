@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   FileText, Plus, Search, ChevronDown, ChevronUp,
   Send, CheckCircle, AlertCircle, Clock, X,
-  Hash, Package, Mail, Eye, Ban
+  Hash, Package, Mail, Ban, PenLine
 } from 'lucide-react';
 import {
   useRemitos,
@@ -282,6 +282,14 @@ function FirmarPropietarioModal({ remito, onClose }: { remito: Remito; onClose: 
 
 // ─── Fila de remito ───────────────────────────────────────
 
+// ─── Helper: estilo botón acción ──────────────────────────
+const btnAccion = (bg: string, border: string, color: string): React.CSSProperties => ({
+  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+  width: '1.875rem', height: '1.875rem', borderRadius: '0.25rem',
+  background: bg, border: `1.5px solid ${border}`,
+  color, cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0,
+});
+
 function RemitoRow({ remito }: { remito: Remito }) {
   const [expanded, setExpanded] = useState(false);
   const [showNumero, setShowNumero] = useState(false);
@@ -294,142 +302,176 @@ function RemitoRow({ remito }: { remito: Remito }) {
 
   return (
     <>
-      <div className="card-base">
-        <div
-          style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', cursor: 'pointer' }}
-          onClick={() => setExpanded(p => !p)}
-        >
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.25rem' }}>
-              <span style={{ fontSize: '0.8rem', fontFamily: 'monospace', color: '#6B3A2A', fontWeight: 700 }}>{nro}</span>
+      <tr>
+        {/* # */}
+        <td className="font-semibold text-xs" style={{ color: '#6B3A2A', fontFamily: 'monospace' }}>{nro}</td>
+
+        {/* Cliente */}
+        <td>
+          <p className="font-semibold text-gray-900 text-sm">{remito.cliente.razonSocial}</p>
+          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+            <span className="text-xs text-gray-400">Venta #{remito.ventaId}</span>
+            {remito.fechaEntrega && (
+              <span className="text-xs font-medium" style={{ color: '#C4895A' }}>
+                Entrega: {formatFecha(remito.fechaEntrega)}
+              </span>
+            )}
+          </div>
+        </td>
+
+        {/* Productos */}
+        <td>
+          <div className="space-y-0.5">
+            {remito.venta.detalles.map(d => (
+              <p key={d.id} className="text-xs text-gray-600">
+                {d.producto.nombre} — {d.cantidadPedida} u
+              </p>
+            ))}
+          </div>
+        </td>
+
+        {/* Total */}
+        <td>
+          <p className="font-semibold text-gray-900 text-sm">{formatPesos(Number(remito.venta.totalConIva ?? 0))}</p>
+          <p className="text-xs text-gray-400">con IVA</p>
+        </td>
+
+        {/* Estado */}
+        <td>
+          <div className="flex flex-col gap-1 items-start">
+            {remito.estado !== 'enviado_a_cliente' && (
               <span className={estado.badgeClass} style={{ borderRadius: '0.25rem', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                 {estado.icon} {estado.label}
               </span>
-              {remito.emailEnviado && (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: '0.72rem', color: '#1D4ED8' }}>
-                  <Mail size={11} /> Email enviado
-                </span>
-              )}
-              {(remito.estado === 'firmado_por_cliente' || remito.estado === 'completado') && (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: '0.72rem', color: '#15803D' }}>
-                  <CheckCircle size={11} /> Firmado por cliente
-                </span>
-              )}
-            </div>
-            <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#111827', margin: 0 }}>{remito.cliente.razonSocial}</p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginTop: 4 }}>
-              <span style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>Venta #{remito.ventaId} · {formatFecha(remito.fechaEmision)}</span>
-              {remito.fechaEntrega && (
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 3,
-                  fontSize: '0.72rem', fontWeight: 600,
-                  background: '#FEF3E2', color: '#C4895A',
-                  border: '1px solid #FDE68A', borderRadius: '0.25rem',
-                  padding: '1px 6px',
-                }}>
-                  Entrega: {formatFecha(remito.fechaEntrega)}
-                </span>
-              )}
-            </div>
+            )}
+            {remito.emailEnviado && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: '0.72rem', color: '#1D4ED8' }}>
+                <Mail size={11} /> Email enviado
+              </span>
+            )}
+            {(remito.estado === 'firmado_por_cliente' || remito.estado === 'completado') && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: '0.72rem', color: '#15803D' }}>
+                <CheckCircle size={11} /> Firmado
+              </span>
+            )}
           </div>
-          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <p style={{ fontSize: '1.05rem', fontWeight: 700, color: '#111827', margin: 0 }}>
-              {formatPesos(Number(remito.venta.totalConIva ?? 0))}
-            </p>
-            {expanded ? <ChevronUp size={15} color="#9CA3AF" /> : <ChevronDown size={15} color="#9CA3AF" />}
-          </div>
-        </div>
+        </td>
+
+        {/* Fecha */}
+        <td className="text-xs text-gray-400">{formatFecha(remito.fechaEmision)}</td>
 
         {/* Acciones */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem', marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #F3F4F6' }}>
-          {!remito.numeroRemito && (
-            <button className="btn-brand-sm" onClick={e => { e.stopPropagation(); setShowNumero(true); }}>
-              <Hash size={13} /> Asignar número
-            </button>
-          )}
-          {/* Sin firma aún: firmar primero */}
-          {remito.estado === 'pendiente_firma_propietario' && !remito.firmaPropietario && (
-            <button className="btn-brand-sm" onClick={e => { e.stopPropagation(); setShowFirmar(true); }}>
-              Firmar y enviar remito
-            </button>
-          )}
-          {/* Ya tiene firma del propietario o fue enviado: botón principal de envío */}
-          {(remito.estado === 'enviado_a_cliente' || (remito.estado === 'pendiente_firma_propietario' && remito.firmaPropietario)) && (
-            <button
-              className="btn-brand-sm"
-              disabled={enviar.isPending}
-              onClick={e => { e.stopPropagation(); enviar.mutate(remito.id); }}
-            >
-              <Send size={13} /> {enviar.isPending ? 'Enviando...' : 'Enviar email con remito'}
-            </button>
-          )}
-          {remito.cliente.emailContacto && remito.estado !== 'cancelado' && (
-            <a
-              href={`${window.location.origin}/remito/${remito.tokenFirma}/firmar`}
-              target="_blank"
-              rel="noreferrer"
-              style={{ fontSize: '0.75rem', color: '#6B7280', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
-              onClick={e => e.stopPropagation()}
-            >
-              <Eye size={13} /> Ver link de firma
-            </a>
-          )}
-          {(remito.estado === 'pendiente_firma_propietario' || remito.estado === 'enviado_a_cliente') && (
-            <button
-              className="btn-secondary"
-              style={{ fontSize: '0.75rem', padding: '0.375rem 0.75rem', color: '#DC2626', borderColor: '#FECACA', marginLeft: 'auto' }}
-              onClick={e => { e.stopPropagation(); if (confirm('¿Cancelar este remito?')) cancelar.mutate(remito.id); }}
-            >
-              Cancelar
-            </button>
-          )}
-        </div>
-
-        {/* Detalle expandido */}
-        {expanded && (
-          <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #F3F4F6' }}>
-            <p style={{ fontSize: '0.72rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Productos</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-              {remito.venta.detalles.map(d => (
-                <div key={d.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#374151' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                    <Package size={13} color="#9CA3AF" /> {d.producto.nombre}
-                  </span>
-                  <span style={{ color: '#6B7280' }}>
-                    {d.cantidadPedida} u. × {formatPesos(Number(d.precioUnitario))} = <strong>{formatPesos(Number(d.subtotal))}</strong>
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            {remito.cliente.emailContacto && (
-              <p style={{ fontSize: '0.75rem', color: '#6B7280', marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <Mail size={12} /> {remito.cliente.emailContacto}
-              </p>
+        <td>
+          <div className="flex items-center gap-1.5">
+            {/* Firmar remito */}
+            {remito.estado === 'pendiente_firma_propietario' && !remito.firmaPropietario && (
+              <button
+                onClick={e => { e.stopPropagation(); setShowFirmar(true); }}
+                title="Firmar remito"
+                style={btnAccion('#FEF3E2', '#FDE68A', '#C4895A')}
+              >
+                <PenLine size={14} />
+              </button>
             )}
-
-            {/* Firmas */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginTop: '0.75rem' }}>
-              {remito.firmaPropietario && (
-                <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.25rem', padding: '0.625rem' }}>
-                  <p style={{ fontSize: '0.7rem', color: '#9CA3AF', marginBottom: 6 }}>Firma propietario</p>
-                  <img src={remito.firmaPropietario} alt="Firma propietario" style={{ maxHeight: 60, borderRadius: '0.25rem' }} />
-                </div>
-              )}
-              {remito.firmaCliente && (
-                <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '0.25rem', padding: '0.625rem' }}>
-                  <p style={{ fontSize: '0.7rem', color: '#15803D', marginBottom: 6 }}>Firma cliente</p>
-                  <img src={remito.firmaCliente} alt="Firma cliente" style={{ maxHeight: 60, borderRadius: '0.25rem' }} />
-                </div>
-              )}
-            </div>
-
-            {remito.observaciones && (
-              <p style={{ fontSize: '0.72rem', color: '#6B7280', fontStyle: 'italic', marginTop: '0.5rem' }}>"{remito.observaciones}"</p>
+            {/* Enviar email */}
+            {(remito.estado === 'enviado_a_cliente' || (remito.estado === 'pendiente_firma_propietario' && remito.firmaPropietario)) && (
+              <button
+                onClick={e => { e.stopPropagation(); enviar.mutate(remito.id); }}
+                disabled={enviar.isPending}
+                title="Enviar email con remito"
+                style={btnAccion('#EFF6FF', '#93C5FD', '#2563EB')}
+              >
+                <Send size={14} />
+              </button>
             )}
+            {/* Asignar número */}
+            {!remito.numeroRemito && (
+              <button
+                onClick={e => { e.stopPropagation(); setShowNumero(true); }}
+                title="Asignar número de remito"
+                style={btnAccion('#F3F4F6', '#E5E7EB', '#6B7280')}
+              >
+                <Hash size={14} />
+              </button>
+            )}
+            {/* Cancelar */}
+            {(remito.estado === 'pendiente_firma_propietario' || remito.estado === 'enviado_a_cliente') && (
+              <button
+                onClick={e => { e.stopPropagation(); if (confirm('¿Cancelar este remito?')) cancelar.mutate(remito.id); }}
+                title="Cancelar remito"
+                style={btnAccion('#FEF2F2', '#FCA5A5', '#DC2626')}
+              >
+                <X size={14} />
+              </button>
+            )}
+            {/* Expandir detalle */}
+            <button
+              onClick={() => setExpanded(p => !p)}
+              title="Ver detalle"
+              style={btnAccion('#F3F4F6', '#E5E7EB', '#6B7280')}
+            >
+              {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
           </div>
-        )}
-      </div>
+        </td>
+      </tr>
+
+      {/* Fila expandida: detalle */}
+      {expanded && (
+        <tr>
+          <td colSpan={7} style={{ background: '#FAFAF8', padding: '0.75rem 1rem', borderTop: 'none' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+
+              {/* Productos */}
+              <div>
+                <p style={{ fontSize: '0.67rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.375rem' }}>Productos</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  {remito.venta.detalles.map(d => (
+                    <div key={d.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#374151', maxWidth: 480 }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                        <Package size={12} color="#9CA3AF" /> {d.producto.nombre}
+                      </span>
+                      <span style={{ color: '#6B7280' }}>
+                        {d.cantidadPedida} u. × {formatPesos(Number(d.precioUnitario))} = <strong>{formatPesos(Number(d.subtotal))}</strong>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Email contacto */}
+              {remito.cliente.emailContacto && (
+                <p style={{ fontSize: '0.75rem', color: '#6B7280', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <Mail size={12} /> {remito.cliente.emailContacto}
+                </p>
+              )}
+
+              {/* Firmas */}
+              {(remito.firmaPropietario || remito.firmaCliente) && (
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  {remito.firmaPropietario && (
+                    <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.25rem', padding: '0.5rem' }}>
+                      <p style={{ fontSize: '0.7rem', color: '#9CA3AF', marginBottom: 4 }}>Firma propietario</p>
+                      <img src={remito.firmaPropietario} alt="Firma propietario" style={{ maxHeight: 50, borderRadius: '0.25rem' }} />
+                    </div>
+                  )}
+                  {remito.firmaCliente && (
+                    <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '0.25rem', padding: '0.5rem' }}>
+                      <p style={{ fontSize: '0.7rem', color: '#15803D', marginBottom: 4 }}>Firma cliente</p>
+                      <img src={remito.firmaCliente} alt="Firma cliente" style={{ maxHeight: 50, borderRadius: '0.25rem' }} />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Observaciones */}
+              {remito.observaciones && (
+                <p style={{ fontSize: '0.72rem', color: '#6B7280', fontStyle: 'italic' }}>"{remito.observaciones}"</p>
+              )}
+            </div>
+          </td>
+        </tr>
+      )}
 
       {showNumero && <AsignarNumeroModal remito={remito} onClose={() => setShowNumero(false)} />}
       {showFirmar && <FirmarPropietarioModal remito={remito} onClose={() => setShowFirmar(false)} />}
@@ -554,8 +596,23 @@ export default function RemitosPage() {
           )}
         </div>
       ) : (
-        <div className="space-y-3">
-          {filtrados.map(r => <RemitoRow key={r.id} remito={r} />)}
+        <div className="card-base" style={{ padding: 0, overflow: 'hidden' }}>
+          <table className="table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Cliente</th>
+                <th>Productos</th>
+                <th>Total</th>
+                <th>Estado</th>
+                <th>Fecha</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtrados.map(r => <RemitoRow key={r.id} remito={r} />)}
+            </tbody>
+          </table>
         </div>
       )}
 

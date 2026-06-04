@@ -398,7 +398,7 @@ export default function NuevaCotizacionRapida({ onClose, onSuccess }: NuevaCotiz
                           <div className="overflow-x-auto">
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
                               <thead>
-                                <tr style={{ background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' }}>
+                                <tr style={{ background: '#7c4b2c' }}>
                                   {['Componente', 'Tablas', 'Largo (mm)', 'Ancho (mm)', 'Espesor (mm)', 'Pies', 'Importe'].map(h => (
                                     <th key={h} style={{ padding: '0.5rem 0.6rem', color: '#fff', fontWeight: 600, textAlign: h === 'Componente' ? 'left' : 'center', whiteSpace: 'nowrap' }}>{h}</th>
                                   ))}
@@ -488,8 +488,8 @@ export default function NuevaCotizacionRapida({ onClose, onSuccess }: NuevaCotiz
                           <p className="text-xs font-medium text-gray-500 mb-1.5">Precio por unidad</p>
                           <div className="flex items-center gap-2">
                             <div className="flex" style={{ borderRadius: '0.25rem', overflow: 'hidden', border: '1px solid #E5E7EB' }}>
-                              <button type="button" onClick={() => setDetalles(prev => prev.map((x, i) => i === idx ? { ...x, usarPrecioEspecial: false } : x))} style={{ fontSize: '0.7rem', fontWeight: 600, padding: '0.25rem 0.625rem', cursor: 'pointer', border: 'none', background: !d.usarPrecioEspecial ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' : '#fff', color: !d.usarPrecioEspecial ? '#fff' : '#6B7280' }}>Guardado</button>
-                              <button type="button" onClick={() => setDetalles(prev => prev.map((x, i) => i === idx ? { ...x, usarPrecioEspecial: true } : x))} style={{ fontSize: '0.7rem', fontWeight: 600, padding: '0.25rem 0.625rem', cursor: 'pointer', border: 'none', borderLeft: '1px solid #E5E7EB', background: d.usarPrecioEspecial ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' : '#fff', color: d.usarPrecioEspecial ? '#fff' : '#6B7280' }}>Precio especial</button>
+                              <button type="button" onClick={() => setDetalles(prev => prev.map((x, i) => i === idx ? { ...x, usarPrecioEspecial: false } : x))} style={{ fontSize: '0.7rem', fontWeight: 600, padding: '0.25rem 0.625rem', cursor: 'pointer', border: 'none', background: !d.usarPrecioEspecial ? '#7c4b2c' : '#fff', color: !d.usarPrecioEspecial ? '#fff' : '#6B7280' }}>Guardado</button>
+                              <button type="button" onClick={() => setDetalles(prev => prev.map((x, i) => i === idx ? { ...x, usarPrecioEspecial: true } : x))} style={{ fontSize: '0.7rem', fontWeight: 600, padding: '0.25rem 0.625rem', cursor: 'pointer', border: 'none', borderLeft: '1px solid #E5E7EB', background: d.usarPrecioEspecial ? '#7c4b2c' : '#fff', color: d.usarPrecioEspecial ? '#fff' : '#6B7280' }}>Precio especial</button>
                             </div>
                             {d.usarPrecioEspecial && (
                               <input type="number" min={0} placeholder="$ por unidad" value={d.precioEspecial || ''} onChange={e => setDetalles(prev => prev.map((x, i) => i === idx ? { ...x, precioEspecial: parseFloat(e.target.value) || 0 } : x))} className="input text-xs py-1" style={{ borderRadius: '0.25rem', maxWidth: '140px' }} />
@@ -541,7 +541,7 @@ export default function NuevaCotizacionRapida({ onClose, onSuccess }: NuevaCotiz
               <label className="label">Canal de envío</label>
               <div className="flex gap-2">
                 {(['whatsapp', 'email'] as const).map(canal => (
-                  <button key={canal} type="button" onClick={() => setForm({ ...form, canalEnvio: canal })} style={{ flex: 1, padding: '0.625rem', fontSize: '0.875rem', fontWeight: 500, borderRadius: '0.25rem', border: '1px solid', cursor: 'pointer', background: form.canalEnvio === canal ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' : '#fff', color: form.canalEnvio === canal ? '#fff' : '#4B5563', borderColor: form.canalEnvio === canal ? '#6B3A2A' : '#E5E7EB' }}>
+                  <button key={canal} type="button" onClick={() => setForm({ ...form, canalEnvio: canal })} style={{ flex: 1, padding: '0.625rem', fontSize: '0.875rem', fontWeight: 500, borderRadius: '0.25rem', border: '1px solid', cursor: 'pointer', background: form.canalEnvio === canal ? '#7c4b2c' : '#fff', color: form.canalEnvio === canal ? '#fff' : '#4B5563', borderColor: form.canalEnvio === canal ? '#6B3A2A' : '#E5E7EB' }}>
                     {canal === 'whatsapp' ? 'WhatsApp' : 'Email'}
                   </button>
                 ))}
@@ -560,8 +560,8 @@ export default function NuevaCotizacionRapida({ onClose, onSuccess }: NuevaCotiz
                 <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-[#C4895A]/20">
                   <span className="text-sm font-medium text-gray-700">¿Incluir IVA? (21%)</span>
                   <div className="flex" style={{ borderRadius: '0.25rem', overflow: 'hidden', border: '1px solid #E5E7EB' }}>
-                    <button type="button" onClick={() => setForm(f => ({ ...f, incluyeIva: true }))} style={{ fontSize: '0.75rem', fontWeight: 600, padding: '0.3rem 0.875rem', cursor: 'pointer', border: 'none', background: form.incluyeIva ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' : '#fff', color: form.incluyeIva ? '#fff' : '#6B7280' }}>Sí</button>
-                    <button type="button" onClick={() => setForm(f => ({ ...f, incluyeIva: false }))} style={{ fontSize: '0.75rem', fontWeight: 600, padding: '0.3rem 0.875rem', cursor: 'pointer', border: 'none', borderLeft: '1px solid #E5E7EB', background: !form.incluyeIva ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' : '#fff', color: !form.incluyeIva ? '#fff' : '#6B7280' }}>No</button>
+                    <button type="button" onClick={() => setForm(f => ({ ...f, incluyeIva: true }))} style={{ fontSize: '0.75rem', fontWeight: 600, padding: '0.3rem 0.875rem', cursor: 'pointer', border: 'none', background: form.incluyeIva ? '#7c4b2c' : '#fff', color: form.incluyeIva ? '#fff' : '#6B7280' }}>Sí</button>
+                    <button type="button" onClick={() => setForm(f => ({ ...f, incluyeIva: false }))} style={{ fontSize: '0.75rem', fontWeight: 600, padding: '0.3rem 0.875rem', cursor: 'pointer', border: 'none', borderLeft: '1px solid #E5E7EB', background: !form.incluyeIva ? '#7c4b2c' : '#fff', color: !form.incluyeIva ? '#fff' : '#6B7280' }}>No</button>
                   </div>
                 </div>
                 <div className="flex justify-between text-sm text-gray-600 mb-1"><span>Subtotal neto</span><span>{formatPesos(totalSinIva)}</span></div>
@@ -578,7 +578,7 @@ export default function NuevaCotizacionRapida({ onClose, onSuccess }: NuevaCotiz
 
           <div className="modal-footer">
             <button type="button" onClick={onClose} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#fff', color: '#374151', border: '1px solid #E5E7EB', fontWeight: 500, fontSize: '0.875rem', padding: '0.5rem 1rem', borderRadius: '0.25rem', cursor: 'pointer' }}>Cancelar</button>
-            <button type="submit" disabled={loading} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', color: 'white', fontWeight: 500, fontSize: '0.875rem', padding: '0.5rem 1rem', borderRadius: '0.25rem', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1 }}>
+            <button type="submit" disabled={loading} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#7c4b2c', color: 'white', fontWeight: 500, fontSize: '0.875rem', padding: '0.5rem 1rem', borderRadius: '0.25rem', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1 }}>
               {loading ? 'Creando...' : 'Crear cotización rápida'}
             </button>
           </div>

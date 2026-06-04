@@ -9,9 +9,13 @@ import {
   useRetiros, useStatsRetiros, useCambiarEstadoRetiro, useReenviarCodigoRetiro,
   type RetiroRow, type EstadoRetiro,
 } from '../../hooks/useRetiros';
+import { useVentas } from '../../hooks/useVentas';
 import { useAuthStore } from '../../store/auth.store';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
+import {
+  PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
+} from 'recharts';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const fmtFecha = (s?: string) =>
@@ -563,6 +567,7 @@ function RetiroListRow({ r, onVerDetalle }: { r: RetiroRow; onVerDetalle: () => 
 export default function RetirosPage() {
   const { data: retiros, isLoading, error } = useRetiros();
   const { data: stats } = useStatsRetiros();
+  const { data: ventas } = useVentas();
   const { usuario } = useAuthStore();
 
   const [busqueda, setBusqueda]         = useState('');
@@ -598,6 +603,33 @@ export default function RetirosPage() {
     });
   }, [retiros, busqueda, filtroEstado, filtroVendedor, filtroFecha]);
 
+  // ── Gráfico 1: Logística vs Retiro (todas las ventas activas) ────────────
+  const dataLogisticaVsRetiro = useMemo(() => {
+    if (!ventas?.length) return [];
+    const conLogistica = ventas.filter(v => v.tipoEntrega === 'envio_woodpallet').length;
+    const conRetiro    = ventas.filter(v => v.tipoEntrega === 'retira_cliente').length;
+    return [
+      { name: 'Con logística', value: conLogistica },
+      { name: 'Con retiro',    value: conRetiro    },
+    ];
+  }, [ventas]);
+
+  // ── Gráfico 2: Retiros por galpón ──────────────────────────────────────
+  const dataGalpon = useMemo(() => {
+    if (!retiros?.length) return [];
+    const mapa: Record<string, number> = {};
+    retiros.filter(r => r.estadoRetiro !== 'cancelado').forEach(r => {
+      const key = r.galpon?.trim() || 'Sin especificar';
+      mapa[key] = (mapa[key] || 0) + 1;
+    });
+    return Object.entries(mapa)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [retiros]);
+
+  const totalVentas  = dataLogisticaVsRetiro.reduce((acc, d) => acc + d.value, 0);
+  const totalGalpon  = dataGalpon.reduce((acc, d) => acc + d.value, 0);
+
   if (isLoading) return <LoadingSpinner text="Cargando retiros..." />;
   if (error) return <ErrorMessage message="No se pudieron cargar los retiros." />;
 
@@ -610,11 +642,8 @@ export default function RetirosPage() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-stone-900 flex items-center gap-2">
-            <Warehouse className="w-6 h-6 text-stone-600" />
-            Retiros en galpón
-          </h1>
-          <p className="text-sm text-stone-500 mt-1">
+          <h1 className="titulo-modulo">Retiros en galpón</h1>
+          <p className="text-sm text-gray-500 mt-1">
             Ventas con retiro en galpón · gestión operativa del día a día
           </p>
         </div>
@@ -652,6 +681,106 @@ export default function RetirosPage() {
             <p className="text-xs text-gray-400 mt-1">retiros finalizados</p>
           </div>
         </div>
+
+        {/* Gráficos */}
+        {((ventas?.length ?? 0) > 0 || (retiros?.length ?? 0) > 0) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            {/* Gráfico 1 — Donut: Con logística vs Con retiro */}
+            <div className="card-kpi flex flex-col" style={{ minHeight: 200 }}>
+              <p className="titulo-card mb-3">Pedidos con logística vs retiro</p>
+              <div className="flex-1 flex items-center gap-4">
+                <div style={{ width: 120, height: 120, flexShrink: 0, position: 'relative' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={dataLogisticaVsRetiro} dataKey="value"
+                        cx="50%" cy="50%" innerRadius={34} outerRadius={52}
+                        paddingAngle={3} strokeWidth={0}>
+                        <Cell fill="#6B3A2A" />
+                        <Cell fill="#C4895A" />
+                      </Pie>
+                      <Tooltip
+                        formatter={(v: number) => [`${v} pedido${v !== 1 ? 's' : ''}`, '']}
+                        contentStyle={{ fontSize: 11, borderRadius: 4, border: '1px solid #E8E2DA' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', textAlign: 'center', pointerEvents: 'none' }}>
+                    <p style={{ fontSize: '0.65rem', color: '#9CA3AF', lineHeight: 1.2 }}>Total</p>
+                    <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', lineHeight: 1.2 }}>{totalVentas}</p>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-3 flex-1 min-w-0">
+                  {dataLogisticaVsRetiro.map((d, i) => {
+                    const pct = totalVentas > 0 ? Math.round((d.value / totalVentas) * 100) : 0;
+                    return (
+                      <div key={d.name}>
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-1.5">
+                            <div style={{ width: 8, height: 8, borderRadius: 2, background: ['#6B3A2A', '#C4895A'][i], flexShrink: 0 }} />
+                            <p style={{ fontSize: '0.72rem', fontWeight: 600, color: '#374151' }}>{d.name}</p>
+                          </div>
+                          <p style={{ fontSize: '0.72rem', color: '#6B7280' }}>{d.value}</p>
+                        </div>
+                        <div style={{ height: 6, background: '#F3F4F6', borderRadius: 4, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${pct}%`, background: ['#6B3A2A', '#C4895A'][i], borderRadius: 4, transition: 'width 0.6s ease' }} />
+                        </div>
+                        <p style={{ fontSize: '0.65rem', color: '#9CA3AF', marginTop: 2 }}>{pct}%</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Gráfico 2 — Donut: Retiros por galpón */}
+            <div className="card-kpi flex flex-col" style={{ minHeight: 200 }}>
+              <p className="titulo-card mb-3">Retiros por galpón</p>
+              <div className="flex-1 flex items-center gap-4">
+                <div style={{ width: 120, height: 120, flexShrink: 0, position: 'relative' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={dataGalpon} dataKey="value"
+                        cx="50%" cy="50%" innerRadius={34} outerRadius={52}
+                        paddingAngle={3} strokeWidth={0}>
+                        {dataGalpon.map((_, i) => (
+                          <Cell key={i} fill={['#6B3A2A', '#C4895A', '#9B5535'][i % 3]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(v: number) => [`${v} retiro${v !== 1 ? 's' : ''}`, '']}
+                        contentStyle={{ fontSize: 11, borderRadius: 4, border: '1px solid #E8E2DA' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', textAlign: 'center', pointerEvents: 'none' }}>
+                    <p style={{ fontSize: '0.65rem', color: '#9CA3AF', lineHeight: 1.2 }}>Total</p>
+                    <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', lineHeight: 1.2 }}>{totalGalpon}</p>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-3 flex-1 min-w-0">
+                  {dataGalpon.map((d, i) => {
+                    const pct = totalGalpon > 0 ? Math.round((d.value / totalGalpon) * 100) : 0;
+                    return (
+                      <div key={d.name}>
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-1.5">
+                            <div style={{ width: 8, height: 8, borderRadius: 2, background: ['#6B3A2A', '#C4895A', '#9B5535'][i % 3], flexShrink: 0 }} />
+                            <p style={{ fontSize: '0.72rem', fontWeight: 600, color: '#374151' }}>{d.name}</p>
+                          </div>
+                          <p style={{ fontSize: '0.72rem', color: '#6B7280' }}>{d.value}</p>
+                        </div>
+                        <div style={{ height: 6, background: '#F3F4F6', borderRadius: 4, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${pct}%`, background: ['#6B3A2A', '#C4895A', '#9B5535'][i % 3], borderRadius: 4, transition: 'width 0.6s ease' }} />
+                        </div>
+                        <p style={{ fontSize: '0.65rem', color: '#9CA3AF', marginTop: 2 }}>{pct}%</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+          </div>
+        )}
 
         {/* Filtros */}
         <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-4">

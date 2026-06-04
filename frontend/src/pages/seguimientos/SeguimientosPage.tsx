@@ -45,7 +45,7 @@ function BtnPrimario({ children, onClick, disabled, type = 'button' }: {
 }) {
   return (
     <button type={type} onClick={onClick} disabled={disabled} style={{
-      background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
+      background: '#7c4b2c',
       color: '#fff', border: 'none', borderRadius: '0.25rem',
       padding: '0.45rem 1rem', fontSize: '0.8rem', fontWeight: 600,
       cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.55 : 1,

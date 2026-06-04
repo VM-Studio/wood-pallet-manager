@@ -111,7 +111,7 @@ export default function ReportesPage() {
             ] as { key: Periodo; label: string }[]).map(p => (
               <button key={p.key} onClick={() => cambiarPeriodo(p.key)}
                 style={periodo === p.key
-                  ? { background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', color: '#fff', borderRadius: '0.25rem' }
+                  ? { background: '#7c4b2c', color: '#fff', borderRadius: '0.25rem' }
                   : { borderRadius: '0.25rem' }
                 }
                 className="px-4 py-2 text-sm font-medium transition-all text-gray-600">
@@ -147,7 +147,7 @@ export default function ReportesPage() {
         ] as { key: TabActivo; label: string; icon: React.ReactNode }[]).map(t => (
           <button key={t.key} onClick={() => setTabActivo(t.key)}
             style={tabActivo === t.key
-              ? { background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', color: '#fff', borderRadius: '0.25rem' }
+              ? { background: '#7c4b2c', color: '#fff', borderRadius: '0.25rem' }
               : { borderRadius: '0.25rem' }
             }
             className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-all text-gray-500 hover:bg-gray-50">
@@ -357,7 +357,7 @@ export default function ReportesPage() {
                     style={{
                       width: `${reporteCobranzas.resumen.tasaCobranza ?? 0}%`,
                       background: (reporteCobranzas.resumen.tasaCobranza ?? 0) >= 80
-                        ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)'
+                        ? '#7c4b2c'
                         : '#F59E0B',
                       borderRadius: '0.25rem'
                     }}
@@ -433,7 +433,7 @@ export default function ReportesPage() {
                           </div>
                           <div className="h-2 bg-gray-100 overflow-hidden" style={{ borderRadius: '0.25rem' }}>
                             <div className="h-full transition-all"
-                              style={{ width: `${pct}%`, background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', borderRadius: '0.25rem' }} />
+                              style={{ width: `${pct}%`, background: '#7c4b2c', borderRadius: '0.25rem' }} />
                           </div>
                           <div className="flex justify-between mt-1.5 text-xs text-gray-400">
                             <span>{c.totalVentas} compra{c.totalVentas !== 1 ? 's' : ''}</span>

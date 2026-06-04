@@ -92,7 +92,7 @@ export default function AlertasPage() {
           onClick={() => refetch()}
           style={{
             display: 'inline-flex', alignItems: 'center', gap: '6px',
-            background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
+            background: '#7c4b2c',
             color: 'white', fontWeight: 500, fontSize: '0.875rem',
             padding: '0.5rem 1rem', borderRadius: '0.25rem',
             border: 'none', cursor: 'pointer', transition: 'all 0.2s'
@@ -101,7 +101,7 @@ export default function AlertasPage() {
             (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, #5A3022 0%, #B07848 100%)';
           }}
           onMouseLeave={e => {
-            (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)';
+            (e.currentTarget as HTMLElement).style.background = '#7c4b2c';
           }}
         >
           <RefreshCw size={15} /> Actualizar
@@ -165,7 +165,7 @@ export default function AlertasPage() {
             fontWeight: 500,
             border: filtroTipo === 'todos' ? 'none' : '1px solid #E5E7EB',
             background: filtroTipo === 'todos'
-              ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)'
+              ? '#7c4b2c'
               : '#fff',
             color: filtroTipo === 'todos' ? '#fff' : '#4B5563',
             cursor: 'pointer',
@@ -186,7 +186,7 @@ export default function AlertasPage() {
               fontWeight: 500,
               border: filtroTipo === key ? 'none' : '1px solid #E5E7EB',
               background: filtroTipo === key
-                ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)'
+                ? '#7c4b2c'
                 : '#fff',
               color: filtroTipo === key ? '#fff' : '#4B5563',
               cursor: 'pointer',

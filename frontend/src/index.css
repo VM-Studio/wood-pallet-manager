@@ -199,7 +199,7 @@
     cursor: pointer;
     transition: all 0.2s;
     user-select: none;
-    background: linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%);
+    background: #7c4b2c;
     box-shadow: 0 1px 3px rgba(107, 58, 42, 0.3);
   }
   .btn-brand:hover {
@@ -223,7 +223,7 @@
     cursor: pointer;
     transition: all 0.2s;
     user-select: none;
-    background: linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%);
+    background: #7c4b2c;
   }
   .btn-brand-sm:hover {
     background: linear-gradient(135deg, #5A3022 0%, #B07848 100%);
@@ -246,7 +246,7 @@
     background: transparent;
   }
   .btn-brand-outline:hover {
-    background: linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%);
+    background: #7c4b2c;
     color: #fff;
     border-color: transparent;
   }

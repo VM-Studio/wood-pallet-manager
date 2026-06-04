@@ -73,7 +73,7 @@ export default function DropdownVista() {
               {vista === op.value && (
                 <span
                   className="w-1.5 h-1.5 rounded-full shrink-0"
-                  style={{ background: 'linear-gradient(135deg, #6B3A2A, #C4895A)' }}
+                  style={{ background: '#7c4b2c' }}
                 />
               )}
             </button>

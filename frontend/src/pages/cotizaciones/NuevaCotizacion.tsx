@@ -461,7 +461,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
                           <div className="overflow-x-auto">
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
                               <thead>
-                                <tr style={{ background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' }}>
+                                <tr style={{ background: '#7c4b2c' }}>
                                   {['Componente', 'Tablas', 'Largo (mm)', 'Ancho (mm)', 'Espesor (mm)', 'Pies', 'Importe'].map(h => (
                                     <th key={h} style={{ padding: '0.5rem 0.6rem', color: '#fff', fontWeight: 600, textAlign: h === 'Componente' ? 'left' : 'center', whiteSpace: 'nowrap' }}>{h}</th>
                                   ))}
@@ -656,7 +656,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
                                 style={{
                                   fontSize: '0.7rem', fontWeight: 600, padding: '0.25rem 0.625rem',
                                   cursor: 'pointer', transition: 'all 0.15s', border: 'none',
-                                  background: !d.usarPrecioEspecial ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' : '#fff',
+                                  background: !d.usarPrecioEspecial ? '#7c4b2c' : '#fff',
                                   color: !d.usarPrecioEspecial ? '#fff' : '#6B7280',
                                 }}
                               >Guardado</button>
@@ -666,7 +666,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
                                 style={{
                                   fontSize: '0.7rem', fontWeight: 600, padding: '0.25rem 0.625rem',
                                   cursor: 'pointer', transition: 'all 0.15s', border: 'none', borderLeft: '1px solid #E5E7EB',
-                                  background: d.usarPrecioEspecial ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' : '#fff',
+                                  background: d.usarPrecioEspecial ? '#7c4b2c' : '#fff',
                                   color: d.usarPrecioEspecial ? '#fff' : '#6B7280',
                                 }}
                               >Precio especial</button>
@@ -778,7 +778,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
                       borderRadius: '0.25rem', border: '1px solid',
                       cursor: 'pointer', transition: 'all 0.15s',
                       background: form.canalEnvio === canal
-                        ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)'
+                        ? '#7c4b2c'
                         : '#fff',
                       color: form.canalEnvio === canal ? '#fff' : '#4B5563',
                       borderColor: form.canalEnvio === canal ? '#6B3A2A' : '#E5E7EB'
@@ -816,7 +816,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
                       style={{
                         fontSize: '0.75rem', fontWeight: 600, padding: '0.3rem 0.875rem',
                         cursor: 'pointer', border: 'none', transition: 'all 0.15s',
-                        background: form.incluyeIva ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' : '#fff',
+                        background: form.incluyeIva ? '#7c4b2c' : '#fff',
                         color: form.incluyeIva ? '#fff' : '#6B7280',
                       }}
                     >Sí</button>
@@ -826,7 +826,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
                       style={{
                         fontSize: '0.75rem', fontWeight: 600, padding: '0.3rem 0.875rem',
                         cursor: 'pointer', border: 'none', borderLeft: '1px solid #E5E7EB', transition: 'all 0.15s',
-                        background: !form.incluyeIva ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' : '#fff',
+                        background: !form.incluyeIva ? '#7c4b2c' : '#fff',
                         color: !form.incluyeIva ? '#fff' : '#6B7280',
                       }}
                     >No</button>
@@ -869,7 +869,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
             <button type="submit" disabled={crearCotizacion.isPending}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: '6px',
-                background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
+                background: '#7c4b2c',
                 color: 'white', fontWeight: 500, fontSize: '0.875rem',
                 padding: '0.5rem 1rem', borderRadius: '0.25rem', border: 'none',
                 cursor: crearCotizacion.isPending ? 'not-allowed' : 'pointer',

@@ -19,7 +19,7 @@ export default function SolicitudLogisticaModal({
 
   const btnBrown: React.CSSProperties = {
     display: 'inline-flex', alignItems: 'center', gap: '6px',
-    background: consultar.isPending ? '#9CA3AF' : 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
+    background: consultar.isPending ? '#9CA3AF' : '#7c4b2c',
     color: 'white', fontWeight: 500, fontSize: '0.875rem',
     padding: '0.5rem 1rem', borderRadius: '0.25rem', border: 'none',
     cursor: consultar.isPending ? 'not-allowed' : 'pointer', transition: 'all 0.2s',

@@ -204,7 +204,7 @@ export default function ProductoForm({ producto, onClose }: ProductoFormProps) {
             <button type="submit" disabled={loading}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: '6px',
-                background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
+                background: '#7c4b2c',
                 color: 'white', fontWeight: 500, fontSize: '0.875rem',
                 padding: '0.5rem 1rem', borderRadius: '0.25rem', border: 'none',
                 cursor: loading ? 'not-allowed' : 'pointer',

@@ -82,7 +82,7 @@ export default function ProductosPage() {
             onClick={() => { setProductoEditar(null); setShowForm(true); }}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: '6px',
-              background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
+              background: '#7c4b2c',
               color: 'white', fontWeight: 500, fontSize: '0.875rem',
               padding: '0.5rem 1rem', borderRadius: '0.25rem',
               border: 'none', cursor: 'pointer', transition: 'all 0.2s'
@@ -92,7 +92,7 @@ export default function ProductosPage() {
               (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
             }}
             onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)';
+              (e.currentTarget as HTMLElement).style.background = '#7c4b2c';
               (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
             }}
           >
@@ -154,7 +154,7 @@ export default function ProductosPage() {
             style={{
               padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 500,
               transition: 'all 0.15s',
-              background: filtro === 'mios' ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' : '#fff',
+              background: filtro === 'mios' ? '#7c4b2c' : '#fff',
               color: filtro === 'mios' ? '#fff' : '#4B5563',
               border: 'none', cursor: 'pointer'
             }}
@@ -166,7 +166,7 @@ export default function ProductosPage() {
             style={{
               padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 500,
               transition: 'all 0.15s',
-              background: filtro === 'otro' ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' : '#fff',
+              background: filtro === 'otro' ? '#7c4b2c' : '#fff',
               color: filtro === 'otro' ? '#fff' : '#4B5563',
               borderLeft: '1px solid #E5E7EB', cursor: 'pointer'
             }}
@@ -313,13 +313,13 @@ export default function ProductosPage() {
                       style={{
                         flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                         gap: '5px',
-                        background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
+                        background: '#7c4b2c',
                         color: 'white', fontWeight: 500, fontSize: '0.75rem',
                         padding: '0.375rem 0.75rem', borderRadius: '0.25rem',
                         border: 'none', cursor: 'pointer', transition: 'all 0.2s'
                       }}
                       onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, #5A3022 0%, #B07848 100%)'; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#7c4b2c'; }}
                     >
                       <DollarSign size={13} /> Precios
                     </button>

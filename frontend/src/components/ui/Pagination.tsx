@@ -37,7 +37,7 @@ export default function Pagination({ total, pagina, porPagina = 10, onCambiar, n
 
   const btnActivo: React.CSSProperties = {
     ...btnBase,
-    background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
+    background: '#7c4b2c',
     color: '#fff',
     border: '1px solid #C4895A',
     fontWeight: 700,

@@ -122,7 +122,7 @@ export default function ConvertirWebModal({ cotizacion: cw, onClose, onSuccess }
                   type="button"
                   onClick={() => setModoCliente('existente')}
                   className={`flex-1 py-2 px-3 text-sm rounded-lg border font-medium transition-all ${modoCliente === 'existente' ? 'bg-brand-brown text-white border-transparent' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
-                  style={modoCliente === 'existente' ? { background: 'linear-gradient(135deg,#6B3A2A,#C4895A)', border: 'none' } : {}}
+                  style={modoCliente === 'existente' ? { background: '#7c4b2c', border: 'none' } : {}}
                 >
                   <User size={13} className="inline mr-1" /> Cliente existente
                 </button>
@@ -130,7 +130,7 @@ export default function ConvertirWebModal({ cotizacion: cw, onClose, onSuccess }
                   type="button"
                   onClick={() => setModoCliente('nuevo')}
                   className={`flex-1 py-2 px-3 text-sm rounded-lg border font-medium transition-all ${modoCliente === 'nuevo' ? 'bg-brand-brown text-white border-transparent' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
-                  style={modoCliente === 'nuevo' ? { background: 'linear-gradient(135deg,#6B3A2A,#C4895A)', border: 'none' } : {}}
+                  style={modoCliente === 'nuevo' ? { background: '#7c4b2c', border: 'none' } : {}}
                 >
                   <UserPlus size={13} className="inline mr-1" /> Crear cliente nuevo
                 </button>
@@ -243,7 +243,7 @@ export default function ConvertirWebModal({ cotizacion: cw, onClose, onSuccess }
                 onClick={handleConvertir}
                 disabled={convertir.isPending}
                 className="btn-primary"
-                style={{ background: 'linear-gradient(135deg,#6B3A2A,#C4895A)' }}
+                style={{ background: '#7c4b2c' }}
               >
                 {convertir.isPending ? 'Convirtiendo...' : 'Crear cotización'}
               </button>

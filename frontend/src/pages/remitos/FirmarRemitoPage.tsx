@@ -134,7 +134,7 @@ export default function FirmarRemitoPage() {
 
         {/* Header */}
         <div style={{ background: '#fff', borderRadius: '0.5rem', border: '1px solid #E5E7EB', padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ width: 48, height: 48, background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ width: 48, height: 48, background: '#7c4b2c', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <FileText size={22} color="#fff" />
           </div>
           <div>
@@ -295,7 +295,7 @@ export default function FirmarRemitoPage() {
                 disabled={!firma || firmarCliente.isPending}
                 style={{
                   width: '100%', padding: '0.875rem', border: 'none', cursor: firma ? 'pointer' : 'not-allowed',
-                  background: firma ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' : '#E5E7EB',
+                  background: firma ? '#7c4b2c' : '#E5E7EB',
                   color: firma ? '#fff' : '#9CA3AF', borderRadius: '0.25rem',
                   fontSize: '0.925rem', fontWeight: 600, transition: 'all 0.2s',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',

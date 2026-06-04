@@ -142,7 +142,7 @@ export default function LoginPage() {
               <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <div style={{
                   width: 6, height: 6, borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #C4895A, #6B3A2A)',
+                  background: '#7c4b2c',
                   flexShrink: 0,
                 }} />
                 <span style={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.82rem' }}>{f}</span>
@@ -291,7 +291,7 @@ export default function LoginPage() {
                   <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
                     <div style={{
                       width: 56, height: 56, borderRadius: '0.25rem',
-                      background: 'linear-gradient(135deg, #6B3A2A, #C4895A)',
+                      background: '#7c4b2c',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       margin: '0 auto 1.25rem',
                     }}>

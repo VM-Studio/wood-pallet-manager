@@ -63,7 +63,7 @@ export default function ClientesPage() {
           onClick={() => { setClienteEditar(null); setShowForm(true); }}
           style={{
             display: 'inline-flex', alignItems: 'center', gap: '6px',
-            background: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
+            background: '#7c4b2c',
             color: 'white', fontWeight: 600, fontSize: '0.875rem',
             padding: '0.6rem 1.25rem', borderRadius: 0,
             border: 'none', cursor: 'pointer', transition: 'all 0.2s',
@@ -113,7 +113,7 @@ export default function ClientesPage() {
                 padding: '0.6rem 1.1rem',
                 fontSize: '0.8375rem', fontWeight: 500,
                 border: 'none', cursor: 'pointer', transition: 'all 0.15s',
-                background: filtro === f ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' : 'transparent',
+                background: filtro === f ? '#7c4b2c' : 'transparent',
                 color: filtro === f ? '#fff' : '#6B7280',
                 borderRight: f === 'todos' ? '1px solid #E8E2DA' : 'none',
               }}
@@ -172,7 +172,7 @@ export default function ClientesPage() {
                       <div style={{
                         width: 34, height: 34, flexShrink: 0,
                         background: esAsignado(cliente)
-                          ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)'
+                          ? '#7c4b2c'
                           : 'linear-gradient(135deg, #6B7280 0%, #9CA3AF 100%)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         color: 'white', fontWeight: 700, fontSize: '0.85rem',
