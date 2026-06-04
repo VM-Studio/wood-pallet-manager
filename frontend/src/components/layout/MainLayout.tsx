@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Outlet, Navigate } from 'react-router-dom';
+import { Outlet, Navigate, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/auth.store';
 import Sidebar from './Sidebar';
 import { Menu, UserCircle } from 'lucide-react';
 
 export default function MainLayout() {
   const { token, usuario } = useAuthStore();
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   if (!token) return <Navigate to="/login" replace />;
 
@@ -44,7 +45,13 @@ export default function MainLayout() {
           <div className="hidden md:block" />
 
           {/* Derecha: usuario */}
-          <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => navigate('/mi-cuenta')}
+            className="flex items-center gap-2.5 text-left"
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+            aria-label="Abrir Mi Cuenta"
+          >
             <div style={{
               width: 30, height: 30, borderRadius: '50%',
               overflow: 'hidden', flexShrink: 0,
@@ -65,7 +72,7 @@ export default function MainLayout() {
                 {usuario?.rol === 'admin' ? 'Administrador' : 'Usuario'}
               </p>
             </div>
-          </div>
+          </button>
         </div>
 
         <div className="p-4 md:p-8 max-w-[1400px] mx-auto animate-fade-in">

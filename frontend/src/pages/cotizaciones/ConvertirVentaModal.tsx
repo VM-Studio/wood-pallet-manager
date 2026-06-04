@@ -8,6 +8,7 @@ import SignaturePad from '../../components/ui/SignaturePad';
 import AgendaLogisticasModal from './AgendaLogisticasModal';
 import PlacesAutocomplete from '../../components/ui/PlacesAutocomplete';
 import api from '../../services/api';
+import { useAuthStore } from '../../store/auth.store';
 
 interface ConvertirVentaModalProps {
   cotizacionId: number;
@@ -24,12 +25,14 @@ export default function ConvertirVentaModal({
 }: ConvertirVentaModalProps) {
   const convertir = useConvertirAVenta();
   const queryClient = useQueryClient();
+  const { usuario } = useAuthStore();
   const { data: cotizacion } = useCotizacion(cotizacionId);
   const { data: stockItems } = useStock();
   const [error, setError] = useState('');
   const [usaStockPropio, setUsaStockPropio] = useState(false);
   const [emitirRemito, setEmitirRemito] = useState(false);
   const [firmaPropietario, setFirmaPropietario] = useState<string | null>(null);
+  const [usarFirmaGuardada, setUsarFirmaGuardada] = useState(!!usuario?.firma);
   const [showAgenda, setShowAgenda] = useState(false);
   const [proveedorUbicacion, setProveedorUbicacion] = useState<string>('');
 
@@ -124,6 +127,9 @@ export default function ConvertirVentaModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    const firmaRemito = emitirRemito
+      ? (usarFirmaGuardada ? (usuario?.firma ?? null) : firmaPropietario)
+      : null;
 
     if (!form.tipoEntrega) { setError('Seleccioná el tipo de entrega'); return; }
     if (!form.metodoPago)  { setError('Seleccioná el método de pago'); return; }
@@ -131,7 +137,7 @@ export default function ConvertirVentaModal({
     if (form.tipoEntrega === 'envio_woodpallet' && !form.lugarEntrega) {
       setError('Ingresá el lugar de entrega'); return;
     }
-    if (emitirRemito && !firmaPropietario) {
+    if (emitirRemito && !firmaRemito) {
       setError('Debés firmar el remito antes de continuar'); return;
     }
 
@@ -154,7 +160,7 @@ export default function ConvertirVentaModal({
           observaciones: form.observaciones || undefined,
           usaStockPropio,
           emitirRemito,
-          firmaPropietario: firmaPropietario ?? undefined,
+          firmaPropietario: firmaRemito ?? undefined,
         },
       });
 
@@ -563,7 +569,17 @@ export default function ConvertirVentaModal({
               <div className="grid grid-cols-2 gap-2">
                 {[{ value: false, label: 'No' }, { value: true, label: 'Sí, emitir remito' }].map(op => (
                   <button key={String(op.value)} type="button"
-                    onClick={() => { setEmitirRemito(op.value); if (!op.value) setFirmaPropietario(null); }}
+                    onClick={() => {
+                      setEmitirRemito(op.value);
+                      if (!op.value) {
+                        setFirmaPropietario(null);
+                        setUsarFirmaGuardada(!!usuario?.firma);
+                      } else if (usuario?.firma) {
+                        setUsarFirmaGuardada(true);
+                      } else {
+                        setUsarFirmaGuardada(false);
+                      }
+                    }}
                     className={`p-3 rounded-xl border text-left transition-all text-sm font-medium ${
                       emitirRemito === op.value
                         ? 'border-[#6B3A2A] bg-[#FEF3E2] text-[#6B3A2A]'
@@ -578,12 +594,35 @@ export default function ConvertirVentaModal({
                   <p className="text-xs text-gray-500">
                     Se enviará un email al cliente con el remito. Él recibirá un enlace para firmarlo digitalmente. Ambos recibirán copia firmada.
                   </p>
-                  <SignaturePad
-                    label="Tu firma (propietario) *"
-                    required
-                    onSignature={setFirmaPropietario}
-                    height={130}
-                  />
+                  {usuario?.firma && (
+                    <div>
+                      <label className="label text-xs">¿Usar firma guardada?</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[{ value: true, label: 'Sí' }, { value: false, label: 'No, firmar ahora' }].map(op => (
+                          <button
+                            key={String(op.value)}
+                            type="button"
+                            onClick={() => setUsarFirmaGuardada(op.value)}
+                            className={`p-2.5 rounded-xl border text-sm font-medium transition-all ${
+                              usarFirmaGuardada === op.value
+                                ? 'border-[#6B3A2A] bg-[#FEF3E2] text-[#6B3A2A]'
+                                : 'border-gray-200 bg-white hover:border-gray-300 text-gray-700'
+                            }`}
+                          >
+                            {op.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {(!usuario?.firma || !usarFirmaGuardada) && (
+                    <SignaturePad
+                      label="Tu firma (propietario) *"
+                      required
+                      onSignature={setFirmaPropietario}
+                      height={130}
+                    />
+                  )}
                 </div>
               )}
             </div>
