@@ -86,14 +86,30 @@ function InfoPersonalSection() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['me-completo'] });
       setUsuario(data);
+      setSuccess('Foto de perfil actualizada');
+      setTimeout(() => setSuccess(''), 3000);
     },
+    onError: () => setError('No se pudo actualizar la foto. Intentá con una imagen más pequeña.'),
   });
 
   const handleFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => subirFotoMutation.mutate(reader.result as string);
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 512;
+        const scale = Math.min(MAX / img.width, MAX / img.height, 1);
+        const canvas = document.createElement('canvas');
+        canvas.width  = Math.round(img.width  * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        subirFotoMutation.mutate(canvas.toDataURL('image/jpeg', 0.8));
+      };
+      img.src = ev.target!.result as string;
+    };
     reader.readAsDataURL(file);
   };
 
