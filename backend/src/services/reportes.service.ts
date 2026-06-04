@@ -3,27 +3,14 @@ import prisma from '../utils/prisma';
 export const getVentasUltimos12MesesService = async (usuarioId?: number) => {
   const meses: { mes: string; ventas: number; pallets: number; facturacion: number }[] = [];
 
-  // Buscar la venta más antigua (incluyendo históricas) para saber desde qué mes arrancar
-  const primeraVenta = await prisma.venta.findFirst({
-    where: usuarioId !== undefined ? { usuarioId } : undefined,
-    orderBy: { fechaVenta: 'asc' },
-    select: { fechaVenta: true },
-  });
-
-  // Si no hay ventas, usar el mes actual
+  // Siempre mostrar los últimos 12 meses completos (rolling window hasta el mes actual)
   const hoyLocal = new Date();
-  const mesInicioRef = primeraVenta
-    ? new Date(primeraVenta.fechaVenta.getFullYear(), primeraVenta.fechaVenta.getMonth(), 1)
-    : new Date(hoyLocal.getFullYear(), hoyLocal.getMonth(), 1);
-
-  // Mostrar siempre 12 meses consecutivos desde el primer mes con datos
   const cantMeses = 12;
 
-  for (let i = 0; i < cantMeses; i++) {
-    const inicio = new Date(mesInicioRef.getFullYear(), mesInicioRef.getMonth() + i, 1);
-    const fin = new Date(mesInicioRef.getFullYear(), mesInicioRef.getMonth() + i + 1, 0, 23, 59, 59);
+  for (let i = cantMeses - 1; i >= 0; i--) {
+    const inicio = new Date(hoyLocal.getFullYear(), hoyLocal.getMonth() - i, 1);
+    const fin = new Date(hoyLocal.getFullYear(), hoyLocal.getMonth() - i + 1, 0, 23, 59, 59);
 
-    // Incluir TODAS las ventas (históricas + operativas) para reflejar la realidad del negocio
     const whereQuery: any = { fechaVenta: { gte: inicio, lte: fin } };
     if (usuarioId !== undefined) whereQuery.usuarioId = usuarioId;
 
