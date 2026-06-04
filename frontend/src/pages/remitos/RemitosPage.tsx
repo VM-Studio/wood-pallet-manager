@@ -465,15 +465,6 @@ export default function RemitosPage() {
   const enviados   = todos.filter(r => r.estado === 'enviado_a_cliente').length;
   const firmados   = todos.filter(r => r.estado === 'completado' || r.estado === 'firmado_por_cliente').length;
 
-  const FILTROS = [
-    { key: 'todos',                       label: 'Todos' },
-    { key: 'pendiente_firma_propietario', label: 'Pendientes firma' },
-    { key: 'enviado_a_cliente',           label: 'Enviados' },
-    { key: 'firmado_por_cliente',         label: 'Firmados' },
-    { key: 'completado',                  label: 'Completados' },
-    { key: 'cancelado',                   label: 'Cancelados' },
-  ];
-
   return (
     <div className="space-y-6 animate-fade-in">
 
@@ -490,35 +481,33 @@ export default function RemitosPage() {
         </button>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        <div className="card-kpi" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: 40, height: 40, background: '#FEF3E2', borderRadius: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <Clock size={18} style={{ color: '#C4895A' }} />
-          </div>
-          <div>
-            <p style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', margin: 0 }}>{pendientes}</p>
-            <p style={{ fontSize: '0.75rem', color: '#6B7280', margin: 0 }}>Pendientes firma</p>
-          </div>
-        </div>
-        <div className="card-kpi" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: 40, height: 40, background: '#EFF6FF', borderRadius: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <Send size={18} style={{ color: '#1D4ED8' }} />
-          </div>
-          <div>
-            <p style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', margin: 0 }}>{enviados}</p>
-            <p style={{ fontSize: '0.75rem', color: '#6B7280', margin: 0 }}>Enviados al cliente</p>
-          </div>
-        </div>
-        <div className="card-kpi" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: 40, height: 40, background: '#F0FDF4', borderRadius: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <CheckCircle size={18} style={{ color: '#15803D' }} />
-          </div>
-          <div>
-            <p style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', margin: 0 }}>{firmados}</p>
-            <p style={{ fontSize: '0.75rem', color: '#6B7280', margin: 0 }}>Firmados / Completados</p>
-          </div>
-        </div>
+      {/* KPIs — también funcionan como filtro */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+        {[
+          { key: 'todos',                       label: 'Todos',                  val: todos.length,    icono: <FileText size={16} />, sub: 'remitos registrados' },
+          { key: 'pendiente_firma_propietario', label: 'Pendientes firma',       val: pendientes,      icono: <Clock size={16} />,    sub: 'esperando firma' },
+          { key: 'enviado_a_cliente',           label: 'Enviados al cliente',    val: enviados,        icono: <Send size={16} />,     sub: 'aguardando firma cliente' },
+          { key: 'completado',                  label: 'Firmados / Completados', val: firmados,        icono: <CheckCircle size={16} />, sub: 'remitos finalizados' },
+        ].map(t => {
+          const activa = filtroEstado === t.key;
+          return (
+            <div
+              key={t.key}
+              className="card-kpi cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+              onClick={() => setFiltroEstado(t.key)}
+              style={activa ? { outline: '2px solid #C4895A', outlineOffset: '-2px' } : {}}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+                  {t.icono}
+                </div>
+                <p className="titulo-card flex-1">{t.label}</p>
+              </div>
+              <p className="text-2xl font-bold text-gray-900 leading-none mb-1">{t.val}</p>
+              <p className="text-xs text-gray-400 mt-1">{t.sub}</p>
+            </div>
+          );
+        })}
       </div>
 
       {/* Alerta pendientes */}
@@ -536,37 +525,16 @@ export default function RemitosPage() {
         </div>
       )}
 
-      {/* Filtros y búsqueda */}
-      <div className="card-base" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-        <div style={{ position: 'relative' }}>
-          <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
-          <input
-            className="input-field"
-            style={{ paddingLeft: '2.25rem' }}
-            placeholder="Buscar por cliente, N° venta, N° remito..."
-            value={busqueda}
-            onChange={e => setBusqueda(e.target.value)}
-          />
-        </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
-          {FILTROS.map(f => (
-            <button
-              key={f.key}
-              onClick={() => setFiltroEstado(f.key)}
-              style={{
-                padding: '0.25rem 0.75rem', fontSize: '0.75rem', fontWeight: 500,
-                borderRadius: '0.25rem', border: 'none', cursor: 'pointer', transition: 'all 0.15s',
-                background: filtroEstado === f.key ? 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)' : '#F3F4F6',
-                color: filtroEstado === f.key ? '#fff' : '#4B5563',
-              }}
-            >
-              {f.label}
-              {f.key !== 'todos' && (
-                <span style={{ marginLeft: '0.25rem', opacity: 0.7 }}>({todos.filter(r => r.estado === f.key).length})</span>
-              )}
-            </button>
-          ))}
-        </div>
+      {/* Buscador */}
+      <div className="relative">
+        <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+        <input
+          className="input-field"
+          style={{ paddingLeft: '2.25rem' }}
+          placeholder="Buscar por cliente, N° venta, N° remito..."
+          value={busqueda}
+          onChange={e => setBusqueda(e.target.value)}
+        />
       </div>
 
       {/* Lista */}

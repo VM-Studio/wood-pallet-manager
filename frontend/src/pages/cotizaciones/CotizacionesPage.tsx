@@ -177,94 +177,64 @@ export default function CotizacionesPage() {
         </div>
       </div>
 
-      {/* Tarjetas filtro — estilo KpiCard dashboard */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
+      {/* Tarjetas filtro */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         {[
           {
             key: 'todos',
             label: 'Total cotizaciones',
             sublabel: 'todas las registradas',
             count: cotizaciones?.length ?? 0,
-            icono: <FileText size={15} />,
-            iconBg: '#F3F4F6', iconColor: '#6B7280',
-            accentColor: '#C4895A',
-            accentBg: 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
+            icono: <FileText size={16} />,
           },
           {
             key: 'en_seguimiento',
             label: 'En seguimiento',
             sublabel: 'enviadas o en curso',
             count: cotizaciones?.filter(c => c.estado === 'enviada' || c.estado === 'en_seguimiento').length ?? 0,
-            icono: <Truck size={15} />,
-            iconBg: '#FFFBEB', iconColor: '#D97706',
-            accentColor: '#D97706',
-            accentBg: '#F59E0B',
+            icono: <Truck size={16} />,
           },
           {
             key: 'aceptada',
             label: 'Aceptadas',
             sublabel: 'convertidas a venta',
             count: cotizaciones?.filter(c => c.estado === 'aceptada').length ?? 0,
-            icono: <CheckCircle size={15} />,
-            iconBg: '#F0FDF4', iconColor: '#16A34A',
-            accentColor: '#16A34A',
-            accentBg: '#16A34A',
+            icono: <CheckCircle size={16} />,
           },
           {
             key: 'rechazada',
             label: 'Rechazadas',
             sublabel: 'no concretadas',
             count: cotizaciones?.filter(c => c.estado === 'rechazada').length ?? 0,
-            icono: <XCircle size={15} />,
-            iconBg: '#FFF1F2', iconColor: '#DC2626',
-            accentColor: '#DC2626',
-            accentBg: '#DC2626',
+            icono: <XCircle size={16} />,
           },
         ].map(f => {
           const activo = filtroEstado === f.key;
           return (
-            <button
+            <div
               key={f.key}
               onClick={() => setFiltroEstado(f.key)}
-              className={`card-kpi${activo ? '' : ' hover:shadow-md hover:-translate-y-0.5 transition-all duration-200'}`}
-              style={{
-                textAlign: 'left',
-                cursor: 'pointer',
-                border: activo ? `1.5px solid ${f.accentColor}` : undefined,
-                boxShadow: activo ? `0 4px 14px rgba(0,0,0,0.10)` : undefined,
-                position: 'relative',
-                overflow: 'hidden',
-              }}
+              className="card-kpi cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+              style={activo ? { outline: '2px solid #C4895A', outlineOffset: '-2px' } : {}}
             >
-              {/* Barra superior activo */}
-              {activo && (
-                <div style={{
-                  position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
-                  background: f.accentBg,
-                }} />
-              )}
-              {/* Ícono + título — idéntico a KpiCard */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', marginTop: activo ? '0.25rem' : 0 }}>
-                <div style={{
-                  width: 28, height: 28, borderRadius: '0.25rem',
-                  background: activo ? f.iconBg : '#F3F4F6',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: activo ? f.accentColor : f.iconColor,
-                  flexShrink: 0,
-                }}>
+              {/* Título + ícono — igual a KpiCard */}
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
                   {f.icono}
                 </div>
-                <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6B7280', lineHeight: 1.2, flex: 1 }}>
-                  {f.label}
-                </p>
+                <p className="titulo-card flex-1">{f.label}</p>
               </div>
-              {/* Número — idéntico a KpiCard */}
-              <p style={{ fontSize: '1.5rem', fontWeight: 700, color: activo ? f.accentColor : '#111827', lineHeight: 1, marginBottom: '0.25rem' }}>
+
+              {/* Número */}
+              <p className="text-2xl font-bold text-gray-900 leading-none mb-1">
                 {f.count}
               </p>
+
               {/* Subtítulo */}
-              <p style={{ fontSize: '0.72rem', color: '#9CA3AF' }}>{f.sublabel}</p>
-            </button>
+              <div className="flex items-center justify-between mt-1">
+                <p className="text-xs text-gray-400">{f.sublabel}</p>
+              </div>
+            </div>
           );
         })}
       </div>

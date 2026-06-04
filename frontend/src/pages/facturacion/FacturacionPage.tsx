@@ -119,64 +119,51 @@ export default function FacturacionPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="card-kpi">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Cobros pendientes</p>
-              <p className="text-2xl font-bold" style={{ color: '#6B3A2A' }}>{formatPesos(totalPendiente)}</p>
-              <p className="text-xs text-gray-400 mt-1">
-                {pendientes?.length ?? 0} factura{(pendientes?.length ?? 0) !== 1 ? 's' : ''}
-              </p>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+              <Clock size={16} />
             </div>
-            <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ background: '#FEF3E2', borderRadius: '0.25rem' }}>
-              <Clock size={18} style={{ color: '#C4895A' }} />
-            </div>
+            <p className="titulo-card flex-1">Cobros pendientes</p>
           </div>
+          <p className="text-2xl font-bold text-gray-900 leading-none mb-1">{formatPesos(totalPendiente)}</p>
+          <p className="text-xs text-gray-400 mt-1">{pendientes?.length ?? 0} factura{(pendientes?.length ?? 0) !== 1 ? 's' : ''}</p>
         </div>
 
         <div className="card-kpi">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Facturas vencidas</p>
-              <p className="text-2xl font-bold" style={{ color: totalVencidas > 0 ? '#B91C1C' : '#6B3A2A' }}>
-                {vencidas?.length ?? 0}
-              </p>
-              {totalVencidas > 0 && (
-                <p className="text-xs text-red-500 mt-1">{formatPesos(totalVencidas)}</p>
-              )}
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+              <AlertTriangle size={16} />
             </div>
-            <div className="w-10 h-10 flex items-center justify-center shrink-0"
-              style={{ background: totalVencidas > 0 ? '#FEF2F2' : '#FEF3E2', borderRadius: '0.25rem' }}>
-              <AlertTriangle size={18} style={{ color: totalVencidas > 0 ? '#B91C1C' : '#C4895A' }} />
-            </div>
+            <p className="titulo-card flex-1">Facturas vencidas</p>
           </div>
+          <p className="text-2xl font-bold text-gray-900 leading-none mb-1">{vencidas?.length ?? 0}</p>
+          <p className="text-xs text-gray-400 mt-1">{totalVencidas > 0 ? formatPesos(totalVencidas) : 'sin deuda vencida'}</p>
         </div>
 
         <div className="card-kpi">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Cobradas</p>
-              <p className="text-2xl font-bold" style={{ color: '#6B3A2A' }}>
-                {facturas?.filter(f => f.estadoCobro === 'cobrada_total').length ?? 0}
-              </p>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+              <CheckCircle size={16} />
             </div>
-            <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ background: '#FEF3E2', borderRadius: '0.25rem' }}>
-              <CheckCircle size={18} style={{ color: '#C4895A' }} />
-            </div>
+            <p className="titulo-card flex-1">Cobradas</p>
           </div>
+          <p className="text-2xl font-bold text-gray-900 leading-none mb-1">
+            {facturas?.filter(f => f.estadoCobro === 'cobrada_total').length ?? 0}
+          </p>
+          <p className="text-xs text-gray-400 mt-1">cobro total confirmado</p>
         </div>
 
         <div className="card-kpi">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Total emitido</p>
-              <p className="text-xl font-bold" style={{ color: '#6B3A2A' }}>
-                {formatPesos(facturas?.reduce((acc, f) => acc + Number(f.totalConIva), 0) ?? 0)}
-              </p>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+              <Receipt size={16} />
             </div>
-            <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ background: '#F3EDE8', borderRadius: '0.25rem' }}>
-              <Receipt size={18} style={{ color: '#6B3A2A' }} />
-            </div>
+            <p className="titulo-card flex-1">Total emitido</p>
           </div>
+          <p className="text-2xl font-bold text-gray-900 leading-none mb-1">
+            {formatPesos(facturas?.reduce((acc, f) => acc + Number(f.totalConIva), 0) ?? 0)}
+          </p>
+          <p className="text-xs text-gray-400 mt-1">todas las facturas</p>
         </div>
       </div>
 

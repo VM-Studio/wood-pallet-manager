@@ -50,21 +50,6 @@ const origenLabel: Record<string, string> = {
   stock_propio: 'Stock propio', compra_directa: 'Compra directa',
 };
 
-// ─── KPI card ─────────────────────────────────────────────────────────────────
-function KpiCard({ label, value, icon: Icon, color }: { label: string; value: number; icon: React.ElementType; color: string }) {
-  return (
-    <div className="bg-white rounded-2xl p-5 shadow-sm border border-stone-100 flex items-center gap-4">
-      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${color}20` }}>
-        <Icon className="w-5 h-5" style={{ color }} />
-      </div>
-      <div>
-        <p className="text-2xl font-bold text-stone-900">{value}</p>
-        <p className="text-xs text-stone-500 mt-0.5">{label}</p>
-      </div>
-    </div>
-  );
-}
-
 // ─── Badge ────────────────────────────────────────────────────────────────────
 function EstadoBadge({ estado }: { estado: EstadoRetiro }) {
   const s = ESTADO_STYLE[estado];
@@ -636,9 +621,36 @@ export default function RetirosPage() {
 
         {/* KPIs */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <KpiCard label="Pendientes hoy"      value={stats?.pendientesHoy    ?? 0} icon={Clock}         color="#C4895A" />
-          <KpiCard label="Pendientes esta semana" value={stats?.pendientesSemana ?? 0} icon={Calendar}   color="#2563EB" />
-          <KpiCard label="Completados este mes" value={stats?.completadosMes  ?? 0} icon={CheckCircle2}  color="#15803D" />
+          <div className="card-kpi">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+                <Clock size={16} />
+              </div>
+              <p className="titulo-card flex-1">Pendientes hoy</p>
+            </div>
+            <p className="text-2xl font-bold text-gray-900 leading-none mb-1">{stats?.pendientesHoy ?? 0}</p>
+            <p className="text-xs text-gray-400 mt-1">retiros programados para hoy</p>
+          </div>
+          <div className="card-kpi">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+                <Calendar size={16} />
+              </div>
+              <p className="titulo-card flex-1">Pendientes esta semana</p>
+            </div>
+            <p className="text-2xl font-bold text-gray-900 leading-none mb-1">{stats?.pendientesSemana ?? 0}</p>
+            <p className="text-xs text-gray-400 mt-1">en los próximos 7 días</p>
+          </div>
+          <div className="card-kpi">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+                <CheckCircle2 size={16} />
+              </div>
+              <p className="titulo-card flex-1">Completados este mes</p>
+            </div>
+            <p className="text-2xl font-bold text-gray-900 leading-none mb-1">{stats?.completadosMes ?? 0}</p>
+            <p className="text-xs text-gray-400 mt-1">retiros finalizados</p>
+          </div>
         </div>
 
         {/* Filtros */}

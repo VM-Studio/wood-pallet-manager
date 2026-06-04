@@ -74,35 +74,35 @@ export default function VentasPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        <div className="card-kpi flex items-center gap-3">
-          <div className="w-10 h-10 flex items-center justify-center shrink-0"
-            style={{ background: '#F3EDE8', borderRadius: '0.25rem' }}>
-            <ShoppingCart size={18} style={{ color: '#6B3A2A' }} />
+        <div className="card-kpi">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+              <ShoppingCart size={16} />
+            </div>
+            <p className="titulo-card flex-1">Pedidos activos</p>
           </div>
-          <div>
-            <p className="text-2xl font-bold text-gray-900">{activas?.length || 0}</p>
-            <p className="text-xs text-gray-500">Pedidos activos</p>
-          </div>
+          <p className="text-2xl font-bold text-gray-900 leading-none mb-1">{activas?.length || 0}</p>
+          <p className="text-xs text-gray-400 mt-1">en preparación o tránsito</p>
         </div>
-        <div className="card-kpi flex items-center gap-3">
-          <div className="w-10 h-10 flex items-center justify-center shrink-0"
-            style={{ background: '#FEF3E2', borderRadius: '0.25rem' }}>
-            <CheckCircle size={18} style={{ color: '#C4895A' }} />
+        <div className="card-kpi">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+              <CheckCircle size={16} />
+            </div>
+            <p className="titulo-card flex-1">Entregados</p>
           </div>
-          <div>
-            <p className="text-2xl font-bold text-gray-900">{entregadas}</p>
-            <p className="text-xs text-gray-500">Entregados</p>
-          </div>
+          <p className="text-2xl font-bold text-gray-900 leading-none mb-1">{entregadas}</p>
+          <p className="text-xs text-gray-400 mt-1">ventas completadas</p>
         </div>
-        <div className="card-kpi flex items-center gap-3">
-          <div className="w-10 h-10 flex items-center justify-center shrink-0"
-            style={{ background: '#F3EDE8', borderRadius: '0.25rem' }}>
-            <Package size={18} style={{ color: '#6B3A2A' }} />
+        <div className="card-kpi">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+              <Package size={16} />
+            </div>
+            <p className="titulo-card flex-1">Pallets totales</p>
           </div>
-          <div>
-            <p className="text-2xl font-bold text-gray-900">{totalPallets}</p>
-            <p className="text-xs text-gray-500">Pallets totales</p>
-          </div>
+          <p className="text-2xl font-bold text-gray-900 leading-none mb-1">{totalPallets}</p>
+          <p className="text-xs text-gray-400 mt-1">unidades pedidas</p>
         </div>
       </div>
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Truck, Calendar, Clock, AlertCircle, X, MapPin, Package, CreditCard } from 'lucide-react';
+import { Truck, Calendar, Clock, AlertCircle, MapPin, Package, CreditCard, CheckCircle, ArrowRight } from 'lucide-react';
 import { useLogisticasPorRol, useEntregasHoy, useConsultarLogistica, useAvanzarLogistica } from '../../hooks/useLogistica';
 import { useAuthStore } from '../../store/auth.store';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
@@ -228,28 +228,37 @@ type FiltroKpi = 'pendiente' | 'en_camino' | 'entregado' | 'hoy' | null;
 
 // ── Lista paginada de tarjetas ──────────────────────────────────────
 function LogisticaList({
-  items, esCarlos, consultarMutation, avanzarMutation, emptyLabel,
+  items, esCarlos, consultarMutation, avanzarMutation, emptyLabel, filtro, entregasHoy,
 }: {
   items: LogisticaRow[];
   esCarlos: boolean;
   consultarMutation: ReturnType<typeof useConsultarLogistica>;
   avanzarMutation: ReturnType<typeof useAvanzarLogistica>;
   emptyLabel?: string;
+  filtro?: FiltroKpi;
+  entregasHoy?: LogisticaRow[];
 }) {
   const [visibles, setVisibles] = useState(PAGE_SIZE);
 
-  // Reiniciar cuando cambie la lista (sin useEffect para evitar warning del React Compiler)
-  const itemsKey = items.length;
+  // Aplicar filtro de tarjetas
+  const itemsFiltrados = filtro
+    ? filtro === 'hoy'
+      ? (entregasHoy ?? []).filter(h => items.some(i => i.id === h.id))
+      : items.filter(l => l.estadoEntrega === filtro)
+    : items;
+
+  // Reiniciar paginación cuando cambie el filtro o la lista
+  const itemsKey = `${items.length}-${filtro}`;
   const [lastKey, setLastKey] = useState(itemsKey);
   if (itemsKey !== lastKey) {
     setLastKey(itemsKey);
     setVisibles(PAGE_SIZE);
   }
 
-  if (!items.length) return <EmptyState esCarlos={esCarlos} label={emptyLabel} />;
+  if (!itemsFiltrados.length) return <EmptyState esCarlos={esCarlos} label={filtro ? 'Sin resultados para este filtro' : emptyLabel} />;
 
-  const mostrados = items.slice(0, visibles);
-  const hayMas    = visibles < items.length;
+  const mostrados = itemsFiltrados.slice(0, visibles);
+  const hayMas    = visibles < itemsFiltrados.length;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -268,195 +277,10 @@ function LogisticaList({
         >
           Ver más
           <span style={{ fontSize: '0.7rem', color: '#9CA3AF' }}>
-            ({items.length - visibles} restante{items.length - visibles !== 1 ? 's' : ''})
+            ({itemsFiltrados.length - visibles} restante{itemsFiltrados.length - visibles !== 1 ? 's' : ''})
           </span>
         </button>
       )}
-    </div>
-  );
-}
-
-// ── Modal de KPI ────────────────────────────────────────────────────
-function KpiModal({
-  filtro, logisticas, entregasHoy, esCarlos, onClose,
-  avanzarMutation,
-}: {
-  filtro: FiltroKpi;
-  logisticas: LogisticaRow[];
-  entregasHoy: LogisticaRow[];
-  esCarlos: boolean;
-  onClose: () => void;
-  avanzarMutation: ReturnType<typeof useAvanzarLogistica>;
-}) {
-  const titulos: Record<string, string> = {
-    pendiente:  'Entregas pendientes',
-    en_camino:  'En camino ahora',
-    entregado:  'Entregadas',
-    hoy:        'Entregas de hoy',
-  };
-
-  const items = filtro === 'hoy'
-    ? entregasHoy
-    : logisticas.filter(l => l.estadoEntrega === filtro);
-
-  const fmtHora = (s?: string) =>
-    s ? new Date(s).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) + ' hs' : null;
-
-  return (
-    <div
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
-      onClick={onClose}
-    >
-      <div
-        style={{ background: '#fff', borderRadius: '0.5rem', width: '100%', maxWidth: 680, maxHeight: '85vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.25rem', borderBottom: '1px solid #E5E7EB', flexShrink: 0 }}>
-          <div>
-            <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#111827', margin: '0 0 2px' }}>
-              {filtro ? titulos[filtro] : ''}
-            </h2>
-            <p style={{ fontSize: '0.78rem', color: '#9CA3AF', margin: 0 }}>
-              {items.length} entrega{items.length !== 1 ? 's' : ''}
-              {filtro === 'hoy' && ` · ${new Date().toLocaleDateString('es-AR', { weekday: 'long', day: '2-digit', month: 'long' })}`}
-            </p>
-          </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280', padding: 4 }}>
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Body */}
-        <div style={{ overflowY: 'auto', flex: 1, padding: '1rem 1.25rem' }}>
-          {items.length === 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2.5rem 1rem', textAlign: 'center' }}>
-              <Truck size={24} style={{ color: '#D1D5DB', marginBottom: 10 }} />
-              <p style={{ fontSize: '0.875rem', color: '#9CA3AF', margin: 0 }}>
-                {filtro === 'hoy' ? 'No hay entregas programadas para hoy' : 'No hay entregas en este estado'}
-              </p>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-              {items.map(l => {
-                const est = estadoEntregaStyle(l.estadoEntrega);
-                const lugarEntrega =
-                  l.venta?.lugarEntrega ||
-                  [l.venta?.cliente?.direccionEntrega, l.venta?.cliente?.localidad].filter(Boolean).join(', ') || '—';
-                const costoFlete = l.venta?.costoFlete ?? l.costoFlete;
-                const fechaEntrega = l.venta?.fechaEstimEntrega ?? l.fechaRetiroGalpon;
-
-                return (
-                  <div key={l.id} style={{ border: '1px solid #E5E7EB', borderRadius: '0.5rem', overflow: 'hidden' }}>
-                    {/* Cabecera tarjeta */}
-                    <div style={{ padding: '0.75rem 1rem', background: '#F9FAFB', borderBottom: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '2px 7px', background: '#6B3A2A', color: '#fff', borderRadius: '0.25rem' }}>
-                          Venta #{l.ventaId}
-                        </span>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#111827' }}>
-                          {l.venta?.cliente?.razonSocial ?? '—'}
-                        </span>
-                      </div>
-                      <span style={{ fontSize: '0.7rem', fontWeight: 600, padding: '2px 8px', borderRadius: 999, background: est.bg, color: est.color }}>
-                        {est.label}
-                      </span>
-                    </div>
-
-                    {/* Datos principales */}
-                    <div style={{ padding: '0.75rem 1rem', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem 1.5rem' }}>
-                      <div>
-                        <p style={{ fontSize: '0.67rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 2px', display: 'flex', alignItems: 'center', gap: 3 }}>
-                          <MapPin size={9} /> Lugar de entrega
-                        </p>
-                        <p style={{ fontSize: '0.82rem', color: '#374151', fontWeight: 500, margin: 0 }}>{lugarEntrega}</p>
-                      </div>
-                      <div>
-                        <p style={{ fontSize: '0.67rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 2px', display: 'flex', alignItems: 'center', gap: 3 }}>
-                          <Truck size={9} /> Transportista
-                        </p>
-                        <p style={{ fontSize: '0.82rem', color: '#374151', fontWeight: 500, margin: 0 }}>
-                          {l.nombreTransportista ?? '—'}
-                          {l.telefonoTransp && <span style={{ color: '#6B7280', marginLeft: 6 }}>{l.telefonoTransp}</span>}
-                        </p>
-                      </div>
-                      <div>
-                        <p style={{ fontSize: '0.67rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 2px', display: 'flex', alignItems: 'center', gap: 3 }}>
-                          <Calendar size={9} /> Fecha / Hora retiro
-                        </p>
-                        <p style={{ fontSize: '0.82rem', color: '#374151', fontWeight: 500, margin: 0 }}>
-                          {fmtFecha(fechaEntrega)}
-                          {l.horaRetiro && <span style={{ color: '#6B7280', marginLeft: 6 }}>{fmtHora(l.horaRetiro)}</span>}
-                        </p>
-                      </div>
-                      {costoFlete != null && (
-                        <div>
-                          <p style={{ fontSize: '0.67rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 2px', display: 'flex', alignItems: 'center', gap: 3 }}>
-                            <CreditCard size={9} /> Costo flete
-                          </p>
-                          <p style={{ fontSize: '0.82rem', color: '#6B3A2A', fontWeight: 700, margin: 0 }}>{fmt(costoFlete)}</p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Productos */}
-                    {l.venta?.detalles && l.venta.detalles.length > 0 && (
-                      <div style={{ padding: '0 1rem 0.75rem', borderTop: '1px solid #F3F4F6' }}>
-                        <p style={{ fontSize: '0.67rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0.625rem 0 0.375rem', display: 'flex', alignItems: 'center', gap: 3 }}>
-                          <Package size={9} /> Productos
-                        </p>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                          {l.venta.detalles.map(d => (
-                            <div key={d.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 10px', background: '#F9FAFB', borderRadius: '0.25rem', border: '1px solid #E5E7EB' }}>
-                              <span style={{ fontSize: '0.8rem', color: '#374151' }}>{d.producto?.nombre ?? '—'}</span>
-                              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#6B3A2A' }}>{d.cantidadPedida} u</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Observaciones */}
-                    {l.observaciones && (
-                      <div style={{ padding: '0 1rem 0.75rem' }}>
-                        <p style={{ fontSize: '0.75rem', color: '#6B7280', fontStyle: 'italic', margin: 0 }}>"{l.observaciones}"</p>
-                      </div>
-                    )}
-
-                    {/* Acciones en modal */}
-                    {esCarlos && l.estadoEntrega !== 'entregado' && (
-                      <div style={{ padding: '0 1rem 0.75rem', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                        <button
-                          onClick={() => avanzarMutation.mutate({ ventaId: l.ventaId, accion: 'consultando' })}
-                          disabled={avanzarMutation.isPending || l.estadoConsulta === 'consultada' || l.estadoConsulta === 'aceptada'}
-                          style={{
-                            fontSize: '0.75rem', fontWeight: 600, padding: '4px 12px', borderRadius: '0.25rem', border: 'none', cursor: 'pointer',
-                            background: (l.estadoConsulta === 'consultada' || l.estadoConsulta === 'aceptada') ? '#DBEAFE' : 'linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%)',
-                            color: (l.estadoConsulta === 'consultada' || l.estadoConsulta === 'aceptada') ? '#1D4ED8' : '#fff',
-                          }}>
-                          Consultando
-                        </button>
-                        <button
-                          onClick={() => avanzarMutation.mutate({ ventaId: l.ventaId, accion: 'aceptada' })}
-                          disabled={avanzarMutation.isPending || l.estadoConsulta === 'aceptada'}
-                          style={{ fontSize: '0.75rem', fontWeight: 600, padding: '4px 12px', borderRadius: '0.25rem', border: '1px solid #E5E7EB', cursor: 'pointer', background: l.estadoConsulta === 'aceptada' ? '#DCFCE7' : '#F3F4F6', color: l.estadoConsulta === 'aceptada' ? '#15803D' : '#374151' }}>
-                          Aceptada
-                        </button>
-                        <button
-                          onClick={() => avanzarMutation.mutate({ ventaId: l.ventaId, accion: 'entregada' })}
-                          disabled={avanzarMutation.isPending}
-                          style={{ fontSize: '0.75rem', fontWeight: 600, padding: '4px 12px', borderRadius: '0.25rem', border: '1px solid #E5E7EB', cursor: 'pointer', background: '#F3F4F6', color: '#374151' }}>
-                          Entregada
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   );
 }
@@ -483,16 +307,26 @@ export default function LogisticaPage() {
   const logisticasJuan = logisticas?.filter(l => l.venta?.usuario?.rol !== 'propietario_carlos') ?? [];
   const consultasPendientes = logisticasJuan.filter(l => l.estadoConsulta === 'pendiente_consulta').length;
 
-  // KPIs
-  const pendientes = logisticas?.filter(l => l.estadoEntrega === 'pendiente').length ?? 0;
-  const enCamino   = logisticas?.filter(l => l.estadoEntrega === 'en_camino').length ?? 0;
+  const entregadas = logisticas?.filter(l => l.estadoEntrega === 'entregado').length ?? 0;
+  void entregadas;
+  const hoy = entregasHoy?.length ?? 0;
+  void hoy;
 
-  const cardProps = { esCarlos, consultarMutation, avanzarMutation };
-  void cardProps; // usado anteriormente, ahora reemplazado por LogisticaList
+  // Para las tarjetas: contar según vista activa (Carlos ve su lista o la de Juan)
+  const listaActiva = !esCarlos
+    ? (logisticas ?? [])
+    : vistaCarlos === 'mis' ? misLogisticas : logisticasJuan;
 
-  const kpis = [
-    { icon: Clock, color: '#C4895A', bg: '#FEF3E2', val: pendientes, label: 'Pendientes', filtro: 'pendiente' as FiltroKpi },
-    { icon: Truck, color: '#6B3A2A', bg: '#F3EDE8', val: enCamino,   label: 'En camino',  filtro: 'en_camino' as FiltroKpi },
+  const pendientesActivos = listaActiva.filter(l => l.estadoEntrega === 'pendiente').length;
+  const enCaminoActivos   = listaActiva.filter(l => l.estadoEntrega === 'en_camino').length;
+  const entregadasActivas = listaActiva.filter(l => l.estadoEntrega === 'entregado').length;
+  const hoyActivos        = (entregasHoy ?? []).filter(h => listaActiva.some(i => i.id === h.id)).length;
+
+  const tarjetas = [
+    { key: 'pendiente' as FiltroKpi, label: 'Pendientes',  val: pendientesActivos, icono: <Clock size={16} />,      sub: 'sin despachar' },
+    { key: 'en_camino' as FiltroKpi, label: 'En camino',   val: enCaminoActivos,   icono: <Truck size={16} />,      sub: 'en tránsito ahora' },
+    { key: 'entregado' as FiltroKpi, label: 'Entregadas',  val: entregadasActivas, icono: <CheckCircle size={16} />, sub: 'confirmadas' },
+    { key: 'hoy'       as FiltroKpi, label: 'Para hoy',    val: hoyActivos,        icono: <Calendar size={16} />,   sub: 'programadas hoy' },
   ];
 
   return (
@@ -506,39 +340,36 @@ export default function LogisticaPage() {
         </p>
       </div>
 
-      {/* KPIs clicables */}
-      <div className={`grid ${esCarlos ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-2'} gap-4`}>
-        {kpis.map(({ icon: Icon, color, bg, val, label, filtro }) => (
-          <button
-            key={label}
-            onClick={() => setFiltroActivo(filtroActivo === filtro ? null : filtro)}
-            style={{
-              background: '#fff',
-              border: `1.5px solid ${filtroActivo === filtro ? color : '#E5E7EB'}`,
-              borderRadius: '0.5rem',
-              padding: '0.875rem 1rem',
-              cursor: 'pointer',
-              textAlign: 'left',
-              transition: 'all 0.15s',
-              boxShadow: filtroActivo === filtro ? `0 0 0 3px ${color}22` : 'none',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', background: bg, borderRadius: '0.25rem', flexShrink: 0 }}>
-                <Icon size={18} style={{ color }} />
-              </div>
-              <div>
-                <p style={{ fontSize: '1.375rem', fontWeight: 800, color: filtroActivo === filtro ? color : '#6B3A2A', margin: 0, lineHeight: 1 }}>{val}</p>
-                <p style={{ fontSize: '0.75rem', color: '#6B7280', margin: '3px 0 0', display: 'flex', alignItems: 'center', gap: 4 }}>
-                  {label}
-                  <span style={{ fontSize: '0.65rem', color: filtroActivo === filtro ? color : '#9CA3AF' }}>
-                    {filtroActivo === filtro ? '▲' : '▼'}
+      {/* Tarjetas filtro */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+        {tarjetas.map(t => {
+          const activa = filtroActivo === t.key;
+          return (
+            <div
+              key={t.key}
+              className="card-kpi cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+              onClick={() => setFiltroActivo(activa ? null : t.key)}
+              style={activa ? { outline: '2px solid #C4895A', outlineOffset: '-2px' } : {}}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+                  {t.icono}
+                </div>
+                <p className="titulo-card flex-1">{t.label}</p>
+                {activa && (
+                  <span style={{ fontSize: '0.6rem', fontWeight: 700, padding: '1px 5px', background: '#C4895A', color: '#fff', borderRadius: '0.2rem' }}>
+                    ON
                   </span>
-                </p>
+                )}
+              </div>
+              <p className="text-2xl font-bold text-gray-900 leading-none mb-1">{t.val}</p>
+              <div className="flex items-center justify-between mt-1">
+                <p className="text-xs text-gray-400">{t.sub}</p>
+                <ArrowRight size={11} className="text-gray-300" />
               </div>
             </div>
-          </button>
-        ))}
+          );
+        })}
       </div>
 
       {/* Banner consultas pendientes — solo Carlos */}
@@ -558,6 +389,8 @@ export default function LogisticaPage() {
           esCarlos={false}
           consultarMutation={consultarMutation}
           avanzarMutation={avanzarMutation}
+          filtro={filtroActivo}
+          entregasHoy={entregasHoy ?? []}
         />
       )}
 
@@ -620,6 +453,8 @@ export default function LogisticaPage() {
                 consultarMutation={consultarMutation}
                 avanzarMutation={avanzarMutation}
                 emptyLabel="Sin logísticas propias"
+                filtro={filtroActivo}
+                entregasHoy={entregasHoy ?? []}
               />
             ) : (
               <LogisticaList
@@ -628,6 +463,8 @@ export default function LogisticaPage() {
                 consultarMutation={consultarMutation}
                 avanzarMutation={avanzarMutation}
                 emptyLabel="Juan no tiene logísticas registradas"
+                filtro={filtroActivo}
+                entregasHoy={entregasHoy ?? []}
               />
             )}
           </div>
@@ -640,18 +477,8 @@ export default function LogisticaPage() {
         </div>
       )}
 
-      {/* Modal KPI */}
-      {filtroActivo && (
-        <KpiModal
-          filtro={filtroActivo}
-          logisticas={logisticas ?? []}
-          entregasHoy={entregasHoy ?? []}
-          esCarlos={esCarlos}
-          onClose={() => setFiltroActivo(null)}
-          avanzarMutation={avanzarMutation}
-        />
-      )}
     </div>
   );
 }
+
 

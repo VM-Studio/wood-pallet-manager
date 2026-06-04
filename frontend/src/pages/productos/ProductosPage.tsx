@@ -104,35 +104,35 @@ export default function ProductosPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        <div className="card-kpi flex items-center gap-3">
-          <div className="w-10 h-10 flex items-center justify-center shrink-0"
-            style={{ background: '#FEF3E2', borderRadius: '0.25rem' }}>
-            <Package size={18} style={{ color: '#C4895A' }} />
+        <div className="card-kpi">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+              <Package size={16} />
+            </div>
+            <p className="titulo-card flex-1">Mis productos</p>
           </div>
-          <div>
-            <p className="text-2xl font-bold text-gray-900">{productos?.length ?? 0}</p>
-            <p className="text-xs text-gray-500">Mis productos</p>
-          </div>
+          <p className="text-2xl font-bold text-gray-900 leading-none mb-1">{productos?.length ?? 0}</p>
+          <p className="text-xs text-gray-400 mt-1">productos registrados</p>
         </div>
-        <div className="card-kpi flex items-center gap-3">
-          <div className="w-10 h-10 flex items-center justify-center shrink-0"
-            style={{ background: '#F3EDE8', borderRadius: '0.25rem' }}>
-            <Layers size={18} style={{ color: '#6B3A2A' }} />
+        <div className="card-kpi">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+              <Layers size={16} />
+            </div>
+            <p className="titulo-card flex-1">Unidades en stock</p>
           </div>
-          <div>
-            <p className="text-2xl font-bold text-gray-900">{stockTotalMios}</p>
-            <p className="text-xs text-gray-500">Unidades en stock</p>
-          </div>
+          <p className="text-2xl font-bold text-gray-900 leading-none mb-1">{stockTotalMios}</p>
+          <p className="text-xs text-gray-400 mt-1">total disponible</p>
         </div>
-        <div className="card-kpi flex items-center gap-3">
-          <div className="w-10 h-10 flex items-center justify-center shrink-0"
-            style={{ background: '#FEF3E2', borderRadius: '0.25rem' }}>
-            <DollarSign size={18} style={{ color: '#C4895A' }} />
+        <div className="card-kpi">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+              <DollarSign size={16} />
+            </div>
+            <p className="titulo-card flex-1">Con precios configurados</p>
           </div>
-          <div>
-            <p className="text-2xl font-bold text-gray-900">{conPrecios}</p>
-            <p className="text-xs text-gray-500">Con precios configurados</p>
-          </div>
+          <p className="text-2xl font-bold text-gray-900 leading-none mb-1">{conPrecios}</p>
+          <p className="text-xs text-gray-400 mt-1">con precios activos</p>
         </div>
       </div>
 

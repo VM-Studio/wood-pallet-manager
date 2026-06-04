@@ -599,32 +599,35 @@ export default function DevolucionesPage() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        <div className="card-kpi" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: 40, height: 40, background: '#FEF3E2', borderRadius: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <AlertCircle size={18} style={{ color: '#C4895A' }} />
+        <div className="card-kpi">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+              <AlertCircle size={16} />
+            </div>
+            <p className="titulo-card flex-1">Esperando depósito</p>
           </div>
-          <div>
-            <p style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', margin: 0 }}>{pendientesDeposito}</p>
-            <p style={{ fontSize: '0.75rem', color: '#6B7280', margin: 0 }}>Esperando depósito</p>
-          </div>
+          <p className="text-2xl font-bold text-gray-900 leading-none mb-1">{pendientesDeposito}</p>
+          <p className="text-xs text-gray-400 mt-1">pendientes de confirmación</p>
         </div>
-        <div className="card-kpi" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: 40, height: 40, background: '#F3EDE8', borderRadius: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <CheckCircle size={18} style={{ color: '#6B3A2A' }} />
+        <div className="card-kpi">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+              <CheckCircle size={16} />
+            </div>
+            <p className="titulo-card flex-1">Procesadas</p>
           </div>
-          <div>
-            <p style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', margin: 0 }}>{procesadas}</p>
-            <p style={{ fontSize: '0.75rem', color: '#6B7280', margin: 0 }}>Procesadas</p>
-          </div>
+          <p className="text-2xl font-bold text-gray-900 leading-none mb-1">{procesadas}</p>
+          <p className="text-xs text-gray-400 mt-1">devoluciones finalizadas</p>
         </div>
-        <div className="card-kpi" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: 40, height: 40, background: '#F3EDE8', borderRadius: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <DollarSign size={18} style={{ color: '#6B3A2A' }} />
+        <div className="card-kpi">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+              <DollarSign size={16} />
+            </div>
+            <p className="titulo-card flex-1">Total reintegrado</p>
           </div>
-          <div>
-            <p style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', margin: 0 }}>{formatPesos(totalReintegrado)}</p>
-            <p style={{ fontSize: '0.75rem', color: '#6B7280', margin: 0 }}>Total reintegrado</p>
-          </div>
+          <p className="text-2xl font-bold text-gray-900 leading-none mb-1">{formatPesos(totalReintegrado)}</p>
+          <p className="text-xs text-gray-400 mt-1">reintegros confirmados</p>
         </div>
       </div>
 

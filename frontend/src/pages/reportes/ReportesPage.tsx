@@ -5,7 +5,7 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell,
   AreaChart, Area
 } from 'recharts';
-import { Calendar, TrendingUp, Users, DollarSign, Package } from 'lucide-react';
+import { Calendar, TrendingUp, Users, DollarSign, Package, Clock, CheckCircle, Receipt } from 'lucide-react';
 import {
   useReporteVentas,
   useReporteCobranzas,
@@ -164,14 +164,17 @@ export default function ReportesPage() {
           <div className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: 'Ventas totales',   valor: reporteVentas?.resumen?.totalVentas ?? 0,                sub: 'operaciones' },
-                { label: 'Pallets vendidos', valor: formatNumero(reporteVentas?.resumen?.totalPallets ?? 0), sub: 'unidades' },
-                { label: 'Facturación',      valor: formatPesos(reporteVentas?.resumen?.totalFacturado ?? 0), sub: 'con IVA' },
-                { label: 'Pendiente cobro',  valor: formatPesos(reporteVentas?.resumen?.pendienteCobro ?? 0), sub: 'por cobrar' },
+                { label: 'Ventas totales',   valor: reporteVentas?.resumen?.totalVentas ?? 0,                sub: 'operaciones',   icono: <TrendingUp size={16} /> },
+                { label: 'Pallets vendidos', valor: formatNumero(reporteVentas?.resumen?.totalPallets ?? 0), sub: 'unidades',       icono: <Package size={16} /> },
+                { label: 'Facturación',      valor: formatPesos(reporteVentas?.resumen?.totalFacturado ?? 0), sub: 'con IVA',       icono: <DollarSign size={16} /> },
+                { label: 'Pendiente cobro',  valor: formatPesos(reporteVentas?.resumen?.pendienteCobro ?? 0), sub: 'por cobrar',    icono: <Clock size={16} /> },
               ].map((k, i) => (
                 <div key={i} className="card-kpi">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{k.label}</p>
-                  <p className="text-2xl font-bold" style={{ color: '#6B3A2A' }}>{k.valor}</p>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">{k.icono}</div>
+                    <p className="titulo-card flex-1">{k.label}</p>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900 leading-none mb-1">{k.valor}</p>
                   <p className="text-xs text-gray-400 mt-1">{k.sub}</p>
                 </div>
               ))}
@@ -323,18 +326,18 @@ export default function ReportesPage() {
           <div className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: 'Total emitido',    valor: formatPesos(reporteCobranzas?.resumen?.totalEmitido ?? 0),   color: '#6B3A2A' },
-                { label: 'Total cobrado',    valor: formatPesos(reporteCobranzas?.resumen?.totalCobrado ?? 0),   color: '#15803D' },
-                { label: 'Pendiente cobrar', valor: formatPesos(reporteCobranzas?.resumen?.pendienteCobro ?? 0), color: '#B45309' },
-                {
-                  label: 'Tasa de cobranza',
-                  valor: `${reporteCobranzas?.resumen?.tasaCobranza ?? 0}%`,
-                  color: (reporteCobranzas?.resumen?.tasaCobranza ?? 0) >= 80 ? '#15803D' : '#B45309'
-                },
+                { label: 'Total emitido',    valor: formatPesos(reporteCobranzas?.resumen?.totalEmitido ?? 0),   sub: 'facturado',        icono: <Receipt size={16} /> },
+                { label: 'Total cobrado',    valor: formatPesos(reporteCobranzas?.resumen?.totalCobrado ?? 0),   sub: 'cobros confirmados', icono: <CheckCircle size={16} /> },
+                { label: 'Pendiente cobrar', valor: formatPesos(reporteCobranzas?.resumen?.pendienteCobro ?? 0), sub: 'por cobrar',         icono: <Clock size={16} /> },
+                { label: 'Tasa de cobranza', valor: `${reporteCobranzas?.resumen?.tasaCobranza ?? 0}%`,          sub: 'del período',        icono: <TrendingUp size={16} /> },
               ].map((k, i) => (
-                <div key={i} className="card-kpi text-center">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{k.label}</p>
-                  <p className="text-2xl font-bold" style={{ color: k.color }}>{k.valor}</p>
+                <div key={i} className="card-kpi">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">{k.icono}</div>
+                    <p className="titulo-card flex-1">{k.label}</p>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900 leading-none mb-1">{k.valor}</p>
+                  <p className="text-xs text-gray-400 mt-1">{k.sub}</p>
                 </div>
               ))}
             </div>

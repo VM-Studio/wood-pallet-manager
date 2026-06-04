@@ -1,9 +1,14 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Plus, Search, Check, X, AlertTriangle, ChevronDown, ChevronUp, FileText } from 'lucide-react';
 import { useCompras, useDeudaProveedores, useRegistrarPagoCompra, useCancelarCompra } from '../../hooks/useCompras';
 import NuevaCompra from './NuevaCompra';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
+import {
+  PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
+  CartesianGrid, XAxis, YAxis,
+  Area, AreaChart,
+} from 'recharts';
 
 const formatPesos = (v: number) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(v);
@@ -39,6 +44,59 @@ export default function ComprasPage() {
   );
 
   const deudaTotal = deuda?.reduce((acc: number, d: any) => acc + d.deudaTotal, 0) || 0;
+
+  // ── Datos gráfico 1: Proveedor (monto total) ──────────────────────────────
+  const dataPorProveedor = useMemo(() => {
+    if (!compras?.length) return [];
+    const mapa: Record<string, number> = {};
+    compras.filter(c => c.estado !== 'cancelada').forEach(c => {
+      const nombre = c.proveedor?.nombreEmpresa ?? 'Sin proveedor';
+      mapa[nombre] = (mapa[nombre] || 0) + Number(c.total || 0);
+    });
+    return Object.entries(mapa)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [compras]);
+
+  // ── Datos gráfico 2: Tipo de compra (monto total) ─────────────────────────
+  const dataPorTipo = useMemo(() => {
+    if (!compras?.length) return [];
+    let stockPropio = 0;
+    let compraDirect = 0;
+    compras.filter(c => c.estado !== 'cancelada').forEach(c => {
+      const monto = Number(c.total || 0);
+      if (c.tipoCompra === 'stock_propio') stockPropio += monto;
+      else compraDirect += monto;
+    });
+    return [
+      { name: 'Stock propio', value: stockPropio },
+      { name: 'Compra directa', value: compraDirect },
+    ];
+  }, [compras]);
+
+  // ── Datos gráfico 3: Evolución mensual (últimos 6 meses) ──────────────────
+  const dataEvolucion = useMemo(() => {
+    const meses: { key: string; label: string }[] = [];
+    const hoy = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const label = d.toLocaleDateString('es-AR', { month: 'short', year: '2-digit' });
+      meses.push({ key, label });
+    }
+    const totales: Record<string, number> = {};
+    meses.forEach(m => { totales[m.key] = 0; });
+    compras?.filter(c => c.estado !== 'cancelada').forEach(c => {
+      const key = c.fechaCompra.slice(0, 7);
+      if (key in totales) totales[key] += Number(c.total || 0);
+    });
+    return meses.map(m => ({ mes: m.label, total: totales[m.key] }));
+  }, [compras]);
+
+  const totalGeneral = useMemo(
+    () => dataPorProveedor.reduce((acc, d) => acc + d.value, 0),
+    [dataPorProveedor]
+  );
 
   const handlePago = async (compraId: number) => {
     setErrorPago('');
@@ -84,6 +142,159 @@ export default function ComprasPage() {
             </div>
             <p className="text-xl font-bold text-amber-600">{formatPesos(deudaTotal)}</p>
           </div>
+        </div>
+      )}
+
+      {/* ── Gráficos ─────────────────────────────────────────────────────── */}
+      {compras && compras.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+          {/* Gráfico 1 — Donut: distribución por proveedor */}
+          <div className="card-kpi flex flex-col" style={{ minHeight: 220 }}>
+            <p className="titulo-card mb-3">Compras por proveedor</p>
+            <div className="flex-1 flex items-center gap-4">
+              <div style={{ width: 130, height: 130, flexShrink: 0, position: 'relative' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={dataPorProveedor}
+                      dataKey="value"
+                      cx="50%" cy="50%"
+                      innerRadius={38} outerRadius={58}
+                      paddingAngle={3}
+                      strokeWidth={0}
+                    >
+                      {dataPorProveedor.map((_, i) => (
+                        <Cell key={i} fill={['#6B3A2A', '#C4895A', '#E8D5C4', '#A0522D'][i % 4]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(v: number) =>
+                        [`$${new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 }).format(v)}`, 'Monto']}
+                      contentStyle={{ fontSize: 11, borderRadius: 4, border: '1px solid #E8E2DA' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                {/* Centro del donut */}
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', textAlign: 'center', pointerEvents: 'none' }}>
+                  <p style={{ fontSize: '0.6rem', color: '#9CA3AF', lineHeight: 1.2 }}>Total</p>
+                  <p style={{ fontSize: '0.65rem', fontWeight: 700, color: '#374151', lineHeight: 1.2 }}>
+                    ${new Intl.NumberFormat('es-AR', { notation: 'compact', maximumFractionDigits: 1 }).format(totalGeneral)}
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2 flex-1 min-w-0">
+                {dataPorProveedor.map((d, i) => (
+                  <div key={d.name} className="flex items-center gap-2 min-w-0">
+                    <div style={{ width: 8, height: 8, borderRadius: 2, background: ['#6B3A2A', '#C4895A', '#E8D5C4', '#A0522D'][i % 4], flexShrink: 0 }} />
+                    <div className="min-w-0 flex-1">
+                      <p style={{ fontSize: '0.7rem', color: '#374151', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.name}</p>
+                      <p style={{ fontSize: '0.65rem', color: '#9CA3AF' }}>
+                        {totalGeneral > 0 ? Math.round((d.value / totalGeneral) * 100) : 0}%
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Gráfico 2 — Barras horizontales: tipo de compra */}
+          <div className="card-kpi flex flex-col" style={{ minHeight: 220 }}>
+            <p className="titulo-card mb-3">Stock propio vs Compra directa</p>
+            <div className="flex-1 flex flex-col justify-center gap-4">
+              {dataPorTipo.map((d, i) => {
+                const total = dataPorTipo.reduce((acc, x) => acc + x.value, 0);
+                const pct = total > 0 ? Math.round((d.value / total) * 100) : 0;
+                const colors = ['#6B3A2A', '#C4895A'];
+                return (
+                  <div key={d.name}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <div style={{ width: 8, height: 8, borderRadius: 2, background: colors[i], flexShrink: 0 }} />
+                        <p style={{ fontSize: '0.72rem', fontWeight: 600, color: '#374151' }}>{d.name}</p>
+                      </div>
+                      <p style={{ fontSize: '0.72rem', color: '#6B7280' }}>
+                        ${new Intl.NumberFormat('es-AR', { notation: 'compact', maximumFractionDigits: 1 }).format(d.value)}
+                      </p>
+                    </div>
+                    <div style={{ height: 8, background: '#F3F4F6', borderRadius: 4, overflow: 'hidden' }}>
+                      <div
+                        style={{
+                          height: '100%',
+                          width: `${pct}%`,
+                          background: `linear-gradient(90deg, ${colors[i]}CC, ${colors[i]})`,
+                          borderRadius: 4,
+                          transition: 'width 0.6s ease',
+                        }}
+                      />
+                    </div>
+                    <p style={{ fontSize: '0.65rem', color: '#9CA3AF', marginTop: 3 }}>{pct}% del total</p>
+                  </div>
+                );
+              })}
+              <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: '0.5rem' }}>
+                <p style={{ fontSize: '0.7rem', color: '#9CA3AF', textAlign: 'center' }}>
+                  {compras?.filter(c => c.estado !== 'cancelada').length ?? 0} operaciones activas
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Gráfico 3 — Line chart: evolución mensual */}
+          <div className="card-kpi flex flex-col" style={{ minHeight: 220 }}>
+            <p className="titulo-card mb-3">Gasto mensual — últimos 6 meses</p>
+            <div className="flex-1" style={{ minHeight: 160 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={dataEvolucion} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+                  <defs>
+                    <linearGradient id="gradCompras" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#C4895A" stopOpacity={0.25} />
+                      <stop offset="100%" stopColor="#C4895A" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
+                  <XAxis
+                    dataKey="mes"
+                    tick={{ fontSize: 10, fill: '#9CA3AF' }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 9, fill: '#9CA3AF' }}
+                    axisLine={false}
+                    tickLine={false}
+                    width={38}
+                    tickFormatter={(v: number) =>
+                      v >= 1_000_000
+                        ? `$${(v / 1_000_000).toFixed(1)}M`
+                        : v >= 1000
+                        ? `$${(v / 1000).toFixed(0)}k`
+                        : `$${v}`
+                    }
+                  />
+                  <Tooltip
+                    formatter={(v: number) => [
+                      `$${new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 }).format(v)}`,
+                      'Gasto'
+                    ]}
+                    contentStyle={{ fontSize: 11, borderRadius: 4, border: '1px solid #E8E2DA', background: '#fff' }}
+                    cursor={{ stroke: '#C4895A', strokeWidth: 1, strokeDasharray: '4 2' }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="total"
+                    stroke="#6B3A2A"
+                    strokeWidth={2}
+                    fill="url(#gradCompras)"
+                    dot={{ r: 3, fill: '#6B3A2A', strokeWidth: 0 }}
+                    activeDot={{ r: 5, fill: '#C4895A', strokeWidth: 0 }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
         </div>
       )}
 
