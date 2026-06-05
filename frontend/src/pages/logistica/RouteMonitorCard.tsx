@@ -28,41 +28,54 @@ function MapaRutas({ rutas }: { rutas: RutaHoy[] }) {
       return;
     }
 
-    async function geocodificar(_geocoder: unknown, destino: string): Promise<null> {
-      console.warn('geocodificar ya no se usa — usar PlacesAutocomplete para guardar coords:', destino);
-      return null;
-    }
-    void geocodificar; // suprimir lint
-
     async function initMap() {
-      console.log('[MapaRutas] Iniciando mapa con rutas:', rutas);
       setOptions({ key: API_KEY!, v: 'weekly' });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const mapsLib    = await importLibrary('maps')   as any;
+      const mapsLib   = await importLibrary('maps')   as any;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const coreLib    = await importLibrary('core')   as any;
+      const coreLib   = await importLibrary('core')   as any;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const routesLib  = await importLibrary('routes') as any;
+      const routesLib = await importLibrary('routes') as any;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const markerLib = await importLibrary('marker') as any;
 
-      const { Map, Polyline, Marker, SymbolPath }     = mapsLib;
+      const { Map, Polyline }                         = mapsLib;
       const { LatLngBounds }                          = coreLib;
       const { DirectionsService, DirectionsRenderer } = routesLib;
+      const { AdvancedMarkerElement }                 = markerLib;
 
       if (!mapRef.current) return;
 
       const map = new Map(mapRef.current, {
         center: ORIGEN,
         zoom: 10,
+        mapId: 'woodpallet_rutas_map',   // requerido para AdvancedMarkerElement
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: false,
-        styles: [{ featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] }],
       });
 
-      new Marker({
+      // Helper: marcador circular con HTML (reemplaza Marker+SymbolPath legacy)
+      const crearPin = (color: string, label?: string, size = 22) => {
+        const el = document.createElement('div');
+        el.style.cssText = [
+          `width:${size}px`, `height:${size}px`,
+          `background:${color}`, 'border-radius:50%',
+          'border:2.5px solid #fff',
+          'box-shadow:0 2px 6px rgba(0,0,0,0.35)',
+          'display:flex', 'align-items:center', 'justify-content:center',
+          'color:#fff', 'font-size:11px', 'font-weight:700',
+          "font-family:Inter,sans-serif",
+        ].join(';');
+        if (label) el.textContent = label;
+        return el;
+      };
+
+      // Marcador de origen (galpón)
+      new AdvancedMarkerElement({
         position: ORIGEN, map, title: 'Galpón Tigre',
-        icon: { path: SymbolPath.CIRCLE, scale: 10, fillColor: '#6B3A2A', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
+        content: crearPin('#6B3A2A', '', 20),
         zIndex: 100,
       });
 
@@ -72,33 +85,32 @@ function MapaRutas({ rutas }: { rutas: RutaHoy[] }) {
 
       let rutasOk = 0;
       for (const ruta of rutas) {
-        // Solo dibujar si tenemos coordenadas exactas guardadas
         if (ruta.lat == null || ruta.lng == null) {
-          console.warn(`[MapaRutas] Sin coordenadas para: "${ruta.destino}" — cargar la venta de nuevo para guardar lat/lng`);
+          console.warn(`[MapaRutas] Sin coordenadas para: "${ruta.destino}"`);
           continue;
         }
         const coords = { lat: ruta.lat, lng: ruta.lng };
-        console.log(`[MapaRutas] Dibujando ruta ${ruta.orden}: "${ruta.destino}"`, coords);
-        const color = COLORES[(ruta.orden - 1) % COLORES.length];
+        const color  = COLORES[(ruta.orden - 1) % COLORES.length];
         bounds.extend(coords);
 
-        new Marker({
+        new AdvancedMarkerElement({
           position: coords, map, title: ruta.destino,
-          icon: { path: SymbolPath.CIRCLE, scale: 12, fillColor: color, fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
-          label: { text: String(ruta.orden), color: '#fff', fontWeight: '700', fontSize: '11px' },
+          content: crearPin(color, String(ruta.orden), 26),
           zIndex: 50 + ruta.orden,
         });
 
-        // Esperar 300ms entre requests para no saturar la Directions API
+        // 300 ms entre requests para no saturar Directions API
         await new Promise(r => setTimeout(r, 300));
 
         try {
-          const result = await new Promise<google.maps.DirectionsResult>((resolve, reject) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const result = await new Promise<any>((resolve, reject) => {
             directionsService.route(
-              { origin: ORIGEN, destination: coords, travelMode: 'DRIVING' as google.maps.TravelMode },
-              (res, status) => {
+              { origin: ORIGEN, destination: coords, travelMode: 'DRIVING' },
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (res: any, status: any) => {
                 if (status === 'OK' && res) resolve(res);
-                else reject(new Error(`Directions failed: ${status}`));
+                else reject(new Error(`Directions: ${status}`));
               },
             );
           });
@@ -107,22 +119,20 @@ function MapaRutas({ rutas }: { rutas: RutaHoy[] }) {
             polylineOptions: { strokeColor: color, strokeWeight: 4, strokeOpacity: 0.85 },
           });
         } catch (err) {
-          console.warn('Directions API falló, usando línea recta:', err);
-          // Fallback: línea recta entre galpón y destino
+          console.warn('[MapaRutas] Directions falló, línea recta:', err);
           new Polyline({ path: [ORIGEN, coords], map, strokeColor: color, strokeWeight: 3, strokeOpacity: 0.7 });
         }
         rutasOk++;
       }
 
       if (rutasOk > 0) map.fitBounds(bounds, 40);
-      console.log(`[MapaRutas] Rutas dibujadas: ${rutasOk} / ${rutas.length}`);
       setCargando(false);
     }
 
     initMap().catch((err: unknown) => {
       // Mostrar el error concreto para diagnóstico (API key/referer/limites)
       console.error('[MapaRutas] Error inicializando Google Maps:', err);
-      const msg = (err && typeof err === 'object' && 'message' in err) ? (err as any).message : String(err);
+      const msg = (err && typeof err === 'object' && 'message' in err) ? (err as { message: string }).message : String(err);
       setError('Error al cargar Google Maps: ' + msg);
       setCargando(false);
     });
