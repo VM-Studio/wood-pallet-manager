@@ -4,10 +4,11 @@ interface SplashScreenProps {
   onFinish: () => void
 }
 
-const DURATION = 2000 // ms
+const DURATION = 2600 // ms total de carga
 
 export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const [progress, setProgress] = useState(0)
+  const [fadeOut, setFadeOut] = useState(false)
   const rafRef = useRef<number>(0)
   const startRef = useRef<number>(0)
 
@@ -15,12 +16,16 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
     const step = (ts: number) => {
       if (!startRef.current) startRef.current = ts
       const elapsed = ts - startRef.current
-      const pct = Math.min((elapsed / DURATION) * 100, 100)
+      // Easing: arranca rápido, frena al final
+      const linear = Math.min(elapsed / DURATION, 1)
+      const eased = linear < 0.8 ? linear * 1.1 : 0.88 + (linear - 0.8) * 0.6
+      const pct = Math.min(eased * 100, 100)
       setProgress(pct)
       if (pct < 100) {
         rafRef.current = requestAnimationFrame(step)
       } else {
-        setTimeout(onFinish, 120)
+        setFadeOut(true)
+        setTimeout(onFinish, 550)
       }
     }
     rafRef.current = requestAnimationFrame(step)
@@ -28,92 +33,94 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   }, [onFinish])
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 9999,
-      background: '#d0ccc6',
-      display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      gap: '0.4rem',
-    }}>
-      {/* Logo */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <img
-          src="/logoWoodPalletDos.png"
-          alt="WoodPallet"
-          style={{ width: 240, height: 240, objectFit: 'contain' }}
-        />
-      </div>
-
-      {/* Barra de avance */}
-      <ProgressBar progress={progress} />
-    </div>
-  )
-}
-
-function ProgressBar({ progress }: { progress: number }) {
-  // Misma anchura que el título (medida via ref del contenedor padre)
-  // Usamos un ancho fijo equivalente visual al texto: lo medimos con un span oculto
-  const [barWidth, setBarWidth] = useState(0)
-  const titleRef = useRef<HTMLSpanElement>(null)
-
-  useEffect(() => {
-    // Medir el span oculto que replica el título
-    if (titleRef.current) {
-      setBarWidth(titleRef.current.offsetWidth + 80)
-    }
-  }, [])
-
-  const pct = Math.round(progress)
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-      {/* Span oculto para medir el ancho del título */}
-      <span
-        ref={titleRef}
-        aria-hidden
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        opacity: fadeOut ? 0 : 1,
+        transition: 'opacity 0.55s ease',
+        overflow: 'hidden',
+        background: '#fff',
+      }}
+    >
+      {/* ── Imagen portada full-cover ── */}
+      <img
+        src="/portada.png"
+        alt="WoodPallet Manager"
         style={{
-          position: 'absolute', visibility: 'hidden', pointerEvents: 'none',
-          fontFamily: "'Cormorant Garamond', Georgia, serif",
-          fontStyle: 'italic',
-          fontWeight: 600,
-          fontSize: 'clamp(2rem, 5vw, 3rem)',
-          whiteSpace: 'nowrap',
+          position: 'absolute',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          objectPosition: 'center',
+          userSelect: 'none',
+          pointerEvents: 'none',
+        }}
+      />
+
+      {/* ── Gradiente inferior para que la barra sea legible ── */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: '30%',
+          background: 'linear-gradient(to bottom, transparent 0%, rgba(20,10,5,0.55) 100%)',
+          pointerEvents: 'none',
+        }}
+      />
+
+      {/* ── Barra de progreso y label ── */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 'max(2.5rem, env(safe-area-inset-bottom, 2.5rem))',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: 'min(300px, 75vw)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '0.6rem',
         }}
       >
-        WoodPallet
-      </span>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
         {/* Track */}
-        <div style={{
-          width: barWidth > 0 ? barWidth : 340,
-          height: 6,
-          background: '#fff',
-          borderRadius: 99,
-          overflow: 'hidden',
-          boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
-        }}>
-          {/* Fill */}
-          <div style={{
-            height: '100%',
-            width: `${progress}%`,
-            background: '#7c4b2c',
+        <div
+          style={{
+            width: '100%',
+            height: 3,
+            background: 'rgba(255,255,255,0.25)',
             borderRadius: 99,
-            transition: 'width 0.05s linear',
-          }} />
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              height: '100%',
+              width: `${progress}%`,
+              background: '#ffffff',
+              borderRadius: 99,
+              transition: 'width 0.08s linear',
+              boxShadow: '0 0 8px rgba(255,255,255,0.6)',
+            }}
+          />
         </div>
 
-        {/* Porcentaje */}
-        <span style={{
-          fontSize: '0.75rem',
-          fontWeight: 600,
-          color: '#6B3A2A',
-          width: '2.5rem',
-          textAlign: 'left',
-          fontVariantNumeric: 'tabular-nums',
-          fontFamily: 'Inter, sans-serif',
-        }}>
-          {pct}%
+        {/* Texto */}
+        <span
+          style={{
+            fontSize: '0.68rem',
+            fontWeight: 500,
+            color: 'rgba(255,255,255,0.65)',
+            fontFamily: 'Inter, sans-serif',
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+          }}
+        >
+          {Math.round(progress) < 100 ? 'Cargando…' : 'Listo'}
         </span>
       </div>
     </div>

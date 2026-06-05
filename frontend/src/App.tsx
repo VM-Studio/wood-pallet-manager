@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { lazy, Suspense, useState, useCallback } from 'react';
 import MainLayout from './components/layout/MainLayout';
 import SplashScreen from './components/SplashScreen';
+import PWAInstallPrompt from './components/PWAInstallPrompt';
 
 const LoginPage       = lazy(() => import('./pages/auth/LoginPage'));
 const RecuperarPasswordPage = lazy(() => import('./pages/auth/RecuperarPasswordPage'));
@@ -46,6 +47,7 @@ export default function App() {
       {!splashDone && <SplashScreen onFinish={() => setSplashDone(true)} />}
       {splashDone && (
       <BrowserRouter>
+        <PWAInstallPrompt />
         <Suspense fallback={<div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',fontFamily:'Inter,sans-serif',color:'#6B7280'}}>Cargando...</div>}>
           <Routes>
           <Route path="/login" element={<LoginPage />} />
