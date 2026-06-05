@@ -40,50 +40,45 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
         zIndex: 9999,
         opacity: fadeOut ? 0 : 1,
         transition: 'opacity 0.55s ease',
-        overflow: 'hidden',
-        background: '#ffffff',
+        background: '#d0ccc6',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
+        gap: '2rem',
       }}
     >
-      {/* ── Imagen portada centrada sobre fondo blanco ── */}
+      {/* ── Logo ── */}
       <img
-        src="/portada.png"
-        alt="WoodPallet Manager"
+        src="/logoWoodPalletDos.png"
+        alt="WoodPallet"
         style={{
-          width: '100%',
-          height: '100%',
+          width: 220,
+          height: 220,
           objectFit: 'contain',
-          objectPosition: 'center',
           userSelect: 'none',
           pointerEvents: 'none',
         }}
       />
 
-      {/* ── Barra de progreso y label al fondo ── */}
+      {/* ── Barra de progreso ── */}
       <div
         style={{
-          position: 'absolute',
-          bottom: 'max(2.5rem, env(safe-area-inset-bottom, 2.5rem))',
-          left: '50%',
-          transform: 'translateX(-50%)',
           width: 'min(300px, 75vw)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: '0.6rem',
+          gap: '0.5rem',
         }}
       >
-        {/* Track */}
         <div
           style={{
             width: '100%',
-            height: 3,
-            background: 'rgba(124,75,44,0.15)',
+            height: 5,
+            background: 'rgba(255,255,255,0.5)',
             borderRadius: 99,
             overflow: 'hidden',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
           }}
         >
           <div
@@ -96,19 +91,16 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
             }}
           />
         </div>
-
-        {/* Texto */}
         <span
           style={{
-            fontSize: '0.68rem',
-            fontWeight: 500,
-            color: 'rgba(124,75,44,0.55)',
+            fontSize: '0.72rem',
+            fontWeight: 600,
+            color: '#6B3A2A',
             fontFamily: 'Inter, sans-serif',
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
+            fontVariantNumeric: 'tabular-nums',
           }}
         >
-          {Math.round(progress) < 100 ? 'Cargando…' : 'Listo'}
+          {Math.round(progress)}%
         </span>
       </div>
     </div>
