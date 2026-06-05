@@ -43,6 +43,7 @@ export default defineConfig({
         screenshots: [
           {
             src: 'portada.png',
+            sizes: '1280x720',
             type: 'image/png',
             form_factor: 'wide',
             label: 'WoodPallet Manager',
