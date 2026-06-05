@@ -41,39 +41,28 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
         opacity: fadeOut ? 0 : 1,
         transition: 'opacity 0.55s ease',
         overflow: 'hidden',
-        background: '#fff',
+        background: '#ffffff',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}
     >
-      {/* ── Imagen portada full-cover ── */}
+      {/* ── Imagen portada centrada sobre fondo blanco ── */}
       <img
         src="/portada.png"
         alt="WoodPallet Manager"
         style={{
-          position: 'absolute',
-          inset: 0,
           width: '100%',
           height: '100%',
-          objectFit: 'cover',
+          objectFit: 'contain',
           objectPosition: 'center',
           userSelect: 'none',
           pointerEvents: 'none',
         }}
       />
 
-      {/* ── Gradiente inferior para que la barra sea legible ── */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: '30%',
-          background: 'linear-gradient(to bottom, transparent 0%, rgba(20,10,5,0.55) 100%)',
-          pointerEvents: 'none',
-        }}
-      />
-
-      {/* ── Barra de progreso y label ── */}
+      {/* ── Barra de progreso y label al fondo ── */}
       <div
         style={{
           position: 'absolute',
@@ -92,7 +81,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
           style={{
             width: '100%',
             height: 3,
-            background: 'rgba(255,255,255,0.25)',
+            background: 'rgba(124,75,44,0.15)',
             borderRadius: 99,
             overflow: 'hidden',
           }}
@@ -101,10 +90,9 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
             style={{
               height: '100%',
               width: `${progress}%`,
-              background: '#ffffff',
+              background: '#7c4b2c',
               borderRadius: 99,
               transition: 'width 0.08s linear',
-              boxShadow: '0 0 8px rgba(255,255,255,0.6)',
             }}
           />
         </div>
@@ -114,7 +102,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
           style={{
             fontSize: '0.68rem',
             fontWeight: 500,
-            color: 'rgba(255,255,255,0.65)',
+            color: 'rgba(124,75,44,0.55)',
             fontFamily: 'Inter, sans-serif',
             letterSpacing: '0.08em',
             textTransform: 'uppercase',
