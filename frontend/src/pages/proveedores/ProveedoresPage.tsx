@@ -38,6 +38,12 @@ const tipoLabel: Record<string, string> = {
   ambos: 'Ambos',
 };
 
+const tipoDescriptivo: Record<string, string> = {
+  seminuevo: 'Galpón de pallets semi-nuevos',
+  nuevo_medida: 'Galpón de pallets nuevos y a medida',
+  ambos: 'Pallets semi-nuevos y a medida',
+};
+
 const formatPesos = (v: number) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(v);
 
@@ -348,38 +354,75 @@ export default function ProveedoresPage() {
                 background: '#fff',
                 border: '1.5px solid #E8E2DA',
                 borderLeft: '3px solid #6B3A2A',
+                borderRadius: '0.375rem',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 0,
+                overflow: 'hidden',
               }}
             >
               {/* ── Encabezado ── */}
-              <div style={{ padding: '1.25rem 1.25rem 1rem', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  {/* Tipo badge — minimalista */}
-                  <span style={{ fontSize: '0.62rem', fontWeight: 700, color: '#C4895A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    {tipoLabel[p.tipoProducto]}
+              <div style={{
+                padding: '1.125rem 1.25rem 1rem',
+                background: 'linear-gradient(135deg, #FDF8F4 0%, #fff 60%)',
+                borderBottom: '1px solid #F3EDE5',
+              }}>
+                {/* Fila superior: descriptor de tipo + distancia */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                    background: '#FDF5F0', border: '1px solid #E8D5C4',
+                    color: '#7c4b2c', fontSize: '0.63rem', fontWeight: 700,
+                    letterSpacing: '0.05em', textTransform: 'uppercase',
+                    padding: '0.22rem 0.65rem', borderRadius: 99,
+                  }}>
+                    <Package size={10} />
+                    {tipoDescriptivo[p.tipoProducto]}
                   </span>
-                  <p style={{ fontSize: '1.15rem', fontWeight: 700, color: '#1F2937', margin: '2px 0 0', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {p.nombreEmpresa}
-                  </p>
+                  {p.distanciaKm && (
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 3,
+                      fontSize: '0.68rem', fontWeight: 600, color: '#9CA3AF',
+                    }}>
+                      <MapPin size={10} style={{ color: '#C4895A' }} />
+                      {p.distanciaKm} km
+                    </span>
+                  )}
                 </div>
-                {/* Acciones */}
-                <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
-                  <button
-                    onClick={() => { setEditando(p); setShowModal(true); }}
-                    title="Editar"
-                    style={{ width: 30, height: 30, border: '1.5px solid #E8E2DA', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF' }}
-                  >
-                    <Pencil size={12} />
-                  </button>
-                  <button
-                    onClick={() => handleEliminar(p.id, p.nombreEmpresa)}
-                    title="Desactivar"
-                    style={{ width: 30, height: 30, border: '1.5px solid #FEE2E2', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FCA5A5' }}
-                  >
-                    <Trash2 size={12} />
-                  </button>
+
+                {/* Nombre + acciones */}
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                  <h3 style={{
+                    fontFamily: "'Cormorant Garamond', Georgia, serif",
+                    fontSize: '1.45rem',
+                    fontWeight: 600,
+                    fontStyle: 'italic',
+                    color: '#1F2937',
+                    margin: 0,
+                    lineHeight: 1.15,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {p.nombreEmpresa}
+                  </h3>
+                  {/* Acciones */}
+                  <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
+                    <button
+                      onClick={() => { setEditando(p); setShowModal(true); }}
+                      title="Editar"
+                      style={{ width: 30, height: 30, border: '1.5px solid #E8E2DA', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF', borderRadius: '0.25rem' }}
+                    >
+                      <Pencil size={12} />
+                    </button>
+                    <button
+                      onClick={() => handleEliminar(p.id, p.nombreEmpresa)}
+                      title="Desactivar"
+                      style={{ width: 30, height: 30, border: '1.5px solid #FEE2E2', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FCA5A5', borderRadius: '0.25rem' }}
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
                 </div>
               </div>
 
