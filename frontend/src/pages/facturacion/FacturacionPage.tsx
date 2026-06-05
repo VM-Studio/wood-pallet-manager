@@ -126,12 +126,12 @@ export default function FacturacionPage() {
     <div className="space-y-6 animate-fade-in">
 
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div className="min-w-0">
           <h1 className="titulo-modulo">Facturación y Cobranzas</h1>
           <p className="text-sm text-gray-500 mt-1">{facturas?.length ?? 0} facturas registradas</p>
         </div>
-        <div>
+        <div className="shrink-0">
           <button
             onClick={() => setShowNuevaFactura(true)}
             className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white"
@@ -375,6 +375,7 @@ export default function FacturacionPage() {
         </div>
       ) : (
         <div className="card-base" style={{ padding: 0, overflow: 'hidden' }}>
+          <div style={{ overflowX: 'auto' }}>
           <table className="table">
             <thead>
               <tr>
@@ -520,6 +521,7 @@ export default function FacturacionPage() {
               })}
             </tbody>
           </table>
+          </div>
           <Pagination
             total={filtradas?.length ?? 0}
             pagina={pagina}

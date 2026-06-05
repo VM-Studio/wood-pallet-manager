@@ -119,12 +119,12 @@ export default function CotizacionesPage() {
     <div className="space-y-5 animate-fade-in">
 
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div className="min-w-0">
           <h1 className="titulo-modulo">Cotizaciones</h1>
           <p className="text-sm text-gray-600 mt-1">{cotizaciones?.length || 0} cotizaciones en total</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap shrink-0">
           <button
             onClick={() => setShowWebModal(true)}
             style={{
@@ -265,6 +265,7 @@ export default function CotizacionesPage() {
         </div>
       ) : (
         <div className="card-base" style={{ padding: 0, overflow: 'hidden' }}>
+          <div style={{ overflowX: 'auto' }}>
           <table className="table">
             <thead>
               <tr>
@@ -397,6 +398,7 @@ export default function CotizacionesPage() {
               ))}
             </tbody>
           </table>
+          </div>
           <Pagination
             total={filtradas?.length ?? 0}
             pagina={pagina}

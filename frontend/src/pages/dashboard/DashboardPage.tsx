@@ -268,8 +268,8 @@ export default function DashboardPage() {
     <div className="space-y-6 animate-fade-in">
 
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div className="min-w-0">
           <h1 className="titulo-modulo">
             Bienvenido, {usuario?.nombre}
           </h1>
@@ -280,7 +280,7 @@ export default function DashboardPage() {
             })}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <DropdownVista />
           {alertasData && alertasData.alta > 0 && (
             <button onClick={() => navigate('/alertas')} className="btn-brand-sm">

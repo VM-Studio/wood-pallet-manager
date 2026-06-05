@@ -175,13 +175,13 @@ export default function ReportesPage() {
           </div>
 
           {periodo === 'custom' && (
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2">
                 <Calendar size={15} className="text-gray-400" />
-                <input type="date" value={desde} onChange={e => setDesde(e.target.value)} className="input w-40" />
+                <input type="date" value={desde} onChange={e => setDesde(e.target.value)} className="input w-36" />
               </div>
               <span className="text-gray-400">→</span>
-              <input type="date" value={hasta} onChange={e => setHasta(e.target.value)} className="input w-40" />
+              <input type="date" value={hasta} onChange={e => setHasta(e.target.value)} className="input w-36" />
             </div>
           )}
 
@@ -192,23 +192,25 @@ export default function ReportesPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1" style={{ background: '#F3EDE8', borderRadius: '0.375rem' }}>
-        {([
-          { key: 'ventas',         label: 'Ventas',         icon: <Package size={14} /> },
-          { key: 'cobranzas',      label: 'Cobranzas',      icon: <DollarSign size={14} /> },
-          { key: 'clientes',       label: 'Top Clientes',   icon: <Users size={14} /> },
-          { key: 'estacionalidad', label: 'Estacionalidad', icon: <TrendingUp size={14} /> },
-        ] as { key: TabActivo; label: string; icon: React.ReactNode }[]).map(t => (
-          <button key={t.key} onClick={() => setTabActivo(t.key)}
-            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-all"
-            style={{
-              background: tabActivo === t.key ? '#7c4b2c' : 'transparent',
-              color: tabActivo === t.key ? '#fff' : '#9E8878',
-              borderRadius: '0.25rem', border: 'none', cursor: 'pointer',
-            }}>
-            {t.icon}{t.label}
-          </button>
-        ))}
+      <div className="overflow-x-auto -mx-1 px-1">
+        <div className="flex gap-1 p-1 min-w-max" style={{ background: '#F3EDE8', borderRadius: '0.375rem' }}>
+          {([
+            { key: 'ventas',         label: 'Ventas',         icon: <Package size={14} /> },
+            { key: 'cobranzas',      label: 'Cobranzas',      icon: <DollarSign size={14} /> },
+            { key: 'clientes',       label: 'Top Clientes',   icon: <Users size={14} /> },
+            { key: 'estacionalidad', label: 'Estacionalidad', icon: <TrendingUp size={14} /> },
+          ] as { key: TabActivo; label: string; icon: React.ReactNode }[]).map(t => (
+            <button key={t.key} onClick={() => setTabActivo(t.key)}
+              className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-all whitespace-nowrap"
+              style={{
+                background: tabActivo === t.key ? '#7c4b2c' : 'transparent',
+                color: tabActivo === t.key ? '#fff' : '#9E8878',
+                borderRadius: '0.25rem', border: 'none', cursor: 'pointer',
+              }}>
+              {t.icon}{t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ── TAB: VENTAS ── */}

@@ -52,8 +52,8 @@ export default function ClientesPage() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }} className="animate-fade-in">
 
       {/* ── Header ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <div style={{ minWidth: 0 }}>
           <h1 className="titulo-modulo">Clientes</h1>
           <p style={{ fontSize: '0.8125rem', color: '#9E8878', marginTop: '0.2rem' }}>
             {clientes?.length || 0} clientes registrados
@@ -128,6 +128,7 @@ export default function ClientesPage() {
 
       {/* ── Tabla de clientes ── */}
       <div style={{ background: '#fff', border: '1.5px solid #E8E2DA', borderRadius: 0, overflow: 'hidden' }}>
+        <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
           <thead>
             <tr style={{ borderBottom: '1.5px solid #E8E2DA', background: '#FAFAF8' }}>
@@ -314,6 +315,7 @@ export default function ClientesPage() {
             )}
           </tbody>
         </table>
+        </div>
         <Pagination
           total={clientesFiltrados?.length ?? 0}
           pagina={pagina}

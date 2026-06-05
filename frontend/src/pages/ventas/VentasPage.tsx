@@ -65,8 +65,8 @@ export default function VentasPage() {
     <div className="animate-fade-in space-y-5">
 
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div className="min-w-0">
           <h1 className="titulo-modulo">Ventas</h1>
           <p className="text-sm text-gray-600 mt-1">Seguimiento de pedidos, entregas y retiros parciales</p>
         </div>
@@ -144,6 +144,7 @@ export default function VentasPage() {
 
       {/* Tabla */}
       <div className="card-base" style={{ padding: 0, overflow: 'hidden' }}>
+        <div style={{ overflowX: 'auto' }}>
         <table className="table">
           <thead>
             <tr>
@@ -208,6 +209,7 @@ export default function VentasPage() {
             ))}
           </tbody>
         </table>
+        </div>
         <Pagination
           total={filtradas.length}
           pagina={pagina}

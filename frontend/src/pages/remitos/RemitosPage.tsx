@@ -707,6 +707,7 @@ export default function RemitosPage() {
         </div>
       ) : (
         <div className="card-base" style={{ padding: 0, overflow: 'hidden' }}>
+          <div style={{ overflowX: 'auto' }}>
           <table className="table">
             <thead>
               <tr>
@@ -723,6 +724,7 @@ export default function RemitosPage() {
               {filtrados.map(r => <RemitoRow key={r.id} remito={r} />)}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 

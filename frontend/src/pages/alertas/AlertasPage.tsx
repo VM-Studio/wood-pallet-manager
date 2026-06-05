@@ -78,8 +78,8 @@ export default function AlertasPage() {
     <div className="space-y-5 animate-fade-in">
 
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div className="min-w-0">
           <h1 className="titulo-modulo">Alertas</h1>
           <p className="text-sm text-gray-600 mt-1">
             {alertas?.total

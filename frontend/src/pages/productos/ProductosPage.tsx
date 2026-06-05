@@ -72,14 +72,15 @@ export default function ProductosPage() {
     <div className="animate-fade-in space-y-5">
 
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div className="min-w-0">
           <h1 className="titulo-modulo">Productos y Precios</h1>
           <p className="text-sm text-gray-600 mt-1">{productos?.length ?? 0} productos en el catálogo</p>
         </div>
         {filtro === 'mios' && (
           <button
             onClick={() => { setProductoEditar(null); setShowForm(true); }}
+            className="shrink-0"
             style={{
               display: 'inline-flex', alignItems: 'center', gap: '6px',
               background: '#7c4b2c',

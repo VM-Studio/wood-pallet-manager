@@ -85,14 +85,15 @@ export default function SeguimientosPage() {
         <h1 className="titulo-modulo">Seguimientos</h1>
         <p className="text-sm text-gray-500 mt-1">Email marketing y automatizaciones CRM</p>
       </div>
-      <div style={{ display: 'flex', gap: 2, background: '#F3EDE8', borderRadius: '0.375rem', padding: 3 }}>
+      <div style={{ display: 'flex', gap: 2, background: '#F3EDE8', borderRadius: '0.375rem', padding: 3, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
         {TABS.map(({ key, label, icon: Icon }) => (
           <button key={key} onClick={() => setTab(key)} style={{
-            flex: 1, padding: '0.45rem 0.5rem', fontSize: '0.78rem', fontWeight: 600,
+            flex: '0 0 auto', minWidth: 0, padding: '0.45rem 0.75rem', fontSize: '0.78rem', fontWeight: 600,
             border: 'none', borderRadius: '0.25rem', cursor: 'pointer', transition: 'all 0.15s',
             background: tab === key ? '#7c4b2c' : 'transparent',
             color: tab === key ? '#fff' : '#9E8878',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+            whiteSpace: 'nowrap',
           }}>
             <Icon size={13} />{label}
           </button>

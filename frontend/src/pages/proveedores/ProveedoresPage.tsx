@@ -99,7 +99,7 @@ function ProveedorModal({
 
             <div>
               <label className="label">Tipo de producto que provee *</label>
-              <div className="grid grid-cols-3 gap-2 mt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1">
                 {(['seminuevo', 'nuevo_medida', 'ambos'] as const).map(t => (
                   <button key={t} type="button"
                     onClick={() => setForm({ ...form, tipoProducto: t })}
@@ -305,8 +305,8 @@ export default function ProveedoresPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-        <div>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <div style={{ minWidth: 0 }}>
           <h1 className="titulo-modulo">Proveedores</h1>
           <p className="text-sm text-gray-500 mt-1">
             {proveedores.length} proveedor{proveedores.length !== 1 ? 'es' : ''} activo{proveedores.length !== 1 ? 's' : ''}

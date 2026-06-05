@@ -396,7 +396,7 @@ export default function LogisticaPage() {
 
       {/* Vista Carlos: dos columnas */}
       {esCarlos && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', alignItems: 'start' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
           {/* Columna izquierda: selector + lista */}
           <div>

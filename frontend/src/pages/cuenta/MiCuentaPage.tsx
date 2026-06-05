@@ -960,12 +960,13 @@ export default function MiCuentaPage() {
         <p className="text-stone-500 text-sm mt-1">Gestioná tu perfil, seguridad y firma digital</p>
       </div>
 
-      <div className="flex gap-8 items-start">
-        {/* Sidebar de tabs */}
-        <aside className="w-56 shrink-0 space-y-1">
+      <div className="flex flex-col md:flex-row gap-4 md:gap-8 items-start">
+        {/* Sidebar de tabs — horizontal scrollable en mobile, vertical en desktop */}
+        <aside className="w-full md:w-56 md:shrink-0">
+          <div className="flex md:flex-col gap-1 overflow-x-auto pb-1 md:pb-0">
           {tabs.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
-              className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-all ${
+              className={`flex items-center gap-2 md:gap-3 px-3 py-2.5 md:py-3 rounded-xl text-left transition-all whitespace-nowrap md:whitespace-normal md:w-full shrink-0 md:shrink ${
                 tab === t.id ? 'shadow-sm' : 'hover:bg-stone-50'
               }`}
               style={tab === t.id ? { background: '#7c4b2c', color: 'white' } : { color: '#6B7280' }}
@@ -973,14 +974,15 @@ export default function MiCuentaPage() {
               <t.icon className="w-4 h-4 shrink-0" />
               <div>
                 <p className={`text-sm font-semibold leading-tight ${tab === t.id ? 'text-white' : 'text-stone-700'}`}>{t.label}</p>
-                <p className={`text-xs leading-tight mt-0.5 ${tab === t.id ? 'text-white/60' : 'text-stone-400'}`}>{t.desc}</p>
+                <p className={`text-xs leading-tight mt-0.5 hidden md:block ${tab === t.id ? 'text-white/60' : 'text-stone-400'}`}>{t.desc}</p>
               </div>
             </button>
           ))}
+          </div>
         </aside>
 
         {/* Contenido */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 w-full">
           {tab === 'info'      && <InfoPersonalSection />}
           {tab === 'seguridad' && <SeguridadSection />}
           {tab === 'firma'     && <FirmaSection />}
