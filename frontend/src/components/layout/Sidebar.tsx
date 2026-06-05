@@ -4,10 +4,12 @@ import {
   Truck, Receipt,
   ClipboardList, Package, Warehouse, Building2,
   BarChart3, LogOut, DollarSign, RotateCcw, FileCheck, Mail,
-  X, UserCircle } from 'lucide-react';
+  X, UserCircle, Globe } from 'lucide-react';
 import logoWood from '/logowood.png';
 import { useAuthStore } from '../../store/auth.store';
 import { useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import api from '../../services/api';
 
 const grupos = [
   {
@@ -20,14 +22,15 @@ const grupos = [
   {
     label: 'Comercial',
     items: [
-      { path: '/clientes',     label: 'Clientes',     icon: Users },
-      { path: '/cotizaciones', label: 'Cotizaciones', icon: FileText },
-      { path: '/ventas',       label: 'Ventas',       icon: DollarSign },
-      { path: '/logistica',    label: 'Logística',    icon: Truck },
-      { path: '/retiros',      label: 'Retiros',      icon: Warehouse },
-      { path: '/remitos',      label: 'Remitos',      icon: FileCheck },
-      { path: '/facturacion',  label: 'Facturación',  icon: Receipt },
-      { path: '/seguimientos', label: 'Seguimientos', icon: Mail },
+      { path: '/clientes',       label: 'Clientes',           icon: Users },
+      { path: '/cotizaciones',   label: 'Cotizaciones',       icon: FileText },
+      { path: '/solicitudes-web', label: 'Solicitudes web',   icon: Globe, badgeKey: 'web' },
+      { path: '/ventas',         label: 'Ventas',             icon: DollarSign },
+      { path: '/logistica',      label: 'Logística',          icon: Truck },
+      { path: '/retiros',        label: 'Retiros',            icon: Warehouse },
+      { path: '/remitos',        label: 'Remitos',            icon: FileCheck },
+      { path: '/facturacion',    label: 'Facturación',        icon: Receipt },
+      { path: '/seguimientos',   label: 'Seguimientos',       icon: Mail },
     ]
   },
   {
@@ -64,6 +67,19 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
   const { logout } = useAuthStore();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [pendientesWeb, setPendientesWeb] = useState(0);
+
+  // Polling cada 60s para el badge de solicitudes web
+  useEffect(() => {
+    const fetch = () => {
+      api.get('/cotizaciones-web/contador')
+        .then(r => setPendientesWeb(r.data?.pendientes ?? 0))
+        .catch(() => {});
+    };
+    fetch();
+    const id = setInterval(fetch, 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   const handleLogout = () => {
     queryClient.clear();
@@ -172,7 +188,17 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
                         size={15}
                         style={{ color: isActive ? C.accentMid : C.label, flexShrink: 0 }}
                       />
-                      {item.label}
+                      <span style={{ flex: 1 }}>{item.label}</span>
+                      {'badgeKey' in item && item.badgeKey === 'web' && pendientesWeb > 0 && (
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          minWidth: 18, height: 18, padding: '0 5px',
+                          background: '#D97706', color: '#fff',
+                          borderRadius: 99, fontSize: '0.62rem', fontWeight: 700,
+                        }}>
+                          {pendientesWeb}
+                        </span>
+                      )}
                     </>
                   )}
                 </NavLink>

@@ -38,10 +38,16 @@ function MapaRutas({ rutas }: { rutas: RutaHoy[] }) {
       console.log('[MapaRutas] Iniciando mapa con rutas:', rutas);
       setOptions({ key: API_KEY!, v: 'weekly' });
 
-      const { Map, Polyline }                        = await importLibrary('maps');
-      const { LatLngBounds, SymbolPath }              = await importLibrary('core');
-      const { DirectionsService, DirectionsRenderer } = await importLibrary('routes');
-      const { Marker }                                = await importLibrary('marker');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const mapsLib    = await importLibrary('maps')   as any;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const coreLib    = await importLibrary('core')   as any;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const routesLib  = await importLibrary('routes') as any;
+
+      const { Map, Polyline, Marker, SymbolPath }     = mapsLib;
+      const { LatLngBounds }                          = coreLib;
+      const { DirectionsService, DirectionsRenderer } = routesLib;
 
       if (!mapRef.current) return;
 
