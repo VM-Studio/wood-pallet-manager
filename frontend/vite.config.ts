@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['portada.png', 'favicon.svg', 'logoWoodPalletDos.png', 'logowood.png'],
+      includeAssets: ['portada.png', 'icon-192.png', 'icon-512.png', 'favicon.svg', 'logoWoodPalletDos.png', 'logowood.png'],
       manifest: {
         name: 'WoodPallet Manager',
         short_name: 'WoodPallet',
@@ -23,18 +23,18 @@ export default defineConfig({
         categories: ['business', 'productivity'],
         icons: [
           {
-            src: 'portada.png',
+            src: 'icon-192.png',
             sizes: '192x192',
             type: 'image/png',
           },
           {
-            src: 'portada.png',
+            src: 'icon-512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any',
           },
           {
-            src: 'portada.png',
+            src: 'icon-512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable',
