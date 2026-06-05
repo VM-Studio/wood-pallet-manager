@@ -337,8 +337,8 @@ export default function ProveedoresPage() {
         </div>
       )}
 
-      {/* Cards — 2 columnas fijas, perfectas para 2 proveedores */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+      {/* Cards — 2 columnas en desktop, 1 en mobile */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {proveedores.map(p => {
           const prods = p.prodProveedores ?? [];
           return (

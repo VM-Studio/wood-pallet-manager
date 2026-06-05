@@ -221,7 +221,7 @@ function NuevaDevolucionModal({ onClose }: { onClose: () => void }) {
             {/* Tipo de devolución */}
             <div>
               <label className="label">Tipo de devolución *</label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {Object.entries(CASO_CONFIG).map(([key, val]) => {
                   const s = CASO_STYLE[key];
                   return (
@@ -272,7 +272,7 @@ function NuevaDevolucionModal({ onClose }: { onClose: () => void }) {
             )}
 
             {ventaSeleccionada && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', background: devuelveFlete ? '#EFF6FF' : '#F9FAFB', border: devuelveFlete ? '2px solid #3B82F6' : '2px solid #E5E7EB', borderRadius: '0.25rem', padding: '0.625rem 0.75rem', cursor: 'pointer' }}>
                   <input type="checkbox" checked={devuelveFlete} onChange={e => setDevuelveFlete(e.target.checked)} />
                   <div>
@@ -301,7 +301,7 @@ function NuevaDevolucionModal({ onClose }: { onClose: () => void }) {
             )}
 
             {!compensaSiguiente && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="label">Método de reintegro</label>
                   <select className="select" value={metodoPago} onChange={e => setMetodoPago(e.target.value)}>
@@ -477,7 +477,7 @@ function DevolucionRow({ dev }: { dev: Devolucion }) {
                 )}
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Productos devueltos */}
                 <div>
                   <p style={{ fontSize: '0.7rem', fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.375rem' }}>Productos devueltos</p>

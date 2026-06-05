@@ -309,7 +309,7 @@ export default function LoginPage() {
                   </div>
                 ) : (
                   <form onSubmit={handleRegistro} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label style={labelStyle}>Nombre</label>
                         <input type="text" style={inputStyle} placeholder="Juan"

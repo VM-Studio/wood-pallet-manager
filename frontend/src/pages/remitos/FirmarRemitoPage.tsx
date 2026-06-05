@@ -152,7 +152,7 @@ export default function FirmarRemitoPage() {
           <div style={{ background: '#F9FAFB', padding: '0.75rem 1.25rem', borderBottom: '1px solid #E5E7EB' }}>
             <p style={{ fontSize: '0.72rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Información del remito</p>
           </div>
-          <div style={{ padding: '1.25rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div style={{ padding: '1.25rem' }} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.625rem' }}>
               <User size={16} color="#9CA3AF" style={{ flexShrink: 0, marginTop: 2 }} />
               <div>

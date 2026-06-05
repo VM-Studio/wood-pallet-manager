@@ -165,7 +165,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
 
               {/* ══ 1. PEDIDO ══════════════════════════════════════ */}
               <Seccion icon={Package} titulo="Pedido" accent>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '1rem' }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
                   <Dato label="Tipo de entrega" value={
                     venta.tipoEntrega === 'retira_cliente'
                       ? <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Building2 size={13} /> Retira el cliente</span>
@@ -212,9 +212,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                 </div>
 
                 {/* Total */}
-                <div style={{
-                  display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', marginBottom: '1rem',
-                }}>
+                <div className="grid grid-cols-3 gap-2 mb-4">
                   <div style={{ padding: '0.75rem', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.25rem', textAlign: 'center' }}>
                     <p style={{ fontSize: '0.68rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', margin: '0 0 3px' }}>Subtotal</p>
                     <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#374151', margin: 0 }}>{formatPesos(venta.totalSinIva || 0)}</p>
@@ -409,7 +407,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                     </div>
 
                     {/* Timeline de fechas/horas */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {[
                         {
                           icon: Navigation,
@@ -471,7 +469,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                     )}
 
                     {/* Confirmaciones */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {[
                         { ok: venta.logistica.confTransportista, label: 'Confirmación transportista', icon: Truck },
                         { ok: venta.logistica.confCliente, label: 'Confirmación cliente', icon: User },
@@ -603,7 +601,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                           </div>
                           <EstadoBadge estado={f.estadoCobro as string} />
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', marginBottom: 8 }}>
+                        <div className="grid grid-cols-3 gap-2 mb-2">
                           <div style={{ padding: '0.5rem', background: '#fff', border: '1px solid #E5E7EB', borderRadius: '0.25rem', textAlign: 'center' }}>
                             <p style={{ fontSize: '0.68rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', margin: '0 0 2px' }}>Neto</p>
                             <p style={{ fontSize: '0.82rem', fontWeight: 700, color: '#374151', margin: 0 }}>{formatPesos(f.totalNeto as number)}</p>

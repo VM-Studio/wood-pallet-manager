@@ -159,7 +159,7 @@ function TabNuevaCampana() {
       {step === 1 && (
         <div style={{ background: '#fff', border: '1.5px solid #E8E2DA', borderRadius: '0.375rem', padding: '1.25rem' }}>
           <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1F2937', marginBottom: '0.875rem' }}>¿A quién enviás la campaña?</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.625rem', marginBottom: '0.875rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.625rem', marginBottom: '0.875rem' }}>
             {SEGMENTOS.map(s => (
               <button key={s.value} onClick={() => setSegmento(s.value)} style={{
                 textAlign: 'left', padding: '0.75rem',
@@ -226,7 +226,7 @@ function TabNuevaCampana() {
       {step === 2 && (
         <div style={{ background: '#fff', border: '1.5px solid #E8E2DA', borderRadius: '0.375rem', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
           <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1F2937', margin: 0 }}>Diseñá el email</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Campo label="Nombre de campaña"><input value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Promo Junio 2026" style={inputStyle} /></Campo>
             <Campo label="Asunto del email"><input value={asunto} onChange={e => setAsunto(e.target.value)} placeholder="Ej: ¡Tenemos pallets para vos!" style={inputStyle} /></Campo>
           </div>
@@ -235,7 +235,7 @@ function TabNuevaCampana() {
               {usarPlantilla ? <ChevronUp size={13} /> : <ChevronDown size={13} />} Cargar desde plantilla guardada
             </button>
             {usarPlantilla && plantillas && (
-              <div style={{ marginTop: 8, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+              <div style={{ marginTop: 8, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 6 }}>
                 {plantillas.length === 0 && <p style={{ fontSize: '0.78rem', color: '#9CA3AF', gridColumn: '1/-1' }}>No hay plantillas guardadas</p>}
                 {plantillas.map(p => (
                   <button key={p.id} onClick={() => { setAsunto(p.asunto); setBloques(p.bloques); setUsarP(false); }} style={{ textAlign: 'left', border: '1.5px solid #E8E2DA', borderRadius: '0.25rem', padding: '0.5rem 0.625rem', cursor: 'pointer', background: '#FAFAF8' }}>
@@ -414,7 +414,7 @@ function TabPlantillas() {
       {(editando || nueva) && (
         <div style={{ flex: 1, background: '#fff', border: '1.5px solid #E8E2DA', borderRadius: '0.375rem', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
           <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1F2937', margin: 0 }}>{editando ? 'Editar plantilla' : 'Nueva plantilla'}</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Campo label="Nombre de plantilla"><input value={nombre} onChange={e => setNombre(e.target.value)} style={inputStyle} /></Campo>
             <Campo label="Asunto"><input value={asunto} onChange={e => setAsunto(e.target.value)} style={inputStyle} /></Campo>
           </div>
@@ -461,7 +461,7 @@ function TabAutomatizaciones() {
       {showForm && (
         <div style={{ background: '#fff', border: '1.5px solid #E8E2DA', borderRadius: '0.375rem', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1F2937', margin: 0 }}>Nueva regla de automatización</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Campo label="Nombre de la regla"><input value={nombre} onChange={e => setNombre(e.target.value)} style={inputStyle} /></Campo>
             <Campo label="Evento disparador">
               <select value={evento} onChange={e => setEvento(e.target.value)} style={inputStyle}>
