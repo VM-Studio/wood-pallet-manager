@@ -119,8 +119,11 @@ function MapaRutas({ rutas }: { rutas: RutaHoy[] }) {
       setCargando(false);
     }
 
-    initMap().catch(() => {
-      setError('Error al cargar Google Maps');
+    initMap().catch((err: unknown) => {
+      // Mostrar el error concreto para diagnóstico (API key/referer/limites)
+      console.error('[MapaRutas] Error inicializando Google Maps:', err);
+      const msg = (err && typeof err === 'object' && 'message' in err) ? (err as any).message : String(err);
+      setError('Error al cargar Google Maps: ' + msg);
       setCargando(false);
     });
   }, [rutasKey]); // eslint-disable-line react-hooks/exhaustive-deps
