@@ -8,12 +8,11 @@ import {
   convertirCotizacionWeb,
 } from '../controllers/cotizaciones-web.controller';
 import { authenticate } from '../middlewares/auth.middleware';
-import { apiKeyMiddleware } from '../middlewares/apiKey.middleware';
 
 const router = Router();
 
-// ── Endpoint PÚBLICO (solo API key, sin JWT) ──────────────────────────────────
-router.post('/nueva', apiKeyMiddleware, recibirCotizacionWeb);
+// ── Endpoint PÚBLICO (sin JWT, sin API key — CORS restringe el origen) ────────
+router.post('/nueva', recibirCotizacionWeb);
 
 // ── Endpoints PROTEGIDOS (JWT) ────────────────────────────────────────────────
 router.use(authenticate);
