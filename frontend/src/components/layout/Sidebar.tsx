@@ -5,7 +5,7 @@ import {
   ClipboardList, Package, Warehouse, Building2,
   BarChart3, LogOut, DollarSign, RotateCcw, FileCheck, Mail,
   X, UserCircle, Globe } from 'lucide-react';
-import logoWood from '/logowood.png';
+import logoWood from '/sistemalogo.png';
 import { useAuthStore } from '../../store/auth.store';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';

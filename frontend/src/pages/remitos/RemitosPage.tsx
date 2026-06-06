@@ -15,6 +15,7 @@ import {
 import { useVentas } from '../../hooks/useVentas';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
+import Pagination from '../../components/ui/Pagination';
 import SignaturePad from '../../components/ui/SignaturePad';
 import { useAuthStore } from '../../store/auth.store';
 
@@ -596,6 +597,8 @@ export default function RemitosPage() {
   const [showModal, setShowModal] = useState(false);
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('todos');
+  const [pagina, setPagina] = useState(1);
+  const POR_PAGINA = 10;
 
   if (isLoading) return <LoadingSpinner text="Cargando remitos..." />;
   if (isError) return <ErrorMessage message="No se pudieron cargar los remitos." />;
@@ -612,6 +615,8 @@ export default function RemitosPage() {
       (r.numeroRemito ?? '').toLowerCase().includes(busqueda.toLowerCase());
     return matchEstado && matchBusqueda;
   });
+
+  const remitosPaginados = filtrados.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
 
   const pendientes = todos.filter(r => r.estado === 'pendiente_firma_propietario').length;
   const enviados   = todos.filter(r => r.estado === 'enviado_a_cliente').length;
@@ -646,7 +651,7 @@ export default function RemitosPage() {
             <div
               key={t.key}
               className="card-kpi cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
-              onClick={() => setFiltroEstado(t.key)}
+              onClick={() => { setFiltroEstado(t.key); setPagina(1); }}
               style={activa ? { outline: '2px solid #C4895A', outlineOffset: '-2px' } : {}}
             >
               <div className="flex items-center gap-2 mb-2">
@@ -685,7 +690,7 @@ export default function RemitosPage() {
           style={{ paddingLeft: '2.25rem' }}
           placeholder="Buscar por cliente, N° venta, N° remito..."
           value={busqueda}
-          onChange={e => setBusqueda(e.target.value)}
+          onChange={e => { setBusqueda(e.target.value); setPagina(1); }}
         />
       </div>
 
@@ -721,10 +726,17 @@ export default function RemitosPage() {
               </tr>
             </thead>
             <tbody>
-              {filtrados.map(r => <RemitoRow key={r.id} remito={r} />)}
+              {remitosPaginados.map(r => <RemitoRow key={r.id} remito={r} />)}
             </tbody>
           </table>
           </div>
+          <Pagination
+            total={filtrados.length}
+            pagina={pagina}
+            porPagina={POR_PAGINA}
+            onCambiar={setPagina}
+            nombreItems="remitos"
+          />
         </div>
       )}
 

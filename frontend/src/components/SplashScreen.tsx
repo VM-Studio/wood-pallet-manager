@@ -50,7 +50,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
     >
       {/* ── Logo ── */}
       <img
-        src="/logoWoodPalletDos.png"
+        src="/loading.png"
         alt="WoodPallet"
         style={{
           width: 220,
@@ -71,23 +71,28 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
           gap: '0.5rem',
         }}
       >
+        {/* Track */}
         <div
           style={{
             width: '100%',
             height: 5,
-            background: 'rgba(255,255,255,0.5)',
+            background: 'rgba(255,255,255,0.45)',
             borderRadius: 99,
-            overflow: 'hidden',
             boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+            position: 'relative',
+            overflow: 'hidden',
           }}
         >
+          {/* Fill — usa scaleX (GPU composite, sin reflow de layout) */}
           <div
             style={{
-              height: '100%',
-              width: `${progress}%`,
-              background: '#7c4b2c',
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(90deg, #7c4b2c 0%, #C4895A 100%)',
               borderRadius: 99,
-              transition: 'width 0.08s linear',
+              transformOrigin: '0 0',
+              transform: `scaleX(${progress / 100})`,
+              willChange: 'transform',
             }}
           />
         </div>

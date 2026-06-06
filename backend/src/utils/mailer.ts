@@ -118,6 +118,13 @@ export const generarPdfRemito = (params: {
   });
 };
 
+// ─── Logo URL para emails ─────────────────────────────────────────────────
+const LOGO_URL = `${process.env.FRONTEND_URL || 'https://surprising-possibility-production-dc88.up.railway.app'}/sistemalogo.png`;
+
+function wrapEmail(titulo: string, subtitulo: string | undefined, body: string): string {
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/></head><body style="margin:0;padding:0;background:#F2EBE1;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;"><table width="100%" cellpadding="0" cellspacing="0" style="background:#F2EBE1;padding:40px 16px;"><tr><td align="center"><table cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#FFFFFF;border-radius:12px;overflow:hidden;box-shadow:0 2px 20px rgba(0,0,0,0.08);"><tr><td style="padding:36px 40px 28px;text-align:center;border-bottom:1px solid #EDE4D8;"><img src="${LOGO_URL}" alt="Wood Pallet" width="64" height="64" style="display:block;margin:0 auto 14px;object-fit:contain;border-radius:6px;"/><h1 style="margin:0 0 4px;font-size:19px;font-weight:700;color:#2D1A0E;letter-spacing:-0.2px;">${titulo}</h1>${subtitulo ? `<p style="margin:0;font-size:13px;color:#A89A8A;">${subtitulo}</p>` : ''}</td></tr><tr><td style="padding:32px 40px;">${body}</td></tr><tr><td style="background:#FAF6F1;border-top:1px solid #EDE4D8;padding:16px 40px;text-align:center;"><p style="margin:0;font-size:11px;color:#C0AFA4;letter-spacing:0.04em;text-transform:uppercase;">Wood Pallet · Sistema de gestión</p></td></tr></table></td></tr></table></body></html>`;
+}
+
 export const enviarPresupuestoPorEmail = async (params: {
   destinatario: string;
   razonSocial: string;
@@ -133,35 +140,26 @@ export const enviarPresupuestoPorEmail = async (params: {
     from: `"Wood Pallet" <${from}>`,
     to: params.destinatario,
     subject: `Presupuesto Wood Pallet #${String(params.numeroCotizacion).padStart(4, '0')}`,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #6B3A2A 0%, #C4895A 100%); padding: 24px; border-radius: 8px 8px 0 0;">
-          <h1 style="color: white; margin: 0; font-size: 22px;">Wood Pallet</h1>
-          <p style="color: rgba(255,255,255,0.85); margin: 4px 0 0; font-size: 14px;">Presupuesto #${String(params.numeroCotizacion).padStart(4, '0')}</p>
-        </div>
-        <div style="background: #FDF6EE; padding: 28px; border: 1px solid #C4895A; border-top: none; border-radius: 0 0 8px 8px;">
-          <p style="color: #374151; font-size: 15px; margin: 0 0 16px;">Estimado/a <strong>${params.razonSocial}</strong>,</p>
-          <p style="color: #374151; font-size: 14px; line-height: 1.6; margin: 0 0 16px;">
-            Adjunto encontrará el presupuesto correspondiente a su consulta.
-            Ante cualquier pregunta o modificación, no dude en contactarnos.
-          </p>
-          <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-            <tr style="background: #6B3A2A;">
-              <td style="padding: 10px 14px; color: white; font-size: 13px;">Número</td>
-              <td style="padding: 10px 14px; color: white; font-size: 13px;">#${String(params.numeroCotizacion).padStart(4, '0')}</td>
-            </tr>
-            <tr style="background: #F5EDE5;">
-              <td style="padding: 10px 14px; color: #6B3A2A; font-size: 13px;">Fecha</td>
-              <td style="padding: 10px 14px; color: #374151; font-size: 13px;">${params.fecha}</td>
-            </tr>
-          </table>
-          <p style="color: #9CA3AF; font-size: 12px; margin: 20px 0 0;">
-            Saludos cordiales,<br/>
-            <strong style="color: #6B3A2A;">Wood Pallet</strong>
-          </p>
-        </div>
+    html: wrapEmail(
+      `Presupuesto #${String(params.numeroCotizacion).padStart(4, '0')}`,
+      'Wood Pallet',
+      `<p style="color:#374151;font-size:15px;margin:0 0 12px;">Estimado/a <strong style="color:#2D1A0E;">${params.razonSocial}</strong>,</p>
+      <p style="color:#6B7280;font-size:14px;line-height:1.7;margin:0 0 24px;">Adjunto encontrará el presupuesto correspondiente a su consulta. Ante cualquier pregunta, no dude en contactarnos.</p>
+      <div style="background:#FAF6F1;border-radius:8px;border:1px solid #EDE4D8;padding:16px 20px;margin-bottom:20px;">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="font-size:11px;color:#A89A8A;text-transform:uppercase;letter-spacing:0.05em;padding-bottom:3px;">Presupuesto</td>
+            <td style="font-size:11px;color:#A89A8A;text-transform:uppercase;letter-spacing:0.05em;padding-bottom:3px;text-align:right;">Fecha</td>
+          </tr>
+          <tr>
+            <td style="font-size:17px;font-weight:700;color:#2D1A0E;">#${String(params.numeroCotizacion).padStart(4, '0')}</td>
+            <td style="font-size:14px;font-weight:600;color:#374151;text-align:right;">${params.fecha}</td>
+          </tr>
+        </table>
       </div>
-    `,
+      <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:6px;padding:12px 16px;font-size:13px;color:#92400E;margin-bottom:24px;">📎 El presupuesto se encuentra adjunto como PDF en este correo.</div>
+      <p style="color:#A89A8A;font-size:13px;margin:0;line-height:1.6;">Saludos cordiales,<br/><strong style="color:#6B3A2A;">Wood Pallet</strong></p>`
+    ),
     attachments: [
       {
         filename: params.filename,
@@ -205,60 +203,38 @@ export const enviarRemitoParaFirmar = async (params: {
     from: `"Wood Pallet" <${from}>`,
     to: params.destinatario,
     subject: `Remito Wood Pallet #${params.numeroRemito} — Firma requerida`,
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;">
-        <div style="background:linear-gradient(135deg,#6B3A2A 0%,#C4895A 100%);padding:24px 28px;border-radius:4px 4px 0 0;">
-          <h1 style="color:white;margin:0;font-size:20px;">Wood Pallet</h1>
-          <p style="color:rgba(255,255,255,0.85);margin:4px 0 0;font-size:14px;">Remito #${params.numeroRemito}</p>
-        </div>
-        <div style="background:#FDF6EE;padding:28px;border:1px solid #C4895A;border-top:none;border-radius:0 0 4px 4px;">
-          <p style="color:#374151;font-size:15px;margin:0 0 12px;">Estimado/a <strong>${params.razonSocial}</strong>,</p>
-          <p style="color:#374151;font-size:14px;line-height:1.6;margin:0 0 20px;">
-            Le enviamos el remito correspondiente a su pedido. Para confirmar la recepción y dar inicio al proceso de entrega,
-            por favor <strong>firmelo digitalmente</strong> haciendo clic en el botón a continuación.
-          </p>
-
-          <table style="width:100%;border-collapse:collapse;margin:0 0 20px;">
-            <thead>
-              <tr style="background:#6B3A2A;">
-                <th style="padding:10px 12px;color:white;font-size:12px;text-align:left;">Producto</th>
-                <th style="padding:10px 12px;color:white;font-size:12px;text-align:center;">Cant.</th>
-                <th style="padding:10px 12px;color:white;font-size:12px;text-align:right;">Precio u.</th>
-                <th style="padding:10px 12px;color:white;font-size:12px;text-align:right;">Subtotal</th>
-              </tr>
-            </thead>
-            <tbody>${filaProductos}</tbody>
-            <tfoot>
-              <tr style="background:#F5EDE5;">
-                <td colspan="3" style="padding:10px 12px;font-size:13px;font-weight:600;color:#6B3A2A;">Total con IVA</td>
-                <td style="padding:10px 12px;font-size:14px;font-weight:700;color:#111827;text-align:right;">${new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(params.totalConIva)}</td>
-              </tr>
-            </tfoot>
-          </table>
-
-          <table style="width:100%;border-collapse:collapse;margin:0 0 24px;">
-            <tr style="background:#F9FAFB;">
-              <td style="padding:8px 12px;font-size:12px;color:#9CA3AF;border:1px solid #E5E7EB;">Fecha de emisión</td>
-              <td style="padding:8px 12px;font-size:13px;color:#374151;border:1px solid #E5E7EB;">${params.fechaEmision}</td>
-            </tr>
-            ${params.fechaEntrega ? `<tr><td style="padding:8px 12px;font-size:12px;color:#9CA3AF;border:1px solid #E5E7EB;">Fecha de entrega estimada</td><td style="padding:8px 12px;font-size:13px;color:#374151;border:1px solid #E5E7EB;">${params.fechaEntrega}</td></tr>` : ''}
-          </table>
-
-          ${firmaImg}
-
-          <div style="text-align:center;margin:28px 0 8px;">
-            <a href="${params.linkFirma}" style="display:inline-block;background:linear-gradient(135deg,#6B3A2A 0%,#C4895A 100%);color:white;text-decoration:none;padding:14px 32px;border-radius:4px;font-size:15px;font-weight:600;">
-              ✍️ Firmar remito
-            </a>
-          </div>
-          <p style="text-align:center;font-size:11px;color:#9CA3AF;margin:8px 0 0;">O copiá este enlace: <a href="${params.linkFirma}" style="color:#C4895A;">${params.linkFirma}</a></p>
-
-          <p style="color:#9CA3AF;font-size:12px;margin:24px 0 0;">
-            Saludos cordiales,<br/><strong style="color:#6B3A2A;">Wood Pallet</strong>
-          </p>
-        </div>
+    html: wrapEmail(
+      `Remito #${params.numeroRemito}`,
+      'Firma requerida',
+      `<p style="color:#374151;font-size:15px;margin:0 0 12px;">Estimado/a <strong style="color:#2D1A0E;">${params.razonSocial}</strong>,</p>
+      <p style="color:#6B7280;font-size:14px;line-height:1.7;margin:0 0 20px;">Le enviamos el remito de su pedido. Por favor <strong style="color:#2D1A0E;">fírmelo digitalmente</strong> para confirmar la recepción.</p>
+      <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:20px;font-size:13px;">
+        <tr style="background:#6B3A2A;">
+          <th style="padding:9px 12px;color:#FFFFFF;text-align:left;font-weight:600;">Producto</th>
+          <th style="padding:9px 12px;color:#FFFFFF;text-align:center;font-weight:600;width:48px;">Cant.</th>
+          <th style="padding:9px 12px;color:#FFFFFF;text-align:right;font-weight:600;">Precio u.</th>
+          <th style="padding:9px 12px;color:#FFFFFF;text-align:right;font-weight:600;">Subtotal</th>
+        </tr>
+        ${filaProductos}
+        <tr style="background:#FAF6F1;">
+          <td colspan="3" style="padding:10px 12px;font-size:13px;font-weight:600;color:#6B3A2A;">Total con IVA</td>
+          <td style="padding:10px 12px;font-size:14px;font-weight:700;color:#2D1A0E;text-align:right;">${new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(params.totalConIva)}</td>
+        </tr>
+      </table>
+      <table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;margin-bottom:24px;">
+        <tr style="border-bottom:1px solid #EDE4D8;">
+          <td style="padding:7px 0;color:#A89A8A;width:160px;">Fecha de emisión</td>
+          <td style="padding:7px 0;color:#374151;font-weight:500;">${params.fechaEmision}</td>
+        </tr>
+        ${params.fechaEntrega ? `<tr><td style="padding:7px 0;color:#A89A8A;width:160px;">Fecha estimada de entrega</td><td style="padding:7px 0;color:#374151;font-weight:500;">${params.fechaEntrega}</td></tr>` : ''}
+      </table>
+      ${firmaImg}
+      <div style="text-align:center;margin:28px 0 8px;">
+        <a href="${params.linkFirma}" style="display:inline-block;background:#6B3A2A;color:#FFFFFF;text-decoration:none;padding:13px 28px;border-radius:6px;font-size:14px;font-weight:600;letter-spacing:0.01em;">✍️ Firmar remito</a>
       </div>
-    `,
+      <p style="text-align:center;font-size:11px;color:#A89A8A;margin:8px 0 0;">O accedé al enlace: <a href="${params.linkFirma}" style="color:#6B3A2A;word-break:break-all;">${params.linkFirma}</a></p>
+      <p style="color:#A89A8A;font-size:13px;margin:28px 0 0;line-height:1.6;">Saludos cordiales,<br/><strong style="color:#6B3A2A;">Wood Pallet</strong></p>`
+    ),
   });
 };
 
@@ -316,34 +292,18 @@ export const enviarRemitoFirmado = async (params: {
     from: `"Wood Pallet" <${from}>`,
     to: params.destinatario,
     subject: titulo,
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
-        <div style="background:linear-gradient(135deg,#6B3A2A 0%,#C4895A 100%);padding:24px 28px;border-radius:4px 4px 0 0;">
-          <h1 style="color:white;margin:0;font-size:20px;">Wood Pallet</h1>
-          <p style="color:rgba(255,255,255,0.85);margin:4px 0 0;font-size:14px;">Remito #${params.numeroRemito} — Firmado ✅</p>
-        </div>
-        <div style="background:#FDF6EE;padding:28px;border:1px solid #C4895A;border-top:none;border-radius:0 0 4px 4px;">
-          <p style="color:#374151;font-size:15px;margin:0 0 16px;">
-            ${esParaPropietario ? 'Estimado equipo Wood Pallet,' : `Estimado/a <strong>${params.razonSocial}</strong>,`}
-          </p>
-          <p style="color:#374151;font-size:14px;line-height:1.6;margin:0 0 20px;">${mensajePrincipal}</p>
-
-          <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:4px;padding:16px 20px;margin-bottom:20px;">
-            <p style="margin:0 0 12px;font-size:12px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.05em;">Firmas del documento</p>
-            ${firmaPropImg}
-            ${firmaClienteImg}
-          </div>
-
-          <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:4px;padding:12px 16px;font-size:13px;color:#1E40AF;">
-            📎 El documento PDF con ambas firmas se encuentra adjunto en este correo.
-          </div>
-
-          <p style="color:#9CA3AF;font-size:12px;margin:24px 0 0;">
-            Saludos cordiales,<br/><strong style="color:#6B3A2A;">Wood Pallet</strong>
-          </p>
-        </div>
+    html: wrapEmail(
+      `Remito #${params.numeroRemito} — Firmado ✅`,
+      esParaPropietario ? 'Copia interna' : 'Tu copia del documento',
+      `<p style="color:#374151;font-size:15px;margin:0 0 12px;">${esParaPropietario ? 'Equipo Wood Pallet,' : `Estimado/a <strong style="color:#2D1A0E;">${params.razonSocial}</strong>,`}</p>
+      <p style="color:#6B7280;font-size:14px;line-height:1.7;margin:0 0 24px;">${mensajePrincipal}</p>
+      <div style="background:#FAF6F1;border:1px solid #EDE4D8;border-radius:8px;padding:20px;margin-bottom:20px;">
+        <p style="margin:0 0 14px;font-size:11px;font-weight:600;color:#A89A8A;text-transform:uppercase;letter-spacing:0.06em;">Firmas del documento</p>
+        ${firmaPropImg}${firmaClienteImg}
       </div>
-    `,
+      <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:12px 16px;font-size:13px;color:#1E40AF;margin-bottom:24px;">📎 El documento PDF con ambas firmas se adjunta en este correo.</div>
+      <p style="color:#A89A8A;font-size:13px;margin:0;line-height:1.6;">Saludos cordiales,<br/><strong style="color:#6B3A2A;">Wood Pallet</strong></p>`
+    ),
     attachments: pdfBuffer ? [
       {
         filename: `Remito-${params.numeroRemito}-firmado.pdf`,
@@ -376,27 +336,19 @@ export const sendVerificationCode = async (params: {
     from,
     to: params.to,
     subject: `${params.codigo} — Tu código de verificación · Wood Pallet`,
-    html: `
-      <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#F9F7F5;padding:40px 20px;min-height:100vh;">
-        <div style="max-width:480px;margin:0 auto;background:#FFFFFF;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
-          <div style="background:#3c250f;padding:28px 32px;">
-            <p style="color:rgba(255,255,255,0.7);font-size:13px;margin:0 0 4px;">Wood Pallet</p>
-            <h1 style="color:#FFFFFF;font-size:20px;font-weight:700;margin:0;">Código de verificación</h1>
-          </div>
-          <div style="padding:32px;">
-            <p style="color:#374151;font-size:15px;margin:0 0 8px;">Hola <strong>${params.nombre}</strong>,</p>
-            <p style="color:#6B7280;font-size:14px;margin:0 0 28px;">Recibimos una solicitud de <strong>${accion}</strong> en tu cuenta. Usá el siguiente código para continuar:</p>
-            <div style="background:#FDF6EE;border:2px dashed #D97706;border-radius:12px;padding:24px;text-align:center;margin-bottom:24px;">
-              <p style="color:#92400E;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 8px;">Tu código</p>
-              <p style="color:#3c250f;font-size:42px;font-weight:800;letter-spacing:0.18em;margin:0;font-variant-numeric:tabular-nums;">${params.codigo}</p>
-            </div>
-            <p style="color:#9CA3AF;font-size:12px;margin:0 0 4px;">⏱ Este código expira en <strong>15 minutos</strong>.</p>
-            <p style="color:#9CA3AF;font-size:12px;margin:0 0 24px;">Si no solicitaste este código, podés ignorar este email. Tu cuenta permanece segura.</p>
-            <p style="color:#9CA3AF;font-size:12px;margin:0;">Saludos,<br/><strong style="color:#6B3A2A;">Wood Pallet</strong></p>
-          </div>
-        </div>
+    html: wrapEmail(
+      'Código de verificación',
+      accion,
+      `<p style="color:#374151;font-size:15px;margin:0 0 12px;">Hola <strong style="color:#2D1A0E;">${params.nombre}</strong>,</p>
+      <p style="color:#6B7280;font-size:14px;line-height:1.7;margin:0 0 24px;">Recibimos una solicitud de <strong>${accion}</strong>. Usá el siguiente código para continuar:</p>
+      <div style="background:#FAF6F1;border:2px dashed #C4895A;border-radius:10px;padding:24px;text-align:center;margin-bottom:24px;">
+        <p style="color:#A89A8A;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 8px;">Tu código</p>
+        <p style="color:#2D1A0E;font-size:40px;font-weight:800;letter-spacing:0.18em;margin:0;font-variant-numeric:tabular-nums;">${params.codigo}</p>
       </div>
-    `,
+      <p style="color:#A89A8A;font-size:12px;margin:0 0 4px;">⏱ Expira en <strong>15 minutos</strong>.</p>
+      <p style="color:#A89A8A;font-size:12px;margin:0 0 24px;">Si no solicitaste este código, podés ignorar este email.</p>
+      <p style="color:#A89A8A;font-size:13px;margin:0;line-height:1.6;">Saludos,<br/><strong style="color:#6B3A2A;">Wood Pallet</strong></p>`
+    ),
   });
 };
 
@@ -423,38 +375,25 @@ export const sendCodigoRetiro = async (params: {
     from,
     to: params.to,
     subject: `Código de retiro ${params.codigoRetiro} · Wood Pallet`,
-    html: `
-      <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#F9F7F5;padding:40px 20px;min-height:100vh;">
-        <div style="max-width:480px;margin:0 auto;background:#FFFFFF;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
-          <div style="background:#3c250f;padding:28px 32px;">
-            <p style="color:rgba(255,255,255,0.7);font-size:13px;margin:0 0 4px;">Wood Pallet · Retiro en galpón</p>
-            <h1 style="color:#FFFFFF;font-size:20px;font-weight:700;margin:0;">Tu pedido está listo para retirar</h1>
-          </div>
-          <div style="padding:32px;">
-            <p style="color:#374151;font-size:15px;margin:0 0 8px;">Hola <strong>${params.nombre}</strong>,</p>
-            <p style="color:#6B7280;font-size:14px;margin:0 0 24px;">Tu pedido fue confirmado. Este es tu código único de retiro — presentalo en el galpón al momento de retirar la mercadería.</p>
-
-            <div style="background:#FEF3E2;border:2px solid #F9C97C;border-radius:12px;padding:24px 32px;text-align:center;margin-bottom:28px;">
-              <p style="color:#92400E;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">Código de retiro</p>
-              <p style="color:#3c250f;font-size:36px;font-weight:800;letter-spacing:4px;margin:0;font-family:monospace;">${params.codigoRetiro}</p>
-            </div>
-
-            ${params.fechaRetiro || params.horaRetiro || params.galpon ? `
-            <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
-              ${params.fechaRetiro ? `<tr><td style="padding:6px 0;color:#9CA3AF;font-size:13px;width:140px;">Fecha estimada</td><td style="padding:6px 0;color:#374151;font-size:13px;font-weight:500;">${params.fechaRetiro}</td></tr>` : ''}
-              ${params.horaRetiro ? `<tr><td style="padding:6px 0;color:#9CA3AF;font-size:13px;">Hora estimada</td><td style="padding:6px 0;color:#374151;font-size:13px;font-weight:500;">${params.horaRetiro}</td></tr>` : ''}
-              ${params.galpon ? `<tr><td style="padding:6px 0;color:#9CA3AF;font-size:13px;">Galpón</td><td style="padding:6px 0;color:#374151;font-size:13px;font-weight:500;">${params.galpon}</td></tr>` : ''}
-            </table>` : ''}
-
-            ${productosHtml ? `<div style="margin-bottom:24px;"><p style="color:#374151;font-size:13px;font-weight:600;margin:0 0 4px;">Productos incluidos</p>${productosHtml}</div>` : ''}
-
-            <p style="color:#9CA3AF;font-size:12px;margin:0 0 4px;">⚠️ Guardá este email — necesitás el código para retirar tu pedido.</p>
-            <p style="color:#9CA3AF;font-size:12px;margin:0 0 24px;">Si tenés alguna consulta, comunicate con nosotros al <strong>11 6623-1866</strong>.</p>
-            <p style="color:#9CA3AF;font-size:12px;margin:0;">Saludos,<br/><strong style="color:#6B3A2A;">Wood Pallet</strong></p>
-          </div>
-        </div>
+    html: wrapEmail(
+      'Tu pedido está listo',
+      'Código de retiro en galpón',
+      `<p style="color:#374151;font-size:15px;margin:0 0 12px;">Hola <strong style="color:#2D1A0E;">${params.nombre}</strong>,</p>
+      <p style="color:#6B7280;font-size:14px;line-height:1.7;margin:0 0 20px;">Tu pedido fue confirmado. Presentá este código en el galpón al momento de retirar la mercadería.</p>
+      <div style="background:#FFFBEB;border:2px solid #FDE68A;border-radius:10px;padding:24px 32px;text-align:center;margin-bottom:24px;">
+        <p style="color:#92400E;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;margin:0 0 8px;">Código de retiro</p>
+        <p style="color:#2D1A0E;font-size:34px;font-weight:800;letter-spacing:0.12em;margin:0;font-family:monospace;">${params.codigoRetiro}</p>
       </div>
-    `,
+      ${params.fechaRetiro || params.horaRetiro || params.galpon ? `<table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;margin-bottom:20px;">
+        ${params.fechaRetiro ? `<tr><td style="padding:6px 0;color:#A89A8A;width:140px;">Fecha estimada</td><td style="padding:6px 0;color:#374151;font-weight:500;">${params.fechaRetiro}</td></tr>` : ''}
+        ${params.horaRetiro ? `<tr><td style="padding:6px 0;color:#A89A8A;">Hora estimada</td><td style="padding:6px 0;color:#374151;font-weight:500;">${params.horaRetiro}</td></tr>` : ''}
+        ${params.galpon ? `<tr><td style="padding:6px 0;color:#A89A8A;">Galpón</td><td style="padding:6px 0;color:#374151;font-weight:500;">${params.galpon}</td></tr>` : ''}
+      </table>` : ''}
+      ${productosHtml ? `<div style="margin-bottom:20px;"><p style="color:#374151;font-size:13px;font-weight:600;margin:0 0 6px;">Productos incluidos</p>${productosHtml}</div>` : ''}
+      <p style="color:#A89A8A;font-size:12px;margin:0 0 4px;">⚠️ Guardá este email — necesitás el código para retirar.</p>
+      <p style="color:#A89A8A;font-size:12px;margin:0 0 24px;">Consultas: <strong>11 6623-1866</strong></p>
+      <p style="color:#A89A8A;font-size:13px;margin:0;line-height:1.6;">Saludos,<br/><strong style="color:#6B3A2A;">Wood Pallet</strong></p>`
+    ),
   });
 };
 // ─── Envío de link de recuperación de contraseña ─────────────────────────────
@@ -470,29 +409,19 @@ export const sendPasswordRecoveryLink = async (params: {
     from,
     to: params.to,
     subject: 'Recuperación de contraseña · Wood Pallet',
-    html: `
-      <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#F9F7F5;padding:40px 20px;min-height:100vh;">
-        <div style="max-width:480px;margin:0 auto;background:#FFFFFF;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
-          <div style="background:#3c250f;padding:28px 32px;">
-            <p style="color:rgba(255,255,255,0.7);font-size:13px;margin:0 0 4px;">Wood Pallet</p>
-            <h1 style="color:#FFFFFF;font-size:20px;font-weight:700;margin:0;">Recuperar contraseña</h1>
-          </div>
-          <div style="padding:32px;">
-            <p style="color:#374151;font-size:15px;margin:0 0 8px;">Hola <strong>${params.nombre}</strong>,</p>
-            <p style="color:#6B7280;font-size:14px;margin:0 0 28px;">Recibimos una solicitud para recuperar el acceso a tu cuenta. Hacé clic en el botón para crear una nueva contraseña:</p>
-            <div style="text-align:center;margin-bottom:28px;">
-              <a href="${params.resetLink}" style="display:inline-block;background:#3c250f;color:#FFFFFF;font-size:15px;font-weight:600;padding:14px 32px;border-radius:8px;text-decoration:none;">
-                Crear nueva contraseña
-              </a>
-            </div>
-            <p style="color:#9CA3AF;font-size:12px;margin:0 0 4px;">⏱ Este enlace expira en <strong>30 minutos</strong> y es de un solo uso.</p>
-            <p style="color:#9CA3AF;font-size:12px;margin:0 0 24px;">Si no solicitaste esto, podés ignorar este email. Tu contraseña no va a cambiar.</p>
-            <p style="color:#9CA3AF;font-size:11px;word-break:break-all;margin:0 0 24px;">Si el botón no funciona, copiá este enlace: ${params.resetLink}</p>
-            <p style="color:#9CA3AF;font-size:12px;margin:0;">Saludos,<br/><strong style="color:#6B3A2A;">Wood Pallet</strong></p>
-          </div>
-        </div>
+    html: wrapEmail(
+      'Recuperar contraseña',
+      'Wood Pallet',
+      `<p style="color:#374151;font-size:15px;margin:0 0 12px;">Hola <strong style="color:#2D1A0E;">${params.nombre}</strong>,</p>
+      <p style="color:#6B7280;font-size:14px;line-height:1.7;margin:0 0 28px;">Recibimos una solicitud para recuperar el acceso a tu cuenta. Hacé clic en el botón para crear una nueva contraseña:</p>
+      <div style="text-align:center;margin-bottom:24px;">
+        <a href="${params.resetLink}" style="display:inline-block;background:#6B3A2A;color:#FFFFFF;font-size:14px;font-weight:600;padding:13px 28px;border-radius:6px;text-decoration:none;">Crear nueva contraseña</a>
       </div>
-    `,
+      <p style="color:#A89A8A;font-size:12px;margin:0 0 4px;">⏱ Enlace válido por <strong>30 minutos</strong> (un solo uso).</p>
+      <p style="color:#A89A8A;font-size:12px;margin:0 0 4px;">Si no solicitaste esto, podés ignorar este email.</p>
+      <p style="color:#A89A8A;font-size:11px;word-break:break-all;margin:0 0 24px;">Enlace: ${params.resetLink}</p>
+      <p style="color:#A89A8A;font-size:13px;margin:0;line-height:1.6;">Saludos,<br/><strong style="color:#6B3A2A;">Wood Pallet</strong></p>`
+    ),
   });
 };
 
@@ -524,41 +453,24 @@ export const enviarNotificacionCotizacionWeb = async (params: {
     from: `"Wood Pallet" <${from}>`,
     to: params.destinatarios.join(', '),
     subject: `🌐 Nueva consulta desde woodpallets.com.ar — ${params.nombre}`,
-    html: `
-      <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#F9F7F5;padding:40px 20px;">
-        <div style="max-width:560px;margin:0 auto;background:#FFFFFF;border-radius:8px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.08);">
-          <div style="background:linear-gradient(135deg,#6B3A2A 0%,#C4895A 100%);padding:24px 28px;">
-            <p style="color:rgba(255,255,255,0.7);font-size:12px;margin:0 0 4px;text-transform:uppercase;letter-spacing:0.08em;">woodpallets.com.ar</p>
-            <h1 style="color:#FFFFFF;font-size:19px;font-weight:700;margin:0;">Nueva solicitud de cotización web</h1>
-          </div>
-          <div style="padding:28px;">
-            <p style="color:#374151;font-size:14px;margin:0 0 20px;">
-              Un cliente completó el formulario de cotización. <strong>Entrá al sistema para atenderlo.</strong>
-            </p>
-
-            <table style="width:100%;border-collapse:collapse;margin-bottom:20px;font-size:13px;">
-              <tr style="background:#F9FAFB;"><td style="padding:9px 12px;color:#6B7280;border:1px solid #E5E7EB;width:150px;">Nombre</td><td style="padding:9px 12px;color:#111827;font-weight:600;border:1px solid #E5E7EB;">${params.nombre}</td></tr>
-              ${params.empresa ? `<tr><td style="padding:9px 12px;color:#6B7280;border:1px solid #E5E7EB;">Empresa</td><td style="padding:9px 12px;color:#111827;border:1px solid #E5E7EB;">${params.empresa}</td></tr>` : ''}
-              <tr style="background:#F9FAFB;"><td style="padding:9px 12px;color:#6B7280;border:1px solid #E5E7EB;">Email</td><td style="padding:9px 12px;color:#111827;border:1px solid #E5E7EB;"><a href="mailto:${params.email}" style="color:#C4895A;">${params.email}</a></td></tr>
-              ${params.telefono ? `<tr><td style="padding:9px 12px;color:#6B7280;border:1px solid #E5E7EB;">Teléfono</td><td style="padding:9px 12px;color:#111827;border:1px solid #E5E7EB;"><a href="https://wa.me/549${params.telefono.replace(/\D/g, '')}" style="color:#25D366;">${params.telefono} 💬</a></td></tr>` : ''}
-              ${params.tipoPallet ? `<tr style="background:#F9FAFB;"><td style="padding:9px 12px;color:#6B7280;border:1px solid #E5E7EB;">Tipo de pallet</td><td style="padding:9px 12px;color:#111827;font-weight:600;border:1px solid #E5E7EB;">${params.tipoPallet}</td></tr>` : ''}
-              ${params.cantidad != null ? `<tr><td style="padding:9px 12px;color:#6B7280;border:1px solid #E5E7EB;">Cantidad</td><td style="padding:9px 12px;color:#111827;font-weight:600;border:1px solid #E5E7EB;">${params.cantidad} unidades</td></tr>` : ''}
-              <tr style="background:#F9FAFB;"><td style="padding:9px 12px;color:#6B7280;border:1px solid #E5E7EB;">Lo necesita para</td><td style="padding:9px 12px;color:#111827;border:1px solid #E5E7EB;">${fechaStr}</td></tr>
-              <tr><td style="padding:9px 12px;color:#6B7280;border:1px solid #E5E7EB;">Entrega</td><td style="padding:9px 12px;color:#111827;border:1px solid #E5E7EB;">${entregaLabel}${params.localidadEntrega ? ` · ${params.localidadEntrega}` : ''}</td></tr>
-              ${params.requiereSenasa ? `<tr style="background:#FEF3C7;"><td style="padding:9px 12px;color:#92400E;font-weight:600;border:1px solid #FCD34D;">SENASA</td><td style="padding:9px 12px;color:#92400E;font-weight:600;border:1px solid #FCD34D;">⚠️ Requiere certificación SENASA</td></tr>` : ''}
-              ${params.observaciones ? `<tr style="background:#F9FAFB;"><td style="padding:9px 12px;color:#6B7280;border:1px solid #E5E7EB;vertical-align:top;">Observaciones</td><td style="padding:9px 12px;color:#374151;border:1px solid #E5E7EB;">${params.observaciones}</td></tr>` : ''}
-            </table>
-
-            <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:4px;padding:14px 16px;font-size:13px;color:#1E40AF;margin-bottom:16px;">
-              📌 Esta solicitud ya fue registrada en el sistema. Ingresá a <strong>Cotizaciones → Cotizaciones web</strong> para procesarla.
-            </div>
-
-            <p style="color:#9CA3AF;font-size:12px;margin:0;">
-              Wood Pallet Manager · Notificación automática
-            </p>
-          </div>
-        </div>
-      </div>
-    `,
+    html: wrapEmail(
+      'Nueva solicitud web',
+      'woodpallets.com.ar',
+      `<p style="color:#374151;font-size:14px;margin:0 0 20px;">Un cliente completó el formulario de cotización. <strong style="color:#2D1A0E;">Entrá al sistema para atenderlo.</strong></p>
+      <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:20px;font-size:13px;">
+        <tr style="background:#FAF6F1;"><td style="padding:9px 12px;color:#A89A8A;border:1px solid #EDE4D8;width:130px;">Nombre</td><td style="padding:9px 12px;color:#2D1A0E;font-weight:600;border:1px solid #EDE4D8;">${params.nombre}</td></tr>
+        ${params.empresa ? `<tr><td style="padding:9px 12px;color:#A89A8A;border:1px solid #EDE4D8;">Empresa</td><td style="padding:9px 12px;color:#374151;border:1px solid #EDE4D8;">${params.empresa}</td></tr>` : ''}
+        <tr style="background:#FAF6F1;"><td style="padding:9px 12px;color:#A89A8A;border:1px solid #EDE4D8;">Email</td><td style="padding:9px 12px;border:1px solid #EDE4D8;"><a href="mailto:${params.email}" style="color:#6B3A2A;font-weight:500;">${params.email}</a></td></tr>
+        ${params.telefono ? `<tr><td style="padding:9px 12px;color:#A89A8A;border:1px solid #EDE4D8;">Teléfono</td><td style="padding:9px 12px;border:1px solid #EDE4D8;"><a href="https://wa.me/549${params.telefono.replace(/\D/g, '')}" style="color:#25D366;">${params.telefono} 💬</a></td></tr>` : ''}
+        ${params.tipoPallet ? `<tr style="background:#FAF6F1;"><td style="padding:9px 12px;color:#A89A8A;border:1px solid #EDE4D8;">Tipo de pallet</td><td style="padding:9px 12px;color:#2D1A0E;font-weight:600;border:1px solid #EDE4D8;">${params.tipoPallet}</td></tr>` : ''}
+        ${params.cantidad != null ? `<tr><td style="padding:9px 12px;color:#A89A8A;border:1px solid #EDE4D8;">Cantidad</td><td style="padding:9px 12px;color:#2D1A0E;font-weight:600;border:1px solid #EDE4D8;">${params.cantidad} unidades</td></tr>` : ''}
+        <tr style="background:#FAF6F1;"><td style="padding:9px 12px;color:#A89A8A;border:1px solid #EDE4D8;">Lo necesita para</td><td style="padding:9px 12px;color:#374151;border:1px solid #EDE4D8;">${fechaStr}</td></tr>
+        <tr><td style="padding:9px 12px;color:#A89A8A;border:1px solid #EDE4D8;">Entrega</td><td style="padding:9px 12px;color:#374151;border:1px solid #EDE4D8;">${entregaLabel}${params.localidadEntrega ? ` · ${params.localidadEntrega}` : ''}</td></tr>
+        ${params.requiereSenasa ? `<tr style="background:#FFFBEB;"><td style="padding:9px 12px;color:#92400E;font-weight:600;border:1px solid #FDE68A;">SENASA</td><td style="padding:9px 12px;color:#92400E;font-weight:600;border:1px solid #FDE68A;">⚠️ Requiere certificación</td></tr>` : ''}
+        ${params.observaciones ? `<tr style="background:#FAF6F1;"><td style="padding:9px 12px;color:#A89A8A;border:1px solid #EDE4D8;vertical-align:top;">Observaciones</td><td style="padding:9px 12px;color:#374151;border:1px solid #EDE4D8;">${params.observaciones}</td></tr>` : ''}
+      </table>
+      <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:6px;padding:12px 16px;font-size:13px;color:#166534;margin-bottom:16px;">📌 Ingresá a <strong>Cotizaciones → Solicitudes web</strong> para procesarla.</div>
+      <p style="color:#A89A8A;font-size:11px;margin:0;">Wood Pallet Manager · Notificación automática</p>`
+    ),
   });
 };

@@ -42,7 +42,7 @@ export const getStockConsolidadoService = async () => {
       cantidadDisponible: disponibleSaneado,
       cantidadDeudora: Math.max(0, s.cantidadDeudora),
       cantidadMinima: s.cantidadMinima,
-      bajoMinimo: s.cantidadMinima !== null && disponibleSaneado <= s.cantidadMinima,
+      bajoMinimo: s.cantidadMinima !== null && s.cantidadMinima > 0 && disponibleSaneado < s.cantidadMinima,
       tieneSaldoDeudor: s.cantidadDeudora > 0,
     });
   }
@@ -79,7 +79,7 @@ export const getStockService = async () => {
 
   return stock.map(s => ({
     ...s,
-    bajoMinimo: s.cantidadMinima !== null && s.cantidadDisponible <= s.cantidadMinima,
+    bajoMinimo: s.cantidadMinima !== null && s.cantidadMinima > 0 && s.cantidadDisponible < s.cantidadMinima,
     tieneSaldoDeudor: s.cantidadDeudora > 0
   }));
 };
@@ -87,7 +87,7 @@ export const getStockService = async () => {
 // Alertas de stock bajo mínimo
 export const getAlertasStockService = async () => {
   const stock = await prisma.stock.findMany({
-    where: { cantidadMinima: { not: null } },
+    where: { cantidadMinima: { gt: 0 } },
     include: {
       producto: { select: { id: true, nombre: true, tipo: true } },
       proveedor: { select: { id: true, nombreEmpresa: true } }
@@ -95,7 +95,7 @@ export const getAlertasStockService = async () => {
   });
 
   return stock
-    .filter(s => s.cantidadDisponible <= (s.cantidadMinima || 0))
+    .filter(s => s.cantidadDisponible < s.cantidadMinima!)
     .map(s => ({
       stockId: s.id,
       producto: s.producto,
@@ -103,7 +103,7 @@ export const getAlertasStockService = async () => {
       cantidadDisponible: s.cantidadDisponible,
       cantidadDeudora: s.cantidadDeudora,
       cantidadMinima: s.cantidadMinima,
-      deficit: (s.cantidadMinima || 0) - s.cantidadDisponible
+      deficit: s.cantidadMinima! - s.cantidadDisponible
     }));
 };
 

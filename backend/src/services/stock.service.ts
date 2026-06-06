@@ -21,9 +21,8 @@ export const getStockService = async (filtros?: {
 };
 
 export const getStockBajoMinimoService = async () => {
-  // Traer todos los stocks con mínimo definido y filtrar en memoria
   const stocks = await prisma.stock.findMany({
-    where: { cantidadMinima: { not: null } },
+    where: { cantidadMinima: { gt: 0 } },
     include: {
       producto: { select: { id: true, nombre: true } },
       proveedor: { select: { id: true, nombreEmpresa: true } },

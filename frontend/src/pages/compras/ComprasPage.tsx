@@ -4,6 +4,7 @@ import { useCompras, useDeudaProveedores, useRegistrarPagoCompra, useCancelarCom
 import NuevaCompra from './NuevaCompra';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
+import Pagination from '../../components/ui/Pagination';
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   CartesianGrid, XAxis, YAxis,
@@ -37,11 +38,15 @@ export default function ComprasPage() {
     nroComprobante: '',
   });
   const [errorPago, setErrorPago] = useState('');
+  const [pagina, setPagina] = useState(1);
+  const POR_PAGINA = 10;
 
   const filtradas = compras?.filter(c =>
     c.proveedor?.nombreEmpresa.toLowerCase().includes(busqueda.toLowerCase()) ||
     `#${c.id}`.includes(busqueda)
-  );
+  ) ?? [];
+
+  const comprasPaginadas = filtradas.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
 
   const deudaTotal = deuda?.reduce((acc: number, d: any) => acc + d.deudaTotal, 0) || 0;
 
@@ -302,20 +307,21 @@ export default function ComprasPage() {
       <div className="relative">
         <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
         <input type="text" placeholder="Buscar por proveedor o número..."
-          value={busqueda} onChange={e => setBusqueda(e.target.value)}
+          value={busqueda} onChange={e => { setBusqueda(e.target.value); setPagina(1); }}
           className="input pl-10" />
       </div>
 
       {/* Lista de compras */}
-      {!filtradas?.length ? (
+      {!filtradas.length ? (
         <div className="empty-state">
           <p className="text-sm font-semibold text-gray-700">Sin compras registradas</p>
           <p className="text-sm text-gray-400 mt-1">Registrá la primera con el botón de arriba</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {filtradas.map(c => (
-            <div key={c.id} className="card-base">
+        <div className="card-base" style={{ padding: 0, overflow: 'hidden' }}>
+          <div className="divide-y divide-gray-100">
+            {comprasPaginadas.map(c => (
+              <div key={c.id} className="px-4 py-3">
               {/* Header de la compra */}
               <div
                 className="flex items-center justify-between cursor-pointer"
@@ -424,6 +430,14 @@ export default function ComprasPage() {
               )}
             </div>
           ))}
+          </div>
+          <Pagination
+            total={filtradas.length}
+            pagina={pagina}
+            porPagina={POR_PAGINA}
+            onCambiar={p => { setPagina(p); setExpandido(null); }}
+            nombreItems="compras"
+          />
         </div>
       )}
 

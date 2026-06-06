@@ -34,7 +34,7 @@ export const getAlertasActivasService = async () => {
 
   // 2. Stock bajo mínimo
   const stockBajo = await prisma.stock.findMany({
-    where: { cantidadMinima: { not: null } },
+    where: { cantidadMinima: { gt: 0 } },
     include: {
       producto: { select: { nombre: true, tipo: true } },
       proveedor: { select: { nombreEmpresa: true } },
@@ -42,12 +42,19 @@ export const getAlertasActivasService = async () => {
   });
 
   for (const s of stockBajo) {
-    if (s.cantidadDisponible <= (s.cantidadMinima || 0)) {
+    const minimo = s.cantidadMinima!;
+    if (s.cantidadDisponible < minimo) {
+      const esSinStock = s.cantidadDisponible <= 0;
+      const esCritico  = s.cantidadDisponible <= Math.floor(minimo / 2);
       alertas.push({
         tipo: 'stock_bajo',
-        urgencia: s.cantidadDisponible === 0 ? 'alta' : 'media',
-        titulo: `Stock bajo — ${s.producto.nombre}`,
-        detalle: `${s.proveedor.nombreEmpresa}: ${s.cantidadDisponible} unidades disponibles (mínimo: ${s.cantidadMinima})`,
+        urgencia: esSinStock ? 'alta' : esCritico ? 'media' : 'baja',
+        titulo: esSinStock
+          ? `Sin stock — ${s.producto.nombre}`
+          : `Stock bajo — ${s.producto.nombre}`,
+        detalle: esSinStock
+          ? `${s.proveedor.nombreEmpresa}: sin unidades disponibles (mínimo requerido: ${minimo})`
+          : `${s.proveedor.nombreEmpresa}: ${s.cantidadDisponible} unidades disponibles (mínimo: ${minimo})`,
         referencia: { tipo: 'stock', id: s.id },
         propietario: 'ambos',
       });

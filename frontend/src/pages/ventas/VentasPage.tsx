@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Search, ShoppingCart, CheckCircle, Package, Truck, Building2, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { Search, ShoppingCart, CheckCircle, Package, Truck, Building2, Trash2, XCircle } from 'lucide-react';
 import { useVentas, useVentasActivas, useEliminarVenta } from '../../hooks/useVentas';
 import EstadoBadge from '../../components/ui/EstadoBadge';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
@@ -15,21 +15,6 @@ const formatPesos = (v: number) =>
 const formatFecha = (f: string) =>
   new Date(f).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-const ESTADOS = [
-  'todos', 'entregado', 'cancelado'
-];
-
-const estadoLabel: Record<string, string> = {
-  todos:             'Todos',
-  confirmado:        'Confirmado',
-  en_preparacion:    'En preparación',
-  listo_para_envio:  'Listo para envío',
-  en_transito:       'En tránsito',
-  entregado:         'Entregado',
-  entregado_parcial: 'Parcial',
-  cancelado:         'Cancelado'
-};
-
 export default function VentasPage() {
   const { data: ventas, isLoading, isError } = useVentas();
   const { data: activas } = useVentasActivas();
@@ -40,8 +25,12 @@ export default function VentasPage() {
   const [ventaSeleccionada, setVentaSeleccionada] = useState<number | null>(null);
   const [confirmEliminar, setConfirmEliminar] = useState<number | null>(null);
 
+  const ESTADOS_ACTIVOS = ['confirmado', 'en_preparacion', 'listo_para_envio', 'en_transito', 'entregado_parcial'];
+
   const filtradas = (ventas || []).filter(v => {
-    const matchEstado = estadoFiltro === 'todos' || v.estadoPedido === estadoFiltro;
+    const matchEstado =
+      estadoFiltro === 'todos' ||
+      (estadoFiltro === 'activos' ? ESTADOS_ACTIVOS.includes(v.estadoPedido) : v.estadoPedido === estadoFiltro);
     const matchBusqueda = !busqueda ||
       v.cliente?.razonSocial?.toLowerCase().includes(busqueda.toLowerCase()) ||
       v.cliente?.cuit?.includes(busqueda) ||
@@ -51,12 +40,11 @@ export default function VentasPage() {
 
   const ventasPaginadas = filtradas.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
 
-  useEffect(() => { setPagina(1); }, [busqueda, estadoFiltro]);
-
   const totalPallets = (ventas || []).reduce((acc, v) => {
     return acc + (v.detalles?.reduce((a, d) => a + d.cantidadPedida, 0) || 0);
   }, 0);
   const entregadas = (ventas || []).filter(v => v.estadoPedido === 'entregado').length;
+  const canceladas = (ventas || []).filter(v => v.estadoPedido === 'cancelado').length;
 
   if (isLoading) return <LoadingSpinner text="Cargando ventas..." />;
   if (isError) return <ErrorMessage message="No se pudieron cargar las ventas." />;
@@ -72,73 +60,104 @@ export default function VentasPage() {
         </div>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        <div className="card-kpi">
+      {/* KPIs — también funcionan como filtros */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+
+        {/* Pedidos activos */}
+        <button
+          onClick={() => { setEstadoFiltro(estadoFiltro === 'activos' ? 'todos' : 'activos'); setPagina(1); }}
+          className="card-kpi text-left transition-all"
+          style={{
+            borderBottom: estadoFiltro === 'activos' ? '3px solid #7c4b2c' : '3px solid transparent',
+            background: estadoFiltro === 'activos' ? '#FDF5F0' : '',
+            cursor: 'pointer',
+          }}
+        >
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
-              <ShoppingCart size={16} />
+            <div className="w-7 h-7 rounded flex items-center justify-center shrink-0"
+              style={{ background: estadoFiltro === 'activos' ? '#7c4b2c' : '#F3F4F6' }}>
+              <ShoppingCart size={16} style={{ color: estadoFiltro === 'activos' ? '#fff' : '#6B7280' }} />
             </div>
             <p className="titulo-card flex-1">Pedidos activos</p>
           </div>
           <p className="text-2xl font-bold text-gray-900 leading-none mb-1">{activas?.length || 0}</p>
           <p className="text-xs text-gray-400 mt-1">en preparación o tránsito</p>
-        </div>
-        <div className="card-kpi">
+        </button>
+
+        {/* Entregados */}
+        <button
+          onClick={() => { setEstadoFiltro(estadoFiltro === 'entregado' ? 'todos' : 'entregado'); setPagina(1); }}
+          className="card-kpi text-left transition-all"
+          style={{
+            borderBottom: estadoFiltro === 'entregado' ? '3px solid #16A34A' : '3px solid transparent',
+            background: estadoFiltro === 'entregado' ? '#F0FDF4' : '',
+            cursor: 'pointer',
+          }}
+        >
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
-              <CheckCircle size={16} />
+            <div className="w-7 h-7 rounded flex items-center justify-center shrink-0"
+              style={{ background: estadoFiltro === 'entregado' ? '#16A34A' : '#F3F4F6' }}>
+              <CheckCircle size={16} style={{ color: estadoFiltro === 'entregado' ? '#fff' : '#6B7280' }} />
             </div>
             <p className="titulo-card flex-1">Entregados</p>
           </div>
           <p className="text-2xl font-bold text-gray-900 leading-none mb-1">{entregadas}</p>
           <p className="text-xs text-gray-400 mt-1">ventas completadas</p>
-        </div>
-        <div className="card-kpi">
+        </button>
+
+        {/* Pallets totales */}
+        <button
+          onClick={() => { setEstadoFiltro('todos'); setPagina(1); }}
+          className="card-kpi text-left transition-all"
+          style={{
+            borderBottom: estadoFiltro === 'todos' ? '3px solid #6B7280' : '3px solid transparent',
+            background: estadoFiltro === 'todos' ? '#F9FAFB' : '',
+            cursor: 'pointer',
+          }}
+        >
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
-              <Package size={16} />
+            <div className="w-7 h-7 rounded flex items-center justify-center shrink-0"
+              style={{ background: estadoFiltro === 'todos' ? '#6B7280' : '#F3F4F6' }}>
+              <Package size={16} style={{ color: estadoFiltro === 'todos' ? '#fff' : '#6B7280' }} />
             </div>
             <p className="titulo-card flex-1">Pallets totales</p>
           </div>
           <p className="text-2xl font-bold text-gray-900 leading-none mb-1">{totalPallets}</p>
-          <p className="text-xs text-gray-400 mt-1">unidades pedidas</p>
-        </div>
+          <p className="text-xs text-gray-400 mt-1">ver todos</p>
+        </button>
+
+        {/* Cancelados */}
+        <button
+          onClick={() => { setEstadoFiltro(estadoFiltro === 'cancelado' ? 'todos' : 'cancelado'); setPagina(1); }}
+          className="card-kpi text-left transition-all"
+          style={{
+            borderBottom: estadoFiltro === 'cancelado' ? '3px solid #DC2626' : '3px solid transparent',
+            background: estadoFiltro === 'cancelado' ? '#FEF2F2' : '',
+            cursor: 'pointer',
+          }}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 rounded flex items-center justify-center shrink-0"
+              style={{ background: estadoFiltro === 'cancelado' ? '#DC2626' : '#F3F4F6' }}>
+              <XCircle size={16} style={{ color: estadoFiltro === 'cancelado' ? '#fff' : '#6B7280' }} />
+            </div>
+            <p className="titulo-card flex-1">Cancelados</p>
+          </div>
+          <p className="text-2xl font-bold text-gray-900 leading-none mb-1">{canceladas}</p>
+          <p className="text-xs text-gray-400 mt-1">ventas canceladas</p>
+        </button>
       </div>
 
-      {/* Filtros */}
-      <div className="card-base space-y-3">
+      {/* Buscador */}
+      <div className="card-base">
         <div className="relative">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             className="input-field pl-9"
             placeholder="Buscar cliente, CUIT o N° venta..."
             value={busqueda}
-            onChange={e => setBusqueda(e.target.value)}
+            onChange={e => { setBusqueda(e.target.value); setPagina(1); }}
           />
-        </div>
-        <div className="flex flex-wrap gap-1.5">
-          {ESTADOS.map((e) => (
-            <button
-              key={e}
-              onClick={() => setEstadoFiltro(e)}
-              style={{
-                padding: '0.25rem 0.75rem',
-                fontSize: '0.75rem',
-                fontWeight: 500,
-                borderRadius: '0.25rem',
-                transition: 'all 0.15s',
-                border: 'none',
-                cursor: 'pointer',
-                background: estadoFiltro === e
-                  ? '#7c4b2c'
-                  : '#F3F4F6',
-                color: estadoFiltro === e ? '#fff' : '#4B5563',
-              }}
-            >
-              {estadoLabel[e]}
-            </button>
-          ))}
         </div>
       </div>
 
