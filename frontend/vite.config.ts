@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['portada.png', 'icon-192.png', 'icon-512.png', 'favicon.svg', 'logoWoodPalletDos.png', 'logowood.png'],
+      includeAssets: ['portada.png', 'icon-192.png', 'icon-512.png', 'favicon.svg', 'sistemalogo.png', 'cotizacioneslogo.png', 'loading.png'],
       manifest: {
         name: 'WoodPallet Manager',
         short_name: 'WoodPallet',
