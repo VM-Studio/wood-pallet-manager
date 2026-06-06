@@ -14,36 +14,64 @@ import {
 } from '../services/cotizaciones-web.service';
 
 // ─── Validación del formulario web ───────────────────────────────────────────
+// Acepta tanto strings como números para mayor compatibilidad con distintos
+// formularios web (algunos envían cantidad como "100" en lugar de 100)
 
 const nuevaWebSchema = z.object({
-  nombre:           z.string().min(2, 'El nombre es requerido'),
-  empresa:          z.string().optional(),
+  nombre:           z.string().min(1, 'El nombre es requerido'),
+  empresa:          z.string().optional().nullable(),
   email:            z.string().email('Email inválido'),
-  telefono:         z.string().optional(),
-  tipoPallet:       z.string().optional(),
-  cantidad:         z.number().int().min(1).optional(),
-  fechaNecesidad:   z.string().optional(),
-  tipoEntrega:      z.enum(['retira', 'envio']).optional(),
-  localidadEntrega: z.string().optional(),
-  requiereSenasa:   z.boolean().optional().default(false),
-  observaciones:    z.string().optional(),
+  telefono:         z.string().optional().nullable(),
+  tipoPallet:       z.string().optional().nullable(),
+  // Acepta número o string numérica
+  cantidad:         z.union([
+    z.number().int().min(1),
+    z.string().transform(v => { const n = parseInt(v, 10); return isNaN(n) ? undefined : n; }),
+  ]).optional().nullable(),
+  fechaNecesidad:   z.string().optional().nullable(),
+  // Acepta 'retira'|'envio' y también 'retira_cliente'|'envio_woodpallet' por si la web usa esos valores
+  tipoEntrega:      z.union([
+    z.enum(['retira', 'envio']),
+    z.enum(['retira_cliente', 'envio_woodpallet']).transform(v => v === 'retira_cliente' ? 'retira' : 'envio'),
+    z.string(),
+  ]).optional().nullable(),
+  localidadEntrega: z.string().optional().nullable(),
+  // Acepta boolean o string 'true'/'false'
+  requiereSenasa:   z.union([
+    z.boolean(),
+    z.string().transform(v => v === 'true' || v === '1'),
+  ]).optional().default(false),
+  observaciones:    z.string().optional().nullable(),
 });
 
 // ─── Endpoint público: recibe formulario web ──────────────────────────────────
 
 export const recibirCotizacionWeb = async (req: Request, res: Response) => {
   try {
+    console.log('[CotizacionWeb] Body recibido:', JSON.stringify(req.body));
     const parsed = nuevaWebSchema.safeParse(req.body);
     if (!parsed.success) {
+      console.error('[CotizacionWeb] Validación fallida:', parsed.error.flatten().fieldErrors);
       return res.status(400).json({ error: parsed.error.flatten().fieldErrors });
     }
 
     const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0] || req.socket.remoteAddress;
 
-    // 1. Guardar en BD
+    // 1. Guardar en BD (convertir null → undefined para compatibilidad con el service)
+    const d = parsed.data;
     const cotizacionWeb = await crearCotizacionWebService({
-      ...parsed.data,
-      ipOrigen: ip,
+      nombre:           d.nombre,
+      empresa:          d.empresa ?? undefined,
+      email:            d.email,
+      telefono:         d.telefono ?? undefined,
+      tipoPallet:       d.tipoPallet ?? undefined,
+      cantidad:         typeof d.cantidad === 'number' ? d.cantidad : undefined,
+      fechaNecesidad:   d.fechaNecesidad ?? undefined,
+      tipoEntrega:      d.tipoEntrega ?? undefined,
+      localidadEntrega: d.localidadEntrega ?? undefined,
+      requiereSenasa:   d.requiereSenasa ?? false,
+      observaciones:    d.observaciones ?? undefined,
+      ipOrigen:         ip,
     });
 
     // 2. Notificar propietarios por email (en paralelo, sin bloquear la respuesta)
@@ -56,17 +84,17 @@ export const recibirCotizacionWeb = async (req: Request, res: Response) => {
       if (destinatarios.length > 0) {
         enviarNotificacionCotizacionWeb({
           destinatarios,
-          nombre: parsed.data.nombre,
-          empresa: parsed.data.empresa,
-          email: parsed.data.email,
-          telefono: parsed.data.telefono ?? undefined,
-          tipoPallet: parsed.data.tipoPallet ?? undefined,
-          cantidad: parsed.data.cantidad ?? undefined,
-          fechaNecesidad: parsed.data.fechaNecesidad ?? undefined,
-          tipoEntrega: parsed.data.tipoEntrega ?? undefined,
-          localidadEntrega: parsed.data.localidadEntrega,
-          requiereSenasa: parsed.data.requiereSenasa ?? false,
-          observaciones: parsed.data.observaciones,
+          nombre:           d.nombre,
+          empresa:          d.empresa ?? undefined,
+          email:            d.email,
+          telefono:         d.telefono ?? undefined,
+          tipoPallet:       d.tipoPallet ?? undefined,
+          cantidad:         typeof d.cantidad === 'number' ? d.cantidad : undefined,
+          fechaNecesidad:   d.fechaNecesidad ?? undefined,
+          tipoEntrega:      d.tipoEntrega ?? undefined,
+          localidadEntrega: d.localidadEntrega ?? undefined,
+          requiereSenasa:   d.requiereSenasa ?? false,
+          observaciones:    d.observaciones ?? undefined,
         }).catch(err => console.error('[CotizacionWeb] Error al enviar email:', err));
       }
     } catch (emailErr) {
