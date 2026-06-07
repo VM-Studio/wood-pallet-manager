@@ -57,17 +57,20 @@ function FilaCotizacionWeb({
   return (
     <>
       <tr
-        className="hover:bg-gray-50 cursor-pointer transition-colors"
+        className="cursor-pointer transition-colors"
+        style={{ background: expandida ? '#FAF5F0' : 'white' }}
+        onMouseEnter={e => { if (!expandida) (e.currentTarget as HTMLElement).style.background = '#FDF6EE'; }}
+        onMouseLeave={e => { if (!expandida) (e.currentTarget as HTMLElement).style.background = 'white'; }}
         onClick={() => setExpandida(e => !e)}
       >
-        <td className="text-xs text-gray-400 font-medium">#{cw.id}</td>
+        <td className="text-xs font-medium" style={{ color: '#9B7E6A' }}>#{cw.id}</td>
         <td>
-          <p className="font-medium text-gray-900 text-sm">{cw.nombre}</p>
-          {cw.empresa && <p className="text-xs text-gray-400">{cw.empresa}</p>}
+          <p className="font-semibold text-sm" style={{ color: '#3c250f' }}>{cw.nombre}</p>
+          {cw.empresa && <p className="text-xs" style={{ color: '#9B7E6A' }}>{cw.empresa}</p>}
         </td>
-        <td className="text-sm text-gray-700">{cw.tipoPallet}</td>
-        <td className="text-sm font-semibold text-gray-800">{cw.cantidad} u</td>
-        <td className="text-sm text-gray-600">{formatFecha(cw.creadoEn)}</td>
+        <td className="text-sm" style={{ color: '#6B3A2A' }}>{cw.tipoPallet}</td>
+        <td className="text-sm font-semibold" style={{ color: '#3c250f' }}>{cw.cantidad} u</td>
+        <td className="text-sm" style={{ color: '#9B7E6A' }}>{formatFecha(cw.creadoEn)}</td>
         <td><EstadoBadge estado={cw.estado} /></td>
         <td>
           <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
@@ -76,14 +79,20 @@ function FilaCotizacionWeb({
                 <button
                   onClick={() => onConvertir(cw)}
                   title="Convertir a cotización"
-                  className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition-colors"
+                  className="p-1.5 transition-colors"
+                  style={{ color: '#16A34A' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#F0FDF4')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
                   <CheckCircle2 size={15} />
                 </button>
                 <button
                   onClick={() => onDescartar(cw)}
                   title="Descartar"
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                  className="p-1.5 transition-colors"
+                  style={{ color: '#9B7E6A' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#DC2626'; (e.currentTarget as HTMLElement).style.background = '#FFF1F2'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#9B7E6A'; (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                 >
                   <Trash2 size={14} />
                 </button>
@@ -93,12 +102,15 @@ function FilaCotizacionWeb({
               <a
                 href={`/cotizaciones`}
                 title="Ver cotización generada"
-                className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 transition-colors"
+                className="p-1.5 transition-colors"
+                style={{ color: '#2563EB' }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#EFF6FF')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
                 <ExternalLink size={14} />
               </a>
             )}
-            <button className="p-1 text-gray-300">
+            <button className="p-1" style={{ color: '#C4895A' }}>
               {expandida ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
           </div>
@@ -108,73 +120,97 @@ function FilaCotizacionWeb({
       {/* Detalle expandido */}
       {expandida && (
         <tr>
-          <td colSpan={7} className="bg-gray-50 px-4 py-4 border-t border-gray-100">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <td colSpan={7} style={{ background: '#FAF5F0', borderTop: '1px solid #E8D5C4', padding: '1rem 1.25rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
 
-              {/* Columna izquierda: datos de contacto */}
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Datos de contacto</p>
-                <div className="flex items-center gap-2 text-gray-700">
-                  <User size={13} className="text-gray-400 shrink-0" />
-                  {cw.nombre}{cw.empresa ? ` · ${cw.empresa}` : ''}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Phone size={13} className="text-gray-400 shrink-0" />
-                  <a
-                    href={`https://wa.me/549${cw.telefono.replace(/\D/g, '')}`}
-                    target="_blank" rel="noopener noreferrer"
-                    className="text-green-600 hover:underline"
-                    onClick={e => e.stopPropagation()}
-                  >
-                    {cw.telefono} 💬 WhatsApp
-                  </a>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Mail size={13} className="text-gray-400 shrink-0" />
-                  <a href={`mailto:${cw.email}`} className="text-blue-500 hover:underline" onClick={e => e.stopPropagation()}>
-                    {cw.email}
-                  </a>
-                </div>
-              </div>
-
-              {/* Columna derecha: datos del pedido */}
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Datos del pedido</p>
-                <div className="flex items-center gap-2 text-gray-700">
-                  <Package size={13} className="text-gray-400 shrink-0" />
-                  {cw.tipoPallet} · <span className="font-semibold">{cw.cantidad} unidades</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-700">
-                  <Calendar size={13} className="text-gray-400 shrink-0" />
-                  Lo necesita para: <span className="font-medium">{formatFecha(cw.fechaNecesidad || cw.creadoEn)}</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-700">
-                  <Truck size={13} className="text-gray-400 shrink-0" />
-                  {cw.tipoEntrega === 'envio' ? 'Envío a domicilio' : 'Retira en galpón'}
-                  {cw.localidadEntrega && ` · ${cw.localidadEntrega}`}
-                </div>
-                {cw.requiereSenasa && (
-                  <div className="flex items-center gap-2 text-amber-600 font-medium">
-                    <Leaf size={13} className="shrink-0" /> Requiere certificación SENASA
+              {/* Datos de contacto */}
+              <div style={{ border: '1px solid #E8D5C4', background: 'white', padding: '0.875rem' }}>
+                <p style={{ fontSize: '0.68rem', fontWeight: 700, color: '#7c4b2c', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.625rem' }}>
+                  Datos de contacto
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <User size={12} style={{ color: '#C4895A', flexShrink: 0 }} />
+                    <span style={{ fontSize: '0.82rem', color: '#3c250f', fontWeight: 500 }}>
+                      {cw.nombre}{cw.empresa ? ` · ${cw.empresa}` : ''}
+                    </span>
                   </div>
-                )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Phone size={12} style={{ color: '#C4895A', flexShrink: 0 }} />
+                    <a
+                      href={`https://wa.me/549${cw.telefono.replace(/\D/g, '')}`}
+                      target="_blank" rel="noopener noreferrer"
+                      style={{ fontSize: '0.82rem', color: '#16A34A', textDecoration: 'none', fontWeight: 500 }}
+                      onClick={e => e.stopPropagation()}
+                    >
+                      {cw.telefono} 💬 WhatsApp
+                    </a>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Mail size={12} style={{ color: '#C4895A', flexShrink: 0 }} />
+                    <a href={`mailto:${cw.email}`}
+                      style={{ fontSize: '0.82rem', color: '#2563EB', textDecoration: 'none' }}
+                      onClick={e => e.stopPropagation()}>
+                      {cw.email}
+                    </a>
+                  </div>
+                </div>
               </div>
 
-              {/* Observaciones */}
+              {/* Datos del pedido */}
+              <div style={{ border: '1px solid #E8D5C4', background: 'white', padding: '0.875rem' }}>
+                <p style={{ fontSize: '0.68rem', fontWeight: 700, color: '#7c4b2c', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.625rem' }}>
+                  Datos del pedido
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Package size={12} style={{ color: '#C4895A', flexShrink: 0 }} />
+                    <span style={{ fontSize: '0.82rem', color: '#3c250f' }}>
+                      {cw.tipoPallet} · <strong>{cw.cantidad} unidades</strong>
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Calendar size={12} style={{ color: '#C4895A', flexShrink: 0 }} />
+                    <span style={{ fontSize: '0.82rem', color: '#3c250f' }}>
+                      Lo necesita para: <strong>{formatFecha(cw.fechaNecesidad || cw.creadoEn)}</strong>
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Truck size={12} style={{ color: '#C4895A', flexShrink: 0 }} />
+                    <span style={{ fontSize: '0.82rem', color: '#3c250f' }}>
+                      {cw.tipoEntrega === 'envio' ? 'Envío a domicilio' : 'Retira en galpón'}
+                      {cw.localidadEntrega && <span style={{ color: '#9B7E6A' }}> · {cw.localidadEntrega}</span>}
+                    </span>
+                  </div>
+                  {cw.requiereSenasa && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Leaf size={12} style={{ color: '#16A34A', flexShrink: 0 }} />
+                      <span style={{ fontSize: '0.82rem', color: '#15803D', fontWeight: 600 }}>Requiere certificación SENASA</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Observaciones — ancho completo */}
               {cw.observaciones && (
-                <div className="md:col-span-2 bg-white rounded-lg px-3 py-2 border border-gray-100 text-gray-600 text-xs">
-                  <span className="font-semibold text-gray-500">Observaciones: </span>{cw.observaciones}
+                <div style={{ gridColumn: '1 / -1', border: '1px solid #E8D5C4', background: 'white', padding: '0.75rem 0.875rem' }}>
+                  <p style={{ fontSize: '0.68rem', fontWeight: 700, color: '#7c4b2c', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.375rem' }}>
+                    Mensaje del cliente
+                  </p>
+                  <p style={{ fontSize: '0.82rem', color: '#3c250f', margin: 0, lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>
+                    {cw.observaciones}
+                  </p>
                 </div>
               )}
 
-              {/* Meta */}
-              <div className="md:col-span-2 text-xs text-gray-400 flex items-center gap-4">
+              {/* Meta — ancho completo */}
+              <div style={{ gridColumn: '1 / -1', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1rem', fontSize: '0.72rem', color: '#9B7E6A', paddingTop: '0.125rem' }}>
                 <span>Recibida el {formatFecha(cw.creadoEn)} a las {formatHora(cw.creadoEn)}</span>
                 {cw.propietarioAsignado && (
-                  <span>Asignada a <strong>{cw.propietarioAsignado.nombre}</strong></span>
+                  <span>Asignada a <strong style={{ color: '#7c4b2c' }}>{cw.propietarioAsignado.nombre}</strong></span>
                 )}
                 {cw.motivoDescarte && (
-                  <span className="text-red-400">Descartada: {cw.motivoDescarte}</span>
+                  <span style={{ color: '#DC2626' }}>Descartada: {cw.motivoDescarte}</span>
                 )}
               </div>
             </div>
@@ -197,35 +233,53 @@ function DescartarModal({ cw, onClose }: { cw: CotizacionWeb; onClose: () => voi
   };
 
   return (
-    <div className="modal-overlay" style={{ zIndex: 60 }}>
-      <div className="modal max-w-sm animate-slide-up">
-        <div className="modal-header">
-          <h2 className="modal-title">Descartar cotización web</h2>
-          <button onClick={onClose} className="btn-icon"><X size={18} /></button>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(30,10,5,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+      <div style={{ background: '#fff', width: '100%', maxWidth: 400, border: '1px solid #E8D5C4', boxShadow: '0 20px 60px rgba(60,37,15,0.2)' }}>
+        {/* Header */}
+        <div style={{ background: '#7c4b2c', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <p style={{ fontSize: '0.65rem', fontWeight: 700, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Cotización web</p>
+            <h2 style={{ margin: '2px 0 0', fontFamily: "'Cormorant Garamond', Georgia, serif", fontStyle: 'italic', fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>
+              Descartar solicitud
+            </h2>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.5)', padding: 4 }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}>
+            <X size={18} />
+          </button>
         </div>
-        <div className="modal-body space-y-4">
-          <div className="flex items-start gap-3 bg-red-50 rounded-xl p-3 border border-red-100">
-            <AlertTriangle size={16} className="text-red-500 shrink-0 mt-0.5" />
-            <p className="text-sm text-red-700">
-              Esta solicitud de <strong>{cw.nombre}</strong> se marcará como descartada y dejará de contar en el badge.
+        <div style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '0.75rem', background: '#FFF1F2', border: '1px solid #FECDD3' }}>
+            <AlertTriangle size={15} style={{ color: '#DC2626', flexShrink: 0, marginTop: 1 }} />
+            <p style={{ fontSize: '0.82rem', color: '#9F1239', margin: 0 }}>
+              La solicitud de <strong>{cw.nombre}</strong> se marcará como descartada y dejará de contar en el badge.
             </p>
           </div>
           <div>
-            <label className="label">Motivo (opcional)</label>
+            <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#7c4b2c', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.375rem' }}>
+              Motivo (opcional)
+            </label>
             <textarea
               className="input"
               rows={2}
               placeholder="Spam, datos inválidos, ya fue atendido por otro canal..."
               value={motivo}
               onChange={e => setMotivo(e.target.value)}
+              style={{ borderRadius: 0 }}
             />
           </div>
-          <div className="flex gap-2 justify-end">
-            <button onClick={onClose} className="btn-secondary">Cancelar</button>
+          <div style={{ display: 'flex', gap: '0.625rem', justifyContent: 'flex-end' }}>
+            <button onClick={onClose}
+              style={{ padding: '0.5rem 1rem', border: '1px solid #E8D5C4', background: 'white', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 500, color: '#9B7E6A', borderRadius: 0 }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#FDF6EE')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'white')}>
+              Cancelar
+            </button>
             <button
               onClick={handleDescartar}
               disabled={cambiar.isPending}
-              className="btn-primary bg-red-600 hover:bg-red-700"
+              style={{ padding: '0.5rem 1rem', border: 'none', background: '#DC2626', color: '#fff', cursor: cambiar.isPending ? 'not-allowed' : 'pointer', fontSize: '0.82rem', fontWeight: 600, borderRadius: 0, opacity: cambiar.isPending ? 0.7 : 1 }}
             >
               {cambiar.isPending ? 'Descartando...' : 'Descartar'}
             </button>
@@ -266,31 +320,38 @@ export default function CotizacionesWebModal({ onClose }: Props) {
         />
       )}
 
-      <div className="modal-overlay" style={{ zIndex: 50 }}>
-        <div className="modal max-w-5xl animate-slide-up" style={{ maxHeight: '92vh', overflowY: 'auto' }}>
+      <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(30,10,5,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+        <div style={{ background: '#fff', width: '100%', maxWidth: '72rem', maxHeight: '92vh', display: 'flex', flexDirection: 'column', border: '1px solid #E8D5C4', boxShadow: '0 20px 60px rgba(60,37,15,0.25)' }}>
 
           {/* Header */}
-          <div className="modal-header">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
-                <Globe size={18} className="text-blue-500" />
+          <div style={{ background: '#7c4b2c', padding: '1rem 1.5rem', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{ width: 32, height: 32, background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Globe size={16} style={{ color: '#fff' }} />
               </div>
               <div>
-                <h2 className="modal-title">Cotizaciones desde woodpallets.com.ar</h2>
-                {pendientes > 0 && (
-                  <p className="text-xs text-amber-600 font-medium mt-0.5">
-                    {pendientes} sin procesar
-                  </p>
-                )}
+                <p style={{ fontSize: '0.65rem', fontWeight: 700, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>woodpallets.com.ar</p>
+                <h2 style={{ margin: '2px 0 0', fontFamily: "'Cormorant Garamond', Georgia, serif", fontStyle: 'italic', fontSize: '1.15rem', fontWeight: 700, color: '#fff' }}>
+                  Cotizaciones desde la web
+                  {pendientes > 0 && (
+                    <span style={{ marginLeft: 8, fontFamily: 'Inter, sans-serif', fontStyle: 'normal', fontSize: '0.7rem', fontWeight: 700, background: '#D97706', color: '#fff', padding: '0.15rem 0.5rem', letterSpacing: '0.04em' }}>
+                      {pendientes} sin procesar
+                    </span>
+                  )}
+                </h2>
               </div>
             </div>
-            <button onClick={onClose} className="btn-icon"><X size={18} /></button>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.5)', padding: 4 }}
+              onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}>
+              <X size={18} />
+            </button>
           </div>
 
-          <div className="modal-body space-y-4">
+          <div style={{ flex: 1, overflowY: 'auto', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', background: '#FDFAF7' }}>
 
             {/* Filtros */}
-            <div className="flex border border-gray-200 overflow-hidden rounded">
+            <div style={{ display: 'flex', border: '1px solid #E8D5C4', overflow: 'hidden', alignSelf: 'flex-start' }}>
               {FILTROS.map((f, i) => (
                 <button
                   key={f.key}
@@ -302,9 +363,9 @@ export default function CotizacionesWebModal({ onClose }: Props) {
                     whiteSpace: 'nowrap',
                     transition: 'all 0.15s',
                     background: filtroEstado === f.key ? '#7c4b2c' : '#fff',
-                    color: filtroEstado === f.key ? '#fff' : '#6B7280',
+                    color: filtroEstado === f.key ? '#fff' : '#9B7E6A',
                     border: 'none',
-                    borderLeft: i > 0 ? '1px solid #E5E7EB' : 'none',
+                    borderLeft: i > 0 ? '1px solid #E8D5C4' : 'none',
                     cursor: 'pointer',
                   }}
                 >
@@ -317,22 +378,24 @@ export default function CotizacionesWebModal({ onClose }: Props) {
             {isLoading ? (
               <LoadingSpinner text="Cargando solicitudes web..." />
             ) : cotizaciones.length === 0 ? (
-              <div className="text-center py-12">
-                <Globe size={36} className="text-gray-200 mx-auto mb-3" />
-                <p className="text-sm text-gray-400">No hay solicitudes web{filtroEstado !== 'todas' ? ` con estado "${filtroEstado}"` : ''}</p>
+              <div style={{ textAlign: 'center', padding: '3rem', background: 'white', border: '1px solid #E8D5C4' }}>
+                <Globe size={36} style={{ color: '#E8D5C4', margin: '0 auto 12px', display: 'block' }} />
+                <p style={{ fontSize: '0.875rem', color: '#9B7E6A', margin: 0 }}>
+                  No hay solicitudes web{filtroEstado !== 'todas' ? ` con estado "${filtroEstado}"` : ''}
+                </p>
               </div>
             ) : (
-              <div className="card-base" style={{ padding: 0, overflow: 'hidden' }}>
+              <div style={{ border: '1px solid #E8D5C4', overflow: 'hidden', background: 'white' }}>
                 <table className="table">
                   <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Nombre / Empresa</th>
-                      <th>Tipo pallet</th>
-                      <th>Cantidad</th>
-                      <th>Fecha</th>
-                      <th>Estado</th>
-                      <th>Acciones</th>
+                    <tr style={{ background: '#FAF5F0', borderBottom: '1.5px solid #E8D5C4' }}>
+                      <th style={{ color: '#7c4b2c' }}>#</th>
+                      <th style={{ color: '#7c4b2c' }}>Nombre / Empresa</th>
+                      <th style={{ color: '#7c4b2c' }}>Tipo pallet</th>
+                      <th style={{ color: '#7c4b2c' }}>Cantidad</th>
+                      <th style={{ color: '#7c4b2c' }}>Fecha</th>
+                      <th style={{ color: '#7c4b2c' }}>Estado</th>
+                      <th style={{ color: '#7c4b2c' }}>Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -348,8 +411,6 @@ export default function CotizacionesWebModal({ onClose }: Props) {
                 </table>
               </div>
             )}
-
-            {/* Info instrucciones para la web */}
 
           </div>
         </div>

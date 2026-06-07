@@ -102,24 +102,26 @@ function ModalConvertir({
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-      <div style={{ background: '#fff', borderRadius: '0.5rem', width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(30,10,5,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+      <div style={{ background: '#fff', width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto', border: '1px solid #E8D5C4', boxShadow: '0 20px 60px rgba(60,37,15,0.25)' }}>
         {/* Header */}
-        <div style={{ padding: '1.25rem 1.5rem 1rem', borderBottom: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ background: '#7c4b2c', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
           <div>
-            <h2 className="modal-title" style={{ margin: 0 }}>Convertir a cotización</h2>
-            <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#6B7280' }}>
-              Solicitud de <strong>{cw.nombre}</strong>
-              {cw.cantidad && ` · ${cw.cantidad} pallets`}
-              {cw.tipoPallet && ` · ${cw.tipoPallet}`}
+            <p style={{ fontSize: '0.65rem', fontWeight: 700, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
+              {cw.cantidad && `${cw.cantidad} pallets`}{cw.tipoPallet && ` · ${cw.tipoPallet}`}
             </p>
+            <h2 style={{ margin: '2px 0 0', fontFamily: "'Cormorant Garamond', Georgia, serif", fontStyle: 'italic', fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>
+              Convertir solicitud de {cw.nombre}
+            </h2>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', padding: 4, borderRadius: '0.25rem' }}>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.5)', padding: 4 }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}>
             <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1.125rem' }}>
+        <form onSubmit={handleSubmit} style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1.125rem', background: '#FDFAF7' }}>
 
           {/* Selector cliente nuevo / existente */}
           <div>
@@ -129,10 +131,10 @@ function ModalConvertir({
                 <button key={m} type="button"
                   onClick={() => setModo(m)}
                   style={{
-                    padding: '0.6rem', border: modo === m ? '2px solid #7c4b2c' : '2px solid #E5E7EB',
-                    background: modo === m ? '#FDF5F0' : '#fff', borderRadius: '0.375rem',
+                    padding: '0.6rem', border: modo === m ? '2px solid #7c4b2c' : '2px solid #E8D5C4',
+                    background: modo === m ? '#FDF5F0' : '#fff', borderRadius: 0,
                     cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600,
-                    color: modo === m ? '#7c4b2c' : '#6B7280',
+                    color: modo === m ? '#7c4b2c' : '#9B7E6A',
                   }}>
                   {m === 'nuevo' ? '+ Crear cliente nuevo' : 'Seleccionar existente'}
                 </button>
@@ -143,7 +145,7 @@ function ModalConvertir({
           {modo === 'existente' ? (
             <div>
               <label className="label">Seleccionar cliente</label>
-              <select className="select" value={clienteId} onChange={e => setClienteId(e.target.value)}>
+              <select className="select" value={clienteId} onChange={e => setClienteId(e.target.value)} style={{ borderRadius: 0 }}>
                 <option value="">— Elegir cliente —</option>
                 {clientes.map(c => <option key={c.id} value={c.id}>{c.razonSocial}</option>)}
               </select>
@@ -152,27 +154,27 @@ function ModalConvertir({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="label">Razón social / Empresa *</label>
-                <input className="input" value={nuevoCliente.razonSocial}
+                <input className="input" style={{ borderRadius: 0 }} value={nuevoCliente.razonSocial}
                   onChange={e => setNuevoCliente(p => ({ ...p, razonSocial: e.target.value }))} />
               </div>
               <div>
                 <label className="label">Nombre de contacto *</label>
-                <input className="input" value={nuevoCliente.nombreContacto}
+                <input className="input" style={{ borderRadius: 0 }} value={nuevoCliente.nombreContacto}
                   onChange={e => setNuevoCliente(p => ({ ...p, nombreContacto: e.target.value }))} />
               </div>
               <div>
                 <label className="label">Email *</label>
-                <input className="input" type="email" value={nuevoCliente.emailContacto}
+                <input className="input" type="email" style={{ borderRadius: 0 }} value={nuevoCliente.emailContacto}
                   onChange={e => setNuevoCliente(p => ({ ...p, emailContacto: e.target.value }))} />
               </div>
               <div>
                 <label className="label">Teléfono *</label>
-                <input className="input" value={nuevoCliente.telefonoContacto}
+                <input className="input" style={{ borderRadius: 0 }} value={nuevoCliente.telefonoContacto}
                   onChange={e => setNuevoCliente(p => ({ ...p, telefonoContacto: e.target.value }))} />
               </div>
               <div>
                 <label className="label">Localidad</label>
-                <input className="input" value={nuevoCliente.localidad}
+                <input className="input" style={{ borderRadius: 0 }} value={nuevoCliente.localidad}
                   onChange={e => setNuevoCliente(p => ({ ...p, localidad: e.target.value }))} />
               </div>
             </div>
@@ -182,13 +184,13 @@ function ModalConvertir({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="label">Precio unitario por pallet *</label>
-              <input className="input" type="number" min="1" placeholder="$ 0"
+              <input className="input" type="number" min="1" placeholder="$ 0" style={{ borderRadius: 0 }}
                 value={precioUnitario} onChange={e => setPrecioUnitario(e.target.value)} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 0.75rem', border: incluyeFlete ? '2px solid #7c4b2c' : '2px solid #E5E7EB', borderRadius: '0.375rem', cursor: 'pointer', background: incluyeFlete ? '#FDF5F0' : '#fff' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 0.75rem', border: incluyeFlete ? '2px solid #7c4b2c' : '2px solid #E8D5C4', borderRadius: 0, cursor: 'pointer', background: incluyeFlete ? '#FDF5F0' : '#fff' }}>
                 <input type="checkbox" checked={incluyeFlete} onChange={e => setIncluyeFlete(e.target.checked)} />
-                <span style={{ fontSize: '0.82rem', fontWeight: 500, color: incluyeFlete ? '#7c4b2c' : '#6B7280' }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 500, color: incluyeFlete ? '#7c4b2c' : '#9B7E6A' }}>
                   <Truck size={12} style={{ display: 'inline', marginRight: 4 }} />
                   Incluye flete
                 </span>
@@ -199,23 +201,29 @@ function ModalConvertir({
           {incluyeFlete && (
             <div>
               <label className="label">Costo del flete</label>
-              <input className="input" type="number" min="0" placeholder="$ 0"
+              <input className="input" type="number" min="0" placeholder="$ 0" style={{ borderRadius: 0 }}
                 value={costoFlete} onChange={e => setCostoFlete(e.target.value)} />
             </div>
           )}
 
           {error && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0.625rem 0.875rem', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '0.375rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0.625rem 0.875rem', background: '#FFF1F2', border: '1px solid #FECACA', borderRadius: 0 }}>
               <AlertTriangle size={14} color="#DC2626" />
               <span style={{ fontSize: '0.82rem', color: '#DC2626' }}>{error}</span>
             </div>
           )}
 
           <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', paddingTop: '0.25rem' }}>
-            <button type="button" onClick={onClose} style={{ padding: '0.5rem 1rem', border: '1.5px solid #E5E7EB', background: '#fff', borderRadius: '0.375rem', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 500, color: '#374151' }}>
+            <button type="button" onClick={onClose}
+              style={{ padding: '0.5rem 1rem', border: '1px solid #E8D5C4', background: '#fff', borderRadius: 0, cursor: 'pointer', fontSize: '0.82rem', fontWeight: 500, color: '#9B7E6A' }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#FDF6EE')}
+              onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
               Cancelar
             </button>
-            <button type="submit" disabled={loading} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0.5rem 1.25rem', background: loading ? '#9CA3AF' : '#7c4b2c', color: '#fff', border: 'none', borderRadius: '0.375rem', cursor: loading ? 'not-allowed' : 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>
+            <button type="submit" disabled={loading}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0.5rem 1.25rem', background: loading ? '#9B7E6A' : '#7c4b2c', color: '#fff', border: 'none', borderRadius: 0, cursor: loading ? 'not-allowed' : 'pointer', fontSize: '0.82rem', fontWeight: 600 }}
+              onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.background = '#5E3520'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = loading ? '#9B7E6A' : '#7c4b2c'; }}>
               <ArrowRight size={14} />
               {loading ? 'Convirtiendo…' : 'Convertir a cotización'}
             </button>
