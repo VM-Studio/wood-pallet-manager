@@ -140,7 +140,7 @@ function VentaCard({ venta }: { venta: Venta }) {
   const pendienteVenta = Number(venta.totalConIva || 0) - cobradoVenta;
 
   return (
-    <div className="rounded-lg overflow-hidden border" style={{ borderColor: '#E8D5C4' }}>
+    <div className="overflow-hidden border" style={{ borderColor: '#E8D5C4' }}>
       <button type="button" className="w-full text-left px-4 py-3 transition-colors"
         style={{ background: 'white' }}
         onMouseEnter={e => (e.currentTarget.style.background = '#FDF6EE')}
@@ -148,7 +148,7 @@ function VentaCard({ venta }: { venta: Venta }) {
         onClick={() => setOpen(!open)}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#F5EDE5' }}>
+            <div className="w-8 h-8  flex items-center justify-center shrink-0" style={{ background: '#F5EDE5' }}>
               <ShoppingCart size={15} style={{ color: '#7c4b2c' }} />
             </div>
             <div>
@@ -183,7 +183,7 @@ function VentaCard({ venta }: { venta: Venta }) {
             <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#7c4b2c' }}>Productos</p>
             <div className="space-y-1.5">
               {venta.detalles.map((d) => (
-                <div key={d.id} className="flex items-center justify-between rounded-lg px-3 py-2 border" style={{ background: 'white', borderColor: '#E8D5C4' }}>
+                <div key={d.id} className="flex items-center justify-between  px-3 py-2 border" style={{ background: 'white', borderColor: '#E8D5C4' }}>
                   <div>
                     <span className="text-sm" style={{ color: '#3c250f' }}>{d.producto.nombre}</span>
                     <span className="ml-2 text-xs capitalize" style={{ color: '#9B7E6A' }}>{d.producto.condicion.replace('_', ' ')}</span>
@@ -203,7 +203,7 @@ function VentaCard({ venta }: { venta: Venta }) {
           {venta.logistica && (
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#7c4b2c' }}>Logística</p>
-              <div className="rounded-lg border px-3 py-2 space-y-1" style={{ background: 'white', borderColor: '#E8D5C4' }}>
+              <div className="border px-3 py-2 space-y-1" style={{ background: 'white', borderColor: '#E8D5C4' }}>
                 <div className="flex items-center justify-between">
                   <span className="text-sm" style={{ color: '#3c250f' }}>
                     <Truck size={13} className="inline mr-1" style={{ color: '#9B7E6A' }} />
@@ -232,7 +232,7 @@ function VentaCard({ venta }: { venta: Venta }) {
           {venta.retiroGalpon && (
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#7c4b2c' }}>Retiro en galpón</p>
-              <div className="rounded-lg border px-3 py-2 space-y-1" style={{ background: 'white', borderColor: '#E8D5C4' }}>
+              <div className="border px-3 py-2 space-y-1" style={{ background: 'white', borderColor: '#E8D5C4' }}>
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-mono font-bold" style={{ color: '#6B3A2A' }}>{venta.retiroGalpon.codigoRetiro}</span>
                   <Badge estado={venta.retiroGalpon.estadoRetiro} config={estadoRetiroConfig} />
@@ -256,7 +256,7 @@ function VentaCard({ venta }: { venta: Venta }) {
               <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#7c4b2c' }}>Facturación</p>
               <div className="space-y-2">
                 {venta.facturas.map((f) => (
-                  <div key={f.id} className="rounded-lg border px-3 py-2" style={{ background: 'white', borderColor: '#E8D5C4' }}>
+                  <div key={f.id} className="border px-3 py-2" style={{ background: 'white', borderColor: '#E8D5C4' }}>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-sm font-semibold" style={{ color: '#3c250f' }}>
                         Factura {f.nroFactura ? `#${f.nroFactura}` : '(sin nro)'}
@@ -288,15 +288,15 @@ function VentaCard({ venta }: { venta: Venta }) {
 
           {/* Resumen financiero */}
           <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-lg border px-2 py-1.5 text-center" style={{ background: 'white', borderColor: '#E8D5C4' }}>
+            <div className="border px-2 py-1.5 text-center" style={{ background: 'white', borderColor: '#E8D5C4' }}>
               <p className="text-xs" style={{ color: '#9B7E6A' }}>Total</p>
               <p className="text-sm font-bold" style={{ color: '#3c250f' }}>{formatPesos(Number(venta.totalConIva || 0))}</p>
             </div>
-            <div className="bg-green-50 rounded-lg border border-green-100 px-2 py-1.5 text-center">
+            <div className="bg-green-50  border border-green-100 px-2 py-1.5 text-center">
               <p className="text-xs text-green-600">Cobrado</p>
               <p className="text-sm font-bold text-green-700">{formatPesos(cobradoVenta)}</p>
             </div>
-            <div className={`rounded-lg border px-2 py-1.5 text-center ${pendienteVenta > 0 ? 'bg-orange-50 border-orange-100' : 'bg-gray-50 border-gray-100'}`}>
+            <div className={`border px-2 py-1.5 text-center ${pendienteVenta > 0 ? 'bg-orange-50 border-orange-100' : 'bg-gray-50 border-gray-100'}`}>
               <p className={`text-xs ${pendienteVenta > 0 ? 'text-orange-600' : 'text-gray-400'}`}>Pendiente</p>
               <p className={`text-sm font-bold ${pendienteVenta > 0 ? 'text-orange-700' : 'text-gray-500'}`}>{formatPesos(pendienteVenta)}</p>
             </div>
@@ -316,7 +316,7 @@ function VentaCard({ venta }: { venta: Venta }) {
 function CotizacionCard({ cotizacion }: { cotizacion: Cotizacion }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="rounded-lg overflow-hidden border" style={{ borderColor: '#E8D5C4' }}>
+    <div className="overflow-hidden border" style={{ borderColor: '#E8D5C4' }}>
       <button type="button" className="w-full text-left px-4 py-3 transition-colors"
         style={{ background: 'white' }}
         onMouseEnter={e => (e.currentTarget.style.background = '#FDF6EE')}
@@ -324,7 +324,7 @@ function CotizacionCard({ cotizacion }: { cotizacion: Cotizacion }) {
         onClick={() => setOpen(!open)}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#EEF2FF' }}>
+            <div className="w-8 h-8  flex items-center justify-center shrink-0" style={{ background: '#EEF2FF' }}>
               <FileText size={15} className="text-indigo-600" />
             </div>
             <div>
@@ -353,7 +353,7 @@ function CotizacionCard({ cotizacion }: { cotizacion: Cotizacion }) {
             <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#7c4b2c' }}>Productos cotizados</p>
             <div className="space-y-1.5">
               {cotizacion.detalles.map((d) => (
-                <div key={d.id} className="flex items-center justify-between rounded-lg px-3 py-2 border" style={{ background: 'white', borderColor: '#E8D5C4' }}>
+                <div key={d.id} className="flex items-center justify-between  px-3 py-2 border" style={{ background: 'white', borderColor: '#E8D5C4' }}>
                   <div>
                     <span className="text-sm" style={{ color: '#3c250f' }}>{d.producto.nombre}</span>
                     <span className="ml-2 text-xs capitalize" style={{ color: '#9B7E6A' }}>{d.producto.condicion.replace('_', ' ')}</span>
@@ -374,7 +374,7 @@ function CotizacionCard({ cotizacion }: { cotizacion: Cotizacion }) {
               <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#7c4b2c' }}>Seguimientos</p>
               <div className="space-y-1">
                 {cotizacion.seguimientos.map((s) => (
-                  <div key={s.id} className="flex items-start gap-2 text-xs rounded-lg px-3 py-2 border" style={{ background: 'white', borderColor: '#E8D5C4', color: '#3c250f' }}>
+                  <div key={s.id} className="flex items-start gap-2 text-xs  px-3 py-2 border" style={{ background: 'white', borderColor: '#E8D5C4', color: '#3c250f' }}>
                     <Clock size={11} className="mt-0.5 shrink-0" style={{ color: '#C4895A' }} />
                     <div>
                       <span className="font-semibold capitalize">{s.tipoContacto.replace('_', ' ')}</span>
@@ -403,7 +403,7 @@ function StatCard({
 }: { icon: React.ReactNode; bg: string; valor: string | number; label: string; small?: boolean }) {
   return (
     <div className="flex flex-col items-center text-center">
-      <div className={`w-9 h-9 ${bg} rounded-lg flex items-center justify-center mb-1.5`}>{icon}</div>
+      <div className={`w-9 h-9 ${bg}  flex items-center justify-center mb-1.5`}>{icon}</div>
       <p className={`font-bold leading-tight ${small ? 'text-xs' : 'text-base'}`} style={{ color: '#3c250f' }}>{valor}</p>
       <p className="text-xs mt-0.5" style={{ color: '#9B7E6A' }}>{label}</p>
     </div>
@@ -412,7 +412,7 @@ function StatCard({
 
 function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="flex items-center gap-2 rounded-lg px-3 py-2 border" style={{ background: '#FDF6EE', borderColor: '#E8D5C4' }}>
+    <div className="flex items-center gap-2  px-3 py-2 border" style={{ background: '#FDF6EE', borderColor: '#E8D5C4' }}>
       <span style={{ color: '#C4895A' }}>{icon}</span>
       <span className="text-xs" style={{ color: '#9B7E6A' }}>{label}:</span>
       <span className="text-sm font-semibold" style={{ color: '#3c250f' }}>{value}</span>
@@ -455,11 +455,11 @@ export default function ClienteHistorial({ clienteId, onClose }: ClienteHistoria
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: 'rgba(30,10,5,0.55)' }}>
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden" style={{ border: '1px solid #E8D5C4' }}>
+      <div className="bg-white shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden" style={{ border: '1px solid #E8D5C4' }}>
 
         {/* Header con acento de color */}
         <div className="shrink-0" style={{ borderBottom: '1px solid #E8D5C4' }}>
-          <div style={{ background: '#3c250f', padding: '1rem 1.5rem 0.875rem' }}>
+          <div style={{ background: '#7c4b2c', padding: '1rem 1.5rem 0.875rem' }}>
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-widest mb-0.5" style={{ color: 'rgba(255,255,255,0.45)', letterSpacing: '0.1em' }}>Historial de cliente</p>
@@ -573,7 +573,7 @@ export default function ClienteHistorial({ clienteId, onClose }: ClienteHistoria
                                   background: item.tipo === 'venta' ? '#C4895A' : '#9B7E6A',
                                   borderColor: '#FDF6EE',
                                 }} />
-                              <div className="flex-1 rounded-lg px-3 py-2 border" style={{ background: '#FDF6EE', borderColor: '#E8D5C4' }}>
+                              <div className="flex-1  px-3 py-2 border" style={{ background: '#FDF6EE', borderColor: '#E8D5C4' }}>
                                 <div className="flex items-center justify-between">
                                   <p className="text-sm font-medium" style={{ color: '#3c250f' }}>{item.titulo}</p>
                                   <p className="text-xs" style={{ color: '#9B7E6A' }}>{formatFecha(item.fecha)}</p>
@@ -623,15 +623,15 @@ export default function ClienteHistorial({ clienteId, onClose }: ClienteHistoria
                   ) : (
                     <>
                       <div className="grid grid-cols-3 gap-3 mb-2">
-                        <div className="rounded-lg border p-3 text-center" style={{ background: '#FDF6EE', borderColor: '#E8D5C4' }}>
+                        <div className="border p-3 text-center" style={{ background: '#FDF6EE', borderColor: '#E8D5C4' }}>
                           <p className="text-xs" style={{ color: '#9B7E6A' }}>Total facturado</p>
                           <p className="text-sm font-bold mt-0.5" style={{ color: '#3c250f' }}>{formatPesos(data?.estadisticas?.totalFacturado ?? 0)}</p>
                         </div>
-                        <div className="rounded-lg border p-3 text-center bg-green-50 border-green-100">
+                        <div className="border p-3 text-center bg-green-50 border-green-100">
                           <p className="text-xs text-green-600">Cobrado</p>
                           <p className="text-sm font-bold text-green-700 mt-0.5">{formatPesos(data?.estadisticas?.totalCobrado ?? 0)}</p>
                         </div>
-                        <div className="rounded-lg border p-3 text-center bg-orange-50 border-orange-100">
+                        <div className="border p-3 text-center bg-orange-50 border-orange-100">
                           <p className="text-xs text-orange-600">Pendiente</p>
                           <p className="text-sm font-bold text-orange-700 mt-0.5">{formatPesos(data?.estadisticas?.totalPendiente ?? 0)}</p>
                         </div>
@@ -641,7 +641,7 @@ export default function ClienteHistorial({ clienteId, onClose }: ClienteHistoria
                         const cobrado = f.pagos.reduce((a, p) => a + Number(p.monto), 0);
                         const pendiente = Number(f.totalConIva) - cobrado;
                         return (
-                          <div key={f.id} className="border rounded-lg p-4 space-y-3" style={{ borderColor: '#E8D5C4', background: 'white' }}>
+                          <div key={f.id} className="border  p-4 space-y-3" style={{ borderColor: '#E8D5C4', background: 'white' }}>
                             <div className="flex items-center justify-between">
                               <div>
                                 <p className="text-sm font-semibold" style={{ color: '#3c250f' }}>
@@ -662,7 +662,7 @@ export default function ClienteHistorial({ clienteId, onClose }: ClienteHistoria
                             {f.pagos.length > 0 && (
                               <div className="space-y-1">
                                 {f.pagos.map((p) => (
-                                  <div key={p.id} className="flex items-center justify-between text-xs bg-green-50 rounded-lg px-3 py-1.5">
+                                  <div key={p.id} className="flex items-center justify-between text-xs bg-green-50  px-3 py-1.5">
                                     <span className="text-green-700 flex items-center gap-1">
                                       <CheckCircle size={11} />
                                       {formatFecha(p.fechaPago)} · {p.medioPago.replace('_', ' ')}
@@ -677,7 +677,7 @@ export default function ClienteHistorial({ clienteId, onClose }: ClienteHistoria
                             {f.notasCredito.length > 0 && (
                               <div className="space-y-1">
                                 {f.notasCredito.map((nc) => (
-                                  <div key={nc.id} className="flex items-center justify-between text-xs bg-red-50 rounded-lg px-3 py-1.5">
+                                  <div key={nc.id} className="flex items-center justify-between text-xs bg-red-50  px-3 py-1.5">
                                     <span className="text-red-600 flex items-center gap-1">
                                       <RotateCcw size={11} />
                                       NC {formatFecha(nc.fechaEmision)} · {nc.motivo}
@@ -708,7 +708,7 @@ export default function ClienteHistorial({ clienteId, onClose }: ClienteHistoria
                     <EmptyState icon={<Truck size={28} />} text="Sin logística registrada" />
                   ) : (
                     logisticaItems.map((v: Venta) => (
-                      <div key={v.id} className="border rounded-lg p-4 space-y-3" style={{ borderColor: '#E8D5C4', background: 'white' }}>
+                      <div key={v.id} className="border  p-4 space-y-3" style={{ borderColor: '#E8D5C4', background: 'white' }}>
                         <div className="flex items-center justify-between">
                           <p className="text-sm font-semibold" style={{ color: '#3c250f' }}>
                             Venta #{v.id}
@@ -718,7 +718,7 @@ export default function ClienteHistorial({ clienteId, onClose }: ClienteHistoria
                         </div>
 
                         {v.logistica && (
-                          <div className="rounded-lg border p-3 space-y-1.5" style={{ background: '#F0F5FF', borderColor: '#C7D8F5' }}>
+                          <div className="border p-3 space-y-1.5" style={{ background: '#F0F5FF', borderColor: '#C7D8F5' }}>
                             <div className="flex items-center justify-between">
                               <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#3B5EA6' }}>Envío a domicilio</p>
                               <Badge estado={v.logistica.estadoEntrega} config={estadoEntregaConfig} />
@@ -746,7 +746,7 @@ export default function ClienteHistorial({ clienteId, onClose }: ClienteHistoria
                         )}
 
                         {v.retiroGalpon && (
-                          <div className="rounded-lg border p-3 space-y-1.5" style={{ background: '#FDF6EE', borderColor: '#E8D5C4' }}>
+                          <div className="border p-3 space-y-1.5" style={{ background: '#FDF6EE', borderColor: '#E8D5C4' }}>
                             <div className="flex items-center justify-between">
                               <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#7c4b2c' }}>Retiro en galpón</p>
                               <Badge estado={v.retiroGalpon.estadoRetiro} config={estadoRetiroConfig} />
