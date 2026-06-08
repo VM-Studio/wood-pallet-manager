@@ -89,7 +89,7 @@ export const getAlertasStockService = async () => {
   const stock = await prisma.stock.findMany({
     where: { cantidadMinima: { gt: 0 } },
     include: {
-      producto: { select: { id: true, nombre: true, tipo: true } },
+      producto: { select: { id: true, nombre: true, tipo: true, condicion: true } },
       proveedor: { select: { id: true, nombreEmpresa: true } }
     }
   });

@@ -15,6 +15,28 @@ import {
 
 const formatNumero = (v: number) => new Intl.NumberFormat('es-AR').format(v);
 
+const condicionBadge: Record<string, string> = {
+  nuevo:     'badge-green',
+  seminuevo: 'badge-yellow',
+  usado:     'badge-gray',
+};
+
+const condicionLabel: Record<string, string> = {
+  nuevo:     'Nuevo',
+  seminuevo: 'Semi-nuevo',
+  usado:     'Usado',
+};
+
+const tipoLabel: Record<string, string> = {
+  estandar:    'Estándar',
+  reforzado:   'Reforzado',
+  liviano:     'Liviano',
+  exportacion: 'Exportación',
+  carton:      'Cartón',
+  a_medida:    'A medida',
+  personalizado: 'Personalizado',
+};
+
 export default function InventarioPage() {
   const { data: consolidado, isLoading, error } = useStockConsolidado();
   const { data: alertas } = useAlertasStock();
@@ -276,9 +298,14 @@ export default function InventarioPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {alertas.map((a: any) => (
-              <div key={a.stockId} className="flex items-center justify-between p-2.5 bg-red-50 rounded-xl border border-red-100">
+              <div key={a.stockId} className="flex items-center justify-between p-2.5 bg-red-50 rounded border border-red-100">
                 <div>
-                  <p className="text-sm font-semibold text-red-800">{a.producto.nombre}</p>
+                  <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                    <p className="text-sm font-semibold text-red-800">{a.producto.nombre}</p>
+                    <span className={condicionBadge[a.producto?.condicion] ?? 'badge-gray'}>
+                      {condicionLabel[a.producto?.condicion] ?? a.producto?.condicion ?? ''}
+                    </span>
+                  </div>
                   <p className="text-xs text-red-500">{a.proveedor.nombreEmpresa}</p>
                 </div>
                 <div className="text-right">
@@ -325,9 +352,14 @@ export default function InventarioPage() {
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div>
+                    <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                      <span className={condicionBadge[item.producto?.condicion] ?? 'badge-gray'}>
+                        {condicionLabel[item.producto?.condicion] ?? item.producto?.condicion ?? ''}
+                      </span>
+                    </div>
                     <h3 className="font-bold text-gray-900">{item.producto.nombre}</h3>
-                    <p className="text-xs text-gray-400 mt-0.5 capitalize">
-                      {item.producto.tipo} · {item.producto.condicion}
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {tipoLabel[item.producto.tipo] ?? item.producto.tipo}
                     </p>
                   </div>
                   <div className="flex flex-col gap-1 items-end">

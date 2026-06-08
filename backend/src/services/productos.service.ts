@@ -31,8 +31,8 @@ export const getProductosService = async (propietarioId: number) => {
 
   return productos.map(p => ({
     ...p,
-    stockTotalPropio: p.stocks.reduce((acc, s) => acc + s.cantidadDisponible, 0),
-    stockTotalDeudor: p.stocks.reduce((acc, s) => acc + (s.cantidadDeudora || 0), 0),
+    stockTotalPropio: p.stocks.reduce((acc, s) => acc + Math.max(0, s.cantidadDisponible), 0),
+    stockTotalDeudor: p.stocks.reduce((acc, s) => acc + Math.max(0, s.cantidadDeudora || 0), 0),
     tieneSaldoDeudor: p.stocks.some(s => (s.cantidadDeudora || 0) > 0)
   }));
 };
@@ -47,8 +47,8 @@ export const getProductosOtroService = async (propietarioId: number) => {
 
   return productos.map(p => ({
     ...p,
-    stockTotalPropio: p.stocks.reduce((acc, s) => acc + s.cantidadDisponible, 0),
-    stockTotalDeudor: p.stocks.reduce((acc, s) => acc + (s.cantidadDeudora || 0), 0),
+    stockTotalPropio: p.stocks.reduce((acc, s) => acc + Math.max(0, s.cantidadDisponible), 0),
+    stockTotalDeudor: p.stocks.reduce((acc, s) => acc + Math.max(0, s.cantidadDeudora || 0), 0),
     tieneSaldoDeudor: p.stocks.some(s => (s.cantidadDeudora || 0) > 0)
   }));
 };
