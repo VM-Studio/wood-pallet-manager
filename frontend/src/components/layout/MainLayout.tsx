@@ -12,7 +12,7 @@ export default function MainLayout() {
   if (!token) return <Navigate to="/login" replace />;
 
   return (
-    <div className="flex min-h-screen" style={{ backgroundColor: '#F2EDE7' }}>
+    <div className="flex h-screen overflow-hidden" style={{ backgroundColor: '#F2EDE7' }}>
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/40 z-20 md:hidden"
@@ -22,7 +22,7 @@ export default function MainLayout() {
 
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <main className="flex-1 md:ml-63 min-h-screen overflow-y-auto" style={{ backgroundColor: '#F2EDE7' }}>
+      <main className="flex-1 md:ml-63 overflow-y-auto" style={{ backgroundColor: '#F2EDE7', overscrollBehavior: 'none' }}>
 
         {/* ── Navbar top (desktop + mobile) ── */}
         <div

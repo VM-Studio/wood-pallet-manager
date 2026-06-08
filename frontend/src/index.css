@@ -317,7 +317,7 @@ body {
 /* ── Evitar overflow horizontal global ── */
 html, body, #root {
   max-width: 100vw;
-  overflow-x: hidden;
+  /* NO usar overflow-x: hidden aquí — rompe el scroll vertical en body */
 }
 
 /* ── MOBILE BASE (<768px) ─────────────────────────────────────── */
