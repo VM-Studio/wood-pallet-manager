@@ -3,9 +3,18 @@ import prisma from '../utils/prisma';
 export const getVentasUltimos12MesesService = async (usuarioId?: number) => {
   const meses: { mes: string; ventas: number; pallets: number; facturacion: number }[] = [];
 
-  // Siempre mostrar los últimos 12 meses terminando en el mes actual
+  // Arrancar desde la venta más antigua del sistema (sin filtrar por usuario)
+  // para que el gráfico siempre muestre el mismo rango temporal
+  const primeraVenta = await prisma.venta.findFirst({
+    orderBy: { fechaVenta: 'asc' },
+    select: { fechaVenta: true },
+  });
+
+  // Si no hay ventas, usar el mes actual como inicio
   const hoyLocal = new Date();
-  const mesInicio = new Date(hoyLocal.getFullYear(), hoyLocal.getMonth() - 11, 1);
+  const mesInicio = primeraVenta
+    ? new Date(primeraVenta.fechaVenta.getFullYear(), primeraVenta.fechaVenta.getMonth(), 1)
+    : new Date(hoyLocal.getFullYear(), hoyLocal.getMonth(), 1);
 
   for (let i = 0; i < 12; i++) {
     const inicio = new Date(mesInicio.getFullYear(), mesInicio.getMonth() + i, 1);
