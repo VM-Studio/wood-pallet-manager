@@ -1,0 +1,135 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #FDF6EE
+  BorderColor #7c4b2c
+  FontColor #3c250f
+}
+skinparam actor {
+  BackgroundColor #E8D5C4
+  BorderColor #7c4b2c
+  FontColor #3c250f
+}
+skinparam rectangle {
+  BackgroundColor #FAF5F0
+  BorderColor #C4895A
+  BorderThickness 2
+}
+skinparam ArrowColor #3c250f
+
+title **Módulo 08 — Compras**\n//WoodPallet Manager//
+
+actor "Propietario" as P
+actor "Sistema\n(actualiza stock)" as S
+
+rectangle "Gestión de Compras" {
+
+  ' ── Listado y consulta ──────────────────────────────────
+  package "Consulta" {
+    usecase "Ver listado de compras" as UC01
+    usecase "Filtrar por tipo de compra\n(stock propio / reventa)" as UC02
+    usecase "Filtrar por estado\n(pendiente / pagada / cancelada)" as UC03
+    usecase "Ver detalle de la compra" as UC04
+    usecase "Ver compras vinculadas\na una venta" as UC05
+    usecase "Ver saldo deudor\nde la compra" as UC06
+    usecase "Ver historial de pagos\nde la compra" as UC07
+  }
+
+  ' ── Creación ────────────────────────────────────────────
+  package "Creación" {
+    usecase "Crear compra de stock propio\n(no vinculada a venta)" as UC08
+    usecase "Crear compra de reventa\ninmediata (vinculada a venta)" as UC09
+    usecase "Seleccionar proveedor" as UC10
+    usecase "Agregar líneas de\nproducto a la compra" as UC11
+    usecase "Definir cantidad y\nprecio de costo" as UC12
+    usecase "Registrar número\nde remito del proveedor" as UC13
+    usecase "Marcar como saldo deudor\n(pago diferido)" as UC14
+  }
+
+  ' ── Edición y cancelación ───────────────────────────────
+  package "Modificación" {
+    usecase "Editar compra\nno pagada" as UC15
+    usecase "Cancelar compra" as UC16
+    usecase "Confirmar cancelación" as UC17
+  }
+
+  ' ── Pagos a proveedor ───────────────────────────────────
+  package "Pagos al Proveedor" {
+    usecase "Registrar pago\nal proveedor" as UC18
+    usecase "Seleccionar medio de pago\n(transferencia / e-check / efectivo)" as UC19
+    usecase "Registrar número\nde comprobante" as UC20
+    usecase "Registrar pago parcial" as UC21
+    usecase "Marcar compra\ncomo pagada" as UC22
+    usecase "Ver total pagado\nvs pendiente" as UC23
+  }
+
+  ' ── Stock (automático) ──────────────────────────────────
+  package "Stock" {
+    usecase "Incrementar stock propio\n(compra de stock propio)" as UC24
+    usecase "Registrar movimiento\nde stock (entrada)" as UC25
+  }
+
+}
+
+' ── Asociaciones ──────────────────────────────────────────
+P --> UC01
+P --> UC08
+P --> UC09
+P --> UC15
+P --> UC16
+P --> UC18
+P --> UC22
+
+' ── Sistema ──────────────────────────────────────────────
+S --> UC24
+S --> UC25
+
+' ── Include / Extend ──────────────────────────────────────
+UC01 ..> UC02 : <<extend>>
+UC01 ..> UC03 : <<extend>>
+UC04 ..> UC05 : <<extend>>
+UC04 ..> UC06 : <<include>>
+UC04 ..> UC07 : <<include>>
+
+UC08 ..> UC10 : <<include>>
+UC08 ..> UC11 : <<include>>
+UC08 ..> UC12 : <<include>>
+UC08 ..> UC13 : <<extend>>
+UC08 ..> UC14 : <<extend>>
+UC08 ..> UC24 : <<include>>
+UC24 ..> UC25 : <<include>>
+
+UC09 ..> UC10 : <<include>>
+UC09 ..> UC11 : <<include>>
+UC09 ..> UC12 : <<include>>
+
+UC16 ..> UC17 : <<include>>
+
+UC18 ..> UC19 : <<include>>
+UC18 ..> UC20 : <<extend>>
+UC18 ..> UC21 : <<extend>>
+UC18 ..> UC22 : <<extend>>
+UC18 ..> UC23 : <<include>>
+
+' ── Notas ─────────────────────────────────────────────────
+note right of UC08
+  stock_propio: la mercadería se queda en galpón.
+  El stock de inventario se incrementa al crear
+  la compra (genera MovimientoStock: compra, entrada).
+end note
+
+note right of UC09
+  reventa_inmediata: la mercadería se compra y
+  se vende al cliente en el mismo acto.
+  Se vincula a una venta específica (ventaId).
+  NO incrementa el stock propio del galpón.
+end note
+
+note bottom of UC21
+  Se pueden registrar N pagos parciales.
+  La compra se marca automáticamente como
+  "pagada" cuando la suma de pagos >= total.
+end note
+
+@enduml

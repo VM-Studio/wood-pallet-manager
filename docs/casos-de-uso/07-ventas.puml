@@ -1,0 +1,148 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #FDF6EE
+  BorderColor #7c4b2c
+  FontColor #3c250f
+}
+skinparam actor {
+  BackgroundColor #E8D5C4
+  BorderColor #7c4b2c
+  FontColor #3c250f
+}
+skinparam rectangle {
+  BackgroundColor #FAF5F0
+  BorderColor #C4895A
+  BorderThickness 2
+}
+skinparam ArrowColor #3c250f
+
+title **Módulo 07 — Ventas y Pedidos**\n//WoodPallet Manager//
+
+actor "Propietario" as P
+actor "Sistema\n(actualiza stock)" as S
+
+rectangle "Gestión de Ventas y Pedidos" {
+
+  ' ── Listado y consulta ──────────────────────────────────
+  package "Consulta" {
+    usecase "Ver listado de ventas" as UC01
+    usecase "Filtrar por estado\ndel pedido" as UC02
+    usecase "Ver detalle de la venta" as UC03
+    usecase "Ver total con / sin IVA" as UC04
+    usecase "Ver ventas históricas\n(importadas)" as UC05
+  }
+
+  ' ── Creación ────────────────────────────────────────────
+  package "Creación" {
+    usecase "Crear venta desde\ncotización aceptada" as UC06
+    usecase "Ver detalles heredados\nde la cotización" as UC07
+    usecase "Seleccionar tipo de entrega\n(retira cliente / envío WP)" as UC08
+    usecase "Definir método de pago\ny modalidad" as UC09
+    usecase "Registrar fecha estimada\nde entrega" as UC10
+    usecase "Cancelar venta" as UC11
+  }
+
+  ' ── Gestión del pedido ──────────────────────────────────
+  package "Estado del Pedido" {
+    usecase "Actualizar estado\ndel pedido" as UC12
+    usecase "Registrar fecha real\nde entrega" as UC13
+    usecase "Marcar como entregado\nparcialmente" as UC14
+    usecase "Marcar como cancelado" as UC15
+  }
+
+  ' ── Retiros en galpón ───────────────────────────────────
+  package "Retiro en Galpón" {
+    usecase "Generar código único\nde retiro" as UC16
+    usecase "Ver código de retiro\ndel cliente" as UC17
+    usecase "Confirmar retiro\nen galpón" as UC18
+    usecase "Reenviar código de retiro\npor email / WhatsApp" as UC19
+    usecase "Ver historial de\nreenvíos del código" as UC20
+    usecase "Cancelar retiro" as UC21
+  }
+
+  ' ── Entregas parciales ──────────────────────────────────
+  package "Entregas Parciales" {
+    usecase "Registrar retiro parcial\nde unidades" as UC22
+    usecase "Ver historial de retiros\nparciales de la venta" as UC23
+    usecase "Ver cantidad pendiente\nde entrega" as UC24
+  }
+
+  ' ── Stock (automático) ──────────────────────────────────
+  package "Stock" {
+    usecase "Decrementar stock propio\nal confirmar venta" as UC25
+    usecase "Registrar movimiento\nde stock (salida)" as UC26
+  }
+
+}
+
+' ── Asociaciones ──────────────────────────────────────────
+P --> UC01
+P --> UC03
+P --> UC06
+P --> UC11
+P --> UC12
+P --> UC13
+P --> UC16
+P --> UC17
+P --> UC18
+P --> UC19
+P --> UC22
+
+' ── Sistema ──────────────────────────────────────────────
+S --> UC25
+S --> UC26
+
+' ── Include / Extend ──────────────────────────────────────
+UC01 ..> UC02 : <<extend>>
+UC01 ..> UC05 : <<extend>>
+UC03 ..> UC04 : <<include>>
+UC03 ..> UC23 : <<include>>
+UC03 ..> UC24 : <<include>>
+
+UC06 ..> UC07 : <<include>>
+UC06 ..> UC08 : <<include>>
+UC06 ..> UC09 : <<extend>>
+UC06 ..> UC10 : <<extend>>
+UC06 ..> UC25 : <<include>>
+UC25 ..> UC26 : <<include>>
+
+UC12 ..> UC13 : <<extend>>
+UC12 ..> UC14 : <<extend>>
+UC12 ..> UC15 : <<extend>>
+
+UC16 ..> UC17 : <<include>>
+UC18 ..> UC17 : <<include>>
+UC19 ..> UC20 : <<include>>
+
+UC22 ..> UC23 : <<include>>
+UC22 ..> UC24 : <<include>>
+
+' ── Notas ─────────────────────────────────────────────────
+note right of UC02
+  Estados: confirmado | en_preparacion |
+  listo_para_envio | en_transito |
+  entregado | entregado_parcial | cancelado
+end note
+
+note right of UC08
+  Tipos de entrega:
+  - retira_cliente → genera código de retiro
+  - envio_woodpallet → genera registro de logística
+end note
+
+note bottom of UC16
+  El código de retiro es único (UUID corto).
+  El cliente lo presenta al retirar en galpón.
+  Se puede reenviar con historial de reenvíos.
+end note
+
+note bottom of UC25
+  El stock se descuenta según origenStock:
+  stock_propio → decrementamos Stock propio
+  La venta puede vincularse a una Compra
+  de tipo reventa_inmediata.
+end note
+
+@enduml

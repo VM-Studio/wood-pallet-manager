@@ -1,0 +1,135 @@
+@startuml
+'──────────────────────────────────────────────────────────────────────────────
+'  SEQ-08 — Devoluciones: Solicitud, Máquina de Estados, Restauración de Stock
+'──────────────────────────────────────────────────────────────────────────────
+skinparam backgroundColor #FDF6EE
+skinparam sequenceArrowColor #3c250f
+skinparam sequenceLifeLineBorderColor #7c4b2c
+skinparam sequenceParticipantBackgroundColor #E8D5C4
+skinparam sequenceParticipantBorderColor #7c4b2c
+skinparam sequenceBoxBackgroundColor #FAF5F0
+skinparam sequenceBoxBorderColor #C4895A
+skinparam noteBorderColor #C4895A
+skinparam noteBackgroundColor #FDF6EE
+skinparam shadowing false
+
+title SEQ-08 — Devoluciones: Solicitud, Máquina de Estados, Restauración de Stock y Factura\n//WoodPallet Manager//
+
+actor       "Propietario"          as P
+participant "React Frontend"       as FE
+participant "Express API\n:3001"   as API
+participant "AuthMiddleware"       as MW
+participant "DevolucionesService"  as DSVC
+participant "PrismaClient"         as DB
+
+== Flujo 1: Crear solicitud de devolución ==
+
+note over P, DB
+  Tipos de caso:
+  · pallet_danado — no requiere confirmación depósito → se procesa directamente
+  · cliente_no_quiere — requiere confirmación depósito
+  · devolucion_parcial — requiere confirmación depósito
+  · cancelacion_anticipada — requiere confirmación depósito (si no devuelve flete)
+end note
+
+P -> FE : click "Nueva devolución" en venta\nselecciona tipoCaso, líneas de producto, montos
+FE -> API : POST /api/devoluciones\n{ ventaId, tipoCaso: 'cliente_no_quiere',\n  devuelveFlete: true, devuelveSenasa: false,\n  detalles: [{ productoId, cantidadDevuelta, precioUnitario }] }
+API -> MW : verifyToken ✓
+API -> DSVC : crearDevolucionService(datos, userId)
+
+DSVC -> DB : venta.findUnique({ id: ventaId,\n  include: { detalles.producto, facturas,\n    logistica, compras.detalles } })
+DB --> DSVC : Venta completa
+
+DSVC -> DSVC : montoPallets = sum(cantDev × precioUnit)\nmontoFlete = devuelveFlete ? venta.costoFlete : 0\nmontoSenasa = devuelveSenasa ? cotizacion.costoSenasa : 0\nmontoTotal = montoPallets + montoFlete + montoSenasa
+
+DSVC -> DSVC : requiereConfirmacion = tipoCaso IN\n  [cliente_no_quiere, devolucion_parcial, cancelacion_anticipada]\n→ estadoInicial = 'esperando_confirmacion_deposito'
+
+DSVC -> DB : **$transaction**:\n  devolucion.create({\n    estado: 'esperando_confirmacion_deposito',\n    depositoConfirmo: false,\n    requiereConfirmacionDeposito: true,\n    detalles: create [...]\n  })
+
+note right of DB
+  Para tipoCaso = 'pallet_danado':
+  estadoInicial = 'confirmada'
+  → se llama a procesarDevolucionInterna()
+    dentro de la misma transacción
+end note
+
+DSVC --> API : Devolucion
+API --> FE : 201 Devolucion
+FE --> P : devolución creada, esperando confirmación de depósito
+
+== Flujo 2: Confirmar depósito del cliente ==
+
+P -> FE : cliente realizó transferencia → click "Confirmar depósito recibido"
+FE -> API : POST /api/devoluciones/:id/confirmar-deposito
+API -> MW : verifyToken ✓
+API -> DSVC : confirmarDepositoService(id, userId)
+
+DSVC -> DB : devolucion.findUnique({ id,\n  include: { venta.detalles, venta.facturas, detalles } })
+DB --> DSVC : Devolucion { estado: 'esperando_confirmacion_deposito' }
+
+alt estado = 'procesada'
+  DSVC --> API : 400 "La devolución ya fue procesada"
+end
+
+DSVC -> DB : **$transaction**:
+DSVC -> DB :   devolucion.update({\n    depositoConfirmo: true,\n    fechaConfirmacionDeposito: now(),\n    estado: 'confirmada'\n  })
+
+DSVC -> DSVC : ¿compensaEnSiguientePedido?
+alt compensa en siguiente pedido
+  DSVC -> DB :   devolucion.update({ estado: 'procesada' })
+  note right: sin restaurar stock ni ajustar factura\n(el crédito se aplica en próxima venta)
+else procesar ahora
+  DSVC -> DSVC : llamar a procesarDevolucionInterna()
+end
+
+== Flujo 3: Procesamiento interno (restaurar stock + ajustar factura) ==
+
+note over DSVC, DB
+  procesarDevolucionInterna() — se ejecuta dentro de $transaction
+end note
+
+loop por cada detalleDevolucion
+  DSVC -> DB : movimientoStock.findFirst({\n    tipoMovimiento: 'salida',\n    motivo: 'venta',\n    idReferencia: venta.id,\n    stock.productoId: detalle.productoId\n  })
+  DB --> DSVC : MovimientoStock original (si existió salida de stock)
+
+  alt encontró movimiento de salida (stock propio fue usado)
+    DSVC -> DB : stock.update({ cantDisponible: +detalle.cantidadDevuelta })
+    DSVC -> DB : movimientoStock.create({\n  tipoMovimiento: 'entrada',\n  motivo: 'devolucion',\n  idReferencia: devolucion.id\n})
+  end
+end
+
+note right of DSVC
+  Si la venta fue 'reventa_inmediata',
+  no hay movimiento de salida de stock propio →
+  no se restaura nada (los pallets vinieron
+  directo del proveedor al cliente).
+end note
+
+DSVC -> DB : factura de la venta (facturas[0])
+DB --> DSVC : Factura
+DSVC -> DSVC : nuevoTotal = max(0, totalConIva - montoTotal)\nnuevoNeto = max(0, totalNeto - montoPallets)\nnuevoIva = nuevoTotal - nuevoNeto
+DSVC -> DB : factura.update({\n  totalConIva: nuevoTotal,\n  totalNeto: nuevoNeto,\n  iva: nuevoIva,\n  observaciones: 'Devolución #X aplicada: -$Y'\n})
+DSVC -> DB : devolucion.update({ estado: 'procesada' })
+DSVC --> API : Devolucion procesada
+API --> FE : 200
+FE --> P : devolución procesada;\nstock restaurado, factura ajustada
+
+== Flujo 4: Cancelar devolución ==
+
+P -> FE : click "Cancelar devolución" antes de procesarla
+FE -> API : PATCH /api/devoluciones/:id/cancelar
+API -> MW : verifyToken ✓
+API -> DSVC : cancelarDevolucionService(id, userId)
+DSVC -> DB : devolucion.findUnique({ id })
+DB --> DSVC : Devolucion
+
+alt estado = 'procesada'
+  DSVC --> API : 400 "No se puede cancelar una devolución ya procesada"
+end
+
+DSVC -> DB : devolucion.update({ estado: 'cancelada' })
+DSVC --> API : 200 Devolucion cancelada
+API --> FE : 200
+FE --> P : devolución cancelada (sin efectos sobre stock ni factura)
+
+@enduml

@@ -1,0 +1,127 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #FDF6EE
+  BorderColor #7c4b2c
+  FontColor #3c250f
+}
+skinparam actor {
+  BackgroundColor #E8D5C4
+  BorderColor #7c4b2c
+  FontColor #3c250f
+}
+skinparam rectangle {
+  BackgroundColor #FAF5F0
+  BorderColor #C4895A
+  BorderThickness 2
+}
+skinparam ArrowColor #3c250f
+
+title **Módulo 15 — Email Marketing y Seguimientos Automáticos**\n//WoodPallet Manager//
+
+actor "Propietario" as P
+actor "Sistema\n(Motor de envío)" as S
+
+rectangle "Email Marketing y Automatización" {
+
+  ' ── Plantillas de email ─────────────────────────────────
+  package "Plantillas de Email" {
+    usecase "Ver listado de plantillas" as UC01
+    usecase "Crear plantilla con\neditor de bloques" as UC02
+    usecase "Definir nombre,\nasunto y bloques" as UC03
+    usecase "Editar plantilla\nexistente" as UC04
+    usecase "Activar / desactivar\nplantilla" as UC05
+    usecase "Ver plantillas activas\ne inactivas" as UC06
+  }
+
+  ' ── Campañas manuales ───────────────────────────────────
+  package "Campañas de Seguimiento" {
+    usecase "Ver historial de\ncampañas enviadas" as UC07
+    usecase "Crear nueva campaña\nde seguimiento" as UC08
+    usecase "Seleccionar plantilla\nbase (opcional)" as UC09
+    usecase "Definir nombre\ny asunto del email" as UC10
+    usecase "Seleccionar segmento\nde destinatarios" as UC11
+    usecase "Definir días de condición\n(para segmentos dinámicos)" as UC12
+    usecase "Previsualizar lista\nde destinatarios" as UC13
+    usecase "Enviar campaña al\nsegmento seleccionado" as UC14
+    usecase "Ver estado del\nenvío por destinatario" as UC15
+    usecase "Ver errores de\nenvío (rebotes)" as UC16
+  }
+
+  ' ── Reglas automáticas ──────────────────────────────────
+  package "Reglas de Automatización" {
+    usecase "Ver reglas de\nautomatización configuradas" as UC17
+    usecase "Crear regla\nde automatización" as UC18
+    usecase "Definir evento disparador\n(cotizacion_sin_respuesta / sin_actividad)" as UC19
+    usecase "Definir días de condición\npara el disparador" as UC20
+    usecase "Asignar plantilla\na la regla" as UC21
+    usecase "Activar / desactivar\nregla" as UC22
+    usecase "Editar regla\nexistente" as UC23
+    usecase "Sistema: evaluar y ejecutar\nreglas automáticas" as UC24
+  }
+
+}
+
+' ── Asociaciones ──────────────────────────────────────────
+P --> UC01
+P --> UC02
+P --> UC04
+P --> UC05
+P --> UC07
+P --> UC08
+P --> UC14
+P --> UC17
+P --> UC18
+P --> UC22
+P --> UC23
+
+' ── Sistema (automático) ─────────────────────────────────
+S --> UC24
+
+' ── Include / Extend ──────────────────────────────────────
+UC01 ..> UC06 : <<extend>>
+UC02 ..> UC03 : <<include>>
+
+UC08 ..> UC09 : <<extend>>
+UC08 ..> UC10 : <<include>>
+UC08 ..> UC11 : <<include>>
+UC11 ..> UC12 : <<extend>>
+UC08 ..> UC13 : <<include>>
+UC14 ..> UC15 : <<include>>
+UC15 ..> UC16 : <<extend>>
+
+UC18 ..> UC19 : <<include>>
+UC18 ..> UC20 : <<include>>
+UC18 ..> UC21 : <<include>>
+UC22 ..> UC24 : <<extend>>
+UC24 ..> UC19 : <<include>>
+
+' ── Notas ─────────────────────────────────────────────────
+note right of UC11
+  Segmentos disponibles:
+  - activos: clientes con compras recientes
+  - cotizacion_sin_respuesta: cotizaciones en seguimiento > N días
+  - cotizacion_rechazada: cotizaciones rechazadas recientemente
+  - sin_actividad: clientes sin actividad en > N días
+  - todos: todos los clientes activos
+  - manual: selección manual de destinatarios
+end note
+
+note bottom of UC14
+  Al enviar, se crea un registro en
+  destinatarios_campana por cada cliente.
+  Se almacena si fue enviado o si hubo error.
+  El snapshot de bloques queda guardado
+  en la campaña al momento del envío.
+end note
+
+note bottom of UC19
+  Eventos disponibles:
+  - cotizacion_sin_respuesta: cotización enviada/en_seguimiento
+    sin actividad hace > diasCondicion días
+  - sin_actividad: cliente sin ventas/cotizaciones
+    en los últimos diasCondicion días
+end note
+
+@enduml

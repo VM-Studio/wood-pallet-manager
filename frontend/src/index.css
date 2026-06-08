@@ -283,3 +283,225 @@
   .page-header   { margin-bottom: 2rem; }
   .titulo-modulo { font-size: 2.25rem; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE — Ajustes para pantallas pequeñas
+   No altera diseño ni funcionalidades, solo adapta el layout.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Touch interaction: elimina el delay de 300ms en tap ── */
+button, [role="button"], a, input, select, textarea {
+  touch-action: manipulation;
+}
+
+/* ── Scrolling suave con momentum en iOS ── */
+.modal,
+.modal-body,
+aside nav,
+.table-container,
+.overflow-y-auto,
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Evita el rebote/scroll innecesario en el fondo cuando un modal está abierto ── */
+.modal-overlay {
+  overscroll-behavior: contain;
+}
+
+/* ── Overscroll en el cuerpo principal ── */
+body {
+  overscroll-behavior-y: none;
+}
+
+/* ── Evitar overflow horizontal global ── */
+html, body, #root {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+/* ── MOBILE BASE (<768px) ─────────────────────────────────────── */
+@media (max-width: 767px) {
+
+  /* ── Inputs con font-size >= 16px: previene el auto-zoom de iOS ── */
+  input[type="text"],
+  input[type="email"],
+  input[type="number"],
+  input[type="password"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"],
+  input[type="month"],
+  input[type="week"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* ── Targets táctiles mínimos: 44px de alto ── */
+  .btn, .btn-sm, .btn-md, .btn-lg,
+  .btn-primary, .btn-secondary, .btn-danger, .btn-ghost,
+  .btn-brand, .btn-brand-outline {
+    min-height: 44px;
+  }
+  .btn-brand-sm { min-height: 38px; }
+  .btn-icon { width: 2.75rem; height: 2.75rem; }
+
+  /* ── Tipografía ── */
+  .titulo-modulo  { font-size: 1.5rem; }
+  .titulo-seccion { font-size: 1.25rem; }
+  .titulo-card    { font-size: 1rem; }
+
+  /* ── Page header: wrap limpio ── */
+  .page-header { gap: 0.75rem; margin-bottom: 1.25rem; }
+
+  /* ── Cards: padding compacto ── */
+  .card-p    { padding: 1rem; }
+  .kpi-card  { padding: 0.875rem; }
+  .card-base { padding: 0.75rem; }
+  .card-base-sm { padding: 0.5rem; }
+
+  /* ── Modal bottom-sheet ── */
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .modal {
+    border-radius: 1rem 1rem 0 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: 92dvh;
+  }
+  .modal-header {
+    padding: 1rem;
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 1;
+    border-bottom: 1px solid #F3F4F6;
+  }
+  .modal-title { font-size: 1rem; }
+  .modal-body {
+    padding: 1rem;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom, 1rem));
+  }
+  .modal-footer {
+    padding: 0.875rem 1rem;
+    padding-bottom: max(0.875rem, env(safe-area-inset-bottom, 0.875rem));
+    flex-wrap: wrap;
+    gap: 0.625rem;
+  }
+  /* Botones del footer del modal ocupan todo el ancho disponible */
+  .modal-footer button,
+  .modal-footer a {
+    flex: 1 1 auto;
+    min-width: calc(50% - 0.3125rem);
+    justify-content: center;
+    text-align: center;
+  }
+
+  /* ── Tabla: scroll horizontal ── */
+  .table-container {
+    overflow-x: auto;
+    border-radius: 0.25rem;
+    -webkit-overflow-scrolling: touch;
+  }
+  .table { min-width: 500px; }
+
+  /* ── Limitar ancho de texto en celdas de tabla ── */
+  .table tbody td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+  }
+  .table tbody td:last-child {
+    max-width: none;
+    white-space: normal;
+  }
+
+  /* ── Grids: 2 columnas en mobile cuando son 3 o 4 ── */
+  .grid-cols-3 { grid-template-columns: repeat(2, 1fr) !important; }
+  .grid-cols-4 { grid-template-columns: repeat(2, 1fr) !important; }
+  .xl\:grid-cols-4 { grid-template-columns: repeat(2, 1fr) !important; }
+  .sm\:grid-cols-4 { grid-template-columns: repeat(2, 1fr) !important; }
+  .sm\:grid-cols-3 { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* ── Header de página: botones apilados debajo del título ── */
+  .flex.items-start.justify-between.flex-wrap {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  /* ── Grupos de botones del header: wrap y ancho completo ── */
+  .flex.items-center.gap-2.flex-wrap.shrink-0,
+  .flex.items-center.gap-2.shrink-0 {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .flex.items-center.gap-2.flex-wrap.shrink-0 > button,
+  .flex.items-center.gap-2.flex-wrap.shrink-0 > a,
+  .flex.items-center.gap-2.shrink-0 > button,
+  .flex.items-center.gap-2.shrink-0 > a {
+    flex: 1 1 auto;
+    min-width: 140px;
+    justify-content: center;
+    text-align: center;
+  }
+
+  /* ── Buscadores: siempre full width ── */
+  input[type="text"].input-field,
+  input.input-field,
+  input.input {
+    width: 100% !important;
+  }
+
+  /* ── Empty state compacto ── */
+  .empty-state { padding: 2.5rem 1rem; }
+
+  /* ── Evitar overflow horizontal en todos los children ── */
+  .animate-fade-in > *,
+  .space-y-5 > *,
+  .space-y-6 > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* ── Gráficos: altura reducida en mobile ── */
+  .recharts-responsive-container {
+    min-height: 0 !important;
+  }
+
+  /* ── Pagination: más compacta ── */
+  .pagination { gap: 0.25rem; }
+}
+
+/* ── Pantallas muy pequeñas (<390px, ej: iPhone SE) ── */
+@media (max-width: 389px) {
+  .titulo-modulo  { font-size: 1.25rem; }
+  .card-base      { padding: 0.625rem; }
+  .kpi-card       { padding: 0.75rem; }
+  .modal-body     { padding: 0.875rem; }
+  .modal-header   { padding: 0.875rem; }
+  .btn, .btn-brand, .btn-primary, .btn-secondary {
+    font-size: 0.8125rem;
+    padding: 0.5rem 0.75rem;
+  }
+}
+
+/* ── Safe area para el contenido principal (iOS home indicator) ── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* ── Safe area top para notch/isla en la navbar (PWA fullscreen) ── */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .navbar-safe {
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+  }
+}

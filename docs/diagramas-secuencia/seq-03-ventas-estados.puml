@@ -1,0 +1,128 @@
+@startuml
+'──────────────────────────────────────────────────────────────────────────────
+'  SEQ-03 — Gestión de Ventas: Estados, Retiro en Galpón, Entregas Parciales
+'──────────────────────────────────────────────────────────────────────────────
+skinparam backgroundColor #FDF6EE
+skinparam sequenceArrowColor #3c250f
+skinparam sequenceLifeLineBorderColor #7c4b2c
+skinparam sequenceParticipantBackgroundColor #E8D5C4
+skinparam sequenceParticipantBorderColor #7c4b2c
+skinparam sequenceBoxBackgroundColor #FAF5F0
+skinparam sequenceBoxBorderColor #C4895A
+skinparam noteBorderColor #C4895A
+skinparam noteBackgroundColor #FDF6EE
+skinparam shadowing false
+
+title SEQ-03 — Ventas: Estados del Pedido, Retiro en Galpón, Entregas Parciales\n//WoodPallet Manager//
+
+actor       "Propietario"          as P
+actor       "Cliente"              as C
+participant "React Frontend"       as FE
+participant "Express API\n:3001"   as API
+participant "AuthMiddleware"       as MW
+participant "VentasService"        as VSVC
+participant "RetirosService"       as RSVC
+participant "Mailer"               as MAIL
+participant "PrismaClient"         as DB
+
+== Flujo 1: Actualizar estado del pedido ==
+
+P -> FE : click "Actualizar estado" → selecciona 'en_preparacion'
+FE -> API : PATCH /api/ventas/:id/estado\n{ estadoPedido: 'en_preparacion' }
+API -> MW : verifyToken ✓
+API -> VSVC : actualizarEstadoPedidoService(id, datos)
+VSVC -> DB : venta.update({ estadoPedido: 'en_preparacion' })
+DB --> VSVC : Venta actualizada
+VSVC --> API : Venta
+API --> FE : 200 Venta
+FE --> P : estado actualizado en tiempo real
+
+note over P, DB
+  Ciclo completo de estados:
+  confirmado → en_preparacion → listo_para_envio → en_transito → entregado
+  En cualquier punto puede ir a: entregado_parcial o cancelado
+end note
+
+== Flujo 2: Retiro en Galpón (cliente retira personalmente) ==
+
+note over P, RSVC
+  El retiro se crea automáticamente al crear la venta
+  con tipoEntrega = 'retira_cliente'
+end note
+
+P -> FE : accede a panel de la venta → ve código de retiro
+FE -> API : GET /api/retiros/venta/:ventaId
+API -> RSVC : getRetirosService(userId, rol)
+RSVC -> DB : retiro.findFirst({ ventaId })
+DB --> RSVC : Retiro { codigoRetiro, estadoRetiro: 'pendiente' }
+RSVC --> API : Retiro
+API --> FE : 200 Retiro
+FE --> P : muestra código UUID
+
+P -> FE : click "Enviar código al cliente"
+FE -> API : POST /api/retiros/:id/reenviar\n{ email?, telefono? }
+API -> RSVC : reenviarCodigoRetiroService(retiroId, userId)
+RSVC -> DB : retiro.findUnique({ id })
+RSVC -> MAIL : enviarCodigoRetiro(email, codigoRetiro, nombreCliente)
+MAIL --> RSVC : enviado
+RSVC -> DB : historialReenvioRetiro.create({ retiroId, emailEnviado, enviadoPorId })
+RSVC --> API : ok
+API --> FE : 200 { mensaje: 'Código enviado' }
+FE --> P : confirmación de envío
+
+C -> P : llega al galpón con el código
+P -> FE : ingresa código del cliente → click "Confirmar retiro"
+FE -> API : POST /api/retiros/:id/confirmar\n{ observaciones? }
+API -> MW : verifyToken ✓
+API -> RSVC : confirmarRetiroService(retiroId, userId, datos)
+RSVC -> DB : retiro.update({ estadoRetiro: 'confirmado', confirmadoPorId, fechaConfirmacion })
+RSVC -> DB : venta.update({ estadoPedido: 'entregado', fechaEntregaReal: now() })
+RSVC --> API : Retiro confirmado
+API --> FE : 200 Retiro
+FE --> P : retiro confirmado, venta marcada como entregada
+
+== Flujo 3: Registrar entrega parcial (entregado_parcial) ==
+
+P -> FE : selecciona "Registrar entrega parcial"\npor línea de producto
+FE -> API : POST /api/ventas/:id/retiro-parcial\n{ detalleVentaId, cantidadRetirada }
+API -> MW : verifyToken ✓
+API -> VSVC : registrarRetiroParcialService(detalleVentaId, cantidadRetirada, userId)
+VSVC -> DB : detalleVenta.findUnique({ id: detalleVentaId })
+DB --> VSVC : DetalleVenta { cantidadPedida, cantidadEntregada }
+
+VSVC -> VSVC : nuevaEntregada = cantidadEntregada + cantidadRetirada
+VSVC -> DB : detalleVenta.update({ cantidadEntregada: nuevaEntregada })
+VSVC -> DB : retiroParcial.create({ detalleVentaId, cantidadRetirada, registradoPorId: userId })
+
+VSVC -> DB : venta.findUnique({ include: { detalles } })
+VSVC -> VSVC : ¿todas las líneas están completamente entregadas?
+
+alt todas entregadas
+  VSVC -> DB : venta.update({ estadoPedido: 'entregado', fechaEntregaReal: now() })
+else aún quedan pendientes
+  VSVC -> DB : venta.update({ estadoPedido: 'entregado_parcial' })
+end
+
+VSVC --> API : Venta actualizada
+API --> FE : 200 Venta
+FE --> P : historial de entregas actualizado
+
+== Flujo 4: Cancelar venta ==
+
+P -> FE : click "Cancelar venta" → confirma
+FE -> API : PATCH /api/ventas/:id/estado\n{ estadoPedido: 'cancelado' }
+API -> VSVC : actualizarEstadoPedidoService(id, { estadoPedido: 'cancelado' })
+VSVC -> DB : venta.update({ estadoPedido: 'cancelado' })
+
+note right of VSVC
+  Al cancelar, NO se restaura el stock
+  automáticamente. El propietario debe
+  hacer un ajuste manual de inventario
+  o registrar una devolución si aplica.
+end note
+
+VSVC --> API : Venta cancelada
+API --> FE : 200 Venta
+FE --> P : venta marcada como cancelada
+
+@enduml

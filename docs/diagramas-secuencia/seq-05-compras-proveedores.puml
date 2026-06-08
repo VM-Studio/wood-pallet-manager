@@ -1,0 +1,154 @@
+@startuml
+'──────────────────────────────────────────────────────────────────────────────
+'  SEQ-05 — Compras a Proveedores: Stock Propio, Reventa Inmediata, Pagos
+'──────────────────────────────────────────────────────────────────────────────
+skinparam backgroundColor #FDF6EE
+skinparam sequenceArrowColor #3c250f
+skinparam sequenceLifeLineBorderColor #7c4b2c
+skinparam sequenceParticipantBackgroundColor #E8D5C4
+skinparam sequenceParticipantBorderColor #7c4b2c
+skinparam sequenceBoxBackgroundColor #FAF5F0
+skinparam sequenceBoxBorderColor #C4895A
+skinparam noteBorderColor #C4895A
+skinparam noteBackgroundColor #FDF6EE
+skinparam shadowing false
+
+title SEQ-05 — Compras: Stock Propio, Reventa Inmediata, Registro de Pagos\n//WoodPallet Manager//
+
+actor       "Propietario"          as P
+participant "React Frontend"       as FE
+participant "Express API\n:3001"   as API
+participant "AuthMiddleware"       as MW
+participant "ComprasService"       as CSVC
+participant "PrismaClient"         as DB
+
+== Flujo 1: Compra para stock propio (abastecimiento de galpón) ==
+
+P -> FE : click "Nueva compra" →\nselecciona proveedor, tipo: stock_propio
+FE -> API : POST /api/compras\n{ proveedorId, tipoCompra: 'stock_propio',\n  detalles: [{ productoId, cantidad, precioCostoUnit }] }
+API -> MW : verifyToken ✓
+API -> CSVC : crearCompraService(datos, userId, rol)
+
+CSVC -> DB : proveedor.findUnique({ id: proveedorId })
+DB --> CSVC : Proveedor { tipoProducto: 'seminuevo' }
+
+alt rol = 'propietario_juancruz' AND tipoProducto ≠ 'seminuevo'
+  CSVC --> API : 403 "Juan Cruz solo puede comprar al Galpón Familiar"
+  API --> FE : 403 error
+  FE --> P : error de permisos
+end
+
+CSVC -> CSVC : validar condicion del producto\nvs condicionesPermitidas del proveedor
+
+loop por cada detalle
+  CSVC -> DB : producto.findUnique({ id: productoId })
+  DB --> CSVC : Producto { condicion }
+  alt condicion incompatible con proveedor
+    CSVC --> API : 400 "Producto incompatible con proveedor"
+    API --> FE : 400 error
+    FE --> P : mensaje de error descriptivo
+  end
+end
+
+CSVC -> DB : compra.create({\n  estado: 'pendiente_pago',\n  saldoDeudor: true,\n  detalles: create[...]\n})
+DB --> CSVC : Compra creada
+
+loop por cada detalle de la compra
+  CSVC -> DB : stock.upsert({\n  where: { productoId_proveedorId },\n  update: { cantDisponible: +cantidad, cantDeudora: +cantidad },\n  create: { cantDisponible: cantidad, cantDeudora: cantidad, cantMinima: 20 }\n})
+  DB --> CSVC : Stock actualizado
+  CSVC -> DB : movimientoStock.create({\n  tipoMovimiento: 'entrada',\n  motivo: 'compra'\n})
+end
+
+CSVC --> API : Compra con detalles y proveedor
+API --> FE : 201 Compra
+FE --> P : compra registrada;\nstock incrementado en galpón
+
+== Flujo 2: Compra de reventa inmediata (asociada a una venta confirmada) ==
+
+note over P, DB
+  Flujo: Propietario recibe pedido → NO tiene stock propio →
+  compra puntualmente al proveedor para esa venta específica
+end note
+
+P -> FE : "Nueva compra de reventa"\nselecciona venta pendiente (origenStock = 'compra_directa')
+FE -> API : POST /api/compras\n{ tipoCompra: 'reventa_inmediata', ventaId: 42, ... }
+API -> CSVC : crearCompraService({ tipoCompra: 'reventa_inmediata', ventaId: 42, ... }, userId, rol)
+CSVC -> DB : venta.findUnique({ id: 42,\n  include: { compras: { select: { id } } } })
+DB --> CSVC : Venta { origenStock: 'compra_directa', compras: [] }
+
+alt venta ya tiene compra
+  CSVC --> API : 400 "Esta venta ya tiene una compra asociada"
+end
+
+alt origenStock ≠ 'compra_directa'
+  CSVC --> API : 400 "La venta seleccionada no es de tipo compra directa"
+end
+
+CSVC -> DB : compra.create({ ventaId: 42, tipoCompra: 'reventa_inmediata', ... })
+DB --> CSVC : Compra
+
+note right of CSVC
+  En reventa_inmediata:
+  stock.update cantidadDisponible = undefined (NO incrementa stock)
+  stock.update cantidadDeudora += cantidad (sí)
+  El stock propio no aumenta porque los pallets van
+  directo del proveedor al cliente.
+end note
+
+loop por cada detalle
+  CSVC -> DB : stock.upsert({ update: { cantDeudora: +cantidad }, create: { cantDisponible: 0, cantDeudora: cantidad } })
+  CSVC -> DB : movimientoStock.create({ tipoMovimiento: 'entrada', motivo: 'compra' })
+end
+
+CSVC --> API : Compra
+API --> FE : 201 Compra
+FE --> P : compra registrada y vinculada a la venta
+
+== Flujo 3: Registrar pago de una compra ==
+
+P -> FE : click "Registrar pago" en compra pendiente\nselecciona: transferencia, nro comprobante
+FE -> API : POST /api/compras/:id/pago\n{ metodoPago: 'transferencia', nroComprobante: '1234' }
+API -> MW : verifyToken ✓
+API -> CSVC : registrarPagoCompraService(compraId, datos, userId)
+CSVC -> DB : compra.findUnique({ id, include: { detalles } })
+DB --> CSVC : Compra { estado: 'pendiente_pago' }
+
+alt estado = 'pagada'
+  CSVC --> API : 400 "Esta compra ya fue pagada"
+end
+
+CSVC -> DB : compra.update({\n  estado: 'pagada',\n  saldoDeudor: false,\n  fechaPago: now(),\n  metodoPago, nroComprobante\n})
+
+loop por cada detalle
+  CSVC -> DB : stock.findFirst({ productoId, proveedorId })
+  CSVC -> DB : stock.update({ cantDeudora: Math.max(0, cantDeudora - detalle.cantidad) })
+end
+
+CSVC --> API : Compra actualizada
+API --> FE : 200 Compra
+FE --> P : compra marcada como pagada;\nsaldo deudor eliminado
+
+== Flujo 4: Cancelar compra pendiente ==
+
+P -> FE : click "Cancelar compra" → confirma
+FE -> API : DELETE /api/compras/:id
+API -> MW : verifyToken ✓
+API -> CSVC : cancelarCompraService(compraId, userId)
+CSVC -> DB : compra.findUnique({ id, include: { detalles } })
+DB --> CSVC : Compra { estado: 'pendiente_pago' }
+
+alt estado ≠ 'pendiente_pago'
+  CSVC --> API : 400 "Solo se pueden cancelar compras pendientes"
+end
+
+loop por cada detalle
+  CSVC -> DB : stock.findFirst({ productoId, proveedorId })
+  CSVC -> DB : stock.update({\n  cantDeudora: Math.max(0, cantDeudora - detalle.cantidad),\n  cantDisponible: si tipoCompra='stock_propio': Math.max(0, cantDisponible - detalle.cantidad)\n})
+end
+
+CSVC -> DB : compra.update({ estado: 'cancelada' })
+CSVC --> API : Compra cancelada
+API --> FE : 200 Compra
+FE --> P : compra cancelada; stock revertido
+
+@enduml

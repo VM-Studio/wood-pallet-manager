@@ -1,0 +1,89 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #FDF6EE
+  BorderColor #7c4b2c
+  FontColor #3c250f
+}
+skinparam actor {
+  BackgroundColor #E8D5C4
+  BorderColor #7c4b2c
+  FontColor #3c250f
+}
+skinparam rectangle {
+  BackgroundColor #FAF5F0
+  BorderColor #C4895A
+  BorderThickness 2
+}
+skinparam ArrowColor #3c250f
+
+title **Módulo 02 — Clientes**\n//WoodPallet Manager//
+
+actor "Propietario" as P
+
+rectangle "Gestión de Clientes" {
+
+  usecase "Ver listado de clientes" as UC01
+  usecase "Buscar cliente por nombre\no razón social" as UC02
+  usecase "Filtrar por canal de entrada" as UC03
+  usecase "Filtrar activos / inactivos" as UC04
+  usecase "Crear nuevo cliente" as UC05
+  usecase "Editar datos del cliente" as UC06
+  usecase "Desactivar cliente" as UC07
+  usecase "Confirmar desactivación" as UC08
+  usecase "Ver detalle del cliente" as UC09
+  usecase "Ver historial de\ncotizaciones del cliente" as UC10
+  usecase "Ver historial de\nventas del cliente" as UC11
+  usecase "Ver datos de contacto\ny dirección de entrega" as UC12
+  usecase "Marcar cliente\ncomo exportador" as UC13
+  usecase "Asignar canal de\nentrada al cliente" as UC14
+  usecase "Asignar propietario\nresponsable del cliente" as UC15
+
+}
+
+' ── Asociaciones ──────────────────────────────────────────
+P --> UC01
+P --> UC02
+P --> UC03
+P --> UC04
+P --> UC05
+P --> UC06
+P --> UC07
+P --> UC09
+P --> UC10
+P --> UC11
+
+' ── Include / Extend ──────────────────────────────────────
+UC01 ..> UC02 : <<extend>>
+UC01 ..> UC03 : <<extend>>
+UC01 ..> UC04 : <<extend>>
+
+UC05 ..> UC14 : <<include>>
+UC05 ..> UC15 : <<include>>
+UC05 ..> UC13 : <<extend>>
+
+UC07 ..> UC08 : <<include>>
+
+UC09 ..> UC10 : <<include>>
+UC09 ..> UC11 : <<include>>
+UC09 ..> UC12 : <<include>>
+
+' ── Notas ─────────────────────────────────────────────────
+note right of UC03
+  Canales: whatsapp, formulario_web, llamada,
+  recomendacion, instagram, email, otro
+end note
+
+note right of UC10
+  Cada propietario ve solo las cotizaciones
+  que él mismo emitió para ese cliente.
+end note
+
+note bottom of UC15
+  Un cliente puede ser asignado a
+  Carlos o Juan Cruz según quién
+  lo haya captado / gestionó la relación.
+end note
+
+@enduml

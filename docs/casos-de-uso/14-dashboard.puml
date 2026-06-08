@@ -1,0 +1,121 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #FDF6EE
+  BorderColor #7c4b2c
+  FontColor #3c250f
+}
+skinparam actor {
+  BackgroundColor #E8D5C4
+  BorderColor #7c4b2c
+  FontColor #3c250f
+}
+skinparam rectangle {
+  BackgroundColor #FAF5F0
+  BorderColor #C4895A
+  BorderThickness 2
+}
+skinparam ArrowColor #3c250f
+
+title **Módulo 14 — Dashboard y Reportes**\n//WoodPallet Manager//
+
+actor "Propietario" as P
+
+rectangle "Dashboard y Reportes" {
+
+  ' ── KPIs principales ────────────────────────────────────
+  package "KPIs Generales" {
+    usecase "Ver dashboard principal" as UC01
+    usecase "Ver total de ventas\nacumuladas (empresa)" as UC02
+    usecase "Ver total de clientes\nactivos" as UC03
+    usecase "Ver total de cotizaciones\nactivas" as UC04
+    usecase "Ver stock total\ndisponible (unidades)" as UC05
+    usecase "Ver saldo deudor\ntotal (clientes)" as UC06
+    usecase "Ver facturas pendientes\nde cobro" as UC07
+  }
+
+  ' ── Gráfico de ventas ───────────────────────────────────
+  package "Gráfico de Ventas" {
+    usecase "Ver gráfico de ventas\npor mes (últimos 12 meses)" as UC08
+    usecase "Filtrar gráfico por\npropietario (Carlos / Juan Cruz)" as UC09
+    usecase "Ver total empresa\n(suma de ambos propietarios)" as UC10
+    usecase "Ver unidades vendidas\npor mes" as UC11
+    usecase "Ver primer mes registrado\nhasta 12 meses" as UC12
+  }
+
+  ' ── Gráfico de cotizaciones ─────────────────────────────
+  package "Gráfico de Cotizaciones" {
+    usecase "Ver distribución de\ncotizaciones por estado" as UC13
+    usecase "Ver tasa de conversión\ncotización → venta" as UC14
+  }
+
+  ' ── Alertas en dashboard ────────────────────────────────
+  package "Alertas Resumen" {
+    usecase "Ver resumen de alertas\nactivas (alta urgencia)" as UC15
+    usecase "Navegar a módulo\nde alertas" as UC16
+  }
+
+  ' ── Gráficos de inventario ──────────────────────────────
+  package "Inventario en Dashboard" {
+    usecase "Ver stock propio\npor producto (top 10)" as UC17
+    usecase "Ver compras: stock propio\nvs reventa directa" as UC18
+    usecase "Ver movimientos de\nstock por mes (6 meses)" as UC19
+  }
+
+}
+
+' ── Asociaciones ──────────────────────────────────────────
+P --> UC01
+P --> UC08
+P --> UC09
+P --> UC10
+P --> UC13
+P --> UC15
+
+' ── Include / Extend ──────────────────────────────────────
+UC01 ..> UC02 : <<include>>
+UC01 ..> UC03 : <<include>>
+UC01 ..> UC04 : <<include>>
+UC01 ..> UC05 : <<include>>
+UC01 ..> UC06 : <<include>>
+UC01 ..> UC07 : <<include>>
+UC01 ..> UC15 : <<include>>
+
+UC08 ..> UC09 : <<extend>>
+UC08 ..> UC10 : <<extend>>
+UC08 ..> UC11 : <<include>>
+UC08 ..> UC12 : <<include>>
+
+UC09 ..> UC10 : <<extend>>
+
+UC13 ..> UC14 : <<include>>
+
+UC15 ..> UC16 : <<extend>>
+
+UC01 ..> UC17 : <<include>>
+UC01 ..> UC18 : <<include>>
+UC01 ..> UC19 : <<include>>
+
+' ── Notas ─────────────────────────────────────────────────
+note right of UC09
+  Por defecto muestra el total empresa
+  (suma de Carlos + Juan Cruz).
+  El filtro cambia entre:
+  "Carlos" | "Juan Cruz" | "Total empresa"
+end note
+
+note bottom of UC12
+  El gráfico arranca desde la venta
+  más antigua del sistema y muestra
+  exactamente 12 meses hacia adelante.
+  Si no hay ventas, usa el mes actual.
+end note
+
+note right of UC17
+  Solo muestra los 10 productos
+  con mayor stock propio.
+  Excluye productos con stock = 0.
+end note
+
+@enduml

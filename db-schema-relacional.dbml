@@ -1,0 +1,892 @@
+// ═══════════════════════════════════════════════════════════════════════
+//  WoodPallet Manager — ESQUEMA RELACIONAL (DBML)
+//
+//  Tool : https://dbdiagram.io  →  "Import DBML" → pegar este contenido
+//  Base : PostgreSQL | 35 tablas | Generado: junio 2026
+// ═══════════════════════════════════════════════════════════════════════
+
+
+// ─── ENUMS ───────────────────────────────────────────────────────────────
+
+Enum rol_usuario {
+  propietario_carlos
+  propietario_juancruz
+  admin
+}
+
+Enum tipo_verificacion {
+  cambio_password
+  cambio_email
+  cambio_telefono
+  recuperacion_password
+}
+
+Enum canal_entrada {
+  whatsapp
+  formulario_web
+  llamada
+  recomendacion
+  instagram
+  email
+  otro
+}
+
+Enum tipo_pallet {
+  estandar
+  reforzado
+  liviano
+  exportacion
+  carton
+  a_medida
+  personalizado
+}
+
+Enum condicion_pallet {
+  nuevo
+  seminuevo
+  usado
+}
+
+Enum tipo_producto_proveedor {
+  seminuevo
+  nuevo_medida
+  ambos
+}
+
+Enum estado_cotizacion {
+  enviada
+  en_seguimiento
+  aceptada
+  rechazada
+  perdida
+  vencida
+}
+
+Enum canal_envio_cotizacion {
+  whatsapp
+  email
+}
+
+Enum tipo_contacto {
+  whatsapp
+  llamada
+  email
+  presencial
+}
+
+Enum resultado_seguimiento {
+  sin_respuesta
+  interesado
+  no_interesado
+  cerrado
+  reprogramado
+}
+
+Enum estado_pedido {
+  confirmado
+  en_preparacion
+  listo_para_envio
+  en_transito
+  entregado
+  entregado_parcial
+  cancelado
+}
+
+Enum tipo_entrega {
+  retira_cliente
+  envio_woodpallet
+}
+
+Enum tipo_movimiento {
+  entrada
+  salida
+  ajuste
+}
+
+Enum motivo_movimiento {
+  venta
+  compra
+  devolucion
+  ajuste_manual
+}
+
+Enum estado_compra {
+  pendiente_pago
+  pagada
+  cancelada
+}
+
+Enum tipo_compra {
+  reventa_inmediata
+  stock_propio
+}
+
+Enum estado_entrega {
+  pendiente
+  en_camino
+  entregado
+  con_problema
+}
+
+Enum estado_consulta {
+  no_aplica
+  pendiente_consulta
+  consultada
+  aceptada
+  rechazada
+}
+
+Enum tipo_factura {
+  A
+}
+
+Enum estado_cobro {
+  pendiente
+  cobrada_parcial
+  cobrada_total
+  vencida
+  incobrable
+}
+
+Enum medio_pago {
+  transferencia
+  e_check
+  efectivo
+}
+
+Enum metodo_pago {
+  transferencia
+  e_check
+  efectivo
+}
+
+Enum modalidad_pago {
+  adelantado
+  contra_entrega
+  por_partes
+}
+
+Enum tipo_caso_devolucion {
+  pallet_danado
+  cliente_no_quiere
+  devolucion_parcial
+  cancelacion_anticipada
+}
+
+Enum estado_devolucion {
+  pendiente
+  esperando_confirmacion_deposito
+  confirmada
+  procesada
+  cancelada
+}
+
+Enum estado_retiro {
+  pendiente
+  confirmado
+  completado
+  cancelado
+}
+
+Enum estado_remito {
+  pendiente_firma_propietario
+  enviado_a_cliente
+  firmado_por_cliente
+  completado
+  cancelado
+}
+
+Enum estado_solicitud_logistica {
+  pendiente
+  aceptada
+  rechazada
+}
+
+Enum estado_cotizacion_web {
+  pendiente
+  vista
+  convertida
+  descartada
+}
+
+
+// ─── USUARIOS ─────────────────────────────────────────────────────────────
+
+Table usuarios {
+  id               Int       [pk, increment]
+  nombre           varchar   [not null]
+  apellido         varchar   [not null]
+  email            varchar   [unique, not null]
+  passwordHash     varchar   [not null]
+  telefono         varchar
+  cuit             varchar
+  rol              rol_usuario [not null]
+  activo           boolean   [default: true]
+  fechaCreacion    timestamp [default: `now()`]
+  fotoPerfil       text                          // base64 data URL
+  firma            text                          // base64 data URL
+}
+
+// ─── VERIFICACIONES DE CÓDIGO ─────────────────────────────────────────────
+
+Table verificaciones_codigo {
+  id         Int              [pk, increment]
+  usuarioId  Int                               // nullable — puede no existir aún
+  email      varchar                           // para recuperación sin usuario
+  codigo     varchar(6)       [not null]
+  tipo       tipo_verificacion [not null]
+  dato       varchar                           // payload: nuevo email / teléfono
+  canal      varchar                           // 'email' | 'telefono'
+  expiresAt  timestamp        [not null]
+  usado      boolean          [default: false]
+  creadoAt   timestamp        [default: `now()`]
+}
+
+Ref: verificaciones_codigo.usuarioId > usuarios.id
+
+// ─── CLIENTES ─────────────────────────────────────────────────────────────
+
+Table clientes {
+  id                Int           [pk, increment]
+  razonSocial       varchar       [not null]
+  cuit              varchar
+  nombreContacto    varchar
+  telefonoContacto  varchar
+  emailContacto     varchar
+  canalEntrada      canal_entrada
+  usuarioAsignadoId Int           [not null]
+  direccionEntrega  varchar
+  localidad         varchar
+  esExportador      boolean       [default: false]
+  observaciones     text
+  fechaAlta         timestamp     [default: `now()`]
+  activo            boolean       [default: true]
+}
+
+Ref: clientes.usuarioAsignadoId > usuarios.id
+
+// ─── PRODUCTOS ─────────────────────────────────────────────────────────────
+
+Table productos {
+  id             Int              [pk, increment]
+  nombre         varchar          [not null]
+  tipo           tipo_pallet      [not null]
+  condicion      condicion_pallet [not null]
+  propietarioId  Int              [not null]
+  dimensionLargo Int
+  dimensionAncho Int
+  cargaMaximaKg  Int
+  requiereSenasa boolean          [default: false]
+  descripcion    text
+  activo         boolean          [default: true]
+}
+
+Ref: productos.propietarioId > usuarios.id
+
+// ─── PROVEEDORES ──────────────────────────────────────────────────────────
+
+Table proveedores {
+  id                  Int                    [pk, increment]
+  nombreEmpresa       varchar                [not null]
+  nombreContacto      varchar                [not null]
+  telefono            varchar
+  email               varchar
+  tipoProducto        tipo_producto_proveedor [not null]
+  contactoExclusivoId Int                    // id del propietario con acceso exclusivo
+  distanciaKm         Int
+  ubicacion           varchar
+  observaciones       text
+  activo              boolean                [default: true]
+}
+
+// ─── PRODUCTO × PROVEEDOR (precio de costo) ───────────────────────────────
+
+Table producto_proveedor {
+  id                 Int       [pk, increment]
+  proveedorId        Int       [not null]
+  productoId         Int       [not null]
+  precioCosto        decimal(12,2) [not null]
+  fechaActualizacion timestamp [default: `now()`]
+  observaciones      text
+}
+
+Ref: producto_proveedor.proveedorId > proveedores.id
+Ref: producto_proveedor.productoId  > productos.id
+
+// ─── LISTA DE PRECIOS (escalones de venta) ────────────────────────────────
+
+Table lista_precios {
+  id             Int       [pk, increment]
+  productoId     Int       [not null]
+  precioUnitario decimal(12,2) [not null]
+  margenPct      decimal(5,2)
+  cantMinima     Int       [not null]
+  cantMaxima     Int
+  bonificaFlete  boolean   [default: false]
+  vigentDesde    timestamp [default: `now()`]
+  vigentHasta    timestamp
+  creadoPorId    Int       [not null]
+  observaciones  text
+}
+
+Ref: lista_precios.productoId  > productos.id
+Ref: lista_precios.creadoPorId > usuarios.id
+
+// ─── HISTORIAL DE PRECIOS ─────────────────────────────────────────────────
+
+Table historial_precios {
+  id              Int       [pk, increment]
+  productoId      Int       [not null]
+  precioAnterior  decimal(12,2) [not null]
+  precioNuevo     decimal(12,2) [not null]
+  motivo          text
+  fechaCambio     timestamp [default: `now()`]
+  registradoPorId Int       [not null]
+}
+
+Ref: historial_precios.productoId      > productos.id
+Ref: historial_precios.registradoPorId > usuarios.id
+
+// ─── STOCK ────────────────────────────────────────────────────────────────
+// Único por (productoId, proveedorId) — cada galpón/proveedor tiene su fila
+
+Table stock {
+  id                  Int       [pk, increment]
+  productoId          Int       [not null]
+  proveedorId         Int       [not null]
+  cantidadDisponible  Int       [default: 0]
+  cantidadMinima      Int                    // null = sin mínimo configurado
+  cantidadDeudora     Int       [default: 0]
+  ultimaActualizacion timestamp [not null]
+  observaciones       text
+
+  indexes {
+    (productoId, proveedorId) [unique]
+  }
+}
+
+Ref: stock.productoId  > productos.id
+Ref: stock.proveedorId > proveedores.id
+
+// ─── MOVIMIENTOS DE STOCK ─────────────────────────────────────────────────
+
+Table movimientos_stock {
+  id              Int              [pk, increment]
+  stockId         Int              [not null]
+  tipoMovimiento  tipo_movimiento  [not null]
+  cantidad        Int              [not null]
+  motivo          motivo_movimiento [not null]
+  idReferencia    Int              // id de la venta / compra / devolución
+  fecha           timestamp        [default: `now()`]
+  registradoPorId Int              [not null]
+}
+
+Ref: movimientos_stock.stockId         > stock.id
+Ref: movimientos_stock.registradoPorId > usuarios.id
+
+// ─── COTIZACIONES ─────────────────────────────────────────────────────────
+
+Table cotizaciones {
+  id                Int                    [pk, increment]
+  clienteId         Int                    // nullable (cotización rápida sin cliente)
+  usuarioId         Int                    [not null]
+  fechaCotizacion   timestamp              [default: `now()`]
+  fechaVencimiento  timestamp
+  estado            estado_cotizacion      [default: `enviada`]
+  incluyeFlete      boolean                [default: false]
+  costoFlete        decimal(12,2)
+  fleteIncluido     boolean                [default: true]
+  requiereSenasa    boolean                [default: false]
+  costoSenasa       decimal(12,2)
+  totalSinIva       decimal(12,2)
+  totalConIva       decimal(12,2)
+  canalEnvio        canal_envio_cotizacion
+  observaciones     text
+  esRapida          boolean                [default: false]
+  nombreProspecto   varchar                // solo en cotizaciones rápidas
+  telefonoProspecto varchar
+  emailProspecto    varchar
+}
+
+Ref: cotizaciones.clienteId > clientes.id
+Ref: cotizaciones.usuarioId > usuarios.id
+
+// ─── DETALLE DE COTIZACIÓN ────────────────────────────────────────────────
+
+Table detalle_cotizacion {
+  id             Int       [pk, increment]
+  cotizacionId   Int       [not null]
+  productoId     Int       [not null]
+  cantidad       Int       [not null]
+  precioUnitario decimal(12,2) [not null]
+  subtotal       decimal(12,2) [not null]
+  esAMedida      boolean   [default: false]
+}
+
+Ref: detalle_cotizacion.cotizacionId > cotizaciones.id
+Ref: detalle_cotizacion.productoId   > productos.id
+
+// ─── ESPECIFICACIONES A MEDIDA ────────────────────────────────────────────
+// Entidad 1:1 opcional, aplica a detalle_cotizacion o detalle_venta
+
+Table especificaciones_medida {
+  id                   Int  [pk, increment]
+  detalleCotizacionId  Int  [unique]         // FK 1:1 opcional
+  detalleVentaId       Int  [unique]         // FK 1:1 opcional
+  largoMm              Int
+  anchoMm              Int
+  altoMm               Int
+  cargaMaximaKg        Int
+  tipoMadera           varchar
+  observacionesCliente text
+  medidas              json
+}
+
+Ref: especificaciones_medida.detalleCotizacionId - detalle_cotizacion.id
+Ref: especificaciones_medida.detalleVentaId      - detalle_venta.id
+
+// ─── SEGUIMIENTO DE COTIZACIÓN ────────────────────────────────────────────
+
+Table seguimiento_cotizacion {
+  id              Int                   [pk, increment]
+  cotizacionId    Int                   [not null]
+  usuarioId       Int                   [not null]
+  fechaContacto   timestamp             [default: `now()`]
+  tipoContacto    tipo_contacto         [not null]
+  resultado       resultado_seguimiento [not null]
+  observaciones   text
+  proximoContacto timestamp
+}
+
+Ref: seguimiento_cotizacion.cotizacionId > cotizaciones.id
+Ref: seguimiento_cotizacion.usuarioId    > usuarios.id
+
+// ─── VENTAS ───────────────────────────────────────────────────────────────
+
+Table ventas {
+  id                Int            [pk, increment]
+  cotizacionId      Int            [unique]          // FK 1:1 opcional
+  clienteId         Int            [not null]
+  usuarioId         Int            [not null]
+  fechaVenta        timestamp      [default: `now()`]
+  estadoPedido      estado_pedido  [default: `confirmado`]
+  tipoEntrega       tipo_entrega   [not null]
+  requiereSenasa    boolean        [default: false]
+  fechaEstimEntrega timestamp
+  fechaEntregaReal  timestamp
+  fechaRetiro       timestamp
+  lugarEntrega      text
+  totalSinIva       decimal(12,2)
+  totalConIva       decimal(12,2)
+  costoFlete        decimal(12,2)
+  metodoPago        metodo_pago
+  cuentaDestino     varchar
+  modalidadPago     modalidad_pago
+  observaciones     text
+  origenStock       varchar        [default: 'stock_propio']
+  esHistorica       boolean        [default: false]
+}
+
+Ref: ventas.cotizacionId - cotizaciones.id
+Ref: ventas.clienteId    > clientes.id
+Ref: ventas.usuarioId    > usuarios.id
+
+// ─── DETALLE DE VENTA ─────────────────────────────────────────────────────
+
+Table detalle_venta {
+  id                     Int       [pk, increment]
+  ventaId                Int       [not null]
+  productoId             Int       [not null]
+  cantidadPedida         Int       [not null]
+  cantidadEntregada      Int       [default: 0]
+  precioUnitario         decimal(12,2) [not null]
+  subtotal               decimal(12,2) [not null]
+  observaciones          text
+  costoUnitarioHistorico decimal(12,2)
+  proveedorHistoricoId   Int                      // ref histórica, no FK enforced
+  tipoCompraHistorico    varchar
+}
+
+Ref: detalle_venta.ventaId    > ventas.id
+Ref: detalle_venta.productoId > productos.id
+
+// ─── RETIROS DE GALPÓN ────────────────────────────────────────────────────
+
+Table retiros_galpon {
+  id                 Int          [pk, increment]
+  ventaId            Int          [unique, not null]
+  codigoRetiro       varchar      [unique, not null]
+  estadoRetiro       estado_retiro [default: `pendiente`]
+  galpon             varchar
+  horaEstimadaRetiro timestamp
+  confirmadoPorId    Int
+  fechaConfirmacion  timestamp
+  observacionesConf  text
+  motivoCancelacion  text
+  creadoEn           timestamp    [default: `now()`]
+}
+
+Ref: retiros_galpon.ventaId         - ventas.id
+Ref: retiros_galpon.confirmadoPorId > usuarios.id
+
+// ─── HISTORIAL REENVÍO RETIRO ─────────────────────────────────────────────
+
+Table historial_reenvio_retiro {
+  id              Int       [pk, increment]
+  retiroId        Int       [not null]
+  emailEnviado    varchar
+  telefonoEnviado varchar
+  enviadoPorId    Int       [not null]
+  creadoEn        timestamp [default: `now()`]
+}
+
+Ref: historial_reenvio_retiro.retiroId     > retiros_galpon.id
+Ref: historial_reenvio_retiro.enviadoPorId > usuarios.id
+
+// ─── RETIROS PARCIALES ────────────────────────────────────────────────────
+
+Table retiros_parciales {
+  id               Int       [pk, increment]
+  detalleVentaId   Int       [not null]
+  fechaRetiro      timestamp [default: `now()`]
+  cantidadRetirada Int       [not null]
+  registradoPorId  Int       [not null]
+}
+
+Ref: retiros_parciales.detalleVentaId  > detalle_venta.id
+Ref: retiros_parciales.registradoPorId > usuarios.id
+
+// ─── COMPRAS ──────────────────────────────────────────────────────────────
+
+Table compras {
+  id             Int          [pk, increment]
+  proveedorId    Int          [not null]
+  usuarioId      Int          [not null]
+  ventaId        Int                       // FK opcional — reventa inmediata
+  fechaCompra    timestamp    [default: `now()`]
+  estado         estado_compra [default: `pendiente_pago`]
+  tipoCompra     tipo_compra  [default: `reventa_inmediata`]
+  total          decimal(12,2)
+  nroRemito      varchar
+  observaciones  text
+  saldoDeudor    boolean      [default: true]
+  fechaPago      timestamp
+  metodoPago     metodo_pago
+  cuentaDestino  varchar
+  nroComprobante varchar
+}
+
+Ref: compras.proveedorId > proveedores.id
+Ref: compras.usuarioId   > usuarios.id
+Ref: compras.ventaId     > ventas.id
+
+// ─── DETALLE DE COMPRA ────────────────────────────────────────────────────
+
+Table detalle_compra {
+  id              Int       [pk, increment]
+  compraId        Int       [not null]
+  productoId      Int       [not null]
+  cantidad        Int       [not null]
+  precioCostoUnit decimal(12,2) [not null]
+  subtotal        decimal(12,2) [not null]
+}
+
+Ref: detalle_compra.compraId    > compras.id
+Ref: detalle_compra.productoId  > productos.id
+
+// ─── LOGÍSTICA ────────────────────────────────────────────────────────────
+
+Table logistica {
+  id                  Int            [pk, increment]
+  ventaId             Int            [unique, not null]
+  nombreTransportista varchar        [not null]
+  telefonoTransp      varchar
+  fechaRetiroGalpon   timestamp
+  horaRetiro          timestamp
+  horaEstimadaEntrega timestamp
+  horaEntregaReal     timestamp
+  estadoEntrega       estado_entrega [default: `pendiente`]
+  confTransportista   boolean        [default: false]
+  confCliente         boolean        [default: false]
+  costoFlete          decimal(12,2)
+  registradoPorId     Int            [not null]
+  observaciones       text
+  lugarEntrega        text
+  latEntrega          float
+  lngEntrega          float
+  estadoConsulta      estado_consulta [default: `no_aplica`]
+  fechaConsulta       timestamp
+  consultadaPorId     Int
+}
+
+Ref: logistica.ventaId         - ventas.id
+Ref: logistica.registradoPorId > usuarios.id
+Ref: logistica.consultadaPorId > usuarios.id
+
+// ─── FACTURAS ─────────────────────────────────────────────────────────────
+
+Table facturas {
+  id               Int          [pk, increment]
+  ventaId          Int          [not null]
+  clienteId        Int          [not null]
+  usuarioId        Int          [not null]
+  tipoFactura      tipo_factura [default: `A`]
+  nroFactura       varchar
+  esSinFactura     boolean      [default: false]
+  fechaEmision     timestamp    [default: `now()`]
+  fechaVencimiento timestamp
+  totalNeto        decimal(12,2) [not null]
+  iva              decimal(12,2) [not null]
+  totalConIva      decimal(12,2) [not null]
+  estadoCobro      estado_cobro  [default: `pendiente`]
+  modalidadPago    varchar
+  medioPago        varchar
+  metodoPago       metodo_pago
+  cuentaDestino    varchar
+  observaciones    text
+}
+
+Ref: facturas.ventaId   > ventas.id
+Ref: facturas.clienteId > clientes.id
+Ref: facturas.usuarioId > usuarios.id
+
+// ─── PAGOS / COBROS ───────────────────────────────────────────────────────
+
+Table pagos_cobros {
+  id              Int        [pk, increment]
+  facturaId       Int        [not null]
+  clienteId       Int        [not null]
+  fechaPago       timestamp  [default: `now()`]
+  monto           decimal(12,2) [not null]
+  medioPago       medio_pago [not null]
+  nroComprobante  varchar
+  esAdelanto      boolean    [default: false]
+  registradoPorId Int        [not null]
+  observaciones   text
+}
+
+Ref: pagos_cobros.facturaId       > facturas.id
+Ref: pagos_cobros.clienteId       > clientes.id
+Ref: pagos_cobros.registradoPorId > usuarios.id
+
+// ─── NOTAS DE CRÉDITO ─────────────────────────────────────────────────────
+
+Table notas_credito {
+  id           Int       [pk, increment]
+  facturaId    Int       [not null]
+  clienteId    Int       [not null]
+  usuarioId    Int       [not null]
+  fechaEmision timestamp [default: `now()`]
+  nroNota      varchar
+  monto        decimal(12,2) [not null]
+  motivo       text      [not null]
+}
+
+Ref: notas_credito.facturaId  > facturas.id
+Ref: notas_credito.clienteId  > clientes.id
+Ref: notas_credito.usuarioId  > usuarios.id
+
+// ─── PAGOS A PROVEEDORES ──────────────────────────────────────────────────
+
+Table pagos_proveedores {
+  id              Int        [pk, increment]
+  compraId        Int        [not null]
+  proveedorId     Int        [not null]
+  fechaPago       timestamp  [default: `now()`]
+  monto           decimal(12,2) [not null]
+  medioPago       medio_pago [not null]
+  nroComprobante  varchar
+  registradoPorId Int        [not null]
+  observaciones   text
+}
+
+Ref: pagos_proveedores.compraId        > compras.id
+Ref: pagos_proveedores.proveedorId     > proveedores.id
+Ref: pagos_proveedores.registradoPorId > usuarios.id
+
+// ─── SOLICITUDES DE LOGÍSTICA ─────────────────────────────────────────────
+
+Table solicitudes_logistica {
+  id               Int                      [pk, increment]
+  ventaId          Int                      // nullable
+  solicitanteId    Int                      [not null]
+  destinatarioId   Int                      [not null]
+  fechaSolicitud   timestamp                [default: `now()`]
+  fechaEntrega     timestamp
+  cantidadUnidades Int
+  ubicacionEntrega text
+  notas            text
+  estado           estado_solicitud_logistica [default: `pendiente`]
+  fechaRespuesta   timestamp
+  notasRespuesta   text
+}
+
+Ref: solicitudes_logistica.ventaId        > ventas.id
+Ref: solicitudes_logistica.solicitanteId  > usuarios.id
+Ref: solicitudes_logistica.destinatarioId > usuarios.id
+
+// ─── DEVOLUCIONES ─────────────────────────────────────────────────────────
+
+Table devoluciones {
+  id                           Int                 [pk, increment]
+  ventaId                      Int                 [not null]
+  clienteId                    Int                 [not null]
+  usuarioId                    Int                 [not null]
+  fechaSolicitud               timestamp           [default: `now()`]
+  tipoCaso                     tipo_caso_devolucion [not null]
+  estado                       estado_devolucion   [default: `pendiente`]
+  devuelveFlete                boolean             [default: false]
+  devuelveSenasa               boolean             [default: false]
+  montoPallets                 decimal(12,2)       [not null]
+  montoFlete                   decimal(12,2)
+  montoSenasa                  decimal(12,2)
+  montoTotal                   decimal(12,2)       [not null]
+  requiereConfirmacionDeposito boolean             [default: false]
+  depositoConfirmo             boolean             [default: false]
+  fechaConfirmacionDeposito    timestamp
+  stockRestaurado              boolean             [default: false]
+  fechaStockRestaurado         timestamp
+  transferenciaDevuelta        boolean             [default: false]
+  fechaTransferenciaDevuelta   timestamp
+  compensaEnSiguientePedido    boolean             [default: false]
+  metodoPago                   metodo_pago
+  cuentaDestino                varchar
+  observaciones                text
+}
+
+Ref: devoluciones.ventaId   > ventas.id
+Ref: devoluciones.clienteId > clientes.id
+Ref: devoluciones.usuarioId > usuarios.id
+
+// ─── DETALLE DE DEVOLUCIÓN ────────────────────────────────────────────────
+
+Table detalle_devolucion {
+  id               Int       [pk, increment]
+  devolucionId     Int       [not null]
+  detalleVentaId   Int                      // nullable — devolución sin línea original
+  productoId       Int       [not null]
+  cantidadDevuelta Int       [not null]
+  precioUnitario   decimal(12,2) [not null]
+  subtotal         decimal(12,2) [not null]
+}
+
+Ref: detalle_devolucion.devolucionId   > devoluciones.id
+Ref: detalle_devolucion.detalleVentaId > detalle_venta.id
+Ref: detalle_devolucion.productoId     > productos.id
+
+// ─── REMITOS ──────────────────────────────────────────────────────────────
+
+Table remitos {
+  id                    Int          [pk, increment]
+  numeroRemito          varchar
+  ventaId               Int          [unique, not null]
+  clienteId             Int          [not null]
+  usuarioId             Int          [not null]
+  fechaEmision          timestamp    [default: `now()`]
+  fechaEntrega          timestamp
+  estado                estado_remito [default: `pendiente_firma_propietario`]
+  firmaPropietario      text                          // firma digital base64
+  fechaFirmaPropietario timestamp
+  firmaCliente          text                          // firma digital base64
+  fechaFirmaCliente     timestamp
+  tokenFirma            varchar      [unique, not null] // UUID para enlace externo
+  emailEnviado          boolean      [default: false]
+  fechaEmailEnviado     timestamp
+  observaciones         text
+}
+
+Ref: remitos.ventaId   - ventas.id
+Ref: remitos.clienteId > clientes.id
+Ref: remitos.usuarioId > usuarios.id
+
+// ─── PLANTILLAS DE EMAIL ──────────────────────────────────────────────────
+
+Table plantillas_email {
+  id          Int       [pk, increment]
+  nombre      varchar   [not null]
+  asunto      varchar   [not null]
+  bloques     json      [not null]    // array de bloques de contenido
+  creadaPorId Int       [not null]
+  creadaEn    timestamp [default: `now()`]
+  activa      boolean   [default: true]
+}
+
+Ref: plantillas_email.creadaPorId > usuarios.id
+
+// ─── CAMPAÑAS DE SEGUIMIENTO ──────────────────────────────────────────────
+
+Table campanas_seguimiento {
+  id                 Int       [pk, increment]
+  nombre             varchar   [not null]
+  asunto             varchar   [not null]
+  segmento           varchar   [not null]   // activos | cotizacion_sin_respuesta | manual | todos | ...
+  diasCondicion      Int
+  bloques            json      [not null]   // snapshot al momento del envío
+  plantillaId        Int
+  enviadaPorId       Int       [not null]
+  enviadaEn          timestamp [default: `now()`]
+  totalDestinatarios Int       [default: 0]
+  estado             varchar   [default: 'enviado']  // 'borrador' | 'enviado'
+}
+
+Ref: campanas_seguimiento.plantillaId  > plantillas_email.id
+Ref: campanas_seguimiento.enviadaPorId > usuarios.id
+
+// ─── DESTINATARIOS DE CAMPAÑA ─────────────────────────────────────────────
+
+Table destinatarios_campana {
+  id        Int       [pk, increment]
+  campanaId Int       [not null]
+  clienteId Int       [not null]
+  email     varchar   [not null]
+  enviado   boolean   [default: false]
+  error     text
+  enviadoEn timestamp
+}
+
+Ref: destinatarios_campana.campanaId > campanas_seguimiento.id [delete: cascade]
+Ref: destinatarios_campana.clienteId > clientes.id
+
+// ─── REGLAS DE AUTOMATIZACIÓN ─────────────────────────────────────────────
+
+Table reglas_automatizacion {
+  id            Int       [pk, increment]
+  nombre        varchar   [not null]
+  activa        boolean   [default: true]
+  evento        varchar   [not null]    // 'cotizacion_sin_respuesta' | 'sin_actividad'
+  diasCondicion Int       [not null]
+  plantillaId   Int       [not null]
+  asunto        varchar   [not null]
+  creadaPorId   Int       [not null]
+  creadaEn      timestamp [default: `now()`]
+}
+
+Ref: reglas_automatizacion.plantillaId  > plantillas_email.id
+Ref: reglas_automatizacion.creadaPorId  > usuarios.id
+
+// ─── COTIZACIONES WEB (formulario woodpallets.com.ar) ─────────────────────
+
+Table cotizaciones_web {
+  id                    Int                  [pk, increment]
+  nombre                varchar              [not null]
+  empresa               varchar
+  email                 varchar              [not null]
+  telefono              varchar
+  tipoPallet            varchar
+  cantidad              Int
+  fechaNecesidad        timestamp
+  tipoEntrega           varchar              // 'retira' | 'envio'
+  localidadEntrega      varchar
+  requiereSenasa        boolean              [default: false]
+  observaciones         text
+  estado                estado_cotizacion_web [default: `pendiente`]
+  propietarioAsignadoId Int
+  cotizacionId          Int                  [unique]    // FK 1:1 opcional
+  motivoDescarte        text
+  ipOrigen              varchar
+  creadoEn              timestamp            [default: `now()`]
+  actualizadoEn         timestamp            [not null]
+}
+
+Ref: cotizaciones_web.propietarioAsignadoId > usuarios.id
+Ref: cotizaciones_web.cotizacionId          - cotizaciones.id

@@ -1,0 +1,145 @@
+@startuml
+'──────────────────────────────────────────────────────────────────────────────
+'  SEQ-01 — Autenticación y Gestión de Cuenta
+'──────────────────────────────────────────────────────────────────────────────
+skinparam backgroundColor #FDF6EE
+skinparam sequenceArrowColor #3c250f
+skinparam sequenceLifeLineBorderColor #7c4b2c
+skinparam sequenceParticipantBackgroundColor #E8D5C4
+skinparam sequenceParticipantBorderColor #7c4b2c
+skinparam sequenceBoxBackgroundColor #FAF5F0
+skinparam sequenceBoxBorderColor #C4895A
+skinparam noteBorderColor #C4895A
+skinparam noteBackgroundColor #FDF6EE
+skinparam shadowing false
+
+title SEQ-01 — Autenticación y Gestión de Cuenta\n//WoodPallet Manager//
+
+actor       "Propietario"         as U
+participant "React Frontend"      as FE
+participant "Express API\n:3001"  as API
+participant "AuthMiddleware\n(JWT)" as MW
+participant "AuthService"         as SVC
+participant "PrismaClient"        as DB
+participant "Mailer\n(nodemailer)" as MAIL
+
+== Flujo 1: Login ==
+
+U -> FE : ingresa email + contraseña
+FE -> API : POST /api/auth/login\n{ email, password }
+API -> SVC : loginService(email, password)
+SVC -> DB : usuario.findUnique({ where: { email } })
+DB --> SVC : Usuario | null
+
+alt usuario no existe o inactivo
+  SVC --> API : throw Error('Email o contraseña incorrectos')
+  API --> FE : 401 { error }
+  FE --> U : muestra mensaje de error
+else contraseña inválida
+  SVC -> SVC : bcrypt.compare(password, passwordHash)
+  SVC --> API : throw Error('Email o contraseña incorrectos')
+  API --> FE : 401 { error }
+else login exitoso
+  SVC -> SVC : bcrypt.compare(password, passwordHash) ✓
+  SVC -> SVC : jwt.sign({ userId, email, rol }, JWT_SECRET, { expiresIn: '7d' })
+  SVC --> API : { token, usuario }
+  API --> FE : 200 { token, usuario }
+  FE -> FE : AuthStore.login(token, usuario)
+  FE --> U : redirige a Dashboard
+end
+
+== Flujo 2: Validación de Token en cada request ==
+
+U -> FE : navega a módulo protegido
+FE -> API : GET /api/... \nHeader: Authorization: Bearer <token>
+API -> MW : verifyToken(req)
+MW -> MW : jwt.verify(token, JWT_SECRET)
+
+alt token expirado o inválido
+  MW --> API : 401 { error: 'Token inválido' }
+  API --> FE : 401
+  FE -> FE : AuthStore.logout()
+  FE --> U : redirige a /login
+else token válido
+  MW -> MW : req.user = { userId, email, rol }
+  MW --> API : next()
+  API -> SVC : ejecuta lógica del módulo
+  API --> FE : 200 { datos }
+end
+
+== Flujo 3: Recuperación de Contraseña ==
+
+U -> FE : click "Olvidé mi contraseña"
+FE -> API : POST /api/auth/recuperar-password\n{ email }
+API -> SVC : recuperarPasswordService(email)
+SVC -> DB : usuario.findUnique({ where: { email } })
+DB --> SVC : Usuario | null
+
+alt usuario no encontrado
+  note right of SVC : No se revela si el email existe.\nSiempre responde con éxito.
+else usuario encontrado
+  SVC -> DB : verificacionCodigo.create({ tipo: 'recuperacion_password', codigo, expiresAt })
+  SVC -> MAIL : enviarEmailRecuperacion(email, codigo)
+  MAIL --> SVC : email enviado
+end
+
+SVC --> API : ok (siempre)
+API --> FE : 200 { mensaje: 'Si el email existe recibirás un código' }
+FE --> U : muestra formulario de ingreso de código
+
+U -> FE : ingresa código + nueva contraseña
+FE -> API : POST /api/auth/confirmar-recuperacion\n{ email, codigo, nuevaPassword }
+API -> SVC : confirmarRecuperacionService(email, codigo, nuevaPassword)
+SVC -> DB : verificacionCodigo.findFirst({ email, codigo, tipo, usado: false })
+DB --> SVC : VerificacionCodigo | null
+
+alt código inválido o expirado
+  SVC --> API : throw Error('Código inválido o expirado')
+  API --> FE : 400 { error }
+else código válido
+  SVC -> SVC : bcrypt.hash(nuevaPassword)
+  SVC -> DB : usuario.update({ passwordHash })
+  SVC -> DB : verificacionCodigo.update({ usado: true })
+  SVC --> API : ok
+  API --> FE : 200 { mensaje: 'Contraseña actualizada' }
+  FE --> U : redirige a login
+end
+
+== Flujo 4: Cambio de Email (con verificación) ==
+
+U -> FE : ingresa nuevo email en perfil
+FE -> API : POST /api/auth/cambiar-email\n{ nuevoEmail }
+API -> MW : verifyToken ✓
+API -> SVC : iniciarCambioEmailService(userId, nuevoEmail)
+SVC -> DB : verificacionCodigo.create({ tipo: 'cambio_email', dato: nuevoEmail, expiresAt })
+SVC -> MAIL : enviarCodigo(nuevoEmail, codigo)
+SVC --> API : ok
+API --> FE : 200 { mensaje: 'Código enviado al nuevo email' }
+
+U -> FE : ingresa código de verificación
+FE -> API : POST /api/auth/confirmar-email\n{ codigo }
+API -> SVC : confirmarCambioEmailService(userId, codigo)
+SVC -> DB : verificacionCodigo.findFirst({ usuarioId, tipo, codigo, usado: false })
+DB --> SVC : VerificacionCodigo
+SVC -> DB : usuario.update({ email: dato })
+SVC -> DB : verificacionCodigo.update({ usado: true })
+SVC --> API : Usuario actualizado
+API --> FE : 200 { usuario }
+FE -> FE : AuthStore.actualizarUsuario(usuario)
+FE --> U : email actualizado en perfil
+
+== Flujo 5: Cargar Firma Digital ==
+
+U -> FE : dibuja firma en canvas
+FE -> FE : canvas.toDataURL() → base64
+FE -> API : POST /api/auth/firma\n{ firma: base64 }
+API -> MW : verifyToken ✓
+API -> SVC : actualizarFirmaService(userId, base64)
+SVC -> DB : usuario.update({ firma: base64 })
+DB --> SVC : Usuario actualizado
+SVC --> API : Usuario
+API --> FE : 200 { usuario }
+FE -> FE : AuthStore.actualizarUsuario(usuario)
+FE --> U : firma guardada (aparece en remitos)
+
+@enduml

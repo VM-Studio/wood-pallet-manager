@@ -1,0 +1,135 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #FDF6EE
+  BorderColor #7c4b2c
+  FontColor #3c250f
+}
+skinparam actor {
+  BackgroundColor #E8D5C4
+  BorderColor #7c4b2c
+  FontColor #3c250f
+}
+skinparam rectangle {
+  BackgroundColor #FAF5F0
+  BorderColor #C4895A
+  BorderThickness 2
+}
+skinparam ArrowColor #3c250f
+
+title **Módulo 10 — Facturación y Cobros**\n//WoodPallet Manager//
+
+actor "Propietario" as P
+actor "Sistema\n(cron 8:00 AM)" as S
+
+rectangle "Facturación y Cobros" {
+
+  ' ── Listado y consulta ──────────────────────────────────
+  package "Consulta" {
+    usecase "Ver listado de facturas" as UC01
+    usecase "Filtrar por estado de cobro" as UC02
+    usecase "Ver facturas vencidas" as UC03
+    usecase "Ver facturas próximas\na vencer" as UC04
+    usecase "Ver detalle de factura" as UC05
+    usecase "Ver total neto, IVA\ny total con IVA" as UC06
+    usecase "Ver historial de cobros\nde la factura" as UC07
+    usecase "Ver monto pendiente\nde cobro" as UC08
+  }
+
+  ' ── Emisión ─────────────────────────────────────────────
+  package "Emisión de Factura" {
+    usecase "Emitir factura de venta" as UC09
+    usecase "Registrar número\nde factura" as UC10
+    usecase "Definir fecha de\nvencimiento" as UC11
+    usecase "Registrar operación\nsin comprobante" as UC12
+    usecase "Definir modalidad\ny medio de pago" as UC13
+  }
+
+  ' ── Cobros ──────────────────────────────────────────────
+  package "Cobros" {
+    usecase "Registrar cobro total" as UC14
+    usecase "Registrar cobro parcial" as UC15
+    usecase "Registrar adelanto\nde pago" as UC16
+    usecase "Seleccionar medio de pago\n(transferencia / e-check / efectivo)" as UC17
+    usecase "Registrar número\nde comprobante" as UC18
+  }
+
+  ' ── Notas de crédito ────────────────────────────────────
+  package "Notas de Crédito" {
+    usecase "Emitir nota de crédito\nsobre una factura" as UC19
+    usecase "Registrar número\nde nota de crédito" as UC20
+    usecase "Definir monto\ny motivo" as UC21
+  }
+
+  ' ── Gestión de estado ───────────────────────────────────
+  package "Estado" {
+    usecase "Marcar factura\ncomo vencida" as UC22
+    usecase "Marcar factura\ncomo incobrable" as UC23
+    usecase "Marcar facturas vencidas\nhace > 3 días (automático)" as UC24
+  }
+
+}
+
+' ── Asociaciones ──────────────────────────────────────────
+P --> UC01
+P --> UC09
+P --> UC12
+P --> UC14
+P --> UC15
+P --> UC16
+P --> UC19
+P --> UC22
+P --> UC23
+
+' ── Sistema ──────────────────────────────────────────────
+S --> UC24
+
+' ── Include / Extend ──────────────────────────────────────
+UC01 ..> UC02 : <<extend>>
+UC01 ..> UC03 : <<extend>>
+UC01 ..> UC04 : <<extend>>
+
+UC05 ..> UC06 : <<include>>
+UC05 ..> UC07 : <<include>>
+UC05 ..> UC08 : <<include>>
+
+UC09 ..> UC10 : <<extend>>
+UC09 ..> UC11 : <<extend>>
+UC09 ..> UC13 : <<extend>>
+
+UC14 ..> UC17 : <<include>>
+UC14 ..> UC18 : <<extend>>
+UC15 ..> UC17 : <<include>>
+UC15 ..> UC08 : <<include>>
+UC16 ..> UC17 : <<include>>
+
+UC19 ..> UC20 : <<extend>>
+UC19 ..> UC21 : <<include>>
+
+' ── Notas ─────────────────────────────────────────────────
+note right of UC02
+  Estados de cobro:
+  pendiente | cobrada_parcial | cobrada_total
+  vencida | incobrable
+end note
+
+note right of UC12
+  esSinFactura = true: operaciones informales
+  sin comprobante fiscal. Igual se registra
+  el monto y estado de cobro.
+end note
+
+note bottom of UC24
+  Cron automático a las 8:00 AM todos los días.
+  Marca como "vencida" toda factura con
+  fechaVencimiento < hoy y estado pendiente/parcial.
+end note
+
+note bottom of UC19
+  Una nota de crédito reduce el saldo
+  pendiente de la factura asociada.
+  Queda registrada con número, monto y motivo.
+end note
+
+@enduml

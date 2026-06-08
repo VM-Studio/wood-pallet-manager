@@ -3,6 +3,7 @@ import { Outlet, Navigate, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/auth.store';
 import Sidebar from './Sidebar';
 import { Menu, UserCircle } from 'lucide-react';
+import logoWood from '/sistemalogo.png';
 
 export default function MainLayout() {
   const { token, usuario } = useAuthStore();
@@ -25,33 +26,54 @@ export default function MainLayout() {
 
         {/* ── Navbar top (desktop + mobile) ── */}
         <div
-          className="sticky top-0 z-10 flex items-center justify-between px-6 py-0"
+          className="sticky top-0 z-10 flex items-center justify-between px-4 md:px-6 navbar-safe"
           style={{
             background: '#FAFAF8',
             borderBottom: '1px solid #E8E2DA',
-            height: '67px',
+            minHeight: '60px',
+            paddingTop: '0.5rem',
+            paddingBottom: '0.5rem',
           }}
         >
-          {/* Izquierda: hamburger (mobile) */}
+          {/* Izquierda: hamburger (mobile) / spacer (desktop) */}
           <button
             onClick={() => setSidebarOpen(true)}
-            className="md:hidden p-1 -ml-1"
-            style={{ color: '#7C4A2D' }}
+            className="md:hidden p-2 -ml-1 flex items-center justify-center"
+            style={{ color: '#7C4A2D', minWidth: 40, minHeight: 40 }}
             aria-label="Abrir menú"
           >
             <Menu size={22} />
           </button>
-          {/* Espacio vacío en desktop para empujar usuario a la derecha */}
           <div className="hidden md:block" />
+
+          {/* Centro: logo + nombre (solo mobile) */}
+          <div className="md:hidden absolute left-1/2 -translate-x-1/2 flex items-center gap-2 pointer-events-none">
+            <img
+              src={logoWood}
+              alt="WoodPallet"
+              style={{ width: 26, height: 26, objectFit: 'contain', borderRadius: '0.25rem' }}
+            />
+            <span style={{
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              fontStyle: 'italic',
+              fontWeight: 700,
+              fontSize: '1.15rem',
+              color: '#111111',
+              letterSpacing: '-0.01em',
+              lineHeight: 1,
+            }}>
+              WoodPallet
+            </span>
+          </div>
 
           {/* Derecha: usuario — clic abre Mi Cuenta */}
           <button
             onClick={() => navigate('/mi-cuenta')}
-            className="flex items-center gap-2.5 rounded-lg px-2 py-1 transition-colors hover:bg-stone-100"
-            style={{ cursor: 'pointer', border: 'none', background: 'transparent' }}
+            className="flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-stone-100"
+            style={{ cursor: 'pointer', border: 'none', background: 'transparent', minHeight: 40 }}
           >
             <div style={{
-              width: 30, height: 30, borderRadius: '50%',
+              width: 32, height: 32, borderRadius: '50%',
               overflow: 'hidden', flexShrink: 0,
               background: '#F0E8DF',
               border: '1.5px solid #E8E2DA',
@@ -59,10 +81,10 @@ export default function MainLayout() {
             }}>
               {usuario?.fotoPerfil
                 ? <img src={usuario.fotoPerfil} alt="foto" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                : <UserCircle size={17} style={{ color: '#C4895A' }} />
+                : <UserCircle size={18} style={{ color: '#C4895A' }} />
               }
             </div>
-            <div className="text-left">
+            <div className="text-left hidden sm:block">
               <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#111111', lineHeight: 1.2 }}>
                 {usuario ? `${usuario.nombre} ${usuario.apellido}` : 'Usuario'}
               </p>
@@ -73,7 +95,7 @@ export default function MainLayout() {
           </button>
         </div>
 
-        <div className="p-4 md:p-8 max-w-[1400px] mx-auto animate-fade-in">
+        <div className="p-4 md:p-8 max-w-[1400px] mx-auto animate-fade-in pb-8" style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}>
           <Outlet />
         </div>
       </main>

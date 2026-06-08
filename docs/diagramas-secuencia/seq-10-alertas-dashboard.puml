@@ -1,0 +1,137 @@
+@startuml
+'──────────────────────────────────────────────────────────────────────────────
+'  SEQ-10 — Alertas & Dashboard: Panel de Alertas, KPIs, Gráfico 12 Meses, Crons
+'──────────────────────────────────────────────────────────────────────────────
+skinparam backgroundColor #FDF6EE
+skinparam sequenceArrowColor #3c250f
+skinparam sequenceLifeLineBorderColor #7c4b2c
+skinparam sequenceParticipantBackgroundColor #E8D5C4
+skinparam sequenceParticipantBorderColor #7c4b2c
+skinparam sequenceBoxBackgroundColor #FAF5F0
+skinparam sequenceBoxBorderColor #C4895A
+skinparam noteBorderColor #C4895A
+skinparam noteBackgroundColor #FDF6EE
+skinparam shadowing false
+
+title SEQ-10 — Alertas & Dashboard: Panel de Alertas, KPIs, Gráfico de Ventas, Crons\n//WoodPallet Manager//
+
+actor       "Propietario"          as P
+participant "React Frontend"       as FE
+participant "Express API\n:3001"   as API
+participant "AuthMiddleware"       as MW
+participant "AlertasService"       as ASVC
+participant "ReportesService"      as RSVC
+participant "CronScheduler"        as CRON
+participant "PrismaClient"         as DB
+
+== Flujo 1: Panel de alertas (evaluación en tiempo real) ==
+
+P -> FE : navega a cualquier página\n(header siempre muestra contador de alertas)
+FE -> API : GET /api/alertas
+API -> MW : verifyToken ✓
+API -> ASVC : getAlertasActivasService()
+
+group Tipo 1 — Facturas vencidas
+  ASVC -> DB : factura.findMany({\n    estadoCobro: IN ['pendiente','cobrada_parcial'],\n    fechaVencimiento: { lt: hoy }\n  })
+  DB --> ASVC : [ Factura × N ]
+  ASVC -> ASVC : calcular diasVencida\nurgencia: >7d=alta, >3d=media, <3d=baja
+end
+
+group Tipo 2 — Stock bajo mínimo
+  ASVC -> DB : stock.findMany({ cantidadMinima: { gt: 0 } })
+  DB --> ASVC : [ Stock × M ]
+  ASVC -> ASVC : filtrar: cantidadDisponible < cantidadMinima\nsin stock=alta, ≤50% del mínimo=media, resto=baja\ntítulo incluye condición del producto (Semi-nuevo, Nuevo, Usado)
+end
+
+group Tipo 3 — Cotizaciones sin respuesta +3 días
+  ASVC -> DB : cotizacion.findMany({\n    estado: IN ['enviada','en_seguimiento'],\n    fechaCotizacion: { lte: hoy-3días }\n  })
+  DB --> ASVC : [ Cotizacion × K ]
+  ASVC -> ASVC : calcular diasSinRespuesta\nurgencia: >7d=alta, resto=media
+end
+
+group Tipo 4 — Pedidos activos con entrega vencida
+  ASVC -> DB : venta.findMany({\n    estadoPedido: IN ['confirmado','en_preparacion',\n      'listo_para_envio','en_transito'],\n    fechaEstimEntrega: { lt: hoy }\n  })
+  DB --> ASVC : [ Venta × J ]
+  ASVC -> ASVC : calcular diasAtraso → urgencia: 'alta' siempre
+end
+
+ASVC -> ASVC : ordenar por urgencia (alta→media→baja)\nreturn { total, alta, media, baja, alertas[] }
+ASVC --> API : AlertasResponse
+API --> FE : 200 alertas
+FE --> P : badge rojo en header con count\npanel lateral con lista categorizada
+
+== Flujo 2: Dashboard — carga de KPIs ==
+
+P -> FE : navega a Dashboard
+FE -> API : GET /api/reportes/dashboard
+API -> MW : verifyToken ✓
+API -> RSVC : getDashboardService()
+
+RSVC -> DB : **Promise.all** — consultas paralelas:
+RSVC -> DB : 1. ventas mes actual (con detalles + usuario + cliente)
+RSVC -> DB : 2. ventas mes anterior
+RSVC -> DB : 3. cobros pendientes (facturas no pagadas)
+RSVC -> DB : 4. facturas vencidas count
+RSVC -> DB : 5. cotizaciones pendientes (enviada/en_seguimiento)
+RSVC -> DB : 6. pedidos activos
+RSVC -> DB : 7. entregas de hoy (logística con fecha hoy)
+RSVC -> DB : 8. stock (para alertas de inventario)
+RSVC -> DB : 9-14. KPIs por propietario (Carlos + Juan Cruz separados)
+DB --> RSVC : todos los resultados
+
+RSVC -> RSVC : calcular:\n· ventasMesActualTotal, comparación vs mes anterior (%)\n· facturacionMesActual, facturacionMesAnterior\n· palletsVendidos, comparación\n· saldoPendiente (suma facturas no cobradas)\n· urgenciaAltas count
+
+RSVC --> API : DashboardData { kpis, ventasMesActual, entregasHoy, stock, porPropietario }
+API --> FE : 200 DashboardData
+FE --> P : tarjetas KPI con variación % + colores verde/rojo
+
+== Flujo 3: Gráfico de ventas últimos 12 meses ==
+
+FE -> API : GET /api/reportes/ventas-12-meses
+API -> MW : verifyToken ✓
+API -> RSVC : getVentasUltimos12MesesService()
+
+note right of RSVC
+  Arranca desde la primera venta del sistema
+  (no filtra por usuario — vista empresa completa).
+  Si no hay ventas, usa el mes actual como inicio.
+end note
+
+RSVC -> DB : venta.findFirst({ orderBy: { fechaVenta: 'asc' } })
+DB --> RSVC : primeraVenta { fechaVenta }
+
+loop 12 iteraciones (i = 0..11)
+  RSVC -> DB : venta.findMany({\n    fechaVenta: { gte: inicio_mes_i, lte: fin_mes_i }\n  })
+  DB --> RSVC : ventas del mes i
+  RSVC -> RSVC : pallets = sum(detalles.cantidadPedida)\nfacturacion = sum(totalConIva)
+end
+
+RSVC --> API : [ { mes, ventas, pallets, facturacion } × 12 ]
+API --> FE : 200 meses
+FE --> P : gráfico de barras con 12 meses\n(ventas + facturación por mes)
+
+== Flujo 4: Cron 8:00 AM — marcar facturas vencidas ==
+
+CRON -> CRON : 0 8 * * * (node-cron)
+CRON -> ASVC : marcarFacturasVencidasService()
+ASVC -> DB : factura.updateMany({\n  where: {\n    estadoCobro: IN ['pendiente','cobrada_parcial'],\n    fechaVencimiento: { lt: hoy - 3 días }\n  },\n  data: { estadoCobro: 'vencida' }\n})
+DB --> ASVC : { count: N }
+ASVC --> CRON : N facturas marcadas como vencidas
+CRON -> CRON : log "Cron: N facturas marcadas como vencidas"
+
+== Flujo 5: Cron 8:05 AM — marcar cotizaciones vencidas ==
+
+CRON -> CRON : 5 8 * * * (node-cron)
+CRON -> ASVC : marcarCotizacionesVencidasService()
+ASVC -> DB : cotizacion.updateMany({\n  where: {\n    estado: IN ['enviada','en_seguimiento'],\n    fechaVencimiento: { lt: hoy }\n  },\n  data: { estado: 'vencida' }\n})
+DB --> ASVC : { count: M }
+ASVC --> CRON : M cotizaciones marcadas como vencidas
+CRON -> CRON : log "Cron: M cotizaciones marcadas como vencidas"
+
+note over CRON, DB
+  Ambos crons son configurados en iniciarTareasProgramadas(app)
+  llamado desde backend/src/index.ts al iniciar el servidor.
+  No envían emails — solo cambian estados en base de datos.
+end note
+
+@enduml

@@ -1,0 +1,132 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #FDF6EE
+  BorderColor #7c4b2c
+  FontColor #3c250f
+}
+skinparam actor {
+  BackgroundColor #E8D5C4
+  BorderColor #7c4b2c
+  FontColor #3c250f
+}
+skinparam rectangle {
+  BackgroundColor #FAF5F0
+  BorderColor #C4895A
+  BorderThickness 2
+}
+skinparam ArrowColor #3c250f
+
+title **Módulo 16 — Cotizaciones Web (woodpallets.com.ar)**\n//WoodPallet Manager//
+
+actor "Propietario" as P
+actor "Visitante Web\n(Formulario externo)" as VW
+actor "Sistema\n(recepción API)" as S
+
+rectangle "Gestión de Leads del Formulario Web" {
+
+  ' ── Visitante web (externo) ──────────────────────────────
+  package "Formulario Web Externo" {
+    usecase "Completar formulario\nde cotización web" as UC01
+    usecase "Ingresar datos de contacto\n(nombre, empresa, email, teléfono)" as UC02
+    usecase "Especificar tipo y\ncantidad de pallets" as UC03
+    usecase "Indicar fecha de\nnecesidad" as UC04
+    usecase "Elegir tipo de entrega\n(retira / envío)" as UC05
+    usecase "Indicar localidad\nde entrega" as UC06
+    usecase "Marcar si requiere\ncertificación SENASA" as UC07
+    usecase "Enviar formulario" as UC08
+  }
+
+  ' ── Sistema (recepción) ──────────────────────────────────
+  package "Recepción Automática" {
+    usecase "Registrar nuevo lead\nen la base de datos" as UC09
+    usecase "Capturar IP\nde origen" as UC10
+    usecase "Asignar estado inicial\n(pendiente)" as UC11
+  }
+
+  ' ── Gestión del lead (propietario) ──────────────────────
+  package "Listado y Consulta" {
+    usecase "Ver listado de\nleads web" as UC12
+    usecase "Filtrar por estado\ndel lead" as UC13
+    usecase "Ver detalle del lead\n(datos del formulario)" as UC14
+    usecase "Ver IP y fecha\nde origen" as UC15
+  }
+
+  ' ── Procesamiento del lead ───────────────────────────────
+  package "Procesamiento" {
+    usecase "Marcar lead como visto" as UC16
+    usecase "Asignar lead a\nun propietario" as UC17
+    usecase "Convertir lead en\ncotización formal del sistema" as UC18
+    usecase "Ver cotización generada\ndesde el lead" as UC19
+    usecase "Descartar lead\ncon motivo" as UC20
+    usecase "Registrar motivo\nde descarte" as UC21
+    usecase "Cambiar estado\ndel lead" as UC22
+  }
+
+}
+
+' ── Asociaciones ──────────────────────────────────────────
+VW --> UC01
+VW --> UC08
+
+S --> UC09
+S --> UC10
+S --> UC11
+
+P --> UC12
+P --> UC16
+P --> UC17
+P --> UC18
+P --> UC20
+P --> UC22
+
+' ── Include / Extend ──────────────────────────────────────
+UC01 ..> UC02 : <<include>>
+UC01 ..> UC03 : <<extend>>
+UC01 ..> UC04 : <<extend>>
+UC01 ..> UC05 : <<extend>>
+UC01 ..> UC06 : <<extend>>
+UC01 ..> UC07 : <<extend>>
+UC08 ..> UC09 : <<include>>
+UC09 ..> UC10 : <<include>>
+UC09 ..> UC11 : <<include>>
+
+UC12 ..> UC13 : <<extend>>
+UC14 ..> UC15 : <<include>>
+
+UC16 ..> UC22 : <<include>>
+UC18 ..> UC19 : <<include>>
+UC18 ..> UC22 : <<include>>
+UC20 ..> UC21 : <<include>>
+UC20 ..> UC22 : <<include>>
+
+' ── Notas ─────────────────────────────────────────────────
+note right of UC13
+  Estados del lead:
+  pendiente | vista | convertida | descartada
+end note
+
+note bottom of UC18
+  Al convertir, se crea una Cotizacion formal
+  en el sistema con todos los datos del lead.
+  El lead queda vinculado a la cotización
+  (cotizacionId 1:1 único).
+  El estado del lead pasa a "convertida".
+end note
+
+note bottom of UC17
+  Si no se asigna, ambos propietarios
+  pueden ver y gestionar el lead.
+  Al asignar, queda vinculado a un propietario
+  específico (propietarioAsignadoId).
+end note
+
+note right of UC10
+  La IP de origen se captura automáticamente
+  al recibir el POST del formulario web.
+  Útil para detectar leads duplicados
+  o automatizaciones no deseadas.
+end note
+
+@enduml

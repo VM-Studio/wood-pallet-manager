@@ -1,0 +1,137 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #FDF6EE
+  BorderColor #7c4b2c
+  FontColor #3c250f
+}
+skinparam actor {
+  BackgroundColor #E8D5C4
+  BorderColor #7c4b2c
+  FontColor #3c250f
+}
+skinparam rectangle {
+  BackgroundColor #FAF5F0
+  BorderColor #C4895A
+  BorderThickness 2
+}
+skinparam ArrowColor #3c250f
+
+title **Módulo 13 — Alertas**\n//WoodPallet Manager//
+
+actor "Propietario" as P
+actor "Sistema\n(Cron + Tiempo Real)" as S
+
+rectangle "Sistema de Alertas" {
+
+  ' ── Panel principal ─────────────────────────────────────
+  package "Panel de Alertas" {
+    usecase "Ver panel de alertas\nactivas" as UC01
+    usecase "Ver resumen por urgencia\n(alta / media / baja)" as UC02
+    usecase "Filtrar alertas\npor urgencia" as UC03
+    usecase "Filtrar alertas\npor tipo" as UC04
+    usecase "Actualizar / refrescar\nalertaas manualmente" as UC05
+    usecase "Ver detalle de\nuna alerta" as UC06
+    usecase "Navegar al módulo\nrelacionado desde la alerta" as UC07
+  }
+
+  ' ── Tipos de alerta ─────────────────────────────────────
+  package "Alertas de Facturación" {
+    usecase "Detectar facturas vencidas\n(pendiente / parcial + fecha pasada)" as UC08
+    usecase "Calcular días de atraso\ny saldo pendiente" as UC09
+    usecase "Marcar facturas como vencidas\n(cron 8:00 AM)" as UC10
+  }
+
+  package "Alertas de Stock" {
+    usecase "Detectar stock bajo mínimo\n(cantidadMinima > 0)" as UC11
+    usecase "Calcular déficit de unidades" as UC12
+    usecase "Clasificar urgencia:\nsin stock (alta) / crítico (media) / bajo (baja)" as UC13
+  }
+
+  package "Alertas de Cotizaciones" {
+    usecase "Detectar cotizaciones sin\nseguimiento > 3 días" as UC14
+    usecase "Calcular días sin respuesta" as UC15
+    usecase "Marcar cotizaciones vencidas\n(cron 8:05 AM)" as UC16
+  }
+
+  package "Alertas de Pedidos" {
+    usecase "Detectar pedidos con fecha\nde entrega vencida" as UC17
+    usecase "Calcular días de atraso\nen entrega" as UC18
+  }
+
+}
+
+' ── Asociaciones ──────────────────────────────────────────
+P --> UC01
+P --> UC03
+P --> UC04
+P --> UC05
+P --> UC07
+
+' ── Sistema (automático y tiempo real) ───────────────────
+S --> UC08
+S --> UC10
+S --> UC11
+S --> UC14
+S --> UC16
+S --> UC17
+
+' ── Include / Extend ──────────────────────────────────────
+UC01 ..> UC02 : <<include>>
+UC01 ..> UC03 : <<extend>>
+UC01 ..> UC04 : <<extend>>
+UC01 ..> UC06 : <<extend>>
+UC06 ..> UC07 : <<extend>>
+
+UC08 ..> UC09 : <<include>>
+UC10 ..> UC08 : <<include>>
+
+UC11 ..> UC12 : <<include>>
+UC11 ..> UC13 : <<include>>
+
+UC14 ..> UC15 : <<include>>
+UC16 ..> UC14 : <<include>>
+
+UC17 ..> UC18 : <<include>>
+
+' ── Notas ─────────────────────────────────────────────────
+note right of UC02
+  Urgencia alta → rojo (AlertCircle)
+  Urgencia media → amarillo (AlertTriangle)
+  Urgencia baja → azul (Info)
+end note
+
+note right of UC04
+  Tipos: factura_vencida | stock_bajo |
+  cotizacion_sin_seguimiento | pedido_atrasado
+end note
+
+note bottom of UC11
+  Guards de stock:
+  - cantidadMinima = null → no genera alerta
+  - cantidadMinima = 0 → no genera alerta
+  - cantidadMinima > 0 y stock < mínimo → alerta
+  El título incluye la condición del producto
+  (ej: "Stock bajo — Pallet Estándar (Semi-nuevo)")
+end note
+
+note bottom of UC13
+  sin stock: cantidadDisponible <= 0 → urgencia ALTA
+  crítico: disponible <= floor(mínimo/2) → urgencia MEDIA
+  bajo: disponible < mínimo → urgencia BAJA
+end note
+
+note right of UC10
+  Cron 8:00 AM: marca como "vencida" toda
+  factura con vencimiento < hoy y estado
+  pendiente o cobrada_parcial.
+end note
+
+note right of UC16
+  Cron 8:05 AM: marca como "vencida" toda
+  cotización con fechaVencimiento < hoy y
+  estado enviada o en_seguimiento.
+end note
+
+@enduml

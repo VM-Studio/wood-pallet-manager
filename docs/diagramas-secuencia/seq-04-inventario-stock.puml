@@ -1,0 +1,106 @@
+@startuml
+'──────────────────────────────────────────────────────────────────────────────
+'  SEQ-04 — Inventario & Stock: Consolidado, Ajustes, Mínimos, Movimientos
+'──────────────────────────────────────────────────────────────────────────────
+skinparam backgroundColor #FDF6EE
+skinparam sequenceArrowColor #3c250f
+skinparam sequenceLifeLineBorderColor #7c4b2c
+skinparam sequenceParticipantBackgroundColor #E8D5C4
+skinparam sequenceParticipantBorderColor #7c4b2c
+skinparam sequenceBoxBackgroundColor #FAF5F0
+skinparam sequenceBoxBorderColor #C4895A
+skinparam noteBorderColor #C4895A
+skinparam noteBackgroundColor #FDF6EE
+skinparam shadowing false
+
+title SEQ-04 — Inventario & Stock: Consolidado, Ajustes Manuales, Mínimos y Movimientos\n//WoodPallet Manager//
+
+actor       "Propietario"          as P
+participant "React Frontend"       as FE
+participant "Express API\n:3001"   as API
+participant "AuthMiddleware"       as MW
+participant "InventarioService"    as SVC
+participant "PrismaClient"         as DB
+
+== Flujo 1: Cargar stock consolidado ==
+
+P -> FE : navega a Inventario
+FE -> API : GET /api/inventario/consolidado
+API -> MW : verifyToken ✓
+API -> SVC : getStockConsolidadoService()
+SVC -> DB : producto.findMany({ where: { activo: true } })
+DB --> SVC : [ Producto × N ]
+SVC -> DB : stock.findMany({ include: { producto, proveedor } })
+DB --> SVC : [ Stock × M ]
+
+SVC -> SVC : consolidar por productoId\n· suma cantidadDisponible (Math.max(0, ...))\n· suma cantidadDeudora\n· bajoMinimo = cantMinima > 0 && disponible < cantMinima
+
+note right of SVC
+  Productos SIN registro stock
+  se agregan con stockTotal = 0
+  (nunca se ocultan del panel)
+end note
+
+SVC -> SVC : ordenar: stock > 0 primero,\nluego alfabético ('es')
+SVC --> API : [ StockConsolidado × N ]
+API --> FE : 200 array consolidado
+FE --> P : panel con tarjetas por producto\nbadges de condición + alerta si bajo mínimo
+
+== Flujo 2: Ajuste manual de stock ==
+
+P -> FE : click "Ajustar stock" en registro → ingresa nueva cantidad
+FE -> API : PUT /api/inventario/stock/:id/ajuste\n{ nuevaCantidad: 30, motivo: 'Conteo físico' }
+API -> MW : verifyToken ✓
+API -> SVC : ajustarStockService(stockId, 30, motivo, userId)
+SVC -> DB : stock.findUnique({ id: stockId })
+DB --> SVC : Stock { cantidadDisponible: 25 }
+SVC -> SVC : cantidadFinal = Math.max(0, 30) = 30\ndiferencia = 30 - 25 = +5
+SVC -> DB : stock.update({ cantidadDisponible: 30 })
+SVC -> DB : movimientoStock.create({\n  tipoMovimiento: 'ajuste',\n  cantidad: 5,\n  motivo: 'ajuste_manual'\n})
+SVC --> API : { mensaje, cantAnterior: 25, cantNueva: 30, diferencia: 5 }
+API --> FE : 200 resultado
+FE --> P : stock actualizado + movimiento registrado
+
+== Flujo 3: Configurar stock mínimo ==
+
+P -> FE : click "Configurar mínimo" → ingresa 20 unidades
+FE -> API : PUT /api/inventario/stock/:id/minimo\n{ cantidadMinima: 20 }
+API -> MW : verifyToken ✓
+API -> SVC : configurarMinimoService(stockId, 20, userId)
+SVC -> DB : stock.update({ cantidadMinima: 20 })
+SVC --> API : Stock actualizado
+API --> FE : 200 Stock
+FE --> P : mínimo configurado;\nalerta activada si stock < 20
+
+note right of DB
+  Cuando cantidadMinima = 0 (sin mínimo),
+  la alerta queda desactivada para ese registro.
+  La alerta sólo dispara si cantMinima > 0 AND
+  cantDisponible < cantMinima.
+end note
+
+== Flujo 4: Ver alertas de stock bajo mínimo ==
+
+FE -> API : GET /api/inventario/alertas
+API -> MW : verifyToken ✓
+API -> SVC : getAlertasStockService()
+SVC -> DB : stock.findMany({ where: { cantidadMinima: { gt: 0 } },\n  include: { producto, proveedor } })
+DB --> SVC : [ Stock con mínimo configurado ]
+SVC -> SVC : filtrar: cantidadDisponible < cantidadMinima\nmapar a { stockId, producto, proveedor,\n  cantidadDisponible, cantidadMinima, deficit }
+SVC --> API : [ AlertaStock ]
+API --> FE : 200 alertas
+FE --> P : banner de alertas con badges de condición\n(seminuevo = amarillo, nuevo = verde, usado = gris)
+
+== Flujo 5: Consultar historial de movimientos ==
+
+P -> FE : click "Ver movimientos" (filtro por producto)
+FE -> API : GET /api/inventario/movimientos?productoId=3
+API -> MW : verifyToken ✓
+API -> SVC : getMovimientosStockService(3, undefined)
+SVC -> DB : movimientoStock.findMany({\n  where: { stock: { productoId: 3 } },\n  include: { stock.producto, stock.proveedor, registradoPor },\n  orderBy: { fecha: 'desc' },\n  take: 100 })
+DB --> SVC : [ MovimientoStock × N ]
+SVC --> API : movimientos
+API --> FE : 200 movimientos
+FE --> P : tabla con: fecha, tipo (entrada/salida/ajuste/compra/devolucion), cantidad, motivo, usuario
+
+@enduml

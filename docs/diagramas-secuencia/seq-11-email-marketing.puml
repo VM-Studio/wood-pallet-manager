@@ -1,0 +1,161 @@
+@startuml
+'──────────────────────────────────────────────────────────────────────────────
+'  SEQ-11 — Email Marketing: Plantillas, Campañas Manuales, Automatizaciones
+'──────────────────────────────────────────────────────────────────────────────
+skinparam backgroundColor #FDF6EE
+skinparam sequenceArrowColor #3c250f
+skinparam sequenceLifeLineBorderColor #7c4b2c
+skinparam sequenceParticipantBackgroundColor #E8D5C4
+skinparam sequenceParticipantBorderColor #7c4b2c
+skinparam sequenceBoxBackgroundColor #FAF5F0
+skinparam sequenceBoxBorderColor #C4895A
+skinparam noteBorderColor #C4895A
+skinparam noteBackgroundColor #FDF6EE
+skinparam shadowing false
+
+title SEQ-11 — Email Marketing: Plantillas con Bloques, Campañas y Automatizaciones\n//WoodPallet Manager//
+
+actor       "Propietario"          as P
+participant "React Frontend"       as FE
+participant "Express API\n:3001"   as API
+participant "AuthMiddleware"       as MW
+participant "SeguimientosService"  as SSVC
+participant "Resend API"           as RESEND
+participant "CronScheduler"        as CRON
+participant "PrismaClient"         as DB
+
+== Flujo 1: Crear plantilla de email con bloques ==
+
+note over P, SSVC
+  Los emails se construyen con bloques JSON:
+  header (logo + empresa), text (contenido con {{variables}}),
+  image, button (CTA) y footer (contacto).
+  Variables disponibles: {{nombre_cliente}}, {{monto_cotizacion}},
+  {{fecha_cotizacion}}, {{vendedor}}
+end note
+
+P -> FE : "Nueva plantilla" → diseña bloques en el editor visual
+FE -> API : POST /api/seguimientos/plantillas\n{ nombre: 'Seguimiento cotización',\n  asunto: 'Tu cotización de pallets, {{nombre_cliente}}',\n  bloques: [\n    { tipo:'header', empresaNombre:'WoodPallet', activo:true },\n    { tipo:'text', contenido:'Hola {{nombre_cliente}}, ...', activo:true },\n    { tipo:'button', botonTexto:'Ver cotización', botonUrl:'...', activo:true },\n    { tipo:'footer', telefono:'...', activo:true }\n  ] }
+API -> MW : verifyToken ✓
+API -> SSVC : crearPlantillaService(datos, userId)
+SSVC -> DB : plantillaEmail.create({\n  nombre, asunto,\n  bloques (JSON array),\n  creadaPorId: userId\n})
+DB --> SSVC : PlantillaEmail
+SSVC --> API : PlantillaEmail
+API --> FE : 201 Plantilla
+FE --> P : plantilla guardada con previsualización
+
+== Flujo 2: Previsualizar segmento antes de enviar ==
+
+P -> FE : click "Previsualizar destinatarios"\nselecciona segmento: 'cotizacion_sin_respuesta', dias: 5
+FE -> API : POST /api/seguimientos/campanas/preview\n{ segmento: 'cotizacion_sin_respuesta', diasCondicion: 5 }
+API -> MW : verifyToken ✓
+API -> SSVC : previsualizarSegmentoService('cotizacion_sin_respuesta', 5)
+SSVC -> DB : cliente.findMany({\n  where: {\n    cotizaciones: { some: {\n      estado: IN ['enviada','en_seguimiento'],\n      fechaCotizacion: { lte: hoy - 5 días }\n    }}\n  }\n})
+DB --> SSVC : [ Cliente × N ]
+SSVC --> API : { total: N, preview: primeros 5 }
+API --> FE : 200 preview
+FE --> P : "Se enviará a N clientes:\nABC SRL, DEF SA, ..."
+
+== Flujo 3: Enviar campaña manual ==
+
+P -> FE : click "Enviar campaña ahora"
+FE -> API : POST /api/seguimientos/campanas\n{ nombre: 'Campaña Mayo 2026',\n  asunto: 'Tu cotización sigue vigente, {{nombre_cliente}}',\n  segmento: 'cotizacion_sin_respuesta',\n  diasCondicion: 5,\n  bloques: [...],\n  plantillaId: 3 }
+API -> MW : verifyToken ✓
+API -> SSVC : enviarCampanaService(datos, userId)
+
+SSVC -> DB : getClientesPorSegmento('cotizacion_sin_respuesta', 5)
+DB --> SSVC : [ { id, razonSocial, emailContacto } × N ]
+
+alt sin destinatarios
+  SSVC --> API : 400 "No hay destinatarios para el segmento"
+end
+
+SSVC -> DB : campanaSeguimiento.create({\n  nombre, asunto, segmento,\n  bloques, plantillaId, enviadaPorId,\n  totalDestinatarios: N, estado: 'enviado'\n})
+DB --> SSVC : Campaña { id }
+
+SSVC -> DB : destinatarioCampana.createMany([\n  { campanaId, clienteId, email, enviado: false }\n  × N\n])
+
+SSVC --> API : { campanaId, totalDestinatarios: N }
+API --> FE : 200 inmediato (sin esperar envíos)
+FE --> P : "Campaña creada — enviando a N clientes en segundo plano"
+
+note right of SSVC
+  Los envíos ocurren en setImmediate()
+  para no bloquear la respuesta HTTP.
+end note
+
+SSVC -> SSVC : **setImmediate** — enviar en background:
+
+loop por cada destinatario (sin email → saltar)
+  SSVC -> DB : getVariablesCliente(clienteId)
+  DB --> SSVC : { nombre_cliente, monto_cotizacion, fecha_cotizacion, vendedor }
+  SSVC -> SSVC : renderBloquesHtml(bloques, vars)\nreemplazar {{variables}} en asunto y bloques text
+  SSVC -> RESEND : emails.send({\n  from: 'WoodPallet <noreply@woodpallet.com.ar>',\n  to: dest.emailContacto,\n  subject: asunto personalizado,\n  html: htmlGenerado\n})
+  alt envío OK
+    RESEND --> SSVC : { id: 'email-id-uuid' }
+    SSVC -> DB : destinatarioCampana.updateMany({ enviado: true, enviadoEn: now() })
+  else error de envío
+    SSVC -> DB : destinatarioCampana.updateMany({ error: mensaje })
+  end
+end
+
+SSVC -> DB : campanaSeguimiento.update({ totalDestinatarios: enviados_exitosos })
+
+== Flujo 4: Crear regla de automatización ==
+
+P -> FE : "Nueva automatización"\n→ evento: 'cotizacion_sin_respuesta', días: 7, plantilla: id 3
+FE -> API : POST /api/seguimientos/reglas\n{ nombre: 'Seguimiento 7 días',\n  evento: 'cotizacion_sin_respuesta',\n  diasCondicion: 7,\n  plantillaId: 3,\n  asunto: '¿Tomaste una decisión, {{nombre_cliente}}?' }
+API -> MW : verifyToken ✓
+API -> SSVC : crearReglaService(datos, userId)
+SSVC -> DB : reglaAutomatizacion.create({ ...datos, activa: true, creadaPorId })
+DB --> SSVC : ReglaAutomatizacion
+SSVC --> API : 201 Regla
+FE --> P : regla activa — se ejecutará diariamente
+
+P -> FE : toggle para desactivar/activar regla
+FE -> API : PATCH /api/seguimientos/reglas/:id/toggle
+API -> SSVC : toggleReglaService(id)
+SSVC -> DB : regla.update({ activa: !regla.activa })
+SSVC --> API : Regla actualizada
+
+== Flujo 5: Cron diario — ejecutar automatizaciones ==
+
+CRON -> CRON : 0 9 * * * (o frecuencia configurada)
+CRON -> SSVC : ejecutarReglasAutomaticasService()
+SSVC -> DB : reglaAutomatizacion.findMany({ activa: true, include: { plantilla } })
+DB --> SSVC : [ Regla × R ]
+
+loop por cada regla activa
+  SSVC -> SSVC : segmento = 'cotizacion_sin_respuesta' o 'sin_actividad'\n(según regla.evento)
+  SSVC -> DB : getClientesPorSegmento(segmento, regla.diasCondicion)
+  DB --> SSVC : [ Cliente × M ]
+
+  alt sin clientes para esta regla
+    SSVC -> SSVC : continuar con siguiente regla
+  end
+
+  SSVC -> DB : campanaSeguimiento.create({ nombre: '[AUTO] '+regla.nombre, ... })
+  SSVC -> DB : destinatarioCampana.createMany([...])
+
+  loop por cada cliente
+    SSVC -> DB : getVariablesCliente(clienteId)
+    SSVC -> SSVC : renderBloquesHtml(bloques, vars)
+    SSVC -> RESEND : emails.send({ ... })
+    SSVC -> DB : destinatarioCampana.update({ enviado: true })
+  end
+end
+
+SSVC --> CRON : totalEnviados
+CRON -> CRON : log "Automatizaciones: N emails enviados"
+
+== Flujo 6: Ver historial de campañas ==
+
+P -> FE : panel "Historial de campañas"
+FE -> API : GET /api/seguimientos/campanas
+API -> SSVC : getHistorialCampanasService()
+SSVC -> DB : campanaSeguimiento.findMany({\n  orderBy: { enviadaEn: 'desc' },\n  include: { enviadaPor, plantilla, _count.destinatarios }\n})
+SSVC --> API : [ CampanaSeguimiento ]
+API --> FE : 200 campañas
+FE --> P : tabla con nombre, segmento, total destinatarios, fecha
+
+@enduml

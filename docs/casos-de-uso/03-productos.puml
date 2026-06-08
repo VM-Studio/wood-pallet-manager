@@ -1,0 +1,119 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #FDF6EE
+  BorderColor #7c4b2c
+  FontColor #3c250f
+}
+skinparam actor {
+  BackgroundColor #E8D5C4
+  BorderColor #7c4b2c
+  FontColor #3c250f
+}
+skinparam rectangle {
+  BackgroundColor #FAF5F0
+  BorderColor #C4895A
+  BorderThickness 2
+}
+skinparam ArrowColor #3c250f
+
+title **Módulo 03 — Productos y Precios**\n//WoodPallet Manager//
+
+actor "Propietario" as P
+
+rectangle "Gestión de Productos y Precios" {
+
+  ' ── Catálogo de productos ────────────────────────────────
+  package "Catálogo" {
+    usecase "Ver listado de\nproductos propios" as UC01
+    usecase "Ver productos del otro\npropietario (solo lectura)" as UC02
+    usecase "Buscar / filtrar productos" as UC03
+    usecase "Crear nuevo producto" as UC04
+    usecase "Editar producto" as UC05
+    usecase "Eliminar / desactivar producto" as UC06
+    usecase "Confirmar eliminación" as UC07
+    usecase "Ver detalle del producto" as UC08
+    usecase "Activar requerimiento SENASA" as UC09
+    usecase "Definir dimensiones\n(largo, ancho, carga máx.)" as UC10
+    usecase "Seleccionar tipo de pallet" as UC11
+    usecase "Seleccionar condición\n(nuevo / semi-nuevo / usado)" as UC12
+  }
+
+  ' ── Lista de precios / escalones ────────────────────────
+  package "Lista de Precios" {
+    usecase "Ver escalones de precio\ndel producto" as UC13
+    usecase "Crear escalón de precio" as UC14
+    usecase "Editar escalón de precio" as UC15
+    usecase "Eliminar escalón de precio" as UC16
+    usecase "Configurar precio unitario,\nmargen y cantidad mínima" as UC17
+    usecase "Marcar escalón como\nbonifica flete" as UC18
+    usecase "Definir vigencia del\nescalón (desde / hasta)" as UC19
+    usecase "Ver historial de cambios\nde precios" as UC20
+  }
+
+  ' ── Relación con inventario ──────────────────────────────
+  package "Stock del Producto" {
+    usecase "Ver stock actual\ndel producto" as UC21
+    usecase "Ver stock propio total" as UC22
+    usecase "Ver saldo deudor\ndel producto" as UC23
+  }
+
+}
+
+' ── Asociaciones ──────────────────────────────────────────
+P --> UC01
+P --> UC02
+P --> UC03
+P --> UC04
+P --> UC05
+P --> UC06
+P --> UC08
+P --> UC13
+P --> UC14
+P --> UC15
+P --> UC16
+P --> UC20
+P --> UC21
+
+' ── Include / Extend ──────────────────────────────────────
+UC04 ..> UC09 : <<extend>>
+UC04 ..> UC10 : <<extend>>
+UC04 ..> UC11 : <<include>>
+UC04 ..> UC12 : <<include>>
+UC06 ..> UC07 : <<include>>
+
+UC08 ..> UC21 : <<include>>
+UC08 ..> UC13 : <<include>>
+
+UC13 ..> UC14 : <<extend>>
+UC14 ..> UC17 : <<include>>
+UC14 ..> UC18 : <<extend>>
+UC14 ..> UC19 : <<extend>>
+
+UC21 ..> UC22 : <<include>>
+UC21 ..> UC23 : <<extend>>
+
+' ── Notas ─────────────────────────────────────────────────
+note right of UC02
+  Solo lectura: el propietario NO puede
+  editar productos del otro propietario.
+end note
+
+note right of UC12
+  Condiciones: nuevo | seminuevo | usado
+  Aparece como badge de color en el sistema.
+end note
+
+note bottom of UC14
+  Escalones por cantidad mínima (e.g.:
+  1-99 unidades: $X / 100+ unidades: $Y).
+  Se usa para cotizaciones automáticas.
+end note
+
+note bottom of UC20
+  Registra precio anterior, precio nuevo
+  y motivo del cambio con fecha y usuario.
+end note
+
+@enduml

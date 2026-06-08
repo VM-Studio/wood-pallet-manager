@@ -1,0 +1,131 @@
+@startuml
+'──────────────────────────────────────────────────────────────────────────────
+'  SEQ-07 — Facturación y Cobros: Emisión, Pagos, Notas de Crédito, Cron
+'──────────────────────────────────────────────────────────────────────────────
+skinparam backgroundColor #FDF6EE
+skinparam sequenceArrowColor #3c250f
+skinparam sequenceLifeLineBorderColor #7c4b2c
+skinparam sequenceParticipantBackgroundColor #E8D5C4
+skinparam sequenceParticipantBorderColor #7c4b2c
+skinparam sequenceBoxBackgroundColor #FAF5F0
+skinparam sequenceBoxBorderColor #C4895A
+skinparam noteBorderColor #C4895A
+skinparam noteBackgroundColor #FDF6EE
+skinparam shadowing false
+
+title SEQ-07 — Facturación y Cobros: Emisión, Pagos Parciales, Notas de Crédito, Cron\n//WoodPallet Manager//
+
+actor       "Propietario"          as P
+participant "React Frontend"       as FE
+participant "Express API\n:3001"   as API
+participant "AuthMiddleware"       as MW
+participant "FacturacionService"   as FSVC
+participant "CronScheduler"        as CRON
+participant "PrismaClient"         as DB
+
+== Flujo 1: Emitir factura desde una venta ==
+
+P -> FE : en detalle de venta, click "Emitir factura"\ningresa nroFactura, fechaVencimiento, IVA
+FE -> API : POST /api/facturas\n{ ventaId, nroFactura, fechaVencimiento,\n  totalNeto, iva, totalConIva }
+API -> MW : verifyToken ✓
+API -> FSVC : crearFacturaService(datos, userId)
+FSVC -> DB : venta.findUnique({ id: ventaId })
+DB --> FSVC : Venta ✓
+FSVC -> DB : factura.findFirst({ ventaId })
+DB --> FSVC : null (no existe)
+FSVC -> DB : factura.create({\n  ventaId, clienteId: venta.clienteId,\n  usuarioId, nroFactura,\n  fechaVencimiento, totalNeto, iva, totalConIva,\n  estadoCobro: 'pendiente'\n})
+DB --> FSVC : Factura creada
+FSVC --> API : Factura
+API --> FE : 201 Factura
+FE --> P : factura emitida y visible en panel
+
+note right of DB
+  Una venta solo puede tener UNA factura.
+  Si ya existe: error 400.
+end note
+
+== Flujo 2: Cargar número ARCA (sistema fiscal externo) ==
+
+P -> FE : click "Cargar nro ARCA" → ingresa código
+FE -> API : PATCH /api/facturas/:id/nro-arca\n{ nroFacturaArca: 'A-0001-00000042' }
+API -> MW : verifyToken ✓
+API -> FSVC : cargarNroFacturaArcaService(facturaId, nroFacturaArca)
+FSVC -> DB : factura.update({ nroFactura: nroFacturaArca })
+FSVC --> API : Factura actualizada
+API --> FE : 200 Factura
+FE --> P : número oficial cargado
+
+== Flujo 3: Registrar cobro (total o parcial) ==
+
+P -> FE : click "Registrar cobro" en factura\ningresa monto, medio de pago
+FE -> API : POST /api/facturas/:id/cobro\n{ monto: 50000, medioPago: 'transferencia',\n  nroComprobante: 'TRF-456' }
+API -> MW : verifyToken ✓
+API -> FSVC : registrarCobroService(facturaId, datos, userId)
+FSVC -> DB : factura.findUnique({ id, include: { pagos } })
+DB --> FSVC : Factura { totalConIva: 100000, pagos: [] }
+
+alt factura ya cobrada totalmente
+  FSVC --> API : 400 "Esta factura ya fue cobrada en su totalidad"
+end
+
+FSVC -> FSVC : totalCobrado = sum(pagos.monto) = 0\nsaldoPendiente = 100000 - 0 = 100000\nmonto (50000) ≤ saldoPendiente ✓
+
+FSVC -> DB : pagoCobro.create({\n  facturaId, clienteId,\n  monto: 50000, medioPago: 'transferencia',\n  nroComprobante: 'TRF-456'\n})
+
+FSVC -> FSVC : nuevoTotalCobrado = 50000\n50000 < 100000 → estadoCobro = 'cobrada_parcial'
+
+FSVC -> DB : factura.update({ estadoCobro: 'cobrada_parcial' })
+FSVC --> API : { pago, resumen: { totalFactura, totalCobrado, saldoPendiente, estadoCobro } }
+API --> FE : 200 resumen
+FE --> P : cobro registrado; saldo pendiente = $50.000
+
+P -> FE : registra segundo cobro por $50.000 restantes
+FE -> API : POST /api/facturas/:id/cobro\n{ monto: 50000, medioPago: 'e_check' }
+API -> FSVC : registrarCobroService(...)
+FSVC -> FSVC : nuevoTotalCobrado = 100000 ≥ 100000\n→ estadoCobro = 'cobrada_total'
+FSVC -> DB : factura.update({ estadoCobro: 'cobrada_total' })
+FSVC --> API : resumen { estadoCobro: 'cobrada_total' }
+API --> FE : 200
+FE --> P : factura cobrada en su totalidad ✓
+
+== Flujo 4: Emitir nota de crédito ==
+
+P -> FE : click "Emitir nota de crédito" en factura\ningresa monto y motivo
+FE -> API : POST /api/facturas/:id/nota-credito\n{ nroNota, monto: 15000, motivo: 'Devolución parcial' }
+API -> MW : verifyToken ✓
+API -> FSVC : crearNotaCreditoService(datos, userId)
+FSVC -> DB : factura.findUnique({ id: facturaId })
+FSVC -> DB : notaCredito.create({\n  facturaId, clienteId: factura.clienteId,\n  usuarioId, nroNota, monto, motivo\n})
+FSVC --> API : NotaCredito
+API --> FE : 201 NotaCredito
+FE --> P : nota de crédito emitida
+
+== Flujo 5: Cron — marcar facturas vencidas (8:00 AM) ==
+
+CRON -> CRON : 0 8 * * * (node-cron)
+CRON -> FSVC : marcarFacturasVencidasService()
+FSVC -> DB : factura.findMany({\n  where: {\n    estadoCobro: { in: ['pendiente', 'cobrada_parcial'] },\n    fechaVencimiento: { lt: now() }\n  },\n  include: { cliente, usuario, pagos }\n})
+DB --> FSVC : [ Factura × N ]
+FSVC -> FSVC : calcular diasVencida, saldoPendiente\nurgencia: >7días=alta, >3días=media, <3días=baja
+FSVC --> CRON : facturas vencidas anotadas en log
+
+note right of CRON
+  El cron NO envía emails ni cambia el estado de la factura.
+  Solo recopila y deja disponible la lista para el endpoint
+  GET /api/facturas/vencidas que el dashboard consume.
+end note
+
+== Flujo 6: Ver cobros pendientes ==
+
+P -> FE : panel "Cobros pendientes"
+FE -> API : GET /api/facturas/cobros-pendientes
+API -> MW : verifyToken ✓
+API -> FSVC : getCobrosPendientesService(userId, rol)
+FSVC -> DB : factura.findMany({\n  where: { estadoCobro: { in: ['pendiente', 'cobrada_parcial'] } },\n  orderBy: { fechaVencimiento: 'asc' }\n})
+DB --> FSVC : Facturas pendientes
+FSVC -> FSVC : calcular totalCobrado y saldoPendiente por factura
+FSVC --> API : [ FacturaPendiente ]
+API --> FE : 200 lista
+FE --> P : tabla ordenada por vencimiento con urgencia
+
+@enduml

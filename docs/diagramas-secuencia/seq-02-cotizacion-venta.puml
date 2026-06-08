@@ -1,0 +1,137 @@
+@startuml
+'──────────────────────────────────────────────────────────────────────────────
+'  SEQ-02 — Flujo Completo de Cotización → Venta
+'──────────────────────────────────────────────────────────────────────────────
+skinparam backgroundColor #FDF6EE
+skinparam sequenceArrowColor #3c250f
+skinparam sequenceLifeLineBorderColor #7c4b2c
+skinparam sequenceParticipantBackgroundColor #E8D5C4
+skinparam sequenceParticipantBorderColor #7c4b2c
+skinparam sequenceBoxBackgroundColor #FAF5F0
+skinparam sequenceBoxBorderColor #C4895A
+skinparam noteBorderColor #C4895A
+skinparam noteBackgroundColor #FDF6EE
+skinparam shadowing false
+
+title SEQ-02 — Cotización: Creación → Seguimiento → Conversión a Venta\n//WoodPallet Manager//
+
+actor       "Propietario"            as P
+participant "React Frontend"         as FE
+participant "Express API\n:3001"     as API
+participant "AuthMiddleware"         as MW
+participant "CotizacionesService"    as SVC
+participant "PreciosService"         as PSVC
+participant "SeguimientosService"    as SSVC
+participant "VentasService"          as VSVC
+participant "StockService"           as ST
+participant "PrismaClient"           as DB
+
+== Flujo 1: Calcular precio antes de cotizar ==
+
+P -> FE : selecciona producto + cantidad
+FE -> API : GET /api/productos/:id/calcular-precio?cantidad=N
+API -> MW : verifyToken ✓
+API -> PSVC : calcularPrecioService(productoId, cantidad)
+PSVC -> DB : listaPrecio.findMany({ where: { productoId, vigente } })
+DB --> PSVC : ListaPrecio[]
+PSVC -> PSVC : busca escalón donde cantMinima <= N <= cantMaxima
+PSVC --> API : CalculoPrecio { precioUnitario, subtotal, subtotalConIva, escalon }
+API --> FE : 200 CalculoPrecio
+FE --> P : muestra precio sugerido en formulario
+
+== Flujo 2: Crear cotización con cliente registrado ==
+
+P -> FE : completa formulario de cotización\n(cliente, productos, flete, SENASA)
+FE -> API : POST /api/cotizaciones\n{ clienteId, detalles[], incluyeFlete, costoFlete, ... }
+API -> MW : verifyToken ✓
+API -> SVC : crearCotizacionService(datos, usuarioId)
+SVC -> DB : cotizacion.create({ clienteId, usuarioId, estado: 'enviada', ... })
+DB --> SVC : Cotizacion creada
+
+loop por cada detalle
+  SVC -> DB : detalleCotizacion.create({ cotizacionId, productoId, cantidad, precioUnitario })
+  alt esAMedida = true
+    SVC -> DB : especificacionMedida.create({ detalleCotizacionId, largoMm, anchoMm, ... })
+  end
+end
+
+SVC --> API : Cotizacion completa (con detalles)
+API --> FE : 201 Cotizacion
+FE --> P : cotización creada, muestra opciones de envío
+
+== Flujo 3: Enviar cotización al cliente ==
+
+P -> FE : click "Enviar por WhatsApp"
+note right of FE
+  El frontend arma el mensaje con los datos
+  de la cotización y abre wa.me/ con el texto.
+  Se registra el canal de envío en la BD.
+end note
+FE -> API : PATCH /api/cotizaciones/:id\n{ canalEnvio: 'whatsapp', estado: 'enviada' }
+API -> SVC : actualizarCotizacionService(id, usuarioId, datos)
+SVC -> DB : cotizacion.update({ canalEnvio, estado })
+DB --> SVC : Cotizacion actualizada
+SVC --> API : Cotizacion
+API --> FE : 200 Cotizacion
+
+== Flujo 4: Registrar seguimiento manual ==
+
+P -> FE : click "Registrar seguimiento"
+FE -> API : POST /api/seguimientos\n{ cotizacionId, tipoContacto, resultado, proximoContacto }
+API -> MW : verifyToken ✓
+API -> SSVC : crearSeguimientoService(datos, usuarioId)
+SSVC -> DB : seguimientoCotizacion.create({...})
+DB --> SSVC : SeguimientoCotizacion
+
+alt resultado = 'interesado' || 'reprogramado'
+  SSVC -> DB : cotizacion.update({ estado: 'en_seguimiento' })
+else resultado = 'no_interesado'
+  SSVC -> DB : cotizacion.update({ estado: 'rechazada' })
+end
+
+SSVC --> API : SeguimientoCotizacion
+API --> FE : 201 SeguimientoCotizacion
+FE --> P : seguimiento registrado, próxima fecha en pantalla
+
+== Flujo 5: Convertir cotización aceptada en venta ==
+
+P -> FE : click "Convertir en venta"
+FE -> API : POST /api/ventas\n{ cotizacionId, tipoEntrega, metodoPago, fechaEstimEntrega, ... }
+API -> MW : verifyToken ✓
+API -> VSVC : crearVentaService(datos, usuarioId)
+
+VSVC -> DB : cotizacion.findUnique({ id: cotizacionId, include: { detalles } })
+DB --> VSVC : Cotizacion
+
+note right of VSVC
+  Valida que la cotización pertenezca
+  al mismo propietario y no esté ya
+  convertida (cotizacion.venta === null)
+end note
+
+VSVC -> DB : venta.create({ cotizacionId, clienteId, usuarioId, estadoPedido: 'confirmado', ... })
+DB --> VSVC : Venta creada
+
+loop por cada detalle de la cotización
+  VSVC -> DB : detalleVenta.create({ ventaId, productoId, cantidadPedida, precioUnitario })
+end
+
+VSVC -> DB : cotizacion.update({ estado: 'aceptada' })
+
+alt tipoEntrega = 'retira_cliente'
+  VSVC -> DB : retiro.create({ ventaId, codigoRetiro: uuid(), estadoRetiro: 'pendiente' })
+end
+
+alt origenStock = 'stock_propio'
+  loop por cada detalleVenta
+    VSVC -> ST : ajustarStockService(stockId, 'salida', cantidad, 'venta', userId)
+    ST -> DB : stock.update({ cantidadDisponible: -= cantidad })
+    ST -> DB : movimientoStock.create({ tipo: 'salida', motivo: 'venta', cantidad })
+  end
+end
+
+VSVC --> API : Venta completa
+API --> FE : 201 Venta
+FE --> P : venta creada, muestra panel de la venta
+
+@enduml

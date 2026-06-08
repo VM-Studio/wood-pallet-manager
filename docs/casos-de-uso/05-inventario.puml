@@ -1,0 +1,124 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #FDF6EE
+  BorderColor #7c4b2c
+  FontColor #3c250f
+}
+skinparam actor {
+  BackgroundColor #E8D5C4
+  BorderColor #7c4b2c
+  FontColor #3c250f
+}
+skinparam rectangle {
+  BackgroundColor #FAF5F0
+  BorderColor #C4895A
+  BorderThickness 2
+}
+skinparam ArrowColor #3c250f
+
+title **Módulo 05 — Inventario y Stock**\n//WoodPallet Manager//
+
+actor "Propietario" as P
+
+rectangle "Inventario y Stock" {
+
+  ' ── Visualización de stock ──────────────────────────────
+  package "Visualización" {
+    usecase "Ver stock consolidado\nde todos los productos" as UC01
+    usecase "Ver stock por galpón\n(proveedor)" as UC02
+    usecase "Ver productos con stock 0" as UC03
+    usecase "Buscar producto\nen inventario" as UC04
+    usecase "Filtrar productos\ncon alerta de stock bajo" as UC05
+    usecase "Ver saldo deudor\npor producto" as UC06
+  }
+
+  ' ── Gráficos ────────────────────────────────────────────
+  package "Gráficos" {
+    usecase "Ver gráfico de stock\nactual por producto" as UC07
+    usecase "Ver gráfico de compras:\nstock propio vs reventa" as UC08
+    usecase "Ver gráfico de movimientos\nde stock por mes" as UC09
+  }
+
+  ' ── Ajustes y movimientos ───────────────────────────────
+  package "Ajustes y Movimientos" {
+    usecase "Ajustar stock manualmente\n(entrada / salida / ajuste)" as UC10
+    usecase "Registrar motivo\ndel ajuste" as UC11
+    usecase "Ver historial de movimientos\nde stock" as UC12
+    usecase "Ver movimientos de\nun producto específico" as UC13
+    usecase "Configurar cantidad\nmínima de stock" as UC14
+  }
+
+  ' ── Alertas de stock ────────────────────────────────────
+  package "Alertas" {
+    usecase "Ver alertas de stock\nbajo mínimo" as UC15
+    usecase "Ver proveedor / galpón\ncon stock crítico" as UC16
+    usecase "Ver déficit de unidades\npor producto" as UC17
+  }
+
+  ' ── Gestión ──────────────────────────────────────────────
+  package "Gestión" {
+    usecase "Eliminar producto\ndel sistema" as UC18
+    usecase "Confirmar eliminación" as UC19
+    usecase "Ver todos los movimientos\n(todos los productos)" as UC20
+  }
+
+}
+
+' ── Asociaciones ──────────────────────────────────────────
+P --> UC01
+P --> UC04
+P --> UC05
+P --> UC07
+P --> UC08
+P --> UC09
+P --> UC10
+P --> UC12
+P --> UC13
+P --> UC14
+P --> UC15
+P --> UC18
+P --> UC20
+
+' ── Include / Extend ──────────────────────────────────────
+UC01 ..> UC02 : <<include>>
+UC01 ..> UC03 : <<extend>>
+UC01 ..> UC04 : <<extend>>
+UC01 ..> UC05 : <<extend>>
+UC01 ..> UC06 : <<extend>>
+
+UC10 ..> UC11 : <<include>>
+
+UC12 ..> UC13 : <<extend>>
+
+UC15 ..> UC16 : <<include>>
+UC15 ..> UC17 : <<include>>
+
+UC18 ..> UC19 : <<include>>
+
+' ── Notas ─────────────────────────────────────────────────
+note right of UC01
+  Stock consolidado = todos los productos activos,
+  incluyendo los que tienen 0 unidades.
+  No hay duplicados: se agrupa por productoId.
+end note
+
+note right of UC02
+  Cada galpón = un proveedor.
+  El stock se almacena como Stock(productoId, proveedorId).
+  El stock nunca puede ser negativo (Math.max(0, ...)).
+end note
+
+note right of UC14
+  cantidadMinima = null → sin mínimo configurado
+  cantidadMinima = 0 → NO genera alerta (guard: gt: 0)
+  cantidadMinima > 0 → genera alerta si stock < mínimo
+end note
+
+note bottom of UC10
+  Motivos: venta | compra | devolucion | ajuste_manual
+  Cada ajuste genera un MovimientoStock en la BD.
+end note
+
+@enduml

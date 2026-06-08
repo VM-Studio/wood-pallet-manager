@@ -1,0 +1,127 @@
+@startuml
+'──────────────────────────────────────────────────────────────────────────────
+'  SEQ-06 — Logística: Envíos, Estados, Confirmaciones, Consultas Inter-propietario
+'──────────────────────────────────────────────────────────────────────────────
+skinparam backgroundColor #FDF6EE
+skinparam sequenceArrowColor #3c250f
+skinparam sequenceLifeLineBorderColor #7c4b2c
+skinparam sequenceParticipantBackgroundColor #E8D5C4
+skinparam sequenceParticipantBorderColor #7c4b2c
+skinparam sequenceBoxBackgroundColor #FAF5F0
+skinparam sequenceBoxBorderColor #C4895A
+skinparam noteBorderColor #C4895A
+skinparam noteBackgroundColor #FDF6EE
+skinparam shadowing false
+
+title SEQ-06 — Logística: Envíos, Estados de Entrega, Consultas Inter-Propietario\n//WoodPallet Manager//
+
+actor       "Carlos (Logística)"    as CAR
+actor       "Juan Cruz (Ventas)"    as JUAN
+participant "React Frontend"        as FE
+participant "Express API\n:3001"    as API
+participant "AuthMiddleware"        as MW
+participant "LogisticaService"      as LSVC
+participant "PrismaClient"          as DB
+
+== Flujo 1: Carlos crea logística para una venta propia ==
+
+CAR -> FE : selecciona venta → "Crear logística"\ningresa transportista, fecha retiro, hora, flete
+FE -> API : POST /api/logistica\n{ ventaId, nombreTransportista,\n  fechaRetiroGalpon, costoFlete, ... }
+API -> MW : verifyToken ✓ (rol: propietario_carlos)
+API -> LSVC : crearLogisticaService(data, userId, rol)
+LSVC -> DB : venta.findUnique({ id: ventaId })
+DB --> LSVC : Venta ✓
+LSVC -> DB : logistica.findUnique({ ventaId })
+DB --> LSVC : null (no existe duplicado)
+LSVC -> DB : **$transaction**:\n  logistica.create({ estadoConsulta: null,\n    estadoEntrega: 'pendiente',\n    confTransportista: false, confCliente: false })\n  venta.update({ estadoPedido: 'en_transito' })
+DB --> LSVC : Logistica creada
+LSVC --> API : Logistica
+API --> FE : 201 Logistica
+FE --> CAR : logística registrada; venta pasa a "en tránsito"
+
+== Flujo 2: Avanzar estados de entrega (panel de Carlos) ==
+
+note over CAR, DB
+  Ciclo de estados de entrega:
+  pendiente → en_camino → entregado
+end note
+
+CAR -> FE : click "En camino" en panel de logística
+FE -> API : PATCH /api/logistica/:ventaId/avanzar\n{ accion: 'en_camino' }
+API -> MW : verifyToken ✓
+API -> LSVC : avanzarLogisticaService(ventaId, 'en_camino', rol)
+LSVC -> DB : **$transaction**:\n  logistica.update({ estadoEntrega: 'en_camino' })\n  venta.update({ estadoPedido: 'en_transito' })
+LSVC --> API : Logistica
+API --> FE : 200
+
+CAR -> FE : click "Marcar entregado"
+FE -> API : PATCH /api/logistica/:ventaId/avanzar\n{ accion: 'entregada' }
+API -> LSVC : avanzarLogisticaService(ventaId, 'entregada', rol)
+LSVC -> DB : **$transaction**:\n  logistica.update({ estadoEntrega: 'entregado',\n    horaEntregaReal: now(), confTransportista: true })\n  venta.update({ estadoPedido: 'entregado',\n    fechaEntregaReal: now() })
+LSVC --> API : Logistica completada
+API --> FE : 200
+FE --> CAR : entrega confirmada
+
+== Flujo 3: Confirmación del cliente ==
+
+CAR -> FE : click "El cliente confirmó la entrega"
+FE -> API : POST /api/logistica/:ventaId/confirmar-cliente
+API -> LSVC : confirmarEntregaClienteService(ventaId)
+LSVC -> DB : logistica.update({ confCliente: true })
+LSVC --> API : Logistica
+API --> FE : 200
+FE --> CAR : logística completamente confirmada
+
+== Flujo 4: Juan Cruz consulta a Carlos sobre logística de su venta ==
+
+note over JUAN, DB
+  Juan Cruz maneja sus propias ventas pero
+  no opera la logística directamente.
+  Envía una consulta a Carlos para que la gestione.
+end note
+
+JUAN -> FE : en su venta, click "Solicitar logística a Carlos"
+FE -> API : POST /api/logistica/:ventaId/consultar
+API -> MW : verifyToken ✓ (rol: propietario_juancruz)
+API -> LSVC : consultarLogisticaService(ventaId, userId)
+LSVC -> DB : logistica.findUnique({ ventaId })
+DB --> LSVC : null (no existe aún)
+LSVC -> DB : logistica.create({\n  estadoConsulta: 'pendiente_consulta',\n  fechaConsulta: now(),\n  consultadaPorId: userId\n})
+LSVC --> API : Logistica con estadoConsulta = 'pendiente_consulta'
+API --> FE : 201
+FE --> JUAN : solicitud enviada a Carlos
+
+== Flujo 5: Carlos responde la consulta de Juan Cruz ==
+
+CAR -> FE : ve notificación "Consulta de Juan Cruz"\nclick "Aceptar" → completa datos del envío
+FE -> API : PATCH /api/logistica/:ventaId/responder\n{ respuesta: 'aceptada', nombreTransportista,\n  fechaRetiroGalpon, costoFlete }
+API -> MW : verifyToken ✓ (rol: propietario_carlos)
+API -> LSVC : responderConsultaLogisticaService(ventaId, 'aceptada', userId, rol, datos)
+LSVC -> DB : logistica.update({\n  estadoConsulta: 'aceptada',\n  nombreTransportista, fechaRetiroGalpon, costoFlete\n})
+LSVC --> API : Logistica aceptada
+API --> FE : 200
+FE --> CAR : consulta respondida
+
+FE --> JUAN : (al recargar) venta muestra logística aceptada
+
+alt Carlos rechaza la consulta
+  CAR -> FE : click "Rechazar"
+  FE -> API : PATCH /api/logistica/:ventaId/responder\n{ respuesta: 'rechazada' }
+  API -> LSVC : responderConsultaLogisticaService(ventaId, 'rechazada', ...)
+  LSVC -> DB : logistica.update({ estadoConsulta: 'rechazada' })
+  FE --> JUAN : (al recargar) solicitud rechazada — debe gestionar envío propio
+end
+
+== Flujo 6: Monitor del mapa — rutas del día ==
+
+CAR -> FE : abre "Mapa de entregas del día"
+FE -> API : GET /api/logistica/rutas-hoy
+API -> LSVC : getRutasHoyService()
+LSVC -> DB : logistica.findMany({\n  where: {\n    venta.fechaEstimEntrega: { gte: inicio, lt: fin } (hoy UTC-3),\n    estadoConsulta: 'aceptada',\n    estadoEntrega: { not: 'entregado' }\n  },\n  include: { venta.cliente, venta.detalles }\n})
+DB --> LSVC : [ Logistica × N ]
+LSVC -> LSVC : mapear a { orden, destino, estadoEntrega,\n  unidades, lat, lng, horaEstimadaEntrega }
+LSVC --> API : [ RutaHoy × N ]
+API --> FE : 200 rutas
+FE --> CAR : mapa con marcadores por destino + panel lateral
+
+@enduml

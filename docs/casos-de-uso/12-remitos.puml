@@ -1,0 +1,135 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #FDF6EE
+  BorderColor #7c4b2c
+  FontColor #3c250f
+}
+skinparam actor {
+  BackgroundColor #E8D5C4
+  BorderColor #7c4b2c
+  FontColor #3c250f
+}
+skinparam rectangle {
+  BackgroundColor #FAF5F0
+  BorderColor #C4895A
+  BorderThickness 2
+}
+skinparam ArrowColor #3c250f
+
+title **Módulo 12 — Remitos y Firmas Digitales**\n//WoodPallet Manager//
+
+actor "Propietario" as P
+actor "Cliente\n(Externo — enlace web)" as CE
+
+rectangle "Remitos y Firmas Digitales" {
+
+  ' ── Listado ─────────────────────────────────────────────
+  package "Consulta" {
+    usecase "Ver listado de remitos" as UC01
+    usecase "Filtrar por estado\ndel remito" as UC02
+    usecase "Ver remito de\nuna venta" as UC03
+    usecase "Ver remito con\nambas firmas" as UC04
+  }
+
+  ' ── Emisión ─────────────────────────────────────────────
+  package "Emisión" {
+    usecase "Emitir remito\ndesde venta" as UC05
+    usecase "Asignar número\nde remito" as UC06
+    usecase "Definir fecha\nde entrega" as UC07
+  }
+
+  ' ── Firma del propietario ────────────────────────────────
+  package "Firma Propietario" {
+    usecase "Firmar remito como\npropietario (firma digital)" as UC08
+    usecase "Usar firma guardada\nen perfil" as UC09
+    usecase "Registrar fecha\nde firma propietario" as UC10
+  }
+
+  ' ── Envío al cliente ────────────────────────────────────
+  package "Envío al Cliente" {
+    usecase "Enviar remito al cliente\npor email" as UC11
+    usecase "Generar enlace único\nde firma (token UUID)" as UC12
+    usecase "Reenviar enlace\nde firma" as UC13
+    usecase "Ver URL del\nenlace de firma" as UC14
+  }
+
+  ' ── Firma del cliente ────────────────────────────────────
+  package "Firma Cliente (Externo)" {
+    usecase "Acceder al remito\npor enlace externo" as UC15
+    usecase "Ver detalle del\nremito (solo lectura)" as UC16
+    usecase "Firmar remito\ndigitalmente" as UC17
+    usecase "Registrar fecha\nde firma del cliente" as UC18
+  }
+
+  ' ── Estado del remito ───────────────────────────────────
+  package "Estado" {
+    usecase "Ver estado del remito" as UC19
+    usecase "Marcar remito\ncomo completado" as UC20
+    usecase "Cancelar remito" as UC21
+    usecase "Confirmar cancelación" as UC22
+  }
+
+}
+
+' ── Asociaciones ──────────────────────────────────────────
+P --> UC01
+P --> UC05
+P --> UC08
+P --> UC11
+P --> UC13
+P --> UC19
+P --> UC21
+
+CE --> UC15
+CE --> UC17
+
+' ── Include / Extend ──────────────────────────────────────
+UC01 ..> UC02 : <<extend>>
+UC03 ..> UC04 : <<extend>>
+
+UC05 ..> UC06 : <<extend>>
+UC05 ..> UC07 : <<extend>>
+UC05 ..> UC12 : <<include>>
+
+UC08 ..> UC09 : <<include>>
+UC08 ..> UC10 : <<include>>
+UC08 ..> UC11 : <<extend>>
+
+UC11 ..> UC12 : <<include>>
+UC11 ..> UC14 : <<include>>
+UC13 ..> UC12 : <<include>>
+
+UC15 ..> UC16 : <<include>>
+UC17 ..> UC18 : <<include>>
+UC17 ..> UC20 : <<extend>>
+
+UC21 ..> UC22 : <<include>>
+
+' ── Notas ─────────────────────────────────────────────────
+note right of UC02
+  Estados: pendiente_firma_propietario |
+  enviado_a_cliente | firmado_por_cliente | completado | cancelado
+end note
+
+note bottom of UC12
+  El token UUID se genera al crear el remito.
+  Permite al cliente firmar desde cualquier
+  dispositivo sin necesidad de login.
+end note
+
+note right of UC09
+  La firma del propietario se toma de su
+  perfil (firma digital cargada en Configuración).
+  Se almacena en el remito como base64.
+end note
+
+note bottom of UC17
+  El cliente dibuja su firma digital en
+  el formulario web accedido por el token.
+  Al firmar, el remito queda como "completado"
+  y ambas firmas quedan registradas.
+end note
+
+@enduml

@@ -1,0 +1,151 @@
+@startuml
+'──────────────────────────────────────────────────────────────────────────────
+'  SEQ-09 — Remitos: Emisión, Firma Propietario, Envío por Email, Firma Cliente
+'──────────────────────────────────────────────────────────────────────────────
+skinparam backgroundColor #FDF6EE
+skinparam sequenceArrowColor #3c250f
+skinparam sequenceLifeLineBorderColor #7c4b2c
+skinparam sequenceParticipantBackgroundColor #E8D5C4
+skinparam sequenceParticipantBorderColor #7c4b2c
+skinparam sequenceBoxBackgroundColor #FAF5F0
+skinparam sequenceBoxBorderColor #C4895A
+skinparam noteBorderColor #C4895A
+skinparam noteBackgroundColor #FDF6EE
+skinparam shadowing false
+
+title SEQ-09 — Remitos: Emisión, Firma del Propietario, Envío por Email y Firma del Cliente\n//WoodPallet Manager//
+
+actor       "Propietario"          as P
+actor       "Cliente Externo"      as CE
+participant "React Frontend"       as FE
+participant "Express API\n:3001"   as API
+participant "AuthMiddleware"       as MW
+participant "RemitosService"       as RSVC
+participant "Mailer"               as MAIL
+participant "PrismaClient"         as DB
+
+== Flujo 1: Crear remito sin firma (borrador) ==
+
+P -> FE : en detalle de venta, click "Emitir remito"
+FE -> API : POST /api/remitos\n{ ventaId, fechaEntrega, observaciones }
+API -> MW : verifyToken ✓
+API -> RSVC : crearRemitoService(datos, userId)
+RSVC -> DB : venta.findUnique({ id: ventaId, include: { remito } })
+DB --> RSVC : Venta { remito: null }
+
+alt venta ya tiene remito
+  RSVC --> API : 400 "Esta venta ya tiene un remito asociado"
+end
+
+RSVC -> DB : remito.create({\n  ventaId, clienteId: venta.clienteId, usuarioId,\n  firmaPropietario: null,\n  estado: 'pendiente_firma_propietario',\n  tokenFirma: UUID generado automáticamente por Prisma @default(uuid())\n})
+DB --> RSVC : Remito { tokenFirma: 'abc-123-...' }
+RSVC --> API : Remito
+API --> FE : 201 Remito
+FE --> P : remito creado, estado: pendiente firma propietario
+
+== Flujo 2: Cargar firma digital del propietario ==
+
+note over P, FE
+  La firma del propietario se carga en "Mi Perfil" como imagen base64.
+  Cuando se firma un remito, se usa esa firma guardada.
+end note
+
+P -> FE : click "Firmar remito" → panel de firma digital\no usa la firma guardada en el perfil
+FE -> API : PATCH /api/remitos/:id/firmar-propietario\n{ firma: 'data:image/png;base64,...' }
+API -> MW : verifyToken ✓
+API -> RSVC : firmarPropietarioService(id, firma)
+RSVC -> DB : remito.findUnique({ id })
+DB --> RSVC : Remito { estado: 'pendiente_firma_propietario' }
+
+alt estado ≠ 'pendiente_firma_propietario'
+  RSVC --> API : 400 "El remito ya tiene firma del propietario"
+end
+
+RSVC -> DB : remito.update({\n  firmaPropietario: firma (base64),\n  fechaFirmaPropietario: now(),\n  estado: 'pendiente_firma_propietario'\n})
+RSVC --> API : Remito firmado
+API --> FE : 200 Remito
+FE --> P : firma cargada — listo para enviar al cliente
+
+== Flujo 3: Enviar remito por email al cliente ==
+
+P -> FE : click "Enviar al cliente por email"
+FE -> API : POST /api/remitos/:id/enviar
+API -> MW : verifyToken ✓
+API -> RSVC : enviarRemitoService(id)
+RSVC -> DB : remito.findUnique({ id, include: REMITO_INCLUDE })
+DB --> RSVC : Remito completo
+
+alt sin firma del propietario
+  RSVC --> API : 400 "El remito necesita la firma del propietario antes de enviarse"
+end
+
+alt cliente sin email
+  RSVC --> API : 400 "El cliente no tiene email registrado"
+end
+
+RSVC -> RSVC : linkFirma = FRONTEND_URL + '/remito/' + remito.tokenFirma + '/firmar'
+RSVC -> MAIL : enviarRemitoParaFirmar({\n  destinatario: cliente.emailContacto,\n  razonSocial, numeroRemito,\n  fechaEmision, fechaEntrega,\n  linkFirma,\n  productos: detalles formateados,\n  totalConIva\n})
+MAIL --> RSVC : enviado ✓
+RSVC -> DB : remito.update({\n  estado: 'enviado_a_cliente',\n  fechaEnvio: now()\n})
+RSVC --> API : Remito actualizado
+API --> FE : 200 Remito
+FE --> P : email enviado; estado: "enviado a cliente"
+
+== Flujo 4: Cliente accede al link y firma el remito (SIN autenticación JWT) ==
+
+note over CE, API
+  El cliente recibe el email con el link:
+  https://app.example.com/remito/{tokenFirma}/firmar
+  Esta ruta NO requiere autenticación JWT — es pública.
+end note
+
+CE -> FE : abre link del email en el navegador\n/remito/{tokenFirma}/firmar
+FE -> API : GET /api/remitos/token/{tokenFirma}\n(sin Authorization header)
+API -> RSVC : getRemitoByTokenService(tokenFirma)
+RSVC -> DB : remito.findUnique({ tokenFirma, include: REMITO_INCLUDE })
+DB --> RSVC : Remito (cualquier estado)
+
+note right of RSVC
+  Siempre devuelve el remito.
+  El frontend muestra la pantalla correcta:
+  · estado 'completado' → "Ya firmaste este remito"
+  · estado 'cancelado'  → "Este remito fue cancelado"
+  · otros              → formulario de firma
+end note
+
+RSVC --> API : Remito
+API --> CE : 200 Remito (sin JWT)
+FE --> CE : muestra PDF del remito + pad de firma digital
+
+CE -> FE : dibuja su firma en el pad → click "Firmar y confirmar"
+FE -> API : POST /api/remitos/token/{tokenFirma}/firmar\n{ firmaCliente: 'data:image/png;base64,...' }\n(sin Authorization header)
+API -> RSVC : firmarClienteByTokenService(tokenFirma, firmaCliente)
+RSVC -> DB : remito.update({\n  firmaCliente: firmaCliente (base64),\n  fechaFirmaCliente: now(),\n  estado: 'completado'\n})
+RSVC -> MAIL : enviarRemitoFirmado({\n  propietario.email,\n  numeroRemito, fechaFirmaCliente,\n  cliente.razonSocial\n})
+MAIL --> RSVC : enviado ✓
+RSVC --> API : Remito completado
+API --> CE : 200 Remito
+FE --> CE : "¡Remito firmado correctamente!" + confirmación visual
+
+FE --> P : (próxima vez que cargue) remito aparece como "Completado"
+
+== Flujo 5: Cancelar remito ==
+
+P -> FE : click "Cancelar remito"
+FE -> API : PATCH /api/remitos/:id/cancelar
+API -> MW : verifyToken ✓
+API -> RSVC : cancelarRemitoService(id, userId)
+RSVC -> DB : remito.update({ estado: 'cancelado' })
+
+note right of DB
+  Si el cliente intenta firmar después del cancelado,
+  verá un mensaje de "Remito cancelado" gracias a que
+  getRemitoByTokenService siempre devuelve el remito
+  con su estado actual.
+end note
+
+RSVC --> API : 200 Remito cancelado
+API --> FE : 200
+FE --> P : remito cancelado
+
+@enduml

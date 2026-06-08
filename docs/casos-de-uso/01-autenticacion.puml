@@ -1,0 +1,90 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #FDF6EE
+  BorderColor #7c4b2c
+  FontColor #3c250f
+}
+skinparam actor {
+  BackgroundColor #E8D5C4
+  BorderColor #7c4b2c
+  FontColor #3c250f
+}
+skinparam rectangle {
+  BackgroundColor #FAF5F0
+  BorderColor #C4895A
+  BorderThickness 2
+}
+skinparam ArrowColor #3c250f
+
+title **Módulo 01 — Autenticación y Gestión de Cuenta**\n//WoodPallet Manager//
+
+actor "Propietario\n(Carlos / Juan Cruz)" as P
+actor "Sistema\n(Cron / Background)" as S
+
+rectangle "Autenticación y Gestión de Cuenta" {
+
+  usecase "Iniciar sesión" as UC01
+  usecase "Cerrar sesión" as UC02
+  usecase "Solicitar recuperación\nde contraseña" as UC03
+  usecase "Cambiar contraseña" as UC04
+  usecase "Cambiar email" as UC05
+  usecase "Cambiar teléfono" as UC06
+  usecase "Ingresar código de\nverificación (6 dígitos)" as UC07
+  usecase "Reenviar código\nde verificación" as UC08
+  usecase "Ver perfil de usuario" as UC09
+  usecase "Actualizar foto de perfil" as UC10
+  usecase "Cargar / reemplazar\nfirma digital" as UC11
+  usecase "Enviar código por email\n/ SMS al usuario" as UC12
+  usecase "Invalidar códigos\nexpirados" as UC13
+  usecase "Validar token de sesión\n(JWT)" as UC14
+
+}
+
+' ── Asociaciones actor → caso de uso ──────────────────────
+P --> UC01
+P --> UC02
+P --> UC03
+P --> UC04
+P --> UC05
+P --> UC06
+P --> UC08
+P --> UC09
+P --> UC10
+P --> UC11
+
+' ── Include / Extend ──────────────────────────────────────
+UC03 ..> UC12 : <<include>>
+UC04 ..> UC07 : <<include>>
+UC04 ..> UC12 : <<include>>
+UC05 ..> UC07 : <<include>>
+UC05 ..> UC12 : <<include>>
+UC06 ..> UC07 : <<include>>
+UC06 ..> UC12 : <<include>>
+UC08 ..> UC12 : <<include>>
+UC01 ..> UC14 : <<include>>
+
+' ── Sistema (automático) ──────────────────────────────────
+S --> UC13
+
+' ── Notas ─────────────────────────────────────────────────
+note bottom of UC01
+  Autenticación vía email + contraseña hasheada.
+  Genera JWT almacenado en cookie/header.
+  Roles: propietario_carlos, propietario_juancruz, admin
+end note
+
+note right of UC07
+  Código de 6 dígitos con tiempo de expiración.
+  Tipos: cambio_password | cambio_email |
+         cambio_telefono | recuperacion_password
+end note
+
+note bottom of UC11
+  La firma se guarda como base64.
+  Se imprime automáticamente en los remitos
+  generados por el sistema.
+end note
+
+@enduml

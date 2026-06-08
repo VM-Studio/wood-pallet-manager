@@ -1,0 +1,140 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #FDF6EE
+  BorderColor #7c4b2c
+  FontColor #3c250f
+}
+skinparam actor {
+  BackgroundColor #E8D5C4
+  BorderColor #7c4b2c
+  FontColor #3c250f
+}
+skinparam rectangle {
+  BackgroundColor #FAF5F0
+  BorderColor #C4895A
+  BorderThickness 2
+}
+skinparam ArrowColor #3c250f
+
+title **Módulo 06 — Cotizaciones**\n//WoodPallet Manager//
+
+actor "Propietario" as P
+
+rectangle "Gestión de Cotizaciones" {
+
+  ' ── Listado y filtros ───────────────────────────────────
+  package "Listado" {
+    usecase "Ver listado de\ncotizaciones propias" as UC01
+    usecase "Filtrar por estado" as UC02
+    usecase "Buscar por cliente\no prospecto" as UC03
+    usecase "Ver cotizaciones vencidas" as UC04
+  }
+
+  ' ── Creación ────────────────────────────────────────────
+  package "Creación" {
+    usecase "Crear cotización con\ncliente registrado" as UC05
+    usecase "Crear cotización rápida\n(prospecto sin cuenta)" as UC06
+    usecase "Agregar línea de producto" as UC07
+    usecase "Agregar especificaciones\na medida" as UC08
+    usecase "Configurar largo, ancho,\nalto y tipo de madera" as UC09
+    usecase "Configurar costo de flete" as UC10
+    usecase "Configurar costo de SENASA" as UC11
+    usecase "Calcular totales\ncon / sin IVA" as UC12
+  }
+
+  ' ── Envío ───────────────────────────────────────────────
+  package "Envío" {
+    usecase "Enviar cotización\npor WhatsApp" as UC13
+    usecase "Enviar cotización\npor email" as UC14
+    usecase "Registrar canal\nde envío" as UC15
+  }
+
+  ' ── Seguimiento ─────────────────────────────────────────
+  package "Seguimiento" {
+    usecase "Registrar seguimiento\nmanual de cotización" as UC16
+    usecase "Seleccionar tipo de contacto\n(WhatsApp / llamada / email / presencial)" as UC17
+    usecase "Registrar resultado\ndel seguimiento" as UC18
+    usecase "Definir próxima\nfecha de contacto" as UC19
+    usecase "Ver historial de\nseguimientos" as UC20
+  }
+
+  ' ── Gestión de estado ───────────────────────────────────
+  package "Estado" {
+    usecase "Marcar cotización\ncomo aceptada" as UC21
+    usecase "Marcar cotización como\nrechazada / perdida" as UC22
+    usecase "Marcar como vencida" as UC23
+    usecase "Cambiar estado\nmanualmente" as UC24
+  }
+
+  ' ── Conversión ──────────────────────────────────────────
+  package "Conversión" {
+    usecase "Convertir cotización\naceptada en venta" as UC25
+    usecase "Ver venta originada\npor la cotización" as UC26
+  }
+
+}
+
+' ── Asociaciones ──────────────────────────────────────────
+P --> UC01
+P --> UC05
+P --> UC06
+P --> UC13
+P --> UC14
+P --> UC16
+P --> UC21
+P --> UC22
+P --> UC24
+P --> UC25
+
+' ── Include / Extend ──────────────────────────────────────
+UC01 ..> UC02 : <<extend>>
+UC01 ..> UC03 : <<extend>>
+UC01 ..> UC04 : <<extend>>
+
+UC05 ..> UC07 : <<include>>
+UC06 ..> UC07 : <<include>>
+UC07 ..> UC08 : <<extend>>
+UC08 ..> UC09 : <<include>>
+UC05 ..> UC10 : <<extend>>
+UC05 ..> UC11 : <<extend>>
+UC05 ..> UC12 : <<include>>
+UC06 ..> UC12 : <<include>>
+
+UC13 ..> UC15 : <<include>>
+UC14 ..> UC15 : <<include>>
+
+UC16 ..> UC17 : <<include>>
+UC16 ..> UC18 : <<include>>
+UC16 ..> UC19 : <<extend>>
+UC16 ..> UC20 : <<extend>>
+
+UC21 ..> UC25 : <<extend>>
+UC25 ..> UC26 : <<include>>
+
+' ── Notas ─────────────────────────────────────────────────
+note right of UC06
+  Cotización rápida: no requiere cliente
+  registrado. Se guardan nombre, teléfono
+  y email del prospecto directamente.
+end note
+
+note right of UC08
+  esAMedida = true: habilita el formulario
+  de EspecificacionMedida (largo/ancho/alto,
+  carga máxima, tipo de madera, observaciones).
+end note
+
+note bottom of UC18
+  Resultados: sin_respuesta | interesado |
+  no_interesado | cerrado | reprogramado
+end note
+
+note bottom of UC25
+  Al convertir, se crea una Venta con
+  cotizacionId (1:1 único). El estado
+  de la cotización pasa a "aceptada".
+end note
+
+@enduml

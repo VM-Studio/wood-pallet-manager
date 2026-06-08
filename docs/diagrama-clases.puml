@@ -1,0 +1,1336 @@
+@startuml
+'──────────────────────────────────────────────────────────────────────────────
+'  WoodPallet Manager — DIAGRAMA DE CLASES COMPLETO
+'  Tool  : https://www.plantuml.com/plantuml/  o VS Code + extensión PlantUML
+'  Junio 2026
+'──────────────────────────────────────────────────────────────────────────────
+
+skinparam classBackgroundColor #FDF6EE
+skinparam classBorderColor #7c4b2c
+skinparam classArrowColor #3c250f
+skinparam classFontColor #3c250f
+skinparam classHeaderBackgroundColor #E8D5C4
+skinparam packageBackgroundColor #FAF5F0
+skinparam packageBorderColor #C4895A
+skinparam stereotypeFontColor #9B7E6A
+skinparam shadowing false
+
+'══════════════════════════════════════════════════════════════════════════════
+' ENUMERACIONES
+'══════════════════════════════════════════════════════════════════════════════
+
+enum RolUsuario {
+  propietario_carlos
+  propietario_juancruz
+  admin
+}
+
+enum TipoVerificacion {
+  cambio_password
+  cambio_email
+  cambio_telefono
+  recuperacion_password
+}
+
+enum CanalEntrada {
+  whatsapp
+  formulario_web
+  llamada
+  recomendacion
+  instagram
+  email
+  otro
+}
+
+enum TipoPallet {
+  estandar
+  reforzado
+  liviano
+  exportacion
+  carton
+  a_medida
+  personalizado
+}
+
+enum CondicionPallet {
+  nuevo
+  seminuevo
+  usado
+}
+
+enum TipoProductoProveedor {
+  seminuevo
+  nuevo_medida
+  ambos
+}
+
+enum EstadoCotizacion {
+  enviada
+  en_seguimiento
+  aceptada
+  rechazada
+  perdida
+  vencida
+}
+
+enum CanalEnvioCotizacion {
+  whatsapp
+  email
+}
+
+enum TipoContacto {
+  whatsapp
+  llamada
+  email
+  presencial
+}
+
+enum ResultadoSeguimiento {
+  sin_respuesta
+  interesado
+  no_interesado
+  cerrado
+  reprogramado
+}
+
+enum EstadoPedido {
+  confirmado
+  en_preparacion
+  listo_para_envio
+  en_transito
+  entregado
+  entregado_parcial
+  cancelado
+}
+
+enum TipoEntrega {
+  retira_cliente
+  envio_woodpallet
+}
+
+enum TipoMovimiento {
+  entrada
+  salida
+  ajuste
+}
+
+enum MotivoMovimiento {
+  venta
+  compra
+  devolucion
+  ajuste_manual
+}
+
+enum EstadoCompra {
+  pendiente_pago
+  pagada
+  cancelada
+}
+
+enum TipoCompra {
+  reventa_inmediata
+  stock_propio
+}
+
+enum EstadoEntrega {
+  pendiente
+  en_camino
+  entregado
+  con_problema
+}
+
+enum EstadoConsulta {
+  no_aplica
+  pendiente_consulta
+  consultada
+  aceptada
+  rechazada
+}
+
+enum TipoFactura {
+  A
+}
+
+enum EstadoCobro {
+  pendiente
+  cobrada_parcial
+  cobrada_total
+  vencida
+  incobrable
+}
+
+enum MedioPago {
+  transferencia
+  e_check
+  efectivo
+}
+
+enum MetodoPago {
+  transferencia
+  e_check
+  efectivo
+}
+
+enum ModalidadPago {
+  adelantado
+  contra_entrega
+  por_partes
+}
+
+enum TipoCasoDevolucion {
+  pallet_danado
+  cliente_no_quiere
+  devolucion_parcial
+  cancelacion_anticipada
+}
+
+enum EstadoDevolucion {
+  pendiente
+  esperando_confirmacion_deposito
+  confirmada
+  procesada
+  cancelada
+}
+
+enum EstadoRetiro {
+  pendiente
+  confirmado
+  completado
+  cancelado
+}
+
+enum EstadoRemito {
+  pendiente_firma_propietario
+  enviado_a_cliente
+  firmado_por_cliente
+  completado
+  cancelado
+}
+
+enum EstadoSolicitudLogistica {
+  pendiente
+  aceptada
+  rechazada
+}
+
+enum EstadoCotizacionWeb {
+  pendiente
+  vista
+  convertida
+  descartada
+}
+
+'══════════════════════════════════════════════════════════════════════════════
+' CAPA DE DOMINIO — ENTIDADES (Modelos Prisma / Base de Datos)
+'══════════════════════════════════════════════════════════════════════════════
+
+package "Dominio: Usuarios y Seguridad" {
+
+  class Usuario {
+    +id: Int
+    +nombre: String
+    +apellido: String
+    +email: String <<unique>>
+    +passwordHash: String
+    +telefono: String?
+    +cuit: String?
+    +rol: RolUsuario
+    +activo: Boolean
+    +fechaCreacion: DateTime
+    +fotoPerfil: String?
+    +firma: String?
+  }
+
+  class VerificacionCodigo {
+    +id: Int
+    +usuarioId: Int?
+    +email: String?
+    +codigo: String
+    +tipo: TipoVerificacion
+    +dato: String?
+    +canal: String?
+    +expiresAt: DateTime
+    +usado: Boolean
+    +creadoAt: DateTime
+  }
+
+  class JwtPayload <<ValueObject>> {
+    +userId: Int
+    +email: String
+    +rol: RolUsuario
+  }
+
+}
+
+package "Dominio: Clientes" {
+
+  class Cliente {
+    +id: Int
+    +razonSocial: String
+    +cuit: String?
+    +nombreContacto: String?
+    +telefonoContacto: String?
+    +emailContacto: String?
+    +canalEntrada: CanalEntrada?
+    +usuarioAsignadoId: Int
+    +direccionEntrega: String?
+    +localidad: String?
+    +esExportador: Boolean
+    +observaciones: String?
+    +fechaAlta: DateTime
+    +activo: Boolean
+  }
+
+}
+
+package "Dominio: Catálogo" {
+
+  class Producto {
+    +id: Int
+    +nombre: String
+    +tipo: TipoPallet
+    +condicion: CondicionPallet
+    +propietarioId: Int
+    +dimensionLargo: Int?
+    +dimensionAncho: Int?
+    +cargaMaximaKg: Int?
+    +requiereSenasa: Boolean
+    +descripcion: String?
+    +activo: Boolean
+  }
+
+  class Proveedor {
+    +id: Int
+    +nombreEmpresa: String
+    +nombreContacto: String
+    +telefono: String?
+    +email: String?
+    +tipoProducto: TipoProductoProveedor
+    +contactoExclusivoId: Int?
+    +distanciaKm: Int?
+    +ubicacion: String?
+    +observaciones: String?
+    +activo: Boolean
+  }
+
+  class ProductoProveedor {
+    +id: Int
+    +proveedorId: Int
+    +productoId: Int
+    +precioCosto: Decimal
+    +fechaActualizacion: DateTime
+    +observaciones: String?
+  }
+
+  class ListaPrecio {
+    +id: Int
+    +productoId: Int
+    +precioUnitario: Decimal
+    +margenPct: Decimal?
+    +cantMinima: Int
+    +cantMaxima: Int?
+    +bonificaFlete: Boolean
+    +vigentDesde: DateTime
+    +vigentHasta: DateTime?
+    +creadoPorId: Int
+    +observaciones: String?
+  }
+
+  class HistorialPrecio {
+    +id: Int
+    +productoId: Int
+    +precioAnterior: Decimal
+    +precioNuevo: Decimal
+    +motivo: String?
+    +fechaCambio: DateTime
+    +registradoPorId: Int
+  }
+
+}
+
+package "Dominio: Inventario y Stock" {
+
+  class Stock {
+    +id: Int
+    +productoId: Int
+    +proveedorId: Int
+    +cantidadDisponible: Int
+    +cantidadMinima: Int?
+    +cantidadDeudora: Int
+    +ultimaActualizacion: DateTime
+    +observaciones: String?
+  }
+
+  class MovimientoStock {
+    +id: Int
+    +stockId: Int
+    +tipoMovimiento: TipoMovimiento
+    +cantidad: Int
+    +motivo: MotivoMovimiento
+    +idReferencia: Int?
+    +fecha: DateTime
+    +registradoPorId: Int
+  }
+
+}
+
+package "Dominio: Cotizaciones" {
+
+  class Cotizacion {
+    +id: Int
+    +clienteId: Int?
+    +usuarioId: Int
+    +fechaCotizacion: DateTime
+    +fechaVencimiento: DateTime?
+    +estado: EstadoCotizacion
+    +incluyeFlete: Boolean
+    +costoFlete: Decimal?
+    +fleteIncluido: Boolean
+    +requiereSenasa: Boolean
+    +costoSenasa: Decimal?
+    +totalSinIva: Decimal?
+    +totalConIva: Decimal?
+    +canalEnvio: CanalEnvioCotizacion?
+    +observaciones: String?
+    +esRapida: Boolean
+    +nombreProspecto: String?
+    +telefonoProspecto: String?
+    +emailProspecto: String?
+  }
+
+  class DetalleCotizacion {
+    +id: Int
+    +cotizacionId: Int
+    +productoId: Int
+    +cantidad: Int
+    +precioUnitario: Decimal
+    +subtotal: Decimal
+    +esAMedida: Boolean
+  }
+
+  class EspecificacionMedida {
+    +id: Int
+    +detalleCotizacionId: Int?
+    +detalleVentaId: Int?
+    +largoMm: Int?
+    +anchoMm: Int?
+    +altoMm: Int?
+    +cargaMaximaKg: Int?
+    +tipoMadera: String?
+    +observacionesCliente: String?
+    +medidas: Json?
+  }
+
+  class SeguimientoCotizacion {
+    +id: Int
+    +cotizacionId: Int
+    +usuarioId: Int
+    +fechaContacto: DateTime
+    +tipoContacto: TipoContacto
+    +resultado: ResultadoSeguimiento
+    +observaciones: String?
+    +proximoContacto: DateTime?
+  }
+
+  class CotizacionWeb {
+    +id: Int
+    +nombre: String
+    +empresa: String?
+    +email: String
+    +telefono: String?
+    +tipoPallet: String?
+    +cantidad: Int?
+    +fechaNecesidad: DateTime?
+    +tipoEntrega: String?
+    +localidadEntrega: String?
+    +requiereSenasa: Boolean
+    +observaciones: String?
+    +estado: EstadoCotizacionWeb
+    +propietarioAsignadoId: Int?
+    +cotizacionId: Int?
+    +motivoDescarte: String?
+    +ipOrigen: String?
+    +creadoEn: DateTime
+    +actualizadoEn: DateTime
+  }
+
+}
+
+package "Dominio: Ventas y Pedidos" {
+
+  class Venta {
+    +id: Int
+    +cotizacionId: Int?
+    +clienteId: Int
+    +usuarioId: Int
+    +fechaVenta: DateTime
+    +estadoPedido: EstadoPedido
+    +tipoEntrega: TipoEntrega
+    +requiereSenasa: Boolean
+    +fechaEstimEntrega: DateTime?
+    +fechaEntregaReal: DateTime?
+    +fechaRetiro: DateTime?
+    +lugarEntrega: String?
+    +totalSinIva: Decimal?
+    +totalConIva: Decimal?
+    +costoFlete: Decimal?
+    +metodoPago: MetodoPago?
+    +cuentaDestino: String?
+    +modalidadPago: ModalidadPago?
+    +observaciones: String?
+    +origenStock: String?
+    +esHistorica: Boolean
+  }
+
+  class DetalleVenta {
+    +id: Int
+    +ventaId: Int
+    +productoId: Int
+    +cantidadPedida: Int
+    +cantidadEntregada: Int
+    +precioUnitario: Decimal
+    +subtotal: Decimal
+    +observaciones: String?
+    +costoUnitarioHistorico: Decimal?
+    +proveedorHistoricoId: Int?
+    +tipoCompraHistorico: String?
+  }
+
+  class RetiroParcial {
+    +id: Int
+    +detalleVentaId: Int
+    +fechaRetiro: DateTime
+    +cantidadRetirada: Int
+    +registradoPorId: Int
+  }
+
+  class Retiro {
+    +id: Int
+    +ventaId: Int
+    +codigoRetiro: String <<unique>>
+    +estadoRetiro: EstadoRetiro
+    +galpon: String?
+    +horaEstimadaRetiro: DateTime?
+    +confirmadoPorId: Int?
+    +fechaConfirmacion: DateTime?
+    +observacionesConf: String?
+    +motivoCancelacion: String?
+    +creadoEn: DateTime
+  }
+
+  class HistorialReenvioRetiro {
+    +id: Int
+    +retiroId: Int
+    +emailEnviado: String?
+    +telefonoEnviado: String?
+    +enviadoPorId: Int
+    +creadoEn: DateTime
+  }
+
+}
+
+package "Dominio: Compras" {
+
+  class Compra {
+    +id: Int
+    +proveedorId: Int
+    +usuarioId: Int
+    +ventaId: Int?
+    +fechaCompra: DateTime
+    +estado: EstadoCompra
+    +tipoCompra: TipoCompra
+    +total: Decimal?
+    +nroRemito: String?
+    +observaciones: String?
+    +saldoDeudor: Boolean
+    +fechaPago: DateTime?
+    +metodoPago: MetodoPago?
+    +cuentaDestino: String?
+    +nroComprobante: String?
+  }
+
+  class DetalleCompra {
+    +id: Int
+    +compraId: Int
+    +productoId: Int
+    +cantidad: Int
+    +precioCostoUnit: Decimal
+    +subtotal: Decimal
+  }
+
+  class PagoProveedor {
+    +id: Int
+    +compraId: Int
+    +proveedorId: Int
+    +fechaPago: DateTime
+    +monto: Decimal
+    +medioPago: MedioPago
+    +nroComprobante: String?
+    +registradoPorId: Int
+    +observaciones: String?
+  }
+
+}
+
+package "Dominio: Logística" {
+
+  class Logistica {
+    +id: Int
+    +ventaId: Int
+    +nombreTransportista: String
+    +telefonoTransp: String?
+    +fechaRetiroGalpon: DateTime?
+    +horaRetiro: DateTime?
+    +horaEstimadaEntrega: DateTime?
+    +horaEntregaReal: DateTime?
+    +estadoEntrega: EstadoEntrega
+    +confTransportista: Boolean
+    +confCliente: Boolean
+    +costoFlete: Decimal?
+    +registradoPorId: Int
+    +observaciones: String?
+    +lugarEntrega: String?
+    +latEntrega: Float?
+    +lngEntrega: Float?
+    +estadoConsulta: EstadoConsulta
+    +fechaConsulta: DateTime?
+    +consultadaPorId: Int?
+  }
+
+  class SolicitudLogistica {
+    +id: Int
+    +ventaId: Int?
+    +solicitanteId: Int
+    +destinatarioId: Int
+    +fechaSolicitud: DateTime
+    +fechaEntrega: DateTime?
+    +cantidadUnidades: Int?
+    +ubicacionEntrega: String?
+    +notas: String?
+    +estado: EstadoSolicitudLogistica
+    +fechaRespuesta: DateTime?
+    +notasRespuesta: String?
+  }
+
+}
+
+package "Dominio: Facturación y Cobros" {
+
+  class Factura {
+    +id: Int
+    +ventaId: Int
+    +clienteId: Int
+    +usuarioId: Int
+    +tipoFactura: TipoFactura
+    +nroFactura: String?
+    +esSinFactura: Boolean
+    +fechaEmision: DateTime
+    +fechaVencimiento: DateTime?
+    +totalNeto: Decimal
+    +iva: Decimal
+    +totalConIva: Decimal
+    +estadoCobro: EstadoCobro
+    +modalidadPago: String?
+    +medioPago: String?
+    +metodoPago: MetodoPago?
+    +cuentaDestino: String?
+    +observaciones: String?
+  }
+
+  class PagoCobro {
+    +id: Int
+    +facturaId: Int
+    +clienteId: Int
+    +fechaPago: DateTime
+    +monto: Decimal
+    +medioPago: MedioPago
+    +nroComprobante: String?
+    +esAdelanto: Boolean
+    +registradoPorId: Int
+    +observaciones: String?
+  }
+
+  class NotaCredito {
+    +id: Int
+    +facturaId: Int
+    +clienteId: Int
+    +usuarioId: Int
+    +fechaEmision: DateTime
+    +nroNota: String?
+    +monto: Decimal
+    +motivo: String
+  }
+
+}
+
+package "Dominio: Devoluciones" {
+
+  class Devolucion {
+    +id: Int
+    +ventaId: Int
+    +clienteId: Int
+    +usuarioId: Int
+    +fechaSolicitud: DateTime
+    +tipoCaso: TipoCasoDevolucion
+    +estado: EstadoDevolucion
+    +devuelveFlete: Boolean
+    +devuelveSenasa: Boolean
+    +montoPallets: Decimal
+    +montoFlete: Decimal?
+    +montoSenasa: Decimal?
+    +montoTotal: Decimal
+    +requiereConfirmacionDeposito: Boolean
+    +depositoConfirmo: Boolean
+    +fechaConfirmacionDeposito: DateTime?
+    +stockRestaurado: Boolean
+    +fechaStockRestaurado: DateTime?
+    +transferenciaDevuelta: Boolean
+    +fechaTransferenciaDevuelta: DateTime?
+    +compensaEnSiguientePedido: Boolean
+    +metodoPago: MetodoPago?
+    +cuentaDestino: String?
+    +observaciones: String?
+  }
+
+  class DetalleDevolucion {
+    +id: Int
+    +devolucionId: Int
+    +detalleVentaId: Int?
+    +productoId: Int
+    +cantidadDevuelta: Int
+    +precioUnitario: Decimal
+    +subtotal: Decimal
+  }
+
+}
+
+package "Dominio: Remitos" {
+
+  class Remito {
+    +id: Int
+    +numeroRemito: String?
+    +ventaId: Int
+    +clienteId: Int
+    +usuarioId: Int
+    +fechaEmision: DateTime
+    +fechaEntrega: DateTime?
+    +estado: EstadoRemito
+    +firmaPropietario: String?
+    +fechaFirmaPropietario: DateTime?
+    +firmaCliente: String?
+    +fechaFirmaCliente: DateTime?
+    +tokenFirma: String <<unique>>
+    +emailEnviado: Boolean
+    +fechaEmailEnviado: DateTime?
+    +observaciones: String?
+  }
+
+}
+
+package "Dominio: Email Marketing" {
+
+  class PlantillaEmail {
+    +id: Int
+    +nombre: String
+    +asunto: String
+    +bloques: Json
+    +creadaPorId: Int
+    +creadaEn: DateTime
+    +activa: Boolean
+  }
+
+  class CampanaSeguimiento {
+    +id: Int
+    +nombre: String
+    +asunto: String
+    +segmento: String
+    +diasCondicion: Int?
+    +bloques: Json
+    +plantillaId: Int?
+    +enviadaPorId: Int
+    +enviadaEn: DateTime
+    +totalDestinatarios: Int
+    +estado: String
+  }
+
+  class DestinatarioCampana {
+    +id: Int
+    +campanaId: Int
+    +clienteId: Int
+    +email: String
+    +enviado: Boolean
+    +error: String?
+    +enviadoEn: DateTime?
+  }
+
+  class ReglaAutomatizacion {
+    +id: Int
+    +nombre: String
+    +activa: Boolean
+    +evento: String
+    +diasCondicion: Int
+    +plantillaId: Int
+    +asunto: String
+    +creadaPorId: Int
+    +creadaEn: DateTime
+  }
+
+}
+
+'══════════════════════════════════════════════════════════════════════════════
+' CAPA DE SERVICIO — Backend (Express + Prisma)
+'══════════════════════════════════════════════════════════════════════════════
+
+package "Servicios: Autenticación" {
+
+  class AuthService <<Service>> {
+    +loginService(email: String, password: String): Token
+    +actualizarPerfilService(userId: Int, datos: Object): Usuario
+    +cambiarPasswordService(userId: Int, actual: String, nueva: String): void
+    +iniciarCambioEmailService(userId: Int, nuevoEmail: String): void
+    +confirmarCambioEmailService(userId: Int, codigo: String): void
+    +iniciarCambioTelefonoService(userId: Int, telefono: String): void
+    +confirmarCambioTelefonoService(userId: Int, codigo: String): void
+    +recuperarPasswordService(email: String): void
+    +confirmarRecuperacionService(email: String, codigo: String, nueva: String): void
+    +actualizarFotoPerfilService(userId: Int, base64: String): Usuario
+    +actualizarFirmaService(userId: Int, base64: String): Usuario
+  }
+
+}
+
+package "Servicios: Clientes" {
+
+  class ClientesService <<Service>> {
+    +getClientesService(usuarioId: Int, rol: String): Cliente[]
+    +getClienteByIdService(id: Int): Cliente
+    +crearClienteService(datos: Object, usuarioId: Int): Cliente
+    +actualizarClienteService(id: Int, datos: Object, usuarioId: Int): Cliente
+    +desactivarClienteService(id: Int, usuarioId: Int): void
+  }
+
+}
+
+package "Servicios: Productos y Precios" {
+
+  class ProductosService <<Service>> {
+    +getProductosService(propietarioId: Int): Producto[]
+    +getProductosOtroService(propietarioId: Int): Producto[]
+    +getProductoByIdService(id: Int): Producto
+    +crearProductoService(datos: Object): Producto
+    +actualizarProductoService(id: Int, propietarioId: Int, datos: Object): Producto
+    +desactivarProductoService(id: Int, propietarioId: Int): void
+  }
+
+  class PreciosService <<Service>> {
+    +getListaPreciosService(productoId: Int): ListaPrecio[]
+    +crearListaPrecioService(datos: Object): ListaPrecio
+    +actualizarListaPrecioService(id: Int, datos: Object): ListaPrecio
+    +eliminarListaPrecioService(id: Int): void
+    +calcularPrecioService(productoId: Int, cantidad: Int): CalculoPrecio
+  }
+
+  class ProveedoresService <<Service>> {
+    +getProveedoresService(usuarioId: Int): Proveedor[]
+    +getProveedorByIdService(id: Int): Proveedor
+    +crearProveedorService(datos: Object): Proveedor
+    +actualizarProveedorService(id: Int, datos: Object): Proveedor
+    +desactivarProveedorService(id: Int): void
+  }
+
+}
+
+package "Servicios: Inventario y Stock" {
+
+  class InventarioService <<Service>> {
+    +getStockConsolidadoService(): StockConsolidado[]
+    +getAlertasStockService(): AlertaStock[]
+    +getStockService(): Stock[]
+    +getMovimientosStockService(productoId?: Int, proveedorId?: Int): MovimientoStock[]
+  }
+
+  class StockService <<Service>> {
+    +ajustarStockService(stockId: Int, tipo: TipoMovimiento, cantidad: Int, motivo: MotivoMovimiento, registradoPorId: Int): Stock
+    +getStockBajoMinimoService(): Stock[]
+    +actualizarMinimoService(stockId: Int, cantidadMinima: Int): Stock
+  }
+
+}
+
+package "Servicios: Cotizaciones" {
+
+  class CotizacionesService <<Service>> {
+    +getCotizacionesService(usuarioId: Int, rol: String): Cotizacion[]
+    +getCotizacionByIdService(id: Int): Cotizacion
+    +crearCotizacionService(datos: Object, usuarioId: Int): Cotizacion
+    +actualizarCotizacionService(id: Int, usuarioId: Int, datos: Object): Cotizacion
+    +cambiarEstadoService(id: Int, estado: EstadoCotizacion): Cotizacion
+    +eliminarCotizacionService(id: Int): void
+  }
+
+  class SeguimientosService <<Service>> {
+    +getSeguimientosService(cotizacionId: Int): SeguimientoCotizacion[]
+    +crearSeguimientoService(datos: Object, usuarioId: Int): SeguimientoCotizacion
+  }
+
+  class CotizacionesWebService <<Service>> {
+    +getCotizacionesWebService(usuarioId: Int, rol: String): CotizacionWeb[]
+    +getCotizacionWebByIdService(id: Int): CotizacionWeb
+    +crearCotizacionWebService(datos: Object, ip: String): CotizacionWeb
+    +actualizarEstadoWebService(id: Int, estado: EstadoCotizacionWeb, extras: Object): CotizacionWeb
+    +asignarPropietarioService(id: Int, propietarioId: Int): CotizacionWeb
+    +convertirACotizacionService(id: Int, usuarioId: Int): Cotizacion
+    +descartarLeadService(id: Int, motivo: String): CotizacionWeb
+    +getContadorService(): ContadorCotizacionesWeb
+  }
+
+}
+
+package "Servicios: Ventas" {
+
+  class VentasService <<Service>> {
+    +getVentasService(usuarioId: Int, rol: String): Venta[]
+    +getVentaByIdService(id: Int): Venta
+    +crearVentaService(datos: Object, usuarioId: Int): Venta
+    +actualizarEstadoPedidoService(id: Int, datos: Object): Venta
+    +cancelarVentaService(id: Int): void
+    +registrarRetiroParcialService(detalleVentaId: Int, cantidad: Int, usuarioId: Int): RetiroParcial
+    +registrarVentaHistoricaService(datos: Object, usuarioId: Int): Venta
+  }
+
+  class RetirosService <<Service>> {
+    +getRetirosService(usuarioId: Int, rol: String): Retiro[]
+    +getRetiroByCodigoService(codigo: String): Retiro
+    +confirmarRetiroService(retiroId: Int, usuarioId: Int, datos: Object): Retiro
+    +cancelarRetiroService(retiroId: Int, motivo: String): Retiro
+    +reenviarCodigoRetiroService(retiroId: Int, usuarioId: Int): void
+  }
+
+}
+
+package "Servicios: Compras" {
+
+  class ComprasService <<Service>> {
+    +getComprasService(usuarioId: Int, rol: String): Compra[]
+    +getCompraByIdService(id: Int): Compra
+    +crearCompraService(datos: Object, usuarioId: Int): Compra
+    +actualizarCompraService(id: Int, datos: Object): Compra
+    +cancelarCompraService(id: Int): Compra
+    +registrarPagoProveedorService(datos: Object, usuarioId: Int): PagoProveedor
+  }
+
+}
+
+package "Servicios: Logística" {
+
+  class LogisticaService <<Service>> {
+    +getLogisticaService(usuarioId: Int, rol: String): Logistica[]
+    +getLogisticaByVentaService(ventaId: Int): Logistica
+    +crearLogisticaService(datos: Object, usuarioId: Int): Logistica
+    +actualizarLogisticaService(id: Int, datos: Object): Logistica
+  }
+
+  class SolicitudesLogisticaService <<Service>> {
+    +getSolicitudesService(usuarioId: Int): SolicitudLogistica[]
+    +crearSolicitudService(datos: Object, solicitanteId: Int): SolicitudLogistica
+    +responderSolicitudService(id: Int, estado: EstadoSolicitudLogistica, notas: String): SolicitudLogistica
+  }
+
+}
+
+package "Servicios: Facturación" {
+
+  class FacturacionService <<Service>> {
+    +getFacturasService(usuarioId: Int, rol: String): Factura[]
+    +getFacturaByIdService(id: Int): Factura
+    +crearFacturaService(datos: Object, usuarioId: Int): Factura
+    +actualizarFacturaService(id: Int, datos: Object): Factura
+    +registrarPagoService(datos: Object, usuarioId: Int): PagoCobro
+    +emitirNotaCreditoService(datos: Object, usuarioId: Int): NotaCredito
+    +marcarFacturasVencidasService(): Int
+    +marcarCotizacionesVencidasService(): Int
+  }
+
+}
+
+package "Servicios: Devoluciones" {
+
+  class DevolucionesService <<Service>> {
+    +getDevolucionesService(usuarioId: Int): Devolucion[]
+    +getDevolucionByIdService(id: Int): Devolucion
+    +crearDevolucionService(datos: Object, usuarioId: Int): Devolucion
+    +actualizarEstadoDevolucionService(id: Int, datos: Object): Devolucion
+    +cancelarDevolucionService(id: Int): Devolucion
+  }
+
+}
+
+package "Servicios: Remitos" {
+
+  class RemitosService <<Service>> {
+    +getRemitosService(usuarioId: Int): Remito[]
+    +getRemitoByVentaService(ventaId: Int): Remito
+    +getRemitoByTokenService(token: String): Remito
+    +crearRemitoService(ventaId: Int, usuarioId: Int): Remito
+    +firmarPropietarioService(id: Int, firma: String, usuarioId: Int): Remito
+    +enviarAClienteService(id: Int): Remito
+    +firmarClienteService(token: String, firma: String): Remito
+    +cancelarRemitoService(id: Int): Remito
+  }
+
+}
+
+package "Servicios: Alertas" {
+
+  class AlertasService <<Service>> {
+    +getAlertasActivasService(): AlertasResponse
+    +marcarFacturasVencidasService(): Int
+    +marcarCotizacionesVencidasService(): Int
+  }
+
+}
+
+package "Servicios: Email Marketing" {
+
+  class PlantillasService <<Service>> {
+    +getPlantillasService(usuarioId: Int): PlantillaEmail[]
+    +crearPlantillaService(datos: Object, usuarioId: Int): PlantillaEmail
+    +actualizarPlantillaService(id: Int, datos: Object): PlantillaEmail
+    +toggleActivaService(id: Int): PlantillaEmail
+  }
+
+  class CampanasService <<Service>> {
+    +getCampanasService(usuarioId: Int): CampanaSeguimiento[]
+    +enviarCampanaService(datos: Object, usuarioId: Int): CampanaSeguimiento
+    +getDestinatariosService(segmento: String, diasCondicion?: Int): Cliente[]
+  }
+
+  class ReglasAutomatizacionService <<Service>> {
+    +getReglasService(usuarioId: Int): ReglaAutomatizacion[]
+    +crearReglaService(datos: Object, usuarioId: Int): ReglaAutomatizacion
+    +actualizarReglaService(id: Int, datos: Object): ReglaAutomatizacion
+    +toggleActivaService(id: Int): ReglaAutomatizacion
+    +evaluarReglasService(): void
+  }
+
+}
+
+package "Servicios: Reportes" {
+
+  class ReportesService <<Service>> {
+    +getDashboardService(usuarioId: Int, rol: String): DashboardData
+    +getVentasUltimos12MesesService(): GraficoMes[]
+    +getKpisService(usuarioId: Int, rol: String): KpisData
+  }
+
+}
+
+'══════════════════════════════════════════════════════════════════════════════
+' CAPA DE PRESENTACIÓN — Frontend (React + Zustand)
+'══════════════════════════════════════════════════════════════════════════════
+
+package "Estado Global (Zustand)" {
+
+  class AuthStore <<Store>> {
+    +token: String?
+    +usuario: Usuario?
+    +isAuthenticated: Boolean
+    +login(token: String, usuario: Usuario): void
+    +logout(): void
+    +actualizarUsuario(datos: Partial<Usuario>): void
+  }
+
+  class VistaStore <<Store>> {
+    +vistaActual: String
+    +setVista(vista: String): void
+  }
+
+}
+
+package "Cliente HTTP" {
+
+  class ApiClient <<Singleton>> {
+    -baseURL: String
+    -axiosInstance: AxiosInstance
+    +get(url: String): Promise
+    +post(url: String, data: Object): Promise
+    +put(url: String, data: Object): Promise
+    +patch(url: String, data: Object): Promise
+    +delete(url: String): Promise
+    -interceptRequest(config): config
+    -interceptResponse(response): response
+  }
+
+}
+
+package "Servicios Frontend" {
+
+  class CotizacionesWebApiService <<ApiService>> {
+    +getAll(params?: Object): CotizacionWeb[]
+    +getById(id: Int): CotizacionWeb
+    +actualizarEstado(id: Int, datos: Object): CotizacionWeb
+    +asignarPropietario(id: Int, propietarioId: Int): CotizacionWeb
+    +convertir(id: Int): CotizacionWeb
+    +descartar(id: Int, motivo: String): CotizacionWeb
+    +getContadores(): ContadorCotizacionesWeb
+  }
+
+}
+
+'══════════════════════════════════════════════════════════════════════════════
+' VALUE OBJECTS Y DTOs
+'══════════════════════════════════════════════════════════════════════════════
+
+package "Value Objects / DTOs" {
+
+  class StockConsolidado <<DTO>> {
+    +producto: ProductoResumen
+    +stockTotalPropio: Int
+    +stockTotalDeudor: Int
+    +porGalpon: GalponStock[]
+  }
+
+  class GalponStock <<DTO>> {
+    +stockId: Int
+    +proveedor: ProveedorResumen
+    +cantidadDisponible: Int
+    +cantidadDeudora: Int
+    +cantidadMinima: Int?
+    +bajoMinimo: Boolean
+    +tieneSaldoDeudor: Boolean
+  }
+
+  class AlertaStock <<DTO>> {
+    +stockId: Int
+    +producto: ProductoResumen
+    +proveedor: ProveedorResumen
+    +cantidadDisponible: Int
+    +cantidadMinima: Int
+    +deficit: Int
+  }
+
+  class AlertaItem <<DTO>> {
+    +tipo: String
+    +urgencia: String
+    +titulo: String
+    +detalle: String
+    +referencia: ReferenciaAlerta
+    +propietario: String
+  }
+
+  class AlertasResponse <<DTO>> {
+    +total: Int
+    +alta: Int
+    +media: Int
+    +baja: Int
+    +alertas: AlertaItem[]
+  }
+
+  class CalculoPrecio <<DTO>> {
+    +precioUnitario: Decimal
+    +cantMinima: Int
+    +cantMaxima: Int?
+    +bonificaFlete: Boolean
+    +subtotal: Decimal
+    +subtotalConIva: Decimal
+    +escalon: String
+  }
+
+  class DashboardData <<DTO>> {
+    +kpis: KpisData
+    +porPropietario: DatosPorPropietario
+    +graficos: GraficosData
+    +ventasMesDetalle: VentaResumen[]?
+    +cotizacionesActivas: CotizacionResumen[]?
+  }
+
+  class ContadorCotizacionesWeb <<DTO>> {
+    +total: Int
+    +pendiente: Int
+    +vista: Int
+  }
+
+}
+
+'══════════════════════════════════════════════════════════════════════════════
+' RELACIONES DE DOMINIO — Asociaciones entre entidades
+'══════════════════════════════════════════════════════════════════════════════
+
+' ── Usuario ────────────────────────────────────────────────────────────────
+Usuario "1" *-- "0..*" VerificacionCodigo : tiene >
+Usuario "1" *-- "0..*" Cliente : gestiona >
+Usuario "1" *-- "0..*" Producto : es propietario de >
+Usuario "1" *-- "0..*" ListaPrecio : crea >
+Usuario "1" *-- "0..*" HistorialPrecio : registra >
+Usuario "1" *-- "0..*" MovimientoStock : registra >
+Usuario "1" *-- "0..*" Cotizacion : emite >
+Usuario "1" *-- "0..*" SeguimientoCotizacion : realiza >
+Usuario "1" *-- "0..*" Venta : registra >
+Usuario "1" *-- "0..*" Compra : realiza >
+Usuario "1" *-- "0..*" Factura : emite >
+Usuario "1" *-- "0..*" PagoCobro : registra >
+Usuario "1" *-- "0..*" NotaCredito : emite >
+Usuario "1" *-- "0..*" PagoProveedor : registra >
+Usuario "1" *-- "0..*" Logistica : registra envío >
+Usuario "1" *-- "0..*" Retiro : confirma >
+Usuario "1" *-- "0..*" HistorialReenvioRetiro : reenvía >
+Usuario "1" *-- "0..*" RetiroParcial : registra >
+Usuario "1" *-- "0..*" SolicitudLogistica : solicita >
+Usuario "1" *-- "0..*" SolicitudLogistica : recibe >
+Usuario "1" *-- "0..*" Devolucion : procesa >
+Usuario "1" *-- "0..*" Remito : emite >
+Usuario "1" *-- "0..*" PlantillaEmail : crea >
+Usuario "1" *-- "0..*" CampanaSeguimiento : envía >
+Usuario "1" *-- "0..*" ReglaAutomatizacion : configura >
+Usuario "1" *-- "0..*" CotizacionWeb : asignado a >
+
+' ── Cliente ────────────────────────────────────────────────────────────────
+Cliente "1" o-- "0..*" Cotizacion : solicita >
+Cliente "1" o-- "0..*" Venta : realiza >
+Cliente "1" o-- "0..*" Factura : tiene >
+Cliente "1" o-- "0..*" PagoCobro : paga >
+Cliente "1" o-- "0..*" NotaCredito : recibe >
+Cliente "1" o-- "0..*" Devolucion : genera >
+Cliente "1" o-- "0..*" Remito : firma >
+Cliente "1" o-- "0..*" DestinatarioCampana : es destinatario >
+
+' ── Producto ───────────────────────────────────────────────────────────────
+Producto "1" o-- "0..*" ProductoProveedor : tiene precio con >
+Producto "1" o-- "0..*" ListaPrecio : tiene escalones >
+Producto "1" o-- "0..*" HistorialPrecio : tiene historial >
+Producto "1" *-- "0..*" Stock : tiene stock >
+Producto "1" o-- "0..*" DetalleCotizacion : aparece en >
+Producto "1" o-- "0..*" DetalleVenta : aparece en >
+Producto "1" o-- "0..*" DetalleCompra : aparece en >
+Producto "1" o-- "0..*" DetalleDevolucion : aparece en >
+
+' ── Proveedor ──────────────────────────────────────────────────────────────
+Proveedor "1" o-- "0..*" ProductoProveedor : provee >
+Proveedor "1" *-- "0..*" Stock : almacena en galpón >
+Proveedor "1" o-- "0..*" Compra : origen de >
+Proveedor "1" o-- "0..*" PagoProveedor : recibe >
+
+' ── Stock ──────────────────────────────────────────────────────────────────
+Stock "1" *-- "0..*" MovimientoStock : registra >
+
+' ── Cotización ─────────────────────────────────────────────────────────────
+Cotizacion "1" *-- "0..*" DetalleCotizacion : tiene >
+Cotizacion "1" o-- "0..*" SeguimientoCotizacion : tiene >
+Cotizacion "1" o-- "0..1" Venta : convierte en >
+Cotizacion "1" o-- "0..1" CotizacionWeb : originada en >
+
+' ── DetalleCotizacion ──────────────────────────────────────────────────────
+DetalleCotizacion "1" o-- "0..1" EspecificacionMedida : puede tener >
+
+' ── Venta ──────────────────────────────────────────────────────────────────
+Venta "1" *-- "1..*" DetalleVenta : tiene >
+Venta "1" o-- "0..*" Factura : genera >
+Venta "1" o-- "0..*" Compra : origina >
+Venta "1" o-- "0..*" SolicitudLogistica : tiene >
+Venta "1" o-- "0..*" Devolucion : puede tener >
+Venta "1" *-- "0..1" Logistica : tiene logística >
+Venta "1" *-- "0..1" Retiro : tiene retiro >
+Venta "1" *-- "0..1" Remito : tiene remito >
+
+' ── DetalleVenta ───────────────────────────────────────────────────────────
+DetalleVenta "1" o-- "0..1" EspecificacionMedida : puede tener >
+DetalleVenta "1" o-- "0..*" RetiroParcial : tiene >
+DetalleVenta "1" o-- "0..*" DetalleDevolucion : puede devolver >
+
+' ── Retiro ─────────────────────────────────────────────────────────────────
+Retiro "1" *-- "0..*" HistorialReenvioRetiro : tiene historial >
+
+' ── Compra ─────────────────────────────────────────────────────────────────
+Compra "1" *-- "1..*" DetalleCompra : tiene >
+Compra "1" o-- "0..*" PagoProveedor : tiene pagos >
+
+' ── Factura ────────────────────────────────────────────────────────────────
+Factura "1" *-- "0..*" PagoCobro : tiene cobros >
+Factura "1" o-- "0..*" NotaCredito : puede tener >
+
+' ── Devolucion ─────────────────────────────────────────────────────────────
+Devolucion "1" *-- "1..*" DetalleDevolucion : tiene >
+
+' ── Email Marketing ────────────────────────────────────────────────────────
+PlantillaEmail "1" o-- "0..*" CampanaSeguimiento : base de >
+PlantillaEmail "1" o-- "0..*" ReglaAutomatizacion : usa en >
+CampanaSeguimiento "1" *-- "1..*" DestinatarioCampana : tiene >
+
+' ── Enums ──────────────────────────────────────────────────────────────────
+Usuario ..> RolUsuario : usa
+VerificacionCodigo ..> TipoVerificacion : usa
+Cliente ..> CanalEntrada : usa
+Producto ..> TipoPallet : usa
+Producto ..> CondicionPallet : usa
+Proveedor ..> TipoProductoProveedor : usa
+Cotizacion ..> EstadoCotizacion : usa
+Cotizacion ..> CanalEnvioCotizacion : usa
+SeguimientoCotizacion ..> TipoContacto : usa
+SeguimientoCotizacion ..> ResultadoSeguimiento : usa
+Venta ..> EstadoPedido : usa
+Venta ..> TipoEntrega : usa
+Venta ..> MetodoPago : usa
+Venta ..> ModalidadPago : usa
+MovimientoStock ..> TipoMovimiento : usa
+MovimientoStock ..> MotivoMovimiento : usa
+Compra ..> EstadoCompra : usa
+Compra ..> TipoCompra : usa
+Logistica ..> EstadoEntrega : usa
+Logistica ..> EstadoConsulta : usa
+Factura ..> TipoFactura : usa
+Factura ..> EstadoCobro : usa
+Factura ..> MetodoPago : usa
+PagoCobro ..> MedioPago : usa
+PagoProveedor ..> MedioPago : usa
+Devolucion ..> TipoCasoDevolucion : usa
+Devolucion ..> EstadoDevolucion : usa
+Devolucion ..> MetodoPago : usa
+Retiro ..> EstadoRetiro : usa
+Remito ..> EstadoRemito : usa
+SolicitudLogistica ..> EstadoSolicitudLogistica : usa
+CotizacionWeb ..> EstadoCotizacionWeb : usa
+
+'══════════════════════════════════════════════════════════════════════════════
+' RELACIONES CAPA SERVICIO → DOMINIO
+'══════════════════════════════════════════════════════════════════════════════
+
+AuthService ..> Usuario : gestiona
+ClientesService ..> Cliente : gestiona
+ProductosService ..> Producto : gestiona
+PreciosService ..> ListaPrecio : gestiona
+PreciosService ..> HistorialPrecio : registra
+ProveedoresService ..> Proveedor : gestiona
+InventarioService ..> Stock : consulta
+InventarioService ..> StockConsolidado : produce
+StockService ..> Stock : modifica
+StockService ..> MovimientoStock : registra
+CotizacionesService ..> Cotizacion : gestiona
+SeguimientosService ..> SeguimientoCotizacion : gestiona
+CotizacionesWebService ..> CotizacionWeb : gestiona
+CotizacionesWebService ..> Cotizacion : convierte
+VentasService ..> Venta : gestiona
+RetirosService ..> Retiro : gestiona
+ComprasService ..> Compra : gestiona
+ComprasService ..> PagoProveedor : registra
+LogisticaService ..> Logistica : gestiona
+SolicitudesLogisticaService ..> SolicitudLogistica : gestiona
+FacturacionService ..> Factura : gestiona
+FacturacionService ..> PagoCobro : registra
+FacturacionService ..> NotaCredito : emite
+DevolucionesService ..> Devolucion : gestiona
+RemitosService ..> Remito : gestiona
+AlertasService ..> AlertasResponse : produce
+PlantillasService ..> PlantillaEmail : gestiona
+CampanasService ..> CampanaSeguimiento : gestiona
+ReglasAutomatizacionService ..> ReglaAutomatizacion : gestiona
+ReportesService ..> DashboardData : produce
+
+'══════════════════════════════════════════════════════════════════════════════
+' RELACIONES CAPA FRONTEND
+'══════════════════════════════════════════════════════════════════════════════
+
+ApiClient <.. CotizacionesWebApiService : usa
+AuthStore ..> Usuario : contiene
+CotizacionesWebApiService ..> CotizacionWeb : retorna
+
+@enduml

@@ -1,0 +1,123 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #FDF6EE
+  BorderColor #7c4b2c
+  FontColor #3c250f
+}
+skinparam actor {
+  BackgroundColor #E8D5C4
+  BorderColor #7c4b2c
+  FontColor #3c250f
+}
+skinparam rectangle {
+  BackgroundColor #FAF5F0
+  BorderColor #C4895A
+  BorderThickness 2
+}
+skinparam ArrowColor #3c250f
+
+title **Módulo 09 — Logística y Solicitudes**\n//WoodPallet Manager//
+
+actor "Propietario\nSolicitante" as PS
+actor "Propietario\nDestinatario" as PD
+
+rectangle "Logística y Coordinación de Envíos" {
+
+  ' ── Envíos propios ──────────────────────────────────────
+  package "Envíos (Logística)" {
+    usecase "Ver listado de envíos" as UC01
+    usecase "Registrar datos del\ntransportista" as UC02
+    usecase "Definir lugar de entrega\n(texto + coordenadas)" as UC03
+    usecase "Registrar hora estimada\nde retiro en galpón" as UC04
+    usecase "Registrar hora estimada\nde entrega al cliente" as UC05
+    usecase "Actualizar estado\ndel envío" as UC06
+    usecase "Registrar confirmación\ndel transportista" as UC07
+    usecase "Registrar confirmación\nde recepción del cliente" as UC08
+    usecase "Registrar hora real\nde entrega" as UC09
+    usecase "Marcar envío\ncon problema" as UC10
+    usecase "Ver logística de\nuna venta específica" as UC11
+  }
+
+  ' ── Solicitudes de coordinación ─────────────────────────
+  package "Solicitudes de Coordinación\n(entre propietarios)" {
+    usecase "Crear solicitud de\ncoordinación logística" as UC12
+    usecase "Definir fecha de entrega\nrequerida" as UC13
+    usecase "Especificar cantidad\ny ubicación" as UC14
+    usecase "Ver solicitudes\nlogísticas enviadas" as UC15
+    usecase "Ver solicitudes\nlogísticas recibidas" as UC16
+    usecase "Aceptar solicitud\nlogística" as UC17
+    usecase "Rechazar solicitud\nlogística" as UC18
+    usecase "Ver respuesta\nde la solicitud" as UC19
+  }
+
+}
+
+' ── Asociaciones ──────────────────────────────────────────
+PS --> UC01
+PS --> UC02
+PS --> UC03
+PS --> UC04
+PS --> UC05
+PS --> UC06
+PS --> UC07
+PS --> UC08
+PS --> UC10
+PS --> UC12
+PS --> UC15
+
+PD --> UC16
+PD --> UC17
+PD --> UC18
+
+' ── Include / Extend ──────────────────────────────────────
+UC01 ..> UC11 : <<extend>>
+
+UC02 ..> UC03 : <<extend>>
+UC06 ..> UC07 : <<extend>>
+UC06 ..> UC08 : <<extend>>
+UC06 ..> UC09 : <<extend>>
+UC06 ..> UC10 : <<extend>>
+UC08 ..> UC09 : <<include>>
+
+UC12 ..> UC13 : <<extend>>
+UC12 ..> UC14 : <<include>>
+UC12 ..> UC15 : <<include>>
+
+UC17 ..> UC19 : <<include>>
+UC18 ..> UC19 : <<include>>
+UC16 ..> UC19 : <<extend>>
+
+' ── Notas ─────────────────────────────────────────────────
+note right of UC06
+  Estados del envío:
+  pendiente | en_camino | entregado | con_problema
+end note
+
+note right of UC03
+  El lugar de entrega se puede expresar
+  como texto libre más coordenadas GPS
+  (latEntrega, lngEntrega) para ver en mapa.
+end note
+
+note bottom of UC12
+  Las solicitudes de coordinación permiten
+  que un propietario le solicite al otro
+  que coordine un envío o entrega relacionada
+  a una venta específica (ventaId opcional).
+end note
+
+note bottom of UC17
+  Estado de la solicitud:
+  pendiente → aceptada | rechazada
+  La respuesta incluye notas opcionales
+  y fecha de respuesta.
+end note
+
+note right of UC11
+  Cada venta tiene máximo una logística
+  (relación 1:1 única por ventaId).
+end note
+
+@enduml

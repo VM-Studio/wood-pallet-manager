@@ -1,0 +1,108 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #FDF6EE
+  BorderColor #7c4b2c
+  FontColor #3c250f
+}
+skinparam actor {
+  BackgroundColor #E8D5C4
+  BorderColor #7c4b2c
+  FontColor #3c250f
+}
+skinparam rectangle {
+  BackgroundColor #FAF5F0
+  BorderColor #C4895A
+  BorderThickness 2
+}
+skinparam ArrowColor #3c250f
+
+title **Módulo 04 — Proveedores**\n//WoodPallet Manager//
+
+actor "Propietario" as P
+
+rectangle "Gestión de Proveedores" {
+
+  ' ── ABM de proveedores ──────────────────────────────────
+  package "Datos del Proveedor" {
+    usecase "Ver listado de proveedores" as UC01
+    usecase "Buscar proveedor\npor nombre" as UC02
+    usecase "Ver detalle del proveedor" as UC03
+    usecase "Crear nuevo proveedor" as UC04
+    usecase "Editar datos del proveedor" as UC05
+    usecase "Desactivar proveedor" as UC06
+    usecase "Confirmar desactivación" as UC07
+    usecase "Definir tipo de producto\nque provee" as UC08
+    usecase "Asignar propietario con\nacceso exclusivo" as UC09
+    usecase "Registrar distancia\ny ubicación" as UC10
+  }
+
+  ' ── Precios de costo ────────────────────────────────────
+  package "Precios de Costo" {
+    usecase "Ver precio de costo\npor producto" as UC11
+    usecase "Registrar precio de costo\npara un producto" as UC12
+    usecase "Actualizar precio de costo" as UC13
+    usecase "Ver historial de cambios\nde precio de costo" as UC14
+  }
+
+  ' ── Relación con compras ────────────────────────────────
+  package "Compras y Saldos" {
+    usecase "Ver compras realizadas\nal proveedor" as UC15
+    usecase "Ver saldo deudor total\ncon el proveedor" as UC16
+    usecase "Ver historial de pagos\nal proveedor" as UC17
+  }
+
+}
+
+' ── Asociaciones ──────────────────────────────────────────
+P --> UC01
+P --> UC02
+P --> UC03
+P --> UC04
+P --> UC05
+P --> UC06
+P --> UC11
+P --> UC12
+P --> UC13
+P --> UC15
+P --> UC16
+
+' ── Include / Extend ──────────────────────────────────────
+UC01 ..> UC02 : <<extend>>
+
+UC04 ..> UC08 : <<include>>
+UC04 ..> UC09 : <<extend>>
+UC04 ..> UC10 : <<extend>>
+UC06 ..> UC07 : <<include>>
+
+UC03 ..> UC11 : <<include>>
+UC03 ..> UC15 : <<include>>
+UC03 ..> UC16 : <<include>>
+
+UC15 ..> UC17 : <<include>>
+
+' ── Notas ─────────────────────────────────────────────────
+note right of UC08
+  Tipos: seminuevo | nuevo_medida | ambos
+end note
+
+note right of UC09
+  Si tiene contacto exclusivo,
+  solo ese propietario ve al proveedor
+  en su listado de proveedores.
+end note
+
+note bottom of UC12
+  La relación Producto ↔ Proveedor
+  almacena el precio de costo con
+  fecha de última actualización.
+end note
+
+note bottom of UC16
+  El saldo deudor se genera cuando
+  se registra una compra sin pago
+  inmediato (saldoDeudor = true).
+end note
+
+@enduml

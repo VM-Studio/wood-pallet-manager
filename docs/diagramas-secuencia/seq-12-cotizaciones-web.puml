@@ -1,0 +1,139 @@
+@startuml
+'──────────────────────────────────────────────────────────────────────────────
+'  SEQ-12 — Cotizaciones Web: Lead Público, Revisión y Conversión a Cotización
+'──────────────────────────────────────────────────────────────────────────────
+skinparam backgroundColor #FDF6EE
+skinparam sequenceArrowColor #3c250f
+skinparam sequenceLifeLineBorderColor #7c4b2c
+skinparam sequenceParticipantBackgroundColor #E8D5C4
+skinparam sequenceParticipantBorderColor #7c4b2c
+skinparam sequenceBoxBackgroundColor #FAF5F0
+skinparam sequenceBoxBorderColor #C4895A
+skinparam noteBorderColor #C4895A
+skinparam noteBackgroundColor #FDF6EE
+skinparam shadowing false
+
+title SEQ-12 — Cotizaciones Web: Formulario Público, Revisión y Conversión a Cotización Formal\n//WoodPallet Manager//
+
+actor       "Visitante Web"        as VW
+actor       "Propietario"          as P
+participant "Web Pública\n(Formulario)" as WEBPUB
+participant "React Frontend\n(Admin)"   as FE
+participant "Express API\n:3001"   as API
+participant "AuthMiddleware"       as MW
+participant "CotizacionesWebService" as CWSVC
+participant "PrismaClient"         as DB
+
+== Flujo 1: Visitante envía formulario de cotización (endpoint público, sin JWT) ==
+
+VW -> WEBPUB : navega a la sección "Cotizar" del sitio web\ncompleta: nombre, empresa, email, teléfono,\ntipo pallet, cantidad, fecha necesidad, localidad
+WEBPUB -> API : POST /api/cotizaciones-web\n{ nombre: 'Juan Pérez',\n  empresa: 'Distribuidora XYZ',\n  email: 'juan@xyz.com',\n  telefono: '1144556677',\n  tipoPallet: 'Standard',\n  cantidad: 200,\n  tipoEntrega: 'envio_domicilio',\n  localidadEntrega: 'Rosario',\n  requiereSenasa: false,\n  observaciones: '...' }\n(sin Authorization header — endpoint público)
+
+note right of API
+  POST /api/cotizaciones-web NO tiene
+  middleware de autenticación.
+  Es accesible por cualquier visitante.
+end note
+
+API -> CWSVC : crearCotizacionWebService(input)
+CWSVC -> CWSVC : extraer ipOrigen del request (req.ip)
+CWSVC -> DB : cotizacionWeb.create({\n  nombre, empresa, email, telefono,\n  tipoPallet, cantidad, fechaNecesidad,\n  tipoEntrega, localidadEntrega,\n  requiereSenasa, observaciones,\n  ipOrigen: '200.10.x.x',\n  estado: 'pendiente'\n})
+DB --> CWSVC : CotizacionWeb { id, estado: 'pendiente' }
+CWSVC --> API : CotizacionWeb
+API --> WEBPUB : 201 { id, mensaje: 'Solicitud recibida' }
+WEBPUB --> VW : "¡Tu solicitud fue enviada!\nTe contactaremos pronto."
+
+== Flujo 2: Propietario ve el badge de leads pendientes ==
+
+FE -> API : GET /api/cotizaciones-web/contador
+API -> MW : verifyToken ✓
+API -> CWSVC : getContadorCotizacionesWebService()
+CWSVC -> DB : cotizacionWeb.count({\n  estado: IN ['pendiente', 'vista']\n})
+DB --> CWSVC : { pendientes: 3 }
+CWSVC --> API : { pendientes: 3 }
+API --> FE : 200 { pendientes: 3 }
+FE --> P : badge "3" en menú de Cotizaciones Web
+
+== Flujo 3: Propietario abre el lead (se marca como vista) ==
+
+P -> FE : click en lead → abre panel de detalle
+FE -> API : GET /api/cotizaciones-web/:id
+API -> MW : verifyToken ✓
+API -> CWSVC : getCotizacionWebByIdService(id)
+CWSVC -> DB : cotizacionWeb.findUnique({ id,\n  include: { propietarioAsignado, cotizacion } })
+DB --> CWSVC : CotizacionWeb { estado: 'pendiente' }
+CWSVC --> API : CotizacionWeb
+
+API -> CWSVC : marcarComoVistaCotizacionWebService(id)
+CWSVC -> DB : estado === 'pendiente'?
+DB --> CWSVC : sí
+CWSVC -> DB : cotizacionWeb.update({ estado: 'vista' })
+
+API --> FE : 200 CotizacionWeb
+FE --> P : datos del lead con todos los campos\nformulario completado por el visitante
+
+== Flujo 4: Asignar propietario responsable ==
+
+P -> FE : click "Asignar a Carlos" (o a Juan Cruz)
+FE -> API : PATCH /api/cotizaciones-web/:id/estado\n{ estado: 'vista', propietarioAsignadoId: 1 }
+API -> MW : verifyToken ✓
+API -> CWSVC : cambiarEstadoCotizacionWebService(id, 'vista',\n  { propietarioAsignadoId: 1 })
+CWSVC -> DB : cotizacionWeb.update({\n  estado: 'vista',\n  propietarioAsignadoId: 1\n})
+DB --> CWSVC : CotizacionWeb actualizada
+CWSVC --> API : CotizacionWeb
+API --> FE : 200
+FE --> P : lead asignado al propietario seleccionado
+
+== Flujo 5: Convertir lead a cotización formal ==
+
+note over P, DB
+  El propietario habla con el visitante por teléfono/email,
+  confirma los datos, y convierte el lead en cotización.
+  Puede crear un cliente nuevo o seleccionar uno existente.
+end note
+
+P -> FE : click "Convertir a cotización"\nselecciona/crea cliente, ingresa precio unitario
+FE -> API : POST /api/cotizaciones-web/:id/convertir\n{ usuarioId: 1,\n  nuevoCliente: {\n    razonSocial: 'Distribuidora XYZ SRL',\n    nombreContacto: 'Juan Pérez',\n    emailContacto: 'juan@xyz.com',\n    telefonoContacto: '1144556677',\n    localidad: 'Rosario'\n  },\n  precioUnitario: 8500,\n  costoFlete: 12000,\n  incluyeFlete: true }
+API -> MW : verifyToken ✓
+API -> CWSVC : convertirCotizacionWebService(id, datos)
+CWSVC -> DB : cotizacionWeb.findUnique({ id })
+DB --> CWSVC : CotizacionWeb { tipoPallet: 'Standard', cantidad: 200, requiereSenasa: false }
+
+alt estado = 'convertida'
+  CWSVC --> API : 400 "Ya fue convertida"
+end
+
+alt estado = 'descartada'
+  CWSVC --> API : 400 "Está descartada"
+end
+
+CWSVC -> DB : producto.findFirst({ nombre contains 'Standard' })
+DB --> CWSVC : Producto (o fallback al primer producto activo)
+
+CWSVC -> DB : **$transaction**:
+CWSVC -> DB :   1. cliente.create({\n        razonSocial, nombreContacto, email, telefono,\n        localidad, usuarioAsignadoId,\n        canalEntrada: 'formulario_web'\n      })
+DB --> CWSVC : Cliente { id }
+
+CWSVC -> CWSVC : subtotal = 8500 × 200 = 1.700.000\nflete = 12.000\ntotalSinIva = 1.712.000\ntotalConIva = 1.712.000 × 1.21 = 2.071.520
+
+CWSVC -> DB :   2. cotizacion.create({\n        clienteId, usuarioId,\n        incluyeFlete: true, costoFlete: 12000,\n        totalSinIva: 1.712.000, totalConIva: 2.071.520,\n        observaciones: '[Web] ...',\n        estado: 'enviada',\n        detalles: create[{ productoId, cantidad: 200,\n          precioUnitario: 8500, subtotal: 1.700.000 }]\n      })
+DB --> CWSVC : Cotizacion { id }
+
+CWSVC -> DB :   3. cotizacionWeb.update({\n        estado: 'convertida',\n        cotizacionId: cotizacion.id,\n        propietarioAsignadoId: datos.usuarioId\n      })
+
+CWSVC --> API : Cotizacion formal creada
+API --> FE : 201 Cotizacion
+FE --> P : lead convertido → redirige a cotizacion formal\ncreada en estado 'enviada' y lista para seguimiento
+
+== Flujo 6: Descartar un lead ==
+
+P -> FE : click "Descartar" → ingresa motivo
+FE -> API : PATCH /api/cotizaciones-web/:id/estado\n{ estado: 'descartada',\n  motivoDescarte: 'No cumple la cantidad mínima' }
+API -> MW : verifyToken ✓
+API -> CWSVC : cambiarEstadoCotizacionWebService(id, 'descartada',\n  { motivoDescarte: '...' })
+CWSVC -> DB : cotizacionWeb.update({ estado: 'descartada', motivoDescarte })
+CWSVC --> API : CotizacionWeb
+API --> FE : 200
+FE --> P : lead descartado con motivo registrado
+
+@enduml

@@ -90,11 +90,11 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
   return (
     <aside
       style={{ background: C.bg, borderRight: `1px solid ${C.border}` }}
-      className={`fixed top-0 left-0 h-screen w-[252px] flex flex-col z-30 transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}
+      className={`fixed top-0 left-0 h-screen h-dvh w-[252px] flex flex-col z-30 transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}
     >
       {/* ── Header / Logo ── */}
       <div
-        style={{ borderBottom: `1px solid ${C.border}`, padding: '1.1rem 1.125rem 1rem' }}
+        style={{ borderBottom: `1px solid ${C.border}`, padding: '1rem 1.125rem 1rem' }}
         className="flex items-center justify-between shrink-0"
       >
         <div className="flex items-center gap-2.5">
@@ -117,8 +117,8 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
         </div>
         <button
           onClick={onClose}
-          className="md:hidden p-1 rounded-md transition-colors"
-          style={{ color: C.textMuted }}
+          className="md:hidden flex items-center justify-center rounded-md transition-colors"
+          style={{ color: C.textMuted, minWidth: 40, minHeight: 40 }}
           aria-label="Cerrar menú"
         >
           <X size={18} />
@@ -128,7 +128,7 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
       {/* ── Nav ── */}
       <nav
         className="flex-1 overflow-y-auto py-3 px-2.5"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
       >
         <style>{`aside nav::-webkit-scrollbar{display:none}`}</style>
 
@@ -157,7 +157,7 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.625rem',
-                    padding: '0.5rem 0.625rem',
+                    padding: '0.5625rem 0.625rem',
                     borderRadius: '0.375rem',
                     fontSize: '0.8375rem',
                     fontWeight: isActive ? 600 : 450,
@@ -166,6 +166,7 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
                     transition: 'all 0.13s',
                     textDecoration: 'none',
                     borderLeft: isActive ? `2.5px solid ${C.accentMid}` : '2.5px solid transparent',
+                    minHeight: '40px',
                   })}
                   onMouseEnter={e => {
                     const el = e.currentTarget as HTMLElement;
@@ -209,7 +210,7 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
       </nav>
 
       {/* ── Footer: Mi Cuenta + Cerrar sesión ── */}
-      <div style={{ borderTop: `1px solid ${C.border}`, padding: '0.625rem 0.625rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '1px' }}>
+      <div style={{ borderTop: `1px solid ${C.border}`, padding: '0.625rem 0.625rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '1px', paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0.75rem))' }}>
         <NavLink
           to="/mi-cuenta"
           onClick={onClose}
@@ -217,7 +218,7 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
             display: 'flex',
             alignItems: 'center',
             gap: '0.625rem',
-            padding: '0.5rem 0.625rem',
+            padding: '0.5625rem 0.625rem',
             borderRadius: '0.375rem',
             fontSize: '0.8375rem',
             fontWeight: isActive ? 600 : 450,
@@ -226,6 +227,7 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
             transition: 'all 0.13s',
             textDecoration: 'none',
             borderLeft: isActive ? `2.5px solid ${C.accentMid}` : '2.5px solid transparent',
+            minHeight: '40px',
           })}
           onMouseEnter={e => {
             const el = e.currentTarget as HTMLElement;
@@ -254,7 +256,7 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
           style={{
             width: '100%',
             display: 'flex', alignItems: 'center', gap: '0.5rem',
-            padding: '0.5rem 0.625rem',
+            padding: '0.5625rem 0.625rem',
             borderRadius: '0.375rem',
             border: 'none', cursor: 'pointer',
             background: 'transparent',
@@ -262,6 +264,7 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
             fontSize: '0.8125rem',
             fontWeight: 500,
             transition: 'all 0.13s',
+            minHeight: '40px',
           }}
           onMouseEnter={e => {
             (e.currentTarget as HTMLElement).style.background = '#FEF2F2';
