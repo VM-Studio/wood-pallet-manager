@@ -26,7 +26,7 @@ export default function MainLayout() {
 
         {/* ── Navbar top (desktop + mobile) ── */}
         <div
-          className="sticky top-0 z-10 flex items-center justify-between px-4 md:px-6 navbar-safe"
+          className="sticky top-0 z-10 flex items-center justify-between px-4 md:px-8 navbar-safe navbar-top"
           style={{
             background: '#FAFAF8',
             borderBottom: '1px solid #E8E2DA',
@@ -38,8 +38,9 @@ export default function MainLayout() {
           {/* Izquierda: hamburger (mobile) / spacer (desktop) */}
           <button
             onClick={() => setSidebarOpen(true)}
+            onTouchEnd={(e) => { e.preventDefault(); setSidebarOpen(true); }}
             className="md:hidden p-2 -ml-1 flex items-center justify-center"
-            style={{ color: '#7C4A2D', minWidth: 40, minHeight: 40 }}
+            style={{ color: '#7C4A2D', minWidth: 44, minHeight: 44, cursor: 'pointer' }}
             aria-label="Abrir menú"
           >
             <Menu size={22} />
@@ -69,11 +70,11 @@ export default function MainLayout() {
           {/* Derecha: usuario — clic abre Mi Cuenta */}
           <button
             onClick={() => navigate('/mi-cuenta')}
-            className="flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-stone-100"
+            className="flex items-center gap-2.5 rounded-lg px-3 py-1.5 transition-colors hover:bg-stone-100"
             style={{ cursor: 'pointer', border: 'none', background: 'transparent', minHeight: 40 }}
           >
             <div style={{
-              width: 32, height: 32, borderRadius: '50%',
+              width: 36, height: 36, borderRadius: '50%',
               overflow: 'hidden', flexShrink: 0,
               background: '#F0E8DF',
               border: '1.5px solid #E8E2DA',
@@ -81,21 +82,21 @@ export default function MainLayout() {
             }}>
               {usuario?.fotoPerfil
                 ? <img src={usuario.fotoPerfil} alt="foto" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                : <UserCircle size={18} style={{ color: '#C4895A' }} />
+                : <UserCircle size={20} style={{ color: '#C4895A' }} />
               }
             </div>
             <div className="text-left hidden sm:block">
-              <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#111111', lineHeight: 1.2 }}>
+              <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#111111', lineHeight: 1.2 }}>
                 {usuario ? `${usuario.nombre} ${usuario.apellido}` : 'Usuario'}
               </p>
-              <p style={{ fontSize: '0.65rem', color: '#777', lineHeight: 1 }}>
+              <p style={{ fontSize: '0.7rem', color: '#777', lineHeight: 1 }}>
                 Mi cuenta
               </p>
             </div>
           </button>
         </div>
 
-        <div className="p-4 md:p-8 max-w-[1400px] mx-auto animate-fade-in pb-8" style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}>
+        <div className="p-4 md:p-8 max-w-[1400px] mx-auto animate-fade-in main-content-mobile" style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}>
           <Outlet />
         </div>
       </main>

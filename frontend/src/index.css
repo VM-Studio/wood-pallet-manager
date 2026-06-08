@@ -282,6 +282,13 @@
   .modal-footer  { padding: 1.5rem; }
   .page-header   { margin-bottom: 2rem; }
   .titulo-modulo { font-size: 2.25rem; }
+
+  /* Navbar un poco más alta en desktop */
+  .navbar-top {
+    min-height: 72px;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -299,9 +306,10 @@ button, [role="button"], a, input, select, textarea {
 .modal-body,
 aside nav,
 .table-container,
-.overflow-y-auto,
 .overflow-x-auto {
   -webkit-overflow-scrolling: touch;
+  /* NOTA: se excluye .overflow-y-auto intencionalmennte —
+     aplicarlo a <main> rompe el touch event chain del navbar sticky en iOS */
 }
 
 /* ── Evita el rebote/scroll innecesario en el fondo cuando un modal está abierto ── */
@@ -322,6 +330,21 @@ html, body, #root {
 
 /* ── MOBILE BASE (<768px) ─────────────────────────────────────── */
 @media (max-width: 767px) {
+
+  /* ── Navbar: fixed en mobile para salir del scroll context de <main>
+        Esto es la causa principal por la que el botón hamburguesa no
+        recibía el touch en iOS (sticky dentro de overflow-y:auto) ── */
+  .navbar-top {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 50 !important;
+  }
+  /* Compensar el espacio que ocupa el navbar fijo (60px) */
+  .main-content-mobile {
+    padding-top: 60px;
+  }
 
   /* ── Inputs con font-size >= 16px: previene el auto-zoom de iOS ── */
   input[type="text"],
