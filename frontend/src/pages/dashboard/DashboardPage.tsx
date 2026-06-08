@@ -9,7 +9,7 @@ import {
   TrendingUp, TrendingDown, Minus, ArrowRight,
   Users, Plus, AlertTriangle, ChevronDown, ChevronUp, ShoppingCart, Layers
 } from 'lucide-react';
-import { useDashboard, useAlertas, useEstacionalidad, useGanancias } from '../../hooks/useDashboard';
+import { useDashboard, useAlertas, useGanancias } from '../../hooks/useDashboard';
 import { useAuthStore } from '../../store/auth.store';
 import { useVistaParams } from '../../hooks/useVista';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
@@ -225,7 +225,6 @@ export default function DashboardPage() {
   const { vista, vistaLabel } = useVistaParams();
   const { data: dashboard, isLoading: loadingDash, error: errorDash } = useDashboard();
   const { data: alertasData, isLoading: loadingAlertas } = useAlertas();
-  const { data: graficoData } = useEstacionalidad();
   const { data: gananciasData } = useGanancias();
 
   const [openCard, setOpenCard] = useState<'pallets' | 'facturacion' | 'ganancias' | 'cotizaciones' | null>(null);
@@ -262,7 +261,7 @@ export default function DashboardPage() {
   const variacionPallets = palletsMesAnt > 0 ? Math.round(((palletsMes - palletsMesAnt) / palletsMesAnt) * 100) : 0;
   const variacionFact    = facturacionMesAnt > 0 ? Math.round(((facturacionMes - facturacionMesAnt) / facturacionMesAnt) * 100) : 0;
 
-  const grafico   = propData?.grafico12Meses ?? graficoData ?? dashboard?.graficos?.ventasUltimos12Meses ?? [];
+  const grafico = dashboard?.graficos?.ventasUltimos12Meses ?? [];
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -457,7 +456,7 @@ export default function DashboardPage() {
               <TrendingUp size={18} />
             </div>
             <h2 className="titulo-seccion">
-              Ventas — Últimos 12 meses · <span className="font-normal text-gray-400">{vistaLabel}</span>
+              Ventas — Últimos 12 meses · <span className="font-normal text-gray-400">Total empresa</span>
             </h2>
           </div>
           <ResponsiveContainer width="100%" height={260}>
@@ -473,15 +472,17 @@ export default function DashboardPage() {
                 tick={{ fontSize: 11, fill: '#9CA3AF', fontFamily: 'Inter' }}
                 axisLine={false}
                 tickLine={false}
+                allowDecimals={false}
               />
               <Tooltip
-                formatter={(value: number) => [`${formatNumero(value)} u`, 'Pallets']}
-                contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #E5E7EB', fontFamily: 'Inter' }}
-                cursor={{ fill: '#F9FAFB' }}
+                formatter={(value: number) => [`${formatNumero(value)} unidades`, 'Pallets vendidos']}
+                labelFormatter={(label) => `Mes: ${label}`}
+                contentStyle={{ fontSize: 12, borderRadius: 0, border: '1px solid #E8D5C4', fontFamily: 'Inter', background: '#FDF6EE' }}
+                cursor={{ fill: 'rgba(196,137,90,0.08)' }}
               />
-              <Bar dataKey="pallets" fill="#7c4b2c" radius={[4, 4, 0, 0]} maxBarSize={40} isAnimationActive={false}>
-                {grafico.map((_: unknown, i: number) => (
-                  <Cell key={i} fill={['#7c4b2c', '#C4895A', '#9B5535'][i % 3]} />
+              <Bar dataKey="pallets" fill="#7c4b2c" radius={[0, 0, 0, 0]} maxBarSize={40} isAnimationActive={false}>
+                {(grafico as Array<{ mes: string; pallets: number }>).map((_item, i) => (
+                  <Cell key={`bar-${i}`} fill={['#7c4b2c', '#C4895A', '#9B5535'][i % 3]} />
                 ))}
               </Bar>
             </BarChart>

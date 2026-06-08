@@ -37,13 +37,15 @@ export const useEstacionalidad = () => {
   const { vistaParam } = useVistaParams();
 
   return useQuery({
-    queryKey: ['estacionalidad', vista],
+    queryKey: ['estacionalidad', vistaParam],
     queryFn: async () => {
       const { data } = await api.get(`/reportes/estacionalidad?vista=${vistaParam}`);
       return data as Array<{ mes: string; ventas: number; pallets: number; facturacion: number }>;
     },
     staleTime: 0,
     gcTime: 0,
+    refetchOnWindowFocus: true,
+    refetchInterval: 1000 * 60 * 5,
   });
 };
 
