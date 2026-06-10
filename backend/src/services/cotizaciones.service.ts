@@ -338,7 +338,7 @@ export const convertirCotizacionAVentaService = async (
       metodoPago: datos.metodoPago as any,
       cuentaDestino: (datos.cuentaDestino ?? undefined) as any,
       modalidadPago: datos.modalidadPago,
-      observaciones: `Generada automáticamente al convertir cotización #${cotizacionId}`,
+      observaciones: undefined,
     },
   });
 
