@@ -3,7 +3,7 @@ import {
   Warehouse, Calendar, Clock, CheckCircle2, XCircle, ChevronRight,
   X, MailIcon, Phone, Copy, Send, User, Package, CreditCard,
   History, FileText, RefreshCw, AlertTriangle, CheckCircle,
-  ShieldCheck, QrCode,
+  ShieldCheck, QrCode, MessageCircle,
 } from 'lucide-react';
 import {
   useRetiros, useStatsRetiros, useCambiarEstadoRetiro, useReenviarCodigoRetiro,
@@ -251,12 +251,119 @@ function ReenviarCodigoModal({ retiro, onClose }: { retiro: RetiroRow; onClose: 
   );
 }
 
+// ─── WhatsApp Galpón modal ────────────────────────────────────────────────────
+function WhatsAppGalponModal({ retiro, onClose }: { retiro: RetiroRow; onClose: () => void }) {
+  const productosLineas = retiro.venta.detalles
+    .map(d => `  • ${d.producto.nombre} (${d.producto.condicion ?? d.producto.tipo}): *${d.cantidadPedida} u.*`)
+    .join('\n');
+
+  const fecha   = retiro.venta.fechaRetiro ? fmtFecha(retiro.venta.fechaRetiro) : '—';
+  const hora    = retiro.horaEstimadaRetiro ? fmtHora(retiro.horaEstimadaRetiro) : null;
+  const metodo  = metodoPagoLabel[retiro.venta.metodoPago ?? '']   ?? '—';
+  const modalid = modalidadLabel[retiro.venta.modalidadPago ?? ''] ?? '—';
+
+  const mensajeDefault =
+`🏭 *CÓDIGO DE RETIRO — WoodPallet*
+
+👤 *Cliente:* ${retiro.venta.cliente.razonSocial}${retiro.venta.cliente.nombreContacto ? ` (${retiro.venta.cliente.nombreContacto})` : ''}
+🔑 *Código de retiro:* \`${retiro.codigoRetiro}\`
+
+📅 *Fecha pactada:* ${fecha}${hora ? ` · ⏰ ${hora} hs` : ''}
+🏪 *Galpón:* ${retiro.galpon ?? '—'}
+
+📦 *Productos a entregar:*
+${productosLineas}
+
+💳 *Pago:* ${metodo} — ${modalid}
+${retiro.venta.observaciones ? `\n📝 *Obs:* ${retiro.venta.observaciones}` : ''}
+Por favor verificar el código antes de entregar la mercadería.
+_WoodPallet Manager_`;
+
+  const [tel, setTel] = useState('');
+  const [msg, setMsg] = useState(mensajeDefault);
+
+  const handleAbrir = () => {
+    const encoded = encodeURIComponent(msg);
+    const numero  = tel.replace(/\D/g, '');
+    const url     = numero
+      ? `https://wa.me/${numero}?text=${encoded}`
+      : `https://wa.me/?text=${encoded}`;
+    window.open(url, '_blank');
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal max-w-lg animate-slide-up">
+        <div className="modal-header">
+          <div className="flex items-center gap-2.5">
+            <div style={{ width: 30, height: 30, background: '#25D366', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <MessageCircle className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h2 className="modal-title">Enviar al galpón por WhatsApp</h2>
+              <p style={{ fontSize: '0.78rem', color: '#6B7280', margin: 0 }}>Código de retiro + detalle completo</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="btn-icon"><X size={18} /></button>
+        </div>
+
+        <div className="modal-body space-y-4">
+          {/* Número del galpón */}
+          <div>
+            <label className="label">
+              <Phone className="w-3.5 h-3.5 inline mr-1" />
+              Número del galpón <span className="text-stone-400 font-normal">(opcional)</span>
+            </label>
+            <input
+              type="tel"
+              className="input"
+              value={tel}
+              onChange={e => setTel(e.target.value)}
+              placeholder="Ej: 5491144556677  (código de país + número, sin + ni espacios)"
+              autoFocus
+            />
+            <p className="text-xs text-stone-400 mt-1">
+              Si no ingresás número, WhatsApp te pedirá elegir el contacto manualmente.
+            </p>
+          </div>
+
+          {/* Preview del mensaje */}
+          <div>
+            <label className="label">
+              Mensaje <span className="text-stone-400 font-normal">(podés editarlo antes de enviar)</span>
+            </label>
+            <textarea
+              className="input resize-none font-mono text-xs leading-relaxed"
+              rows={14}
+              value={msg}
+              onChange={e => setMsg(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="modal-footer">
+          <button onClick={onClose} className="btn-secondary">Cancelar</button>
+          <button
+            onClick={handleAbrir}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white transition-colors"
+            style={{ background: '#25D366', borderRadius: '0.375rem' }}
+          >
+            <MessageCircle className="w-4 h-4" />
+            Abrir WhatsApp
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Detalle modal ────────────────────────────────────────────────────────────
 function DetalleRetiroModal({ retiro, onClose }: { retiro: RetiroRow; onClose: () => void }) {
   const cambiar = useCambiarEstadoRetiro();
   const [showConfirmar, setShowConfirmar] = useState(false);
   const [showCancelar, setShowCancelar]   = useState(false);
   const [showReenviar, setShowReenviar]   = useState(false);
+  const [showWhatsApp, setShowWhatsApp]   = useState(false);
   const [copied, setCopied]               = useState(false);
 
   const copiarCodigo = () => {
@@ -281,6 +388,7 @@ function DetalleRetiroModal({ retiro, onClose }: { retiro: RetiroRow; onClose: (
       {showConfirmar && <ConfirmarRetiroModal retiro={retiro} onClose={() => setShowConfirmar(false)} />}
       {showCancelar  && <CancelarRetiroModal  retiro={retiro} onClose={() => { setShowCancelar(false); onClose(); }} />}
       {showReenviar  && <ReenviarCodigoModal  retiro={retiro} onClose={() => setShowReenviar(false)} />}
+      {showWhatsApp  && <WhatsAppGalponModal  retiro={retiro} onClose={() => setShowWhatsApp(false)} />}
 
       <div className="modal-overlay">
         <div className="modal max-w-2xl animate-slide-up" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
@@ -316,6 +424,14 @@ function DetalleRetiroModal({ retiro, onClose }: { retiro: RetiroRow; onClose: (
                     className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border border-amber-200 text-amber-700 hover:bg-amber-100 transition-colors">
                     <RefreshCw className="w-3.5 h-3.5" />
                     Reenviar
+                  </button>
+                  <button
+                    onClick={() => setShowWhatsApp(true)}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-white transition-colors"
+                    style={{ background: '#25D366' }}
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    WhatsApp
                   </button>
                 </div>
               </div>
