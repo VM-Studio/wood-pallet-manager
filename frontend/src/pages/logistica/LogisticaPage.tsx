@@ -384,14 +384,21 @@ export default function LogisticaPage() {
 
       {/* Vista Juan */}
       {!esCarlos && (
-        <LogisticaList
-          items={logisticas ?? []}
-          esCarlos={false}
-          consultarMutation={consultarMutation}
-          avanzarMutation={avanzarMutation}
-          filtro={filtroActivo}
-          entregasHoy={entregasHoy ?? []}
-        />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          <div>
+            <LogisticaList
+              items={logisticas ?? []}
+              esCarlos={false}
+              consultarMutation={consultarMutation}
+              avanzarMutation={avanzarMutation}
+              filtro={filtroActivo}
+              entregasHoy={entregasHoy ?? []}
+            />
+          </div>
+          <div>
+            <RouteMonitorCard />
+          </div>
+        </div>
       )}
 
       {/* Vista Carlos: dos columnas */}
