@@ -168,98 +168,127 @@ function InfoPersonalSection() {
   return (
     <div className="space-y-6">
       {/* Foto y nombre */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-100">
-        <div className="flex items-start gap-6">
-          {/* Avatar */}
-          <div className="relative shrink-0">
-            <div className="w-24 h-24 rounded-2xl overflow-hidden bg-stone-100 flex items-center justify-center"
-              style={{ border: '3px solid #e7ddd5' }}>
-              {me?.fotoPerfil
-                ? <img src={me.fotoPerfil} alt="foto" className="w-full h-full object-cover" />
-                : <User className="w-10 h-10 text-stone-300" />
-              }
-            </div>
-            <button
-              onClick={() => fotoInputRef.current?.click()}
-              className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-colors"
-              style={{ background: '#7c4b2c', color: 'white' }}
-              title="Cambiar foto"
-            >
-              {subirFotoMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
-            </button>
-            <input ref={fotoInputRef} type="file" accept="image/*" className="hidden" onChange={handleFoto} />
-          </div>
+      <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
+        {/* Banda decorativa superior */}
+        <div style={{
+          height: 88,
+          background: 'linear-gradient(135deg, #3c250f 0%, #7c4b2c 55%, #C4895A 100%)',
+          position: 'relative',
+        }}>
+          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 75% 50%, rgba(255,255,255,0.07) 0%, transparent 65%)' }} />
+        </div>
 
-          <div className="flex-1 min-w-0">
-            {editando ? (
-              <div className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1">Nombre</label>
-                    <input value={nombre} onChange={e => setNombre(e.target.value)}
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-stone-200 focus:outline-none focus:border-amber-400"
-                      style={{ background: '#FAFAF9' }}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1">Apellido</label>
-                    <input value={apellido} onChange={e => setApellido(e.target.value)}
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-stone-200 focus:outline-none focus:border-amber-400"
-                      style={{ background: '#FAFAF9' }}
-                    />
-                  </div>
-                </div>
-                {error && <p className="text-red-500 text-xs">{error}</p>}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => guardarPerfilMutation.mutate({ nombre, apellido })}
-                    disabled={guardarPerfilMutation.isPending}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors"
-                    style={{ background: '#7c4b2c' }}
-                  >
-                    {guardarPerfilMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                    Guardar
-                  </button>
-                  <button onClick={() => { setEditando(false); setError(''); setNombre(me?.nombre); setApellido(me?.apellido); }}
-                    className="px-4 py-2 rounded-lg text-sm font-medium text-stone-500 hover:bg-stone-50 border border-stone-200 transition-colors">
-                    Cancelar
-                  </button>
-                </div>
+        <div style={{ padding: '0 1.5rem 1.5rem' }}>
+          {/* Avatar solapado */}
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: -48, marginBottom: '1.25rem' }}>
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <div style={{
+                width: 92, height: 92, borderRadius: '1.25rem', overflow: 'hidden',
+                background: '#E8D5C4', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: '4px solid white', boxShadow: '0 4px 16px rgba(60,37,15,0.2)',
+              }}>
+                {me?.fotoPerfil
+                  ? <img src={me.fotoPerfil} alt="foto" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : <User style={{ width: 36, height: 36, color: '#9B7E6A' }} />
+                }
               </div>
-            ) : (
-              <div>
-                <div className="flex items-center gap-3 mb-1">
-                  <h2 className="text-xl font-bold text-stone-800">{me?.nombre} {me?.apellido}</h2>
-                </div>
-                <RolBadge rol={me?.rol || ''} />
-                <p className="text-xs text-stone-400 mt-2">
-                  Cuenta creada el {me?.fechaCreacion ? new Date(me.fechaCreacion).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'}
-                </p>
-                {success && <p className="text-green-600 text-xs mt-1 font-medium">{success}</p>}
-                <button onClick={() => setEditando(true)}
-                  className="mt-3 text-xs font-semibold underline-offset-2 hover:underline transition-colors"
-                  style={{ color: '#6B3A2A' }}>
-                  Editar nombre
-                </button>
-              </div>
+              <button
+                onClick={() => fotoInputRef.current?.click()}
+                style={{
+                  position: 'absolute', bottom: -6, right: -6,
+                  width: 30, height: 30, borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: '#7c4b2c', color: 'white',
+                  border: '2.5px solid white', boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                  cursor: 'pointer',
+                }}
+                title="Cambiar foto"
+              >
+                {subirFotoMutation.isPending ? <Loader2 style={{ width: 13, height: 13 }} className="animate-spin" /> : <Camera style={{ width: 13, height: 13 }} />}
+              </button>
+              <input ref={fotoInputRef} type="file" accept="image/*" className="hidden" onChange={handleFoto} />
+            </div>
+            {!editando && (
+              <button onClick={() => setEditando(true)}
+                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors"
+                style={{ borderColor: '#e7ddd5', color: '#6B3A2A', background: '#FDF6EE', marginBottom: 4 }}>
+                Editar nombre
+              </button>
             )}
           </div>
+
+          {editando ? (
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1">Nombre</label>
+                  <input value={nombre} onChange={e => setNombre(e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-stone-200 focus:outline-none focus:border-amber-400"
+                    style={{ background: '#FAFAF9' }}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1">Apellido</label>
+                  <input value={apellido} onChange={e => setApellido(e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-stone-200 focus:outline-none focus:border-amber-400"
+                    style={{ background: '#FAFAF9' }}
+                  />
+                </div>
+              </div>
+              {error && <p className="text-red-500 text-xs">{error}</p>}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => guardarPerfilMutation.mutate({ nombre, apellido })}
+                  disabled={guardarPerfilMutation.isPending}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors"
+                  style={{ background: '#7c4b2c' }}
+                >
+                  {guardarPerfilMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  Guardar
+                </button>
+                <button onClick={() => { setEditando(false); setError(''); setNombre(me?.nombre); setApellido(me?.apellido); }}
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-stone-500 hover:bg-stone-50 border border-stone-200 transition-colors">
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
+                <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#111827', margin: 0 }}>{me?.nombre} {me?.apellido}</h2>
+                <RolBadge rol={me?.rol || ''} />
+              </div>
+              <p style={{ fontSize: '0.72rem', color: '#9CA3AF', margin: 0 }}>
+                Miembro desde {me?.fechaCreacion ? new Date(me.fechaCreacion).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'}
+              </p>
+              {success && (
+                <p className="flex items-center gap-1.5 text-green-600 text-xs mt-2 font-medium">
+                  <CheckCircle className="w-3.5 h-3.5" />{success}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Email */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-100">
-        <div className="flex items-start justify-between gap-4 mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: '#FDF6EE' }}>
-              <Mail className="w-4.5 h-4.5" style={{ color: '#92400E' }} />
+      <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
+        <div style={{ padding: '1.125rem 1.5rem', borderBottom: emailFlow !== 'idle' ? '1px solid #F3F4F6' : 'none' }}>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div style={{
+                width: 42, height: 42, borderRadius: '0.875rem', flexShrink: 0,
+                background: 'linear-gradient(135deg, #FDF6EE 0%, #F5EBD9 100%)',
+                border: '1px solid #FDE68A', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Mail style={{ width: 17, height: 17, color: '#92400E' }} />
+              </div>
+              <div>
+                <p style={{ fontSize: '0.65rem', fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 2px' }}>Email</p>
+                <p style={{ fontSize: '0.9rem', fontWeight: 600, color: '#111827', margin: 0 }}>{me?.email}</p>
+                <p style={{ fontSize: '0.7rem', color: '#9CA3AF', margin: '1px 0 0' }}>Dato de acceso principal a la cuenta</p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Email</p>
-              <p className="text-sm font-semibold text-stone-800 mt-0.5">{me?.email}</p>
-              <p className="text-xs text-stone-400 mt-0.5">Dato de acceso principal a la cuenta</p>
-            </div>
-          </div>
           {emailFlow === 'idle' && (
             <button onClick={() => setEmailFlow('input')}
               className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors"
@@ -267,10 +296,11 @@ function InfoPersonalSection() {
               Cambiar
             </button>
           )}
+          </div>
         </div>
 
         {emailFlow === 'input' && (
-          <div className="space-y-3 pt-3 border-t border-stone-100">
+          <div className="space-y-3" style={{ padding: '1rem 1.5rem 1.25rem' }}>
             <p className="text-sm text-stone-600">Ingresá el nuevo email que querés registrar:</p>
             <input value={nuevoEmail} onChange={e => setNuevoEmail(e.target.value)}
               type="email" placeholder="nuevo@email.com"
@@ -312,7 +342,7 @@ function InfoPersonalSection() {
         )}
 
         {emailFlow === 'codigo' && (
-          <div className="space-y-3 pt-3 border-t border-stone-100">
+          <div className="space-y-3" style={{ padding: '1rem 1.5rem 1.25rem' }}>
             <p className="text-sm text-stone-600">
               Te enviamos un código de 6 dígitos a <strong>{me?.email ? maskEmail(me.email) : '—'}</strong>. Ingresalo para confirmar el cambio a <strong>{nuevoEmail}</strong>.
             </p>
@@ -335,7 +365,7 @@ function InfoPersonalSection() {
         )}
 
         {emailFlow === 'ok' && (
-          <div className="pt-3 border-t border-stone-100">
+          <div style={{ padding: '1rem 1.5rem 1.25rem' }}>
             <div className="flex items-center gap-2 text-green-600">
               <CheckCircle className="w-4 h-4" />
               <p className="text-sm font-semibold">Email actualizado correctamente a <strong>{nuevoEmail}</strong></p>
@@ -346,18 +376,23 @@ function InfoPersonalSection() {
       </div>
 
       {/* Teléfono */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-100">
-        <div className="flex items-start justify-between gap-4 mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: '#F0FDF4' }}>
-              <Phone className="w-4.5 h-4.5 text-green-600" />
+      <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
+        <div style={{ padding: '1.125rem 1.5rem', borderBottom: telFlow !== 'idle' ? '1px solid #F3F4F6' : 'none' }}>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div style={{
+                width: 42, height: 42, borderRadius: '0.875rem', flexShrink: 0,
+                background: 'linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%)',
+                border: '1px solid #BBF7D0', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Phone style={{ width: 17, height: 17, color: '#15803D' }} />
+              </div>
+              <div>
+                <p style={{ fontSize: '0.65rem', fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 2px' }}>Teléfono</p>
+                <p style={{ fontSize: '0.9rem', fontWeight: 600, color: '#111827', margin: 0 }}>{me?.telefono || <span style={{ color: '#9CA3AF', fontStyle: 'italic', fontWeight: 400 }}>No registrado</span>}</p>
+                <p style={{ fontSize: '0.7rem', color: '#9CA3AF', margin: '1px 0 0' }}>Canal alternativo de verificación</p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Teléfono</p>
-              <p className="text-sm font-semibold text-stone-800 mt-0.5">{me?.telefono || <span className="text-stone-400 font-normal italic">No registrado</span>}</p>
-              <p className="text-xs text-stone-400 mt-0.5">Canal alternativo de verificación</p>
-            </div>
-          </div>
           {telFlow === 'idle' && (
             <button onClick={() => setTelFlow('input')}
               className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors"
@@ -365,10 +400,11 @@ function InfoPersonalSection() {
               {me?.telefono ? 'Cambiar' : 'Agregar'}
             </button>
           )}
+          </div>
         </div>
 
         {telFlow === 'input' && (
-          <div className="space-y-3 pt-3 border-t border-stone-100">
+          <div className="space-y-3" style={{ padding: '1rem 1.5rem 1.25rem' }}>
             <p className="text-sm text-stone-600">Ingresá el nuevo número de teléfono:</p>
             <input value={nuevoTel} onChange={e => setNuevoTel(e.target.value)}
               type="tel" placeholder="+54 11 12345678"
@@ -391,7 +427,7 @@ function InfoPersonalSection() {
         )}
 
         {telFlow === 'codigo' && (
-          <div className="space-y-3 pt-3 border-t border-stone-100">
+          <div className="space-y-3" style={{ padding: '1rem 1.5rem 1.25rem' }}>
             <p className="text-sm text-stone-600">
               Te enviamos un código a <strong>{me?.email ? maskEmail(me.email) : '—'}</strong>. Ingresalo para confirmar el cambio de teléfono a <strong>{nuevoTel}</strong>.
             </p>
@@ -411,7 +447,7 @@ function InfoPersonalSection() {
         )}
 
         {telFlow === 'ok' && (
-          <div className="pt-3 border-t border-stone-100">
+          <div style={{ padding: '1rem 1.5rem 1.25rem' }}>
             <div className="flex items-center gap-2 text-green-600">
               <CheckCircle className="w-4 h-4" />
               <p className="text-sm font-semibold">Teléfono actualizado correctamente</p>
@@ -532,16 +568,24 @@ function SeguridadSection() {
   const reset = () => { setStep('idle'); setCodigo(''); setNuevaPass(''); setConfirmarPass(''); setError(''); };
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-100 max-w-lg">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: '#FEF2F2' }}>
-          <Lock className="w-4.5 h-4.5 text-red-500" />
-        </div>
-        <div>
-          <h3 className="text-sm font-bold text-stone-800">Cambio de contraseña</h3>
-          <p className="text-xs text-stone-400">Te enviaremos un código a tu email para verificar la operación</p>
+    <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden max-w-lg">
+      <div style={{ padding: '1.125rem 1.5rem', borderBottom: '1px solid #F3F4F6', background: '#FAFAF9' }}>
+        <div className="flex items-center gap-3.5">
+          <div style={{
+            width: 42, height: 42, borderRadius: '0.875rem', flexShrink: 0,
+            background: 'linear-gradient(135deg, #FEF2F2 0%, #FECACA 100%)',
+            border: '1px solid #FECACA', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Lock style={{ width: 17, height: 17, color: '#DC2626' }} />
+          </div>
+          <div>
+            <p style={{ fontSize: '0.65rem', fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 2px' }}>Seguridad</p>
+            <p style={{ fontSize: '0.9rem', fontWeight: 600, color: '#111827', margin: 0 }}>Cambio de contraseña</p>
+            <p style={{ fontSize: '0.7rem', color: '#9CA3AF', margin: '1px 0 0' }}>Te enviaremos un código a tu email para verificar la operación</p>
+          </div>
         </div>
       </div>
+      <div className="p-6">
 
       {step === 'idle' && (
         <div>
@@ -655,6 +699,7 @@ function SeguridadSection() {
           <button onClick={reset} className="text-xs text-stone-400 hover:text-stone-600">Cerrar</button>
         </div>
       )}
+      </div>
     </div>
   );
 }
@@ -777,39 +822,42 @@ function FirmaSection() {
     <div className="space-y-6 max-w-2xl">
       {/* Firma actual */}
       {me?.firma && (
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-100">
-          <div className="flex items-start justify-between mb-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
+          <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid #F3F4F6', background: '#FAFAF9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
-              <h3 className="text-sm font-bold text-stone-800">Firma registrada</h3>
-              <p className="text-xs text-stone-400 mt-0.5">Se incluirá automáticamente en los remitos generados</p>
+              <p style={{ fontSize: '0.65rem', fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 2px' }}>Firma registrada</p>
+              <p style={{ fontSize: '0.82rem', color: '#6B7280', margin: 0 }}>Se incluye automáticamente en los remitos generados</p>
             </div>
             <button onClick={() => eliminarFirma.mutate()}
               disabled={eliminarFirma.isPending}
-              className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 transition-colors">
+              className="flex items-center gap-1 text-xs font-medium text-red-400 hover:text-red-600 transition-colors">
               <Trash2 className="w-3.5 h-3.5" />
               Eliminar
             </button>
           </div>
-          <div className="border-2 border-dashed border-stone-200 rounded-xl p-4 bg-stone-50 flex items-center justify-center" style={{ minHeight: 100 }}>
-            <img src={me.firma} alt="Firma" className="max-h-24 max-w-full object-contain" />
-          </div>
-          {success && (
-            <div className="mt-3 flex items-center gap-2 text-green-600">
-              <CheckCircle className="w-4 h-4" />
-              <p className="text-sm font-semibold">{success}</p>
+          <div style={{ padding: '1rem 1.5rem 1.25rem' }}>
+            <div className="border-2 border-dashed border-stone-200 rounded-xl p-4 bg-stone-50 flex items-center justify-center" style={{ minHeight: 100 }}>
+              <img src={me.firma} alt="Firma" className="max-h-24 max-w-full object-contain" />
             </div>
-          )}
+            {success && (
+              <div className="mt-3 flex items-center gap-2 text-green-600">
+                <CheckCircle className="w-4 h-4" />
+                <p className="text-sm font-semibold">{success}</p>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
       {/* Nueva firma */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-100">
-        <div className="flex items-center justify-between mb-5">
+      <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
+        <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid #F3F4F6', background: '#FAFAF9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
           <div>
-            <h3 className="text-sm font-bold text-stone-800">{me?.firma ? 'Reemplazar firma' : 'Registrar firma'}</h3>
-            <p className="text-xs text-stone-400 mt-0.5">Dibujá tu firma o subí una imagen escaneada</p>
+            <p style={{ fontSize: '0.65rem', fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 2px' }}>Firma digital</p>
+            <p style={{ fontSize: '0.9rem', fontWeight: 600, color: '#111827', margin: 0 }}>{me?.firma ? 'Reemplazar firma' : 'Registrar firma'}</p>
+            <p style={{ fontSize: '0.7rem', color: '#9CA3AF', margin: '1px 0 0' }}>Dibujá tu firma o subí una imagen escaneada</p>
           </div>
-          <div className="flex gap-1 p-0.5 rounded-lg" style={{ background: '#F5F0EC' }}>
+          <div className="flex gap-1 p-0.5 rounded-lg shrink-0" style={{ background: '#F5F0EC' }}>
             <button onClick={() => setModo('canvas')}
               className="px-3 py-1.5 rounded-md text-xs font-semibold transition-all"
               style={modo === 'canvas' ? { background: '#7c4b2c', color: 'white' } : { color: '#6B7280' }}>
@@ -824,6 +872,7 @@ function FirmaSection() {
             </button>
           </div>
         </div>
+        <div className="p-6">
 
         {modo === 'canvas' && (
           <div className="space-y-3">
@@ -913,12 +962,16 @@ function FirmaSection() {
             )}
           </div>
         )}
+        </div>
       </div>
 
       {/* Vista previa en remito */}
       {previewUrl && (
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-100">
-          <h3 className="text-sm font-bold text-stone-800 mb-4">Vista previa — cómo aparece en el remito</h3>
+        <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
+          <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid #F3F4F6', background: '#FAFAF9' }}>
+            <p style={{ fontSize: '0.65rem', fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Vista previa — cómo aparece en el remito</p>
+          </div>
+          <div style={{ padding: '1rem 1.5rem 1.25rem' }}>
           <div className="border border-stone-200 rounded-xl overflow-hidden">
             {/* Simulación de bloque de remito */}
             <div className="p-4 border-b border-stone-100" style={{ background: '#FAFAF9' }}>
@@ -937,7 +990,8 @@ function FirmaSection() {
               </div>
             </div>
           </div>
-          <button onClick={() => setPreviewUrl(null)} className="mt-3 text-xs text-stone-400 hover:text-stone-600">Cerrar vista previa</button>
+          </div>
+          <button onClick={() => setPreviewUrl(null)} style={{ padding: '0 1.5rem 1rem', display: 'block' }} className="text-xs text-stone-400 hover:text-stone-600">Cerrar vista previa</button>
         </div>
       )}
     </div>
@@ -955,31 +1009,44 @@ export default function MiCuentaPage() {
   ];
 
   return (
-    <div>
+    <div className="animate-fade-in">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className="titulo-modulo">Mi Cuenta</h1>
         <p className="text-stone-500 text-sm mt-1">Gestioná tu perfil, seguridad y firma digital</p>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 md:gap-8 items-start">
-        {/* Sidebar de tabs — horizontal scrollable en mobile, vertical en desktop */}
-        <aside className="w-full md:w-56 md:shrink-0">
-          <div className="flex md:flex-col gap-1 overflow-x-auto pb-1 md:pb-0">
-          {tabs.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              className={`flex items-center gap-2 md:gap-3 px-3 py-2.5 md:py-3 rounded-xl text-left transition-all whitespace-nowrap md:whitespace-normal md:w-full shrink-0 md:shrink ${
-                tab === t.id ? 'shadow-sm' : 'hover:bg-stone-50'
-              }`}
-              style={tab === t.id ? { background: '#7c4b2c', color: 'white' } : { color: '#6B7280' }}
-            >
-              <t.icon className="w-4 h-4 shrink-0" />
-              <div>
-                <p className={`text-sm font-semibold leading-tight ${tab === t.id ? 'text-white' : 'text-stone-700'}`}>{t.label}</p>
-                <p className={`text-xs leading-tight mt-0.5 hidden md:block ${tab === t.id ? 'text-white/60' : 'text-stone-400'}`}>{t.desc}</p>
-              </div>
-            </button>
-          ))}
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
+        {/* Sidebar */}
+        <aside className="w-full lg:w-60 lg:shrink-0">
+          <div className="bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden">
+            <div className="px-4 py-2.5 border-b border-stone-100" style={{ background: '#FAFAF9' }}>
+              <p style={{ fontSize: '0.62rem', fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
+                Configuración
+              </p>
+            </div>
+            <nav className="p-2 flex lg:flex-col gap-1 overflow-x-auto">
+              {tabs.map(t => {
+                const active = tab === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => setTab(t.id)}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all whitespace-nowrap lg:whitespace-normal lg:w-full shrink-0 lg:shrink"
+                    style={active ? { background: '#7c4b2c' } : {}}
+                  >
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors"
+                      style={{ background: active ? 'rgba(255,255,255,0.15)' : '#F5F0EC' }}>
+                      <t.icon className="w-3.5 h-3.5" style={{ color: active ? 'white' : '#92400E' }} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold leading-tight" style={{ color: active ? 'white' : '#374151' }}>{t.label}</p>
+                      <p className="text-xs leading-tight mt-0.5 hidden lg:block" style={{ color: active ? 'rgba(255,255,255,0.6)' : '#9CA3AF' }}>{t.desc}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </nav>
           </div>
         </aside>
 
