@@ -6,14 +6,51 @@ import { useRutasHoy } from '../../hooks/useLogistica';
 
 type LatLng = { lat: number; lng: number };
 
-const ORIGEN: LatLng = { lat: -34.4262, lng: -58.5796 };
+const ORIGEN: LatLng = { lat: -34.4262, lng: -58.5796 }; // Tigre, Bs. As.
 const COLORES = ['#E53E3E', '#38A169', '#3182CE', '#D69E2E', '#7B2FBE', '#DD6B20'];
 const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
+
+// ── Geocodifica usando la Maps JS Geocoder (importLibrary('geocoding')) ────────
+// La Maps JS API SÍ está habilitada en la clave → el Geocoder funciona en el browser
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function geocodeConMapsJS(address: string, mapsLibLoaded: boolean, geocoderRef: any): Promise<LatLng | null> {
+  if (!address || address === 'Sin destino') return null;
+  try {
+    if (!geocoderRef.current) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const geocodingLib = await importLibrary('geocoding') as any;
+      geocoderRef.current = new geocodingLib.Geocoder();
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result: any = await new Promise((resolve, reject) => {
+      geocoderRef.current.geocode(
+        { address: address.includes('Argentina') ? address : `${address}, Argentina`, region: 'ar' },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (results: any[], status: string) => {
+          if (status === 'OK' && results?.[0]) resolve(results[0]);
+          else reject(new Error(`Geocoder: ${status}`));
+        }
+      );
+    });
+    return {
+      lat: result.geometry.location.lat(),
+      lng: result.geometry.location.lng(),
+    };
+  } catch (err) {
+    console.warn('[MapaRutas] Geocoder JS falló para:', address, err);
+    return null;
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  void mapsLibLoaded; // solo para evitar warning de TS
+}
 
 function MapaRutas({ rutas }: { rutas: RutaHoy[] }) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(true);
+  const [geocodingPendiente, setGeocodingPendiente] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const geocoderRef = useRef<any>(null);
   // Clave estable: solo re-ejecutar el efecto cuando cambien los IDs de las rutas
   const rutasKey = rutas.map(r => r.logisticaId).join(',');
 
@@ -21,10 +58,8 @@ function MapaRutas({ rutas }: { rutas: RutaHoy[] }) {
     if (!mapRef.current || rutas.length === 0) return;
 
     if (!API_KEY) {
-      setTimeout(() => {
-        setError('Configurar VITE_GOOGLE_MAPS_API_KEY en .env');
-        setCargando(false);
-      }, 0);
+      setError('Configurar VITE_GOOGLE_MAPS_API_KEY en .env');
+      setCargando(false);
       return;
     }
 
@@ -50,13 +85,13 @@ function MapaRutas({ rutas }: { rutas: RutaHoy[] }) {
       const map = new Map(mapRef.current, {
         center: ORIGEN,
         zoom: 10,
-        mapId: 'woodpallet_rutas_map',   // requerido para AdvancedMarkerElement
+        mapId: 'woodpallet_rutas_map',
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: false,
       });
 
-      // Helper: marcador circular con HTML (reemplaza Marker+SymbolPath legacy)
+      // Helper: marcador circular con HTML
       const crearPin = (color: string, label?: string, size = 22) => {
         const el = document.createElement('div');
         el.style.cssText = [
@@ -72,7 +107,7 @@ function MapaRutas({ rutas }: { rutas: RutaHoy[] }) {
         return el;
       };
 
-      // Marcador de origen (galpón)
+      // Marcador de origen (galpón Tigre)
       new AdvancedMarkerElement({
         position: ORIGEN, map, title: 'Galpón Tigre',
         content: crearPin('#6B3A2A', '', 20),
@@ -85,11 +120,23 @@ function MapaRutas({ rutas }: { rutas: RutaHoy[] }) {
 
       let rutasOk = 0;
       for (const ruta of rutas) {
-        if (ruta.lat == null || ruta.lng == null) {
-          console.warn(`[MapaRutas] Sin coordenadas para: "${ruta.destino}"`);
+        let coords: LatLng | null = null;
+
+        if (ruta.lat != null && ruta.lng != null) {
+          // Coordenadas ya disponibles (guardadas en BD)
+          coords = { lat: ruta.lat, lng: ruta.lng };
+        } else if (ruta.destino && ruta.destino !== 'Sin destino') {
+          // Geocodificar con Maps JS Geocoder (Maps JS API está habilitada)
+          setGeocodingPendiente(true);
+          coords = await geocodeConMapsJS(ruta.destino, true, geocoderRef);
+          setGeocodingPendiente(false);
+        }
+
+        if (!coords) {
+          console.warn(`[MapaRutas] Sin coordenadas para: "${ruta.destino}" — solo aparece en tabla`);
           continue;
         }
-        const coords = { lat: ruta.lat, lng: ruta.lng };
+
         const color  = COLORES[(ruta.orden - 1) % COLORES.length];
         bounds.extend(coords);
 
@@ -119,6 +166,7 @@ function MapaRutas({ rutas }: { rutas: RutaHoy[] }) {
             polylineOptions: { strokeColor: color, strokeWeight: 4, strokeOpacity: 0.85 },
           });
         } catch (err) {
+          // Fallback: línea recta Tigre → destino
           console.warn('[MapaRutas] Directions falló, línea recta:', err);
           new Polyline({ path: [ORIGEN, coords], map, strokeColor: color, strokeWeight: 3, strokeOpacity: 0.7 });
         }
@@ -126,11 +174,11 @@ function MapaRutas({ rutas }: { rutas: RutaHoy[] }) {
       }
 
       if (rutasOk > 0) map.fitBounds(bounds, 40);
+      else map.setCenter(ORIGEN); // si ninguna ruta tiene coordenadas, mostrar origen
       setCargando(false);
     }
 
     initMap().catch((err: unknown) => {
-      // Mostrar el error concreto para diagnóstico (API key/referer/limites)
       console.error('[MapaRutas] Error inicializando Google Maps:', err);
       const msg = (err && typeof err === 'object' && 'message' in err) ? (err as { message: string }).message : String(err);
       setError('Error al cargar Google Maps: ' + msg);
@@ -153,7 +201,9 @@ function MapaRutas({ rutas }: { rutas: RutaHoy[] }) {
       {cargando && (
         <div style={{ position: 'absolute', inset: 0, background: 'rgba(249,250,251,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 8 }}>
           <div style={{ width: 24, height: 24, border: '3px solid #E8E2DA', borderTopColor: '#6B3A2A', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-          <p style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>Cargando mapa…</p>
+          <p style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>
+            {geocodingPendiente ? 'Geolocalizando destinos…' : 'Cargando mapa…'}
+          </p>
         </div>
       )}
     </div>

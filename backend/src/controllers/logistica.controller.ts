@@ -17,6 +17,54 @@ import {
   getLogisticasAceptadasService,
   getRutasHoyService,
 } from '../services/logistica.service';
+import { geocodeAddress } from '../utils/geocode';
+
+// ── Búsqueda de dirección (Nominatim) para el autocomplete del front ──────────
+interface NominatimResult {
+  display_name: string;
+  lat: string;
+  lon: string;
+}
+
+export const addressSearch = async (req: Request, res: Response) => {
+  const q = (req.query.q as string ?? '').trim();
+  if (q.length < 3) { res.json([]); return; }
+
+  try {
+    const query = encodeURIComponent(q.includes('argentina') ? q : `${q}, Argentina`);
+    const url =
+      `https://nominatim.openstreetmap.org/search` +
+      `?q=${query}&format=json&countrycodes=ar&limit=5&accept-language=es&addressdetails=0`;
+
+    const resp = await fetch(url, {
+      headers: {
+        'User-Agent': 'WoodPalletManager/1.0 (woodpallets.com.ar)',
+        'Accept-Language': 'es',
+      },
+    });
+    const data = (await resp.json()) as NominatimResult[];
+
+    res.json(
+      data.map(r => ({
+        address: r.display_name,
+        lat: parseFloat(r.lat),
+        lng: parseFloat(r.lon),
+      }))
+    );
+  } catch (err) {
+    console.error('[addressSearch] Nominatim error:', err);
+    res.json([]);
+  }
+};
+
+// ── Geocodificación de una sola dirección ─────────────────────────────────────
+export const geocodeSingle = async (req: Request, res: Response) => {
+  const q = (req.query.q as string ?? '').trim();
+  if (!q) { res.json(null); return; }
+
+  const result = await geocodeAddress(q);
+  res.json(result);
+};
 
 export const getLogisticas = async (_req: Request, res: Response) => {
   const data = await getLogisticasService();

@@ -79,10 +79,12 @@ export const useRutasHoy = () => {
     queryKey: ['rutas-hoy'],
     queryFn: async () => {
       const { data } = await api.get('/logistica/rutas-hoy');
-      console.log('[useRutasHoy] Rutas recibidas del backend:', data);
       return data as RutaHoy[];
     },
-    refetchInterval: 1000 * 60 * 5, // refrescar cada 5 min
+    // Primer refresh a los 8 segundos (para que el backend haya geocodificado y guardado)
+    // Luego cada 5 minutos
+    refetchInterval: 1000 * 60 * 5,
+    staleTime: 1000 * 8,
   });
 };
 

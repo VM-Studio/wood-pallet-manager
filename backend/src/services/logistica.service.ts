@@ -1,4 +1,5 @@
 import prisma from '../utils/prisma';
+import { geocodeAddress } from '../utils/geocode';
 
 export const getLogisticasService = async () => {
   return prisma.logistica.findMany({
@@ -398,15 +399,26 @@ export const getRutasHoyService = async () => {
 
   const rows = await prisma.logistica.findMany({
     where: {
-      // Fecha de entrega al cliente coincide con hoy
-      venta: {
-        esHistorica: false,
-        fechaEstimEntrega: { gte: inicio, lt: fin },
-      },
-      // Solo logísticas aceptadas (consultada y aprobada por Carlos)
-      estadoConsulta: 'aceptada',
-      // Excluir ya entregadas
-      estadoEntrega: { not: 'entregado' },
+      AND: [
+        // Solo logísticas aceptadas (aprobadas por Carlos) y no entregadas
+        { estadoConsulta: 'aceptada' },
+        { estadoEntrega: { not: 'entregado' } },
+        {
+          OR: [
+            // Fecha estimada de entrega en la venta es hoy
+            {
+              venta: {
+                esHistorica: false,
+                fechaEstimEntrega: { gte: inicio, lt: fin },
+              },
+            },
+            // O la hora estimada de entrega de la logística es hoy
+            { horaEstimadaEntrega: { gte: inicio, lt: fin } },
+            // O la fecha de retiro del galpón es hoy
+            { fechaRetiroGalpon: { gte: inicio, lt: fin } },
+          ],
+        },
+      ],
     },
     include: {
       venta: {
@@ -414,6 +426,7 @@ export const getRutasHoyService = async () => {
           id: true,
           lugarEntrega: true,
           fechaEstimEntrega: true,
+          esHistorica: true,
           cliente: { select: { razonSocial: true, localidad: true, direccionEntrega: true } },
           detalles: { select: { cantidadPedida: true } },
         },
@@ -422,7 +435,39 @@ export const getRutasHoyService = async () => {
     orderBy: [{ horaEstimadaEntrega: 'asc' }, { id: 'asc' }],
   });
 
-  return rows.map((r, idx) => {
+  // Geocodificar en paralelo las rutas que no tienen coordenadas guardadas
+  const geocodingTasks = rows.map(async (r) => {
+    // Si ya tiene coordenadas, no geocodificar
+    if (r.latEntrega != null && r.lngEntrega != null) return r;
+
+    // Construir la dirección de destino con la misma prioridad que usamos para 'destino'
+    const direccion =
+      r.lugarEntrega ||
+      r.venta?.lugarEntrega ||
+      [r.venta?.cliente?.direccionEntrega, r.venta?.cliente?.localidad].filter(Boolean).join(', ') ||
+      '';
+
+    if (!direccion) return r;
+
+    const coords = await geocodeAddress(direccion);
+    if (!coords) return r;
+
+    // Guardar coordenadas en la DB para no geocodificar de nuevo
+    try {
+      await prisma.logistica.update({
+        where: { id: r.id },
+        data: { latEntrega: coords.lat, lngEntrega: coords.lng },
+      });
+    } catch (e) {
+      console.error(`[getRutasHoy] Error guardando coordenadas logística #${r.id}:`, e);
+    }
+
+    return { ...r, latEntrega: coords.lat, lngEntrega: coords.lng };
+  });
+
+  const rutasGeocodificadas = await Promise.all(geocodingTasks);
+
+  return rutasGeocodificadas.map((r, idx) => {
     const unidades = r.venta?.detalles?.reduce((sum, d) => sum + d.cantidadPedida, 0) ?? 0;
 
     // Prioridad: lugarEntrega del registro logística > lugarEntrega de la venta > dirección + localidad del cliente

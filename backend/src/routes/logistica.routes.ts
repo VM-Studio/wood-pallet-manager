@@ -14,11 +14,17 @@ import {
   avanzarLogistica,
   getLogisticasAceptadas,
   getRutasHoy,
+  addressSearch,
+  geocodeSingle,
 } from '../controllers/logistica.controller';
 
 const router = Router();
 
 router.use(authenticate);
+
+// Address search (Nominatim proxy) — para el autocomplete del front
+router.get('/address-search', addressSearch);
+router.get('/geocode', geocodeSingle);
 
 router.get('/entregas-hoy', getEntregasHoy);
 router.get('/rutas-hoy', getRutasHoy);
