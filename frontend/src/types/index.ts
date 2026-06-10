@@ -302,6 +302,19 @@ export interface Factura {
   observaciones?: string;
   cliente?: { razonSocial: string; cuit?: string };
   pagos?: PagoCobro[];
+  venta?: {
+    id: number;
+    estadoPedido: string;
+    tipoEntrega: string;
+    nroOrden?: string;
+    detalles?: {
+      id: number;
+      cantidadPedida: number;
+      precioUnitario: number;
+      subtotal: number;
+      producto?: { nombre: string; tipo: string };
+    }[];
+  };
   diasVencida?: number;
   urgencia?: 'alta' | 'media' | 'baja';
 }
@@ -314,6 +327,8 @@ export interface PagoCobro {
   medioPago: 'transferencia' | 'e_check' | 'efectivo';
   nroComprobante?: string;
   esAdelanto: boolean;
+  observaciones?: string;
+  registradoPor?: { nombre: string; apellido: string };
 }
 
 // Alerta

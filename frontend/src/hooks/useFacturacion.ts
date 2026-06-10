@@ -134,3 +134,16 @@ export const useCargarNroArca = () => {
     }
   });
 };
+
+export const useActualizarObservaciones = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, observaciones }: { id: number; observaciones: string }) => {
+      const { data } = await api.patch(`/facturas/${id}/observaciones`, { observaciones });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['facturas'] });
+    }
+  });
+};

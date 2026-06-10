@@ -11,6 +11,7 @@ import {
   crearNotaCreditoService,
   getCobrosPendientesService,
   cargarNroFacturaArcaService,
+  actualizarObservacionesService,
 } from '../services/facturacion.service';
 
 const crearFacturaSchema = z.object({
@@ -126,6 +127,17 @@ export const cargarNroArca = async (req: AuthRequest, res: Response) => {
       return;
     }
     const factura = await cargarNroFacturaArcaService(id, nroFacturaArca.trim());
+    res.json(factura);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const actualizarObservaciones = async (req: AuthRequest, res: Response) => {
+  try {
+    const id = parseId(req.params.id);
+    const { observaciones } = req.body;
+    const factura = await actualizarObservacionesService(id, observaciones ?? '');
     res.json(factura);
   } catch (error: any) {
     res.status(400).json({ error: error.message });

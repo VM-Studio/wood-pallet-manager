@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search, DollarSign, AlertTriangle, Clock, CheckCircle, Receipt, X, Plus } from 'lucide-react';
-import { useFacturas, useFacturasVencidas, useCobrosPendientes, useActualizarNroFactura, useCargarNroArca } from '../../hooks/useFacturacion';
+import { Search, DollarSign, AlertTriangle, Clock, CheckCircle, Receipt, X, Plus, Eye, MessageSquare } from 'lucide-react';
+import { useFacturas, useFacturasVencidas, useCobrosPendientes, useActualizarNroFactura, useCargarNroArca, useFactura, useActualizarObservaciones } from '../../hooks/useFacturacion';
 import type { Factura } from '../../types';
 import RegistrarCobro from './RegistrarCobro';
 import NuevaFactura from './NuevaFactura';
@@ -32,6 +32,153 @@ interface CobroData {
 const formatPesos = (v: number) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(v);
 
+// ── Modal: Detalle de facturación ────────────────────────────────────
+function DetalleFacturaModal({ facturaId, onClose }: { facturaId: number; onClose: () => void }) {
+  const { data: factura, isLoading } = useFactura(facturaId);
+
+  const fmtFecha = (s?: string) => {
+    if (!s) return '—';
+    return new Date(s).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
+
+  const labelMedio = (m: string) =>
+    m === 'transferencia' ? 'Transferencia' : m === 'e_check' ? 'E-check' : 'Efectivo';
+
+  const totalCobrado = factura?.pagos?.reduce((acc, p) => acc + Number(p.monto), 0) ?? 0;
+  const saldo = factura ? Number(factura.totalConIva) - totalCobrado : 0;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div
+        className="modal animate-slide-up"
+        style={{ maxWidth: '580px', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="modal-header" style={{ flexShrink: 0 }}>
+          <div>
+            <h2 className="modal-title">Detalle de facturación</h2>
+            {factura && (
+              <p style={{ fontSize: '0.8rem', color: '#6B7280', margin: '2px 0 0' }}>
+                {factura.cliente?.razonSocial}
+                {factura.cliente?.cuit ? ` · CUIT ${factura.cliente.cuit}` : ''}
+              </p>
+            )}
+          </div>
+          <button onClick={onClose} className="btn-icon"><X size={18} /></button>
+        </div>
+
+        {/* Body */}
+        <div className="modal-body space-y-5" style={{ overflowY: 'auto', flex: 1 }}>
+          {isLoading ? (
+            <div className="py-8 flex justify-center"><LoadingSpinner /></div>
+          ) : factura && (
+            <>
+              {/* Resumen financiero */}
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: 'TOTAL FACTURA', val: Number(factura.totalConIva), bg: '#F9FAFB', border: '#E5E7EB', color: '#111827', sub: '#9CA3AF' },
+                  { label: 'COBRADO', val: totalCobrado, bg: '#F0FDF4', border: '#BBF7D0', color: '#15803D', sub: '#15803D' },
+                  { label: 'SALDO PENDIENTE', val: saldo, bg: saldo > 0 ? '#FFFBEB' : '#F9FAFB', border: saldo > 0 ? '#FDE68A' : '#E5E7EB', color: saldo > 0 ? '#92400E' : '#6B7280', sub: saldo > 0 ? '#92400E' : '#9CA3AF' },
+                ].map(c => (
+                  <div key={c.label} style={{ background: c.bg, border: `1px solid ${c.border}`, borderRadius: '0.375rem', padding: '0.75rem' }}>
+                    <p style={{ fontSize: '0.62rem', fontWeight: 700, color: c.sub, marginBottom: 4, letterSpacing: '0.04em' }}>{c.label}</p>
+                    <p style={{ fontSize: '0.95rem', fontWeight: 700, color: c.color, margin: 0 }}>{formatPesos(c.val)}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* N° de Orden del cliente */}
+              {factura.venta?.nroOrden && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '2px 7px', background: '#EFF6FF', color: '#1D4ED8', borderRadius: '0.25rem', border: '1px solid #BFDBFE', letterSpacing: '0.03em' }}>N° ORDEN</span>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#1D4ED8' }}>{factura.venta.nroOrden}</span>
+                </div>
+              )}
+
+              {/* Historial de cobros */}
+              <div>
+                <p style={{ fontSize: '0.72rem', fontWeight: 700, color: '#374151', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Historial de cobros</p>
+                {factura.pagos && factura.pagos.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {factura.pagos.map(p => (
+                      <div key={p.id} style={{ border: '1px solid #E5E7EB', borderRadius: '0.375rem', padding: '0.625rem 0.875rem', background: '#F9FAFB' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <p style={{ fontSize: '0.95rem', fontWeight: 700, color: '#15803D', margin: 0 }}>{formatPesos(Number(p.monto))}</p>
+                              {p.esAdelanto && (
+                                <span style={{ fontSize: '0.62rem', fontWeight: 700, padding: '1px 5px', background: '#FEF9C3', color: '#854D0E', borderRadius: '0.2rem', border: '1px solid #FDE047' }}>ADELANTO</span>
+                              )}
+                            </div>
+                            <p style={{ fontSize: '0.75rem', color: '#6B7280', margin: '3px 0 0' }}>
+                              {labelMedio(p.medioPago)} · {fmtFecha(p.fechaPago)}
+                              {p.nroComprobante ? ` · Comp. ${p.nroComprobante}` : ''}
+                            </p>
+                            {p.registradoPor && (
+                              <p style={{ fontSize: '0.7rem', color: '#9CA3AF', margin: '2px 0 0' }}>
+                                Registrado por {p.registradoPor.nombre} {p.registradoPor.apellido}
+                              </p>
+                            )}
+                            {p.observaciones && (
+                              <p style={{ fontSize: '0.72rem', color: '#6B7280', margin: '4px 0 0', fontStyle: 'italic' }}>"{p.observaciones}"</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ padding: '1rem', background: '#F9FAFB', borderRadius: '0.375rem', border: '1px solid #E5E7EB', textAlign: 'center' }}>
+                    <p style={{ fontSize: '0.82rem', color: '#9CA3AF', margin: 0 }}>Sin cobros registrados aún</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Detalle de la venta */}
+              {factura.venta?.detalles && factura.venta.detalles.length > 0 && (
+                <div>
+                  <p style={{ fontSize: '0.72rem', fontWeight: 700, color: '#374151', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Detalle de la venta</p>
+                  <div style={{ border: '1px solid #E5E7EB', borderRadius: '0.375rem', overflow: 'hidden' }}>
+                    {factura.venta.detalles.map((d, i) => (
+                      <div key={d.id} style={{
+                        padding: '0.5rem 0.875rem',
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        background: i % 2 === 0 ? '#fff' : '#F9FAFB',
+                      }}>
+                        <div>
+                          <p style={{ fontSize: '0.82rem', fontWeight: 600, color: '#111827', margin: 0 }}>{d.producto?.nombre ?? '—'}</p>
+                          <p style={{ fontSize: '0.72rem', color: '#9CA3AF', margin: '1px 0 0' }}>
+                            {d.cantidadPedida} u. × {formatPesos(d.precioUnitario)}
+                          </p>
+                        </div>
+                        <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#374151', margin: 0 }}>{formatPesos(d.subtotal)}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Observaciones de facturación */}
+              {factura.observaciones && (
+                <div style={{ padding: '0.75rem 0.875rem', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '0.375rem' }}>
+                  <p style={{ fontSize: '0.68rem', fontWeight: 700, color: '#92400E', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Observaciones de facturación</p>
+                  <p style={{ fontSize: '0.82rem', color: '#78350F', margin: 0 }}>{factura.observaciones}</p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="modal-footer" style={{ flexShrink: 0 }}>
+          <button onClick={onClose} className="btn-secondary">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function FacturacionPage() {
   const { data: facturas, isLoading, isError } = useFacturas() as {
     data: Factura[] | undefined;
@@ -55,6 +202,10 @@ export default function FacturacionPage() {
   const cargarArca = useCargarNroArca();
   const [arcaModal, setArcaModal] = useState<{ id: number; clienteNombre: string } | null>(null);
   const [arcaInput, setArcaInput] = useState('');
+  const [detalleFacturaId, setDetalleFacturaId] = useState<number | null>(null);
+  const [obsModal, setObsModal] = useState<{ id: number; clienteNombre: string } | null>(null);
+  const [obsInput, setObsInput] = useState('');
+  const actualizarObs = useActualizarObservaciones();
 
   const filtradas = facturas?.filter(f => {
     const matchBusqueda =
@@ -465,37 +616,50 @@ export default function FacturacionPage() {
                     <td><EstadoBadge estado={f.estadoCobro} /></td>
                     <td>
                       <div className="flex flex-col gap-1.5">
-                        {/* Botón pago aprobado / pago manual */}
+                        {/* Registrar cobro */}
                         {f.estadoCobro !== 'cobrada_total' && (
-                          <>
-                            <button
-                              onClick={() => setCobroData({
-                                facturaId: f.id,
-                                clienteNombre: f.cliente?.razonSocial ?? '',
-                                totalFactura: Number(f.totalConIva),
-                                totalCobrado
-                              })}
-                              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white"
-                              style={{ background: 'linear-gradient(135deg, #16A34A 0%, #15803D 100%)', borderRadius: '0.25rem' }}
-                            >
-                              <CheckCircle size={13} />
-                              {f.estadoCobro === 'cobrada_parcial' ? `Pago restante (${formatPesos(saldo)})` : 'Pago aprobado'}
-                            </button>
-
-                            <button
-                              onClick={() => setCobroData({
-                                facturaId: f.id,
-                                clienteNombre: f.cliente?.razonSocial ?? '',
-                                totalFactura: Number(f.totalConIva),
-                                totalCobrado
-                              })}
-                              className="px-3 py-1.5 text-xs font-medium border rounded"
-                              style={{ borderColor: '#E5E7EB', background: '#fff' }}
-                            >
-                              Pago
-                            </button>
-                          </>
+                          <button
+                            onClick={() => setCobroData({
+                              facturaId: f.id,
+                              clienteNombre: f.cliente?.razonSocial ?? '',
+                              totalFactura: Number(f.totalConIva),
+                              totalCobrado
+                            })}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white"
+                            style={{ background: 'linear-gradient(135deg, #16A34A 0%, #15803D 100%)', borderRadius: '0.25rem' }}
+                          >
+                            <CheckCircle size={13} />
+                            {f.estadoCobro === 'cobrada_parcial' ? `Cobrar saldo (${formatPesos(saldo)})` : 'Registrar cobro'}
+                          </button>
                         )}
+
+                        {/* Detalle */}
+                        <button
+                          onClick={() => setDetalleFacturaId(f.id)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium"
+                          style={{ background: '#EFF6FF', color: '#1D4ED8', borderRadius: '0.25rem', border: '1px solid #BFDBFE' }}
+                        >
+                          <Eye size={12} /> Detalle
+                        </button>
+
+                        {/* Observaciones */}
+                        <button
+                          onClick={() => {
+                            setObsModal({ id: f.id, clienteNombre: f.cliente?.razonSocial ?? '' });
+                            setObsInput(f.observaciones ?? '');
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium"
+                          style={{
+                            background: f.observaciones ? '#FFFBEB' : '#F9FAFB',
+                            color: f.observaciones ? '#92400E' : '#6B7280',
+                            borderRadius: '0.25rem',
+                            border: `1px solid ${f.observaciones ? '#FDE68A' : '#E5E7EB'}`,
+                          }}
+                        >
+                          <MessageSquare size={12} />
+                          {f.observaciones ? 'Ver obs.' : 'Observaciones'}
+                        </button>
+
                         {/* Botón cargar N° ARCA oficial */}
                         {!f.esSinFactura && (
                           <button
@@ -607,6 +771,54 @@ export default function FacturacionPage() {
           onSuccess={() => setShowNuevaFactura(false)}
         />
       )}
+
+      {/* Modal Detalle de facturación */}
+      {detalleFacturaId && (
+        <DetalleFacturaModal
+          facturaId={detalleFacturaId}
+          onClose={() => setDetalleFacturaId(null)}
+        />
+      )}
+
+      {/* Modal Observaciones */}
+      {obsModal && (
+        <div className="modal-overlay" onClick={() => setObsModal(null)}>
+          <div className="modal" style={{ maxWidth: '480px' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <span className="modal-title">Observaciones de facturación</span>
+                <p style={{ fontSize: '0.8rem', color: '#6B7280', margin: '2px 0 0' }}>{obsModal.clienteNombre}</p>
+              </div>
+              <button onClick={() => setObsModal(null)} className="btn-icon"><X size={18} /></button>
+            </div>
+            <div className="modal-body space-y-3">
+              <p className="text-xs text-gray-400">Notas internas sobre este cobro o facturación. Solo visibles para los propietarios.</p>
+              <textarea
+                className="input resize-none"
+                rows={4}
+                placeholder="Ej: Acordar con el cliente un plan de pago en cuotas..."
+                value={obsInput}
+                onChange={e => setObsInput(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="modal-footer">
+              <button onClick={() => setObsModal(null)} className="btn-secondary">Cancelar</button>
+              <button
+                disabled={actualizarObs.isPending}
+                onClick={async () => {
+                  await actualizarObs.mutateAsync({ id: obsModal.id, observaciones: obsInput });
+                  setObsModal(null);
+                }}
+                className="btn-primary"
+              >
+                {actualizarObs.isPending ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {cobroData && (
         <RegistrarCobro
           facturaId={cobroData.facturaId}

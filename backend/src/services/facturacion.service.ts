@@ -235,3 +235,10 @@ export const cargarNroFacturaArcaService = async (facturaId: number, nroFacturaA
     data: { nroFactura: nroFacturaArca },
   });
 };
+
+export const actualizarObservacionesService = async (id: number, observaciones: string) => {
+  return prisma.factura.update({
+    where: { id },
+    data: { observaciones: observaciones.trim() || null },
+  });
+};

@@ -10,6 +10,7 @@ import {
   getCobrosPendientes,
   actualizarNroFactura,
   cargarNroArca,
+  actualizarObservaciones,
 } from '../controllers/facturacion.controller';
 
 const router = Router();
@@ -24,5 +25,6 @@ router.post('/:id/cobro', registrarCobro);
 router.post('/nota-credito', crearNotaCredito);
 router.patch('/:id/nro-factura', actualizarNroFactura);
 router.put('/:id/nro-arca', cargarNroArca);
+router.patch('/:id/observaciones', actualizarObservaciones);
 
 export default router;
