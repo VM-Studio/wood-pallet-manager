@@ -41,6 +41,9 @@ export const loginService = async (email: string, password: string) => {
       email: usuario.email,
       rol: usuario.rol,
       cuit: usuario.cuit ?? undefined,
+      telefono: usuario.telefono ?? undefined,
+      fotoPerfil: usuario.fotoPerfil ?? undefined,
+      firma: usuario.firma ?? undefined,
     },
   };
 };
@@ -54,7 +57,8 @@ export const actualizarPerfilService = async (
     data: datos,
     select: {
       id: true, nombre: true, apellido: true,
-      email: true, rol: true, telefono: true
+      email: true, rol: true, telefono: true,
+      fotoPerfil: true, firma: true, cuit: true,
     }
   });
   return u;

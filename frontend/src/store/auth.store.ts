@@ -9,11 +9,12 @@ interface AuthStore {
   login: (token: string, usuario: Usuario) => void;
   logout: () => void;
   setUsuario: (usuario: Usuario) => void;
+  patchUsuario: (patch: Partial<Usuario>) => void;
 }
 
 export const useAuthStore = create<AuthStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       token: null,
       usuario: null,
       isAuthenticated: false,
@@ -27,6 +28,12 @@ export const useAuthStore = create<AuthStore>()(
         set({ token: null, usuario: null, isAuthenticated: false });
       },
       setUsuario: (usuario) => set({ usuario }),
+      // Actualiza solo los campos recibidos sin pisar los demás (ej: foto sin pisar firma)
+      patchUsuario: (patch) => {
+        const current = get().usuario;
+        if (!current) return;
+        set({ usuario: { ...current, ...patch } });
+      },
     }),
     { name: 'wp_auth' }
   )

@@ -37,7 +37,7 @@ const RolBadge = ({ rol }: { rol: string }) => {
 // ─── Sección: Información Personal ───────────────────────────────────────────
 function InfoPersonalSection() {
   const queryClient = useQueryClient();
-  const { setUsuario } = useAuthStore();
+  const { setUsuario, patchUsuario } = useAuthStore();
   const { data: me, isLoading } = useQuery({
     queryKey: ['me-completo'],
     queryFn: () => api.get('/auth/me/completo').then(r => r.data),
@@ -71,7 +71,8 @@ function InfoPersonalSection() {
     mutationFn: (d: { nombre: string; apellido: string }) => api.put('/auth/perfil', d).then(r => r.data),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['me-completo'] });
-      setUsuario(data);
+      // Ahora el backend devuelve fotoPerfil y firma también, se puede usar setUsuario completo
+      patchUsuario({ nombre: data.nombre, apellido: data.apellido, telefono: data.telefono ?? undefined });
       setEditando(false);
       setSuccess('Perfil actualizado');
       setTimeout(() => setSuccess(''), 3000);
@@ -85,7 +86,8 @@ function InfoPersonalSection() {
     mutationFn: (b64: string) => api.put('/auth/foto', { fotoPerfil: b64 }).then(r => r.data),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['me-completo'] });
-      setUsuario(data);
+      // Solo pisa fotoPerfil en el store, sin borrar el resto de los campos
+      patchUsuario({ fotoPerfil: data.fotoPerfil ?? undefined });
       setSuccess('Foto de perfil actualizada');
       setTimeout(() => setSuccess(''), 3000);
     },
@@ -660,7 +662,7 @@ function SeguridadSection() {
 // ─── Sección: Firma Digital ────────────────────────────────────────────────────
 function FirmaSection() {
   const queryClient = useQueryClient();
-  const { setUsuario } = useAuthStore();
+  const { patchUsuario } = useAuthStore();
   const { data: me } = useQuery({
     queryKey: ['me-completo'],
     queryFn: () => api.get('/auth/me/completo').then(r => r.data),
@@ -738,7 +740,7 @@ function FirmaSection() {
     mutationFn: (firma: string) => api.put('/auth/firma', { firma }).then(r => r.data),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['me-completo'] });
-      setUsuario(data);
+      patchUsuario({ firma: data.firma ?? undefined });
       setSuccess('Firma guardada correctamente');
       setPreviewUrl(null);
       setTimeout(() => setSuccess(''), 4000);
@@ -763,9 +765,9 @@ function FirmaSection() {
 
   const eliminarFirma = useMutation({
     mutationFn: () => api.put('/auth/firma', { firma: '' }).then(r => r.data),
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['me-completo'] });
-      setUsuario(data);
+      patchUsuario({ firma: undefined });
       setSuccess('Firma eliminada');
       setTimeout(() => setSuccess(''), 3000);
     },

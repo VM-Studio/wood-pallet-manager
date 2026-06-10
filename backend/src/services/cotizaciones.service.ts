@@ -237,6 +237,7 @@ export const convertirCotizacionAVentaService = async (
     horaEstimadaRetiro?: string; // formato "HH:MM" — para retiro en galpón
     galponRetiro?: string; // nombre/dirección del galpón
     observaciones?: string;
+    nroOrden?: string;
     usaStockPropio?: boolean;
     emitirRemito?: boolean;
     firmaPropietario?: string;
@@ -275,6 +276,7 @@ export const convertirCotizacionAVentaService = async (
       totalConIva: cotizacion.totalConIva != null ? Number(cotizacion.totalConIva) : undefined,
       costoFlete: cotizacion.costoFlete != null ? Number(cotizacion.costoFlete) : undefined,
       observaciones: datos.observaciones,
+      nroOrden: datos.nroOrden,
       origenStock: datos.usaStockPropio ? 'stock_propio' : 'compra_directa',
       detalles: {
         create: cotizacion.detalles.map((d) => ({

@@ -433,6 +433,7 @@ model Venta {
   cuentaDestino     String?
   modalidadPago     ModalidadPago?
   observaciones     String?
+  nroOrden          String?
   origenStock       String?        @default("stock_propio")
   esHistorica       Boolean        @default(false)
 

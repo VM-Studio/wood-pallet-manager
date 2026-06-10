@@ -119,6 +119,7 @@ export default function ConvertirVentaModal({
     horaEstimadaRetiro: '',
     galponRetiro: '',
     observaciones: '',
+    nroOrden: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -152,6 +153,7 @@ export default function ConvertirVentaModal({
           horaEstimadaRetiro: form.horaEstimadaRetiro || undefined,
           galponRetiro: galponAutoNombre || form.galponRetiro || undefined,
           observaciones: form.observaciones || undefined,
+          nroOrden: form.nroOrden || undefined,
           usaStockPropio,
           emitirRemito,
           firmaPropietario: firmaPropietario ?? undefined,
@@ -539,6 +541,18 @@ export default function ConvertirVentaModal({
                 onChange={e => setForm({ ...form, observaciones: e.target.value })}
                 className="input resize-none" rows={2}
                 placeholder="Notas adicionales sobre la venta..." />
+            </div>
+
+            <div>
+              <label className="label">N° de Orden del cliente <span style={{ fontWeight: 400, color: '#6B7280' }}>(opcional)</span></label>
+              <input
+                type="text"
+                value={form.nroOrden}
+                onChange={e => setForm({ ...form, nroOrden: e.target.value })}
+                className="input"
+                placeholder="Ej: OC-2024-0089"
+              />
+              <p className="text-xs text-gray-400 mt-1">Solo para clientes que trabajan con órdenes de compra internas.</p>
             </div>
 
             {incluyeFlete && form.tipoEntrega === 'envio_woodpallet' && (

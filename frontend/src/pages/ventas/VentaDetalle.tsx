@@ -151,6 +151,16 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                   {venta.cliente?.cuit ? ` · CUIT ${venta.cliente.cuit}` : ''}
                 </p>
               )}
+              {venta?.nroOrden && (
+                <p style={{ fontSize: '0.8rem', margin: '4px 0 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{
+                    fontSize: '0.7rem', fontWeight: 700, padding: '2px 7px',
+                    background: '#EFF6FF', color: '#1D4ED8', borderRadius: '0.25rem',
+                    border: '1px solid #BFDBFE', letterSpacing: '0.03em',
+                  }}>N° ORDEN</span>
+                  <span style={{ fontWeight: 600, color: '#1D4ED8' }}>{venta.nroOrden}</span>
+                </p>
+              )}
             </div>
             <button onClick={onClose} className="btn-icon" style={{ borderRadius: '0.25rem', flexShrink: 0 }}>
               <X size={18} />
@@ -174,6 +184,11 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                   <Dato label="Fecha estimada de entrega" value={
                     venta.fechaEstimEntrega ? formatFecha(venta.fechaEstimEntrega) : '—'
                   } />
+                  {venta.nroOrden && (
+                    <Dato label="N° de Orden del cliente" value={
+                      <span style={{ fontWeight: 700, color: '#1D4ED8' }}>{venta.nroOrden}</span>
+                    } />
+                  )}
                   {venta.lugarEntrega && (
                     <Dato label="Lugar de entrega" value={
                       <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>

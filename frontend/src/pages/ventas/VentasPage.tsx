@@ -21,6 +21,7 @@ export default function VentasPage() {
   const eliminarVenta = useEliminarVenta();
   const [estadoFiltro, setEstadoFiltro] = useState('todos');
   const [busqueda, setBusqueda] = useState('');
+  const [busquedaOrden, setBusquedaOrden] = useState('');
   const [pagina, setPagina] = useState(1);
   const [ventaSeleccionada, setVentaSeleccionada] = useState<number | null>(null);
   const [confirmEliminar, setConfirmEliminar] = useState<number | null>(null);
@@ -35,7 +36,9 @@ export default function VentasPage() {
       v.cliente?.razonSocial?.toLowerCase().includes(busqueda.toLowerCase()) ||
       v.cliente?.cuit?.includes(busqueda) ||
       String(v.id).includes(busqueda);
-    return matchEstado && matchBusqueda;
+    const matchOrden = !busquedaOrden ||
+      v.nroOrden?.toLowerCase().includes(busquedaOrden.toLowerCase());
+    return matchEstado && matchBusqueda && matchOrden;
   });
 
   const ventasPaginadas = filtradas.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
@@ -150,14 +153,26 @@ export default function VentasPage() {
 
       {/* Buscador */}
       <div className="card-base">
-        <div className="relative">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input
-            className="input-field pl-9"
-            placeholder="Buscar cliente, CUIT o N° venta..."
-            value={busqueda}
-            onChange={e => { setBusqueda(e.target.value); setPagina(1); }}
-          />
+        <div className="flex gap-3 flex-col sm:flex-row">
+          <div className="relative flex-1">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              className="input-field pl-9"
+              placeholder="Buscar cliente, CUIT o N° venta..."
+              value={busqueda}
+              onChange={e => { setBusqueda(e.target.value); setPagina(1); }}
+            />
+          </div>
+          <div className="relative sm:w-64">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400" />
+            <input
+              className="input-field pl-9"
+              placeholder="Buscar por N° de orden..."
+              value={busquedaOrden}
+              onChange={e => { setBusquedaOrden(e.target.value); setPagina(1); }}
+              style={{ borderColor: busquedaOrden ? '#93C5FD' : undefined, background: busquedaOrden ? '#EFF6FF' : undefined }}
+            />
+          </div>
         </div>
       </div>
 
@@ -190,6 +205,13 @@ export default function VentasPage() {
                 <td>
                   <p className="font-semibold text-gray-900 text-sm">{v.cliente?.razonSocial}</p>
                   <p className="text-xs text-gray-400">{v.cliente?.cuit}</p>
+                  {v.nroOrden && (
+                    <span style={{
+                      fontSize: '0.65rem', fontWeight: 700, padding: '1px 5px',
+                      background: '#EFF6FF', color: '#1D4ED8', borderRadius: '0.2rem',
+                      border: '1px solid #BFDBFE', display: 'inline-block', marginTop: 2,
+                    }}>{v.nroOrden}</span>
+                  )}
                 </td>
                 <td className="text-sm text-gray-600">{formatFecha(v.fechaVenta)}</td>
                 <td>

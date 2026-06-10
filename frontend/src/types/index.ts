@@ -145,6 +145,7 @@ export interface Venta {
   metodoPago?: string;
   modalidadPago?: string;
   observaciones?: string;
+  nroOrden?: string;
   cliente?: { id?: number; razonSocial: string; cuit?: string; nombreContacto?: string; telefonoContacto?: string };
   usuario?: { nombre: string; apellido: string; rol: string };
   detalles?: DetalleVenta[];

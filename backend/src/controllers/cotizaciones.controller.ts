@@ -69,6 +69,7 @@ const convertirSchema = z.object({
   horaEstimadaRetiro: z.string().optional(), // "HH:MM" — para retiro en galpón
   galponRetiro: z.string().optional(),
   observaciones: z.string().optional(),
+  nroOrden: z.string().optional(),
   usaStockPropio: z.boolean().optional().default(false),
   emitirRemito: z.boolean().optional().default(false),
   firmaPropietario: z.string().optional(),
