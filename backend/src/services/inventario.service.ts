@@ -1,18 +1,18 @@
 import prisma from '../utils/prisma';
 
-// Stock consolidado: TODOS los productos activos, con o sin stock registrado.
+// Stock consolidado: productos activos del propietario, con o sin stock registrado.
 // Un producto NUNCA aparece duplicado. Stock nunca puede ser negativo.
-export const getStockConsolidadoService = async () => {
-  // 1. Todos los productos activos del catálogo
+export const getStockConsolidadoService = async (propietarioId: number) => {
+  // 1. Solo los productos activos que pertenecen al propietario
   const productos = await prisma.producto.findMany({
-    where: { activo: true },
+    where: { activo: true, propietarioId },
     select: { id: true, nombre: true, tipo: true, condicion: true },
     orderBy: { nombre: 'asc' },
   });
 
-  // 2. Todos los registros de stock (puede haber varios por producto si tiene múltiples proveedores)
+  // 2. Solo los registros de stock de productos de ese propietario
   const stocks = await prisma.stock.findMany({
-    where: { producto: { activo: true } },
+    where: { producto: { activo: true, propietarioId } },
     include: {
       producto: { select: { id: true, nombre: true, tipo: true, condicion: true } },
       proveedor: { select: { id: true, nombreEmpresa: true } },
@@ -84,10 +84,13 @@ export const getStockService = async () => {
   }));
 };
 
-// Alertas de stock bajo mínimo
-export const getAlertasStockService = async () => {
+// Alertas de stock bajo mínimo — solo del propietario
+export const getAlertasStockService = async (propietarioId: number) => {
   const stock = await prisma.stock.findMany({
-    where: { cantidadMinima: { gt: 0 } },
+    where: {
+      cantidadMinima: { gt: 0 },
+      producto: { propietarioId },
+    },
     include: {
       producto: { select: { id: true, nombre: true, tipo: true, condicion: true } },
       proveedor: { select: { id: true, nombreEmpresa: true } }
@@ -107,15 +110,26 @@ export const getAlertasStockService = async () => {
     }));
 };
 
-// Movimientos de stock
-export const getMovimientosStockService = async (productoId?: number, proveedorId?: number) => {
+// Movimientos de stock — filtrados por propietario y opcionalmente por producto/proveedor
+export const getMovimientosStockService = async (
+  productoId?: number,
+  proveedorId?: number,
+  propietarioId?: number,
+) => {
   const where: any = {};
 
-  if (productoId || proveedorId) {
-    const stockConditions: any = {};
-    if (productoId) stockConditions.productoId = productoId;
-    if (proveedorId) stockConditions.proveedorId = proveedorId;
+  // Filtros sobre el stock relacionado
+  const stockConditions: any = {};
+  if (productoId)    stockConditions.productoId  = productoId;
+  if (proveedorId)   stockConditions.proveedorId = proveedorId;
+  // Restringir siempre al propietario del producto
+  if (propietarioId) stockConditions.producto = { propietarioId };
+
+  if (Object.keys(stockConditions).length > 0) {
     where.stock = stockConditions;
+  } else if (propietarioId) {
+    // Sin otros filtros, solo filtrar por propietario
+    where.stock = { producto: { propietarioId } };
   }
 
   return await prisma.movimientoStock.findMany({
@@ -130,7 +144,7 @@ export const getMovimientosStockService = async (productoId?: number, proveedorI
       registradoPor: { select: { nombre: true, apellido: true } }
     },
     orderBy: { fecha: 'desc' },
-    take: 100
+    take: 200,
   });
 };
 

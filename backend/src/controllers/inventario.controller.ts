@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { z } from 'zod';
 import { AuthRequest } from '../types';
 import {
@@ -14,15 +14,17 @@ export const getStock = async (_req: AuthRequest, res: Response) => {
   res.json(stock);
 };
 
-export const getAlertas = async (_req: AuthRequest, res: Response) => {
-  const alertas = await getAlertasStockService();
+export const getAlertas = async (req: AuthRequest, res: Response) => {
+  const propietarioId = req.user!.userId;
+  const alertas = await getAlertasStockService(propietarioId);
   res.json(alertas);
 };
 
-export const getMovimientos = async (req: Request, res: Response) => {
-  const productoId = req.query.productoId ? Number(req.query.productoId) : undefined;
+export const getMovimientos = async (req: AuthRequest, res: Response) => {
+  const productoId  = req.query.productoId  ? Number(req.query.productoId)  : undefined;
   const proveedorId = req.query.proveedorId ? Number(req.query.proveedorId) : undefined;
-  const movimientos = await getMovimientosStockService(productoId, proveedorId);
+  const propietarioId = req.user!.userId;
+  const movimientos = await getMovimientosStockService(productoId, proveedorId, propietarioId);
   res.json(movimientos);
 };
 
@@ -48,7 +50,8 @@ export const ajustarStock = async (req: AuthRequest, res: Response) => {
   res.json(result);
 };
 
-export const getConsolidado = async (_req: Request, res: Response) => {
-  const consolidado = await getStockConsolidadoService();
+export const getConsolidado = async (req: AuthRequest, res: Response) => {
+  const propietarioId = req.user!.userId;
+  const consolidado = await getStockConsolidadoService(propietarioId);
   res.json(consolidado);
 };
