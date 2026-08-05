@@ -216,7 +216,7 @@ export default function UsuariosPage() {
               {u.modulosPermitidos?.length ?? 0} módulo(s)
             </span>
           )}
-          {u.estadoCuenta !== 'rechazado' && u.rol !== 'propietario_carlos' && (
+          {u.estadoCuenta !== 'rechazado' && u.rol !== 'propietario_carlos' && u.rol !== 'propietario_juancruz' && (
             <button
               onClick={() => cambiarEstado.mutate({ id: u.id, activo: !u.activo })}
               style={{

@@ -81,8 +81,8 @@ export const actualizarAccesoUsuarioService = async (
 export const cambiarEstadoActivoService = async (id: number, activo: boolean) => {
   const usuario = await prisma.usuario.findUnique({ where: { id } });
   if (!usuario) throw new Error('Usuario no encontrado');
-  if (usuario.rol === 'propietario_carlos') {
-    throw new Error('No podés desactivar la cuenta del administrador principal');
+  if (usuario.rol === 'propietario_carlos' || usuario.rol === 'propietario_juancruz') {
+    throw new Error('No podés desactivar la cuenta de un propietario');
   }
 
   return prisma.usuario.update({

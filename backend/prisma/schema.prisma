@@ -24,7 +24,7 @@ model Usuario {
   // Aprobación de cuentas y permisos por módulo (solo Carlos administra esto)
   estadoCuenta          EstadoCuentaUsuario @default(aprobado)
   tieneModulosLimitados Boolean             @default(false)
-  modulosPermitidos     String[]           @default([])
+  modulosPermitidos     String[]            @default([])
   motivoRechazo         String?
   fechaAprobacion       DateTime?
 
