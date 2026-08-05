@@ -202,6 +202,7 @@ export const useConfirmarLogisticaCarlos = () => {
       queryClient.invalidateQueries({ queryKey: ['logisticas'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['logisticas-aceptadas'] });
+      queryClient.invalidateQueries({ queryKey: ['rutas-hoy'] });
     }
   });
 };
@@ -220,6 +221,7 @@ export const useAvanzarLogistica = () => {
       queryClient.invalidateQueries({ queryKey: ['ventas'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['logisticas-aceptadas'] });
+      queryClient.invalidateQueries({ queryKey: ['rutas-hoy'] });
     }
   });
 };
