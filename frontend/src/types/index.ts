@@ -9,6 +9,13 @@ export interface Usuario {
   cuit?: string;
   fotoPerfil?: string;  // base64 data URL
   firma?: string;       // base64 data URL
+  activo?: boolean;
+  fechaCreacion?: string;
+  estadoCuenta?: 'pendiente' | 'aprobado' | 'rechazado';
+  tieneModulosLimitados?: boolean;
+  modulosPermitidos?: string[];
+  motivoRechazo?: string;
+  fechaAprobacion?: string;
 }
 
 export interface AuthState {

@@ -17,25 +17,15 @@ export const getListaPreciosService = async (productoId?: number) => {
 };
 
 export const calcularPrecioService = async (productoId: number, cantidad: number) => {
-  const precio = await prisma.listaPrecio.findFirst({
-    where: {
-      productoId,
-      cantMinima: { lte: cantidad },
-      OR: [{ cantMaxima: null }, { cantMaxima: { gte: cantidad } }],
-      AND: [
-        { OR: [{ vigentHasta: null }, { vigentHasta: { gte: new Date() } }] },
-      ],
-    },
-    orderBy: { cantMinima: 'desc' },
-  });
-
-  const base = precio ?? (await prisma.listaPrecio.findFirst({
+  // Sin escalones por cantidad: siempre se usa el precio base vigente del producto
+  // (el que se carga/edita en el módulo Productos, o el precio especial manual en el modal de cotización).
+  const base = await prisma.listaPrecio.findFirst({
     where: {
       productoId,
       OR: [{ vigentHasta: null }, { vigentHasta: { gte: new Date() } }],
     },
     orderBy: { cantMinima: 'asc' },
-  }));
+  });
 
   if (!base) throw new Error('No hay precio configurado para este producto');
 
@@ -46,9 +36,7 @@ export const calcularPrecioService = async (productoId: number, cantidad: number
     bonificaFlete: base.bonificaFlete,
     subtotal: Number(base.precioUnitario) * cantidad,
     subtotalConIva: Number(base.precioUnitario) * cantidad * 1.21,
-    escalon: base.cantMaxima
-      ? `${base.cantMinima} a ${base.cantMaxima} unidades`
-      : `Desde ${base.cantMinima} unidades`,
+    escalon: 'Precio único',
   };
 };
 

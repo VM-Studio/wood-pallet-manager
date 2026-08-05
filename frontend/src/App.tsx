@@ -28,6 +28,7 @@ const FirmarRemitoPage   = lazy(() => import('./pages/remitos/FirmarRemitoPage')
 const SeguimientosPage   = lazy(() => import('./pages/seguimientos/SeguimientosPage'));
 const MiCuentaPage       = lazy(() => import('./pages/cuenta/MiCuentaPage'));
 const CotizacionesWebPage = lazy(() => import('./pages/cotizaciones/CotizacionesWebPage'));
+const UsuariosPage       = lazy(() => import('./pages/usuarios/UsuariosPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -73,6 +74,7 @@ export default function App() {
             <Route path="seguimientos"  element={<SeguimientosPage />} />
             <Route path="mi-cuenta"     element={<MiCuentaPage />} />
             <Route path="solicitudes-web" element={<CotizacionesWebPage />} />
+            <Route path="usuarios"      element={<UsuariosPage />} />
           </Route>
           <Route path="/remito/:token/firmar" element={<FirmarRemitoPage />} />
           <Route path="/recuperar-password"   element={<RecuperarPasswordPage />} />

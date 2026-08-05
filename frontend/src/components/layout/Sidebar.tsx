@@ -4,12 +4,14 @@ import {
   Truck, Receipt,
   ClipboardList, Package, Warehouse, Building2,
   BarChart3, LogOut, DollarSign, RotateCcw, FileCheck, Mail,
-  X, UserCircle, Globe } from 'lucide-react';
+  X, UserCircle, Globe, UserCog } from 'lucide-react';
 import logoWood from '/sistemalogo.png';
 import { useAuthStore } from '../../store/auth.store';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import api from '../../services/api';
+import { tieneAccesoAModulo } from '../../utils/modulos';
+import { useUsuarios } from '../../hooks/useUsuarios';
 
 const grupos = [
   {
@@ -64,10 +66,35 @@ const C = {
 };
 
 export default function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { logout } = useAuthStore();
+  const { logout, usuario } = useAuthStore();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [pendientesWeb, setPendientesWeb] = useState(0);
+  const esCarlos = usuario?.rol === 'propietario_carlos';
+  const { data: usuariosSistema } = useUsuarios();
+  const pendientesUsuarios = esCarlos
+    ? (usuariosSistema?.filter(u => u.estadoCuenta === 'pendiente').length ?? 0)
+    : 0;
+
+  // Filtra los módulos según los permisos del usuario logueado.
+  // Carlos y Juan Cruz siempre ven todo (comportamiento sin cambios).
+  const gruposVisibles = grupos
+    .map(grupo => ({
+      ...grupo,
+      items: grupo.items.filter(item => tieneAccesoAModulo(usuario, item.path.slice(1))),
+    }))
+    .filter(grupo => grupo.items.length > 0);
+
+  // "Usuarios" solo aparece en el perfil de Carlos
+  if (esCarlos) {
+    const finanzas = gruposVisibles.find(g => g.label === 'Finanzas');
+    if (finanzas) {
+      finanzas.items = [
+        ...finanzas.items,
+        { path: '/usuarios', label: 'Usuarios', icon: UserCog, badgeKey: 'usuarios' as const },
+      ];
+    }
+  }
 
   // Polling cada 60s para el badge de solicitudes web
   useEffect(() => {
@@ -132,8 +159,8 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
       >
         <style>{`aside nav::-webkit-scrollbar{display:none}`}</style>
 
-        {grupos.map((grupo, gi) => (
-          <div key={grupo.label} style={{ marginBottom: gi < grupos.length - 1 ? '1.25rem' : 0 }}>
+        {gruposVisibles.map((grupo, gi) => (
+          <div key={grupo.label} style={{ marginBottom: gi < gruposVisibles.length - 1 ? '1.25rem' : 0 }}>
             {/* Etiqueta de grupo */}
             <p style={{
               color: C.label,
@@ -198,6 +225,16 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
                           borderRadius: 99, fontSize: '0.62rem', fontWeight: 700,
                         }}>
                           {pendientesWeb}
+                        </span>
+                      )}
+                      {'badgeKey' in item && item.badgeKey === 'usuarios' && pendientesUsuarios > 0 && (
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          minWidth: 18, height: 18, padding: '0 5px',
+                          background: '#D97706', color: '#fff',
+                          borderRadius: 99, fontSize: '0.62rem', fontWeight: 700,
+                        }}>
+                          {pendientesUsuarios}
                         </span>
                       )}
                     </>

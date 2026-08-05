@@ -77,12 +77,6 @@ export const getMe = async (req: AuthRequest, res: Response) => {
 
 export const register = async (req: Request, res: Response) => {
   try {
-    const cantidadUsuarios = await prisma.usuario.count();
-    if (cantidadUsuarios >= 2) {
-      return res.status(403).json({
-        error: 'El sistema ya tiene los dos usuarios configurados. Contactá al administrador.'
-      });
-    }
     const datos = registerSchema.parse(req.body);
     const usuario = await registerService(datos.nombre, datos.apellido, datos.email, datos.password);
     res.status(201).json(usuario);

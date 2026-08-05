@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Outlet, Navigate, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/auth.store';
 import Sidebar from './Sidebar';
+import ModuleGuard from './ModuleGuard';
 import { Menu, UserCircle } from 'lucide-react';
 import logoWood from '/sistemalogo.png';
 
@@ -97,7 +98,9 @@ export default function MainLayout() {
         </div>
 
         <div className="p-4 md:p-8 max-w-[1400px] mx-auto animate-fade-in main-content-mobile" style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}>
-          <Outlet />
+          <ModuleGuard>
+            <Outlet />
+          </ModuleGuard>
         </div>
       </main>
     </div>

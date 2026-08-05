@@ -108,6 +108,8 @@ export const useConvertirAVenta = () => {
       queryClient.invalidateQueries({ queryKey: ['logisticas'] });
       queryClient.invalidateQueries({ queryKey: ['retiros'] });
       queryClient.invalidateQueries({ queryKey: ['retiros-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['ventas-para-compra-directa'] });
+      queryClient.invalidateQueries({ queryKey: ['deuda-proveedores'] });
     }
   });
 };

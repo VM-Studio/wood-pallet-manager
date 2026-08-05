@@ -21,6 +21,13 @@ model Usuario {
   fotoPerfil    String? // base64 data URL
   firma         String? // base64 data URL
 
+  // Aprobación de cuentas y permisos por módulo (solo Carlos administra esto)
+  estadoCuenta          EstadoCuentaUsuario @default(aprobado)
+  tieneModulosLimitados Boolean             @default(false)
+  modulosPermitidos     String[]           @default([])
+  motivoRechazo         String?
+  fechaAprobacion       DateTime?
+
   // Relaciones
   clientes             Cliente[]
   cotizaciones         Cotizacion[]
@@ -57,6 +64,12 @@ enum RolUsuario {
   propietario_carlos
   propietario_juancruz
   admin
+}
+
+enum EstadoCuentaUsuario {
+  pendiente
+  aprobado
+  rechazado
 }
 
 // ─── VERIFICACIONES DE CÓDIGO ────────────────────────────

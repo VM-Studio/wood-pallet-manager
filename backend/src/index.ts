@@ -19,6 +19,7 @@ import remitosRoutes from './routes/remitos.routes';
 import seguimientosRoutes from './routes/seguimientos.routes';
 import retirosRoutes from './routes/retiros.routes';
 import cotizacionesWebRoutes from './routes/cotizaciones-web.routes';
+import usuariosRoutes from './routes/usuarios.routes';
 import { iniciarTareasProgramadas } from './utils/cron';
 
 dotenv.config();
@@ -61,6 +62,7 @@ app.use('/api/remitos', remitosRoutes);
 app.use('/api/seguimientos', seguimientosRoutes);
 app.use('/api/retiros', retirosRoutes);
 app.use('/api/cotizaciones-web', cotizacionesWebRoutes);
+app.use('/api/usuarios', usuariosRoutes);
 
 app.get('/health', (_req, res) => {
   res.json({

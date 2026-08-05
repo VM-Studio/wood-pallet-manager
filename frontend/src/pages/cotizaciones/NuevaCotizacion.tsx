@@ -681,7 +681,7 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
                             )}
                             {!d.usarPrecioEspecial && d.precioCalculado && (
                               <span className="text-xs text-gray-500">
-                                {formatPesos(d.precioCalculado.precioUnitario)} · Escalón: {d.precioCalculado.escalon}
+                                {formatPesos(d.precioCalculado.precioUnitario)} (precio guardado)
                               </span>
                             )}
                             {!d.usarPrecioEspecial && !d.precioCalculado && (

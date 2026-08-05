@@ -16,6 +16,14 @@ export const loginService = async (email: string, password: string) => {
     throw new Error('Usuario inactivo. Contactá al administrador');
   }
 
+  if (usuario.estadoCuenta === 'pendiente') {
+    throw new Error('Esperando a que el administrador te deje ingresar.');
+  }
+
+  if (usuario.estadoCuenta === 'rechazado') {
+    throw new Error('Tu solicitud de acceso fue rechazada por el administrador.');
+  }
+
   const passwordValido = await bcrypt.compare(password, usuario.passwordHash);
 
   if (!passwordValido) {
@@ -44,6 +52,8 @@ export const loginService = async (email: string, password: string) => {
       telefono: usuario.telefono ?? undefined,
       fotoPerfil: usuario.fotoPerfil ?? undefined,
       firma: usuario.firma ?? undefined,
+      tieneModulosLimitados: usuario.tieneModulosLimitados,
+      modulosPermitidos: usuario.modulosPermitidos,
     },
   };
 };
@@ -161,23 +171,21 @@ export const registerService = async (
       email,
       passwordHash,
       rol: 'admin',
+      estadoCuenta: 'pendiente',
+      tieneModulosLimitados: true,
+      modulosPermitidos: [],
     },
   });
 
-  const token = jwt.sign(
-    { userId: usuario.id, email: usuario.email, rol: usuario.rol },
-    process.env.JWT_SECRET!,
-    { expiresIn: '7d' }
-  );
-
+  // No se emite token: la cuenta queda pendiente hasta que Carlos la apruebe.
   return {
-    token,
+    pendiente: true,
+    mensaje: 'Tu cuenta fue creada. Esperá a que el administrador te dé acceso.',
     usuario: {
       id: usuario.id,
       nombre: usuario.nombre,
       apellido: usuario.apellido,
       email: usuario.email,
-      rol: usuario.rol,
     },
   };
 };

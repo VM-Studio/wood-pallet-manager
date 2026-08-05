@@ -298,10 +298,10 @@ export default function LoginPage() {
                       <span style={{ fontSize: '1.5rem' }}>✓</span>
                     </div>
                     <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#111827', margin: '0 0 0.5rem' }}>
-                      ¡Cuenta creada!
+                      ¡Solicitud enviada!
                     </h3>
                     <p style={{ color: '#6B7280', fontSize: '0.8rem', margin: '0 0 1.5rem' }}>
-                      Tu cuenta fue creada exitosamente.
+                      Esperá a que el administrador te deje ingresar. Te vamos a avisar cuando tu cuenta esté aprobada.
                     </p>
                     <button onClick={() => switchTab('login')} className="btn-brand" style={{ justifyContent: 'center' }}>
                       Iniciar sesión

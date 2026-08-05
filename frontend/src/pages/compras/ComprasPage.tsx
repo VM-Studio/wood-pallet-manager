@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Plus, Search, Check, X, AlertTriangle, ChevronDown, ChevronUp, FileText } from 'lucide-react';
-import { useCompras, useDeudaProveedores, useRegistrarPagoCompra, useCancelarCompra } from '../../hooks/useCompras';
+import { Plus, Search, Check, X, AlertTriangle, ChevronDown, ChevronUp, FileText, PackageSearch, User, Boxes } from 'lucide-react';
+import { useCompras, useDeudaProveedores, useRegistrarPagoCompra, useCancelarCompra, useVentasParaCompraDirecta } from '../../hooks/useCompras';
 import NuevaCompra from './NuevaCompra';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
@@ -25,11 +25,13 @@ const tipoCompraLabel: Record<string, string> = {
 export default function ComprasPage() {
   const { data: compras, isLoading, error } = useCompras();
   const { data: deuda } = useDeudaProveedores();
+  const { data: ventasPendientesCD } = useVentasParaCompraDirecta();
   const registrarPago = useRegistrarPagoCompra();
   const cancelarCompra = useCancelarCompra();
   const [busqueda, setBusqueda] = useState('');
   const [showNueva, setShowNueva] = useState(false);
   const [expandido, setExpandido] = useState<number | null>(null);
+  const [notifExpandida, setNotifExpandida] = useState(true);
   const [pagoModal, setPagoModal] = useState<number | null>(null);
   const [detalleVentaModal, setDetalleVentaModal] = useState<import('../../types').CompraVentaResumen | null>(null);
   const [pagoForm, setPagoForm] = useState({
@@ -147,6 +149,71 @@ export default function ComprasPage() {
             </div>
             <p className="text-xl font-bold text-amber-600">{formatPesos(deudaTotal)}</p>
           </div>
+        </div>
+      )}
+
+      {/* Notificación: compras directas pendientes de hacer al galpón */}
+      {ventasPendientesCD && ventasPendientesCD.length > 0 && (
+        <div className="card-base border-l-4" style={{ padding: 0, overflow: 'hidden', borderLeftColor: '#7c4b2c' }}>
+          <button
+            onClick={() => setNotifExpandida(v => !v)}
+            className="w-full flex items-center justify-between gap-3 px-4 py-3.5"
+            style={{ background: '#F3EDE8' }}
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: '#7c4b2c' }}>
+                <PackageSearch size={18} className="text-white" />
+              </div>
+              <div className="text-left min-w-0">
+                <p className="text-sm font-bold" style={{ color: '#4A2E1C' }}>
+                  {ventasPendientesCD.length} compra{ventasPendientesCD.length > 1 ? 's' : ''} directa{ventasPendientesCD.length > 1 ? 's' : ''} pendiente{ventasPendientesCD.length > 1 ? 's' : ''} de hacerle al galpón
+                </p>
+                <p className="text-xs" style={{ color: '#8A6D57' }}>Ventas confirmadas con origen "compra directa" que todavía no tienen compra asociada</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-xs font-bold text-white px-2 py-0.5 rounded-full" style={{ background: '#7c4b2c' }}>
+                {ventasPendientesCD.length}
+              </span>
+              {notifExpandida ? <ChevronUp size={16} style={{ color: '#7c4b2c' }} /> : <ChevronDown size={16} style={{ color: '#7c4b2c' }} />}
+            </div>
+          </button>
+
+          {notifExpandida && (
+            <div className="divide-y" style={{ background: '#fff', borderColor: '#EDE4DB' }}>
+              {ventasPendientesCD.map(v => {
+                const totalUnidades = v.detalles.reduce((acc, d) => acc + d.cantidadPedida, 0);
+                return (
+                  <div key={v.id} className="px-4 py-3 flex items-start justify-between gap-3 transition-colors" style={{ borderColor: '#EDE4DB' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#FBF7F3')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-mono text-gray-400">#{v.id}</span>
+                        <span className="inline-flex items-center gap-1 text-sm font-semibold text-gray-900">
+                          <User size={12} className="text-gray-400" />
+                          {v.cliente?.razonSocial ?? '—'}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1">
+                        {v.detalles.map(d => (
+                          <span key={d.id} className="inline-flex items-center gap-1 text-xs text-gray-600">
+                            <Boxes size={11} className="text-gray-400" />
+                            {d.cantidadPedida} u. · {d.producto.nombre} ({d.producto.condicion})
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-xs text-gray-400 mb-0.5">{formatFecha(v.fechaVenta)}</p>
+                      <p className="text-sm font-bold" style={{ color: '#7c4b2c' }}>{totalUnidades} u. total</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

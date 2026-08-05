@@ -494,7 +494,7 @@ export default function NuevaCotizacionRapida({ onClose, onSuccess }: NuevaCotiz
                             {d.usarPrecioEspecial && (
                               <input type="number" min={0} placeholder="$ por unidad" value={d.precioEspecial || ''} onChange={e => setDetalles(prev => prev.map((x, i) => i === idx ? { ...x, precioEspecial: parseFloat(e.target.value) || 0 } : x))} className="input text-xs py-1" style={{ borderRadius: '0.25rem', maxWidth: '140px' }} />
                             )}
-                            {!d.usarPrecioEspecial && d.precioCalculado && <span className="text-xs text-gray-500">{formatPesos(d.precioCalculado.precioUnitario)} · Escalón: {d.precioCalculado.escalon}</span>}
+                            {!d.usarPrecioEspecial && d.precioCalculado && <span className="text-xs text-gray-500">{formatPesos(d.precioCalculado.precioUnitario)} (precio guardado)</span>}
                             {!d.usarPrecioEspecial && !d.precioCalculado && <span className="text-xs text-gray-400 italic">Sin precio configurado</span>}
                           </div>
                         </div>
