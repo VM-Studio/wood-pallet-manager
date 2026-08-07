@@ -180,9 +180,16 @@ export default function ClientesPage() {
                       }}>
                         {cliente.razonSocial[0].toUpperCase()}
                       </div>
-                      <span style={{ fontWeight: 700, color: '#1a1a1a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 200 }}>
-                        {cliente.razonSocial}
-                      </span>
+                      <div style={{ minWidth: 0 }}>
+                        <p style={{ fontWeight: 400, color: '#1a1a1a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 200, margin: 0 }}>
+                          {cliente.razonSocial}
+                        </p>
+                        {cliente.nombreContacto && (
+                          <p style={{ fontSize: '0.72rem', color: '#9E8878', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 200, margin: 0 }}>
+                            {cliente.nombreContacto}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </td>
 
