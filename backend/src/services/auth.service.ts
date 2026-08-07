@@ -436,6 +436,8 @@ export const getMeCompletoService = async (userId: number) => {
       id: true, nombre: true, apellido: true,
       email: true, rol: true, telefono: true,
       fotoPerfil: true, firma: true, fechaCreacion: true,
+      activo: true, estadoCuenta: true,
+      tieneModulosLimitados: true, modulosPermitidos: true,
     },
   });
   if (!usuario) throw new Error('Usuario no encontrado');

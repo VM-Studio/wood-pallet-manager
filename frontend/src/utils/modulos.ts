@@ -30,10 +30,13 @@ export const MODULOS_SISTEMA: ModuloInfo[] = [
 // Rutas que siempre están permitidas, sin importar los permisos asignados
 export const MODULOS_SIEMPRE_PERMITIDOS = ['dashboard', 'mi-cuenta', 'configuracion'];
 
-// true si el usuario logueado tiene restricciones de módulos activas
+// true si el usuario logueado tiene restricciones de módulos activas.
+// Carlos (el único que administra el módulo de Usuarios) nunca queda restringido,
+// para evitar que se bloquee a sí mismo por error. Cualquier otro usuario
+// (incluido Juan Cruz) sí respeta los permisos que Carlos le haya asignado.
 export function esUsuarioRestringido(usuario: { rol: string; tieneModulosLimitados?: boolean } | null | undefined) {
   if (!usuario) return false;
-  if (usuario.rol === 'propietario_carlos' || usuario.rol === 'propietario_juancruz') return false;
+  if (usuario.rol === 'propietario_carlos') return false;
   return !!usuario.tieneModulosLimitados;
 }
 

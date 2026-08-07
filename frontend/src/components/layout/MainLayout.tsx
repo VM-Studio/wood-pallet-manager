@@ -1,15 +1,45 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, Navigate, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/auth.store';
 import Sidebar from './Sidebar';
 import ModuleGuard from './ModuleGuard';
 import { Menu, UserCircle } from 'lucide-react';
 import logoWood from '/sistemalogo.png';
+import api from '../../services/api';
 
 export default function MainLayout() {
-  const { token, usuario } = useAuthStore();
+  const { token, usuario, patchUsuario, logout } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
+
+  // Sincroniza periódicamente los permisos/estado del usuario logueado.
+  // Así, si Carlos le cambia el acceso a alguien que ya tiene sesión abierta,
+  // se aplica sin necesidad de volver a loguearse.
+  useEffect(() => {
+    if (!token) return;
+    const sync = () => {
+      api.get('/auth/me/completo')
+        .then(r => {
+          const d = r.data;
+          if (d.activo === false || d.estadoCuenta === 'rechazado') {
+            logout();
+            navigate('/login');
+            return;
+          }
+          patchUsuario({
+            tieneModulosLimitados: d.tieneModulosLimitados,
+            modulosPermitidos: d.modulosPermitidos,
+            rol: d.rol,
+          });
+        })
+        .catch(() => {});
+    };
+    sync();
+    const id = setInterval(sync, 30_000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
   if (!token) return <Navigate to="/login" replace />;
 
   return (
