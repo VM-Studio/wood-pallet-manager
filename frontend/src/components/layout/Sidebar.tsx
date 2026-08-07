@@ -117,7 +117,7 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
   return (
     <aside
       style={{ background: C.bg, borderRight: `1px solid ${C.border}` }}
-      className={`fixed top-0 left-0 h-screen h-dvh w-[252px] flex flex-col z-30 transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}
+      className={`fixed top-0 left-0 h-screen h-dvh w-[252px] flex flex-col z-30 transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
     >
       {/* ── Header / Logo ── */}
       <div
@@ -144,7 +144,7 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
         </div>
         <button
           onClick={onClose}
-          className="md:hidden flex items-center justify-center rounded-md transition-colors"
+          className="lg:hidden flex items-center justify-center rounded-md transition-colors"
           style={{ color: C.textMuted, minWidth: 40, minHeight: 40 }}
           aria-label="Cerrar menú"
         >

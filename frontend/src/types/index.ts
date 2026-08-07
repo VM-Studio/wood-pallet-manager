@@ -398,6 +398,19 @@ export interface DashboardData {
       facturasVencidas: number;
       grafico12Meses: { mes: string; ventas: number; pallets: number; facturacion: number }[];
     };
+    // Datos del usuario realmente logueado (válido para cualquier rol/cuenta)
+    propio: {
+      ventas: number;
+      pallets: number;
+      facturacion: number;
+      palletsMesAnterior: number;
+      facturacionMesAnterior: number;
+      cotizacionesPendientes: number;
+      pedidosActivos: number;
+      cobrosPendientes: number;
+      facturasVencidas: number;
+      grafico12Meses: { mes: string; ventas: number; pallets: number; facturacion: number }[];
+    };
   };
   graficos: {
     ventasUltimos12Meses: {

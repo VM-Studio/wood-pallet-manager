@@ -11,8 +11,9 @@ import {
   getGananciasDetalleService,
 } from '../services/reportes.service';
 
-export const getDashboard = async (_req: AuthRequest, res: Response) => {
-  const dashboard = await getDashboardService();
+export const getDashboard = async (req: AuthRequest, res: Response) => {
+  const vista = typeof req.query.vista === 'string' ? req.query.vista : undefined;
+  const dashboard = await getDashboardService(req.user!.userId, vista);
   res.json(dashboard);
 };
 

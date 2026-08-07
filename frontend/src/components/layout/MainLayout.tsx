@@ -46,14 +46,14 @@ export default function MainLayout() {
     <div className="flex h-screen overflow-hidden" style={{ backgroundColor: '#F2EDE7' }}>
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/40 z-20 md:hidden"
+          className="fixed inset-0 bg-black/40 z-20 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <main className="flex-1 md:ml-63 overflow-y-auto" style={{ backgroundColor: '#F2EDE7', overscrollBehavior: 'none' }}>
+      <main className="flex-1 lg:ml-63 overflow-y-auto" style={{ backgroundColor: '#F2EDE7', overscrollBehavior: 'none' }}>
 
         {/* ── Navbar top (desktop + mobile) ── */}
         <div
@@ -70,16 +70,16 @@ export default function MainLayout() {
           <button
             onClick={() => setSidebarOpen(true)}
             onTouchEnd={(e) => { e.preventDefault(); setSidebarOpen(true); }}
-            className="md:hidden p-2 -ml-1 flex items-center justify-center"
+            className="lg:hidden p-2 -ml-1 flex items-center justify-center"
             style={{ color: '#7C4A2D', minWidth: 44, minHeight: 44, cursor: 'pointer' }}
             aria-label="Abrir menú"
           >
             <Menu size={22} />
           </button>
-          <div className="hidden md:block" />
+          <div className="hidden lg:block" />
 
           {/* Centro: logo + nombre (solo mobile) */}
-          <div className="md:hidden absolute left-1/2 -translate-x-1/2 flex items-center gap-2 pointer-events-none">
+          <div className="lg:hidden absolute left-1/2 -translate-x-1/2 flex items-center gap-2 pointer-events-none">
             <img
               src={logoWood}
               alt="WoodPallet"

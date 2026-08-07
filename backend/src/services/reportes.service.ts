@@ -48,7 +48,7 @@ export const getVentasUltimos12MesesService = async (usuarioId?: number) => {
   return meses;
 };
 
-export const getDashboardService = async () => {
+export const getDashboardService = async (usuarioIdActual?: number, vista?: string) => {
   const hoy = new Date();
   const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
   const inicioMesAnterior = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
@@ -155,6 +155,29 @@ export const getDashboardService = async () => {
     }),
   ]);
 
+  // ─── Datos del usuario realmente logueado (funciona para cualquier usuario,
+  // no solo Carlos/Juan Cruz — ej: cuentas admin con acceso limitado) ───────
+  const usuarioIdPropio = usuarioIdActual;
+  const [
+    cotizacionesPendientesPropio,
+    pedidosActivosPropio,
+    cobrosPendientesPropio,
+  ] = await Promise.all([
+    prisma.cotizacion.count({
+      where: { estado: { in: ['enviada', 'en_seguimiento'] }, ...(usuarioIdPropio ? { usuarioId: usuarioIdPropio } : { usuarioId: -1 }) },
+    }),
+    prisma.venta.count({
+      where: {
+        ...(usuarioIdPropio ? { usuarioId: usuarioIdPropio } : { usuarioId: -1 }),
+        estadoPedido: { in: ['confirmado', 'en_preparacion', 'listo_para_envio', 'en_transito'] },
+      },
+    }),
+    prisma.factura.findMany({
+      where: { estadoCobro: { in: ['pendiente', 'cobrada_parcial'] }, venta: { ...(usuarioIdPropio ? { usuarioId: usuarioIdPropio } : { usuarioId: -1 }) } },
+      include: { pagos: true },
+    }),
+  ]);
+
   const alertasStock = stockRaw.filter(
     (s) => s.cantidadDisponible <= (s.cantidadMinima ?? 0)
   ).length;
@@ -197,20 +220,47 @@ export const getDashboardService = async () => {
     f => f.fechaVencimiento && f.fechaVencimiento < hoy
   ).length;
 
+  const totalCobrosPendientesPropio = cobrosPendientesPropio.reduce((acc, f) => {
+    const cobrado = f.pagos.reduce((a, p) => a + Number(p.monto), 0);
+    return acc + (Number(f.totalConIva) - cobrado);
+  }, 0);
+  const facturasVencidasPropio = cobrosPendientesPropio.filter(
+    f => f.fechaVencimiento && f.fechaVencimiento < hoy
+  ).length;
+
   const ventasCarlos = ventasMesActual.filter(
     (v) => v.usuario.rol === 'propietario_carlos'
   );
   const ventasJuanCruz = ventasMesActual.filter(
     (v) => v.usuario.rol === 'propietario_juancruz'
   );
+  // "Propio" = ventas del usuario realmente logueado (sirve para cualquier
+  // rol, no solo los dos propietarios históricos)
+  const ventasPropio = usuarioIdPropio
+    ? ventasMesActual.filter((v) => v.usuario.id === usuarioIdPropio)
+    : [];
+  const ventasMesAnteriorPropio = usuarioIdPropio
+    ? ventasMesAnterior.filter((v) => v.usuario.id === usuarioIdPropio)
+    : [];
 
   const ventasUltimos12Meses = await getVentasUltimos12MesesService();
   const grafico12MesesCarlos = await getVentasUltimos12MesesService(idCarlos);
   const grafico12MesesJuanCruz = await getVentasUltimos12MesesService(idJuanCruz);
+  const grafico12MesesPropio =
+    usuarioIdPropio === idCarlos ? grafico12MesesCarlos
+    : usuarioIdPropio === idJuanCruz ? grafico12MesesJuanCruz
+    : await getVentasUltimos12MesesService(usuarioIdPropio);
 
-  // Cotizaciones activas con cliente
+  // Cotizaciones activas con cliente — filtradas según la vista elegida,
+  // para que cada usuario vea únicamente lo que le corresponde.
+  const filtroUsuarioCotizaciones =
+    vista === 'mis_datos' ? (usuarioIdPropio ? { usuarioId: usuarioIdPropio } : { usuarioId: -1 })
+    : vista === 'carlos'    ? (idCarlos ? { usuarioId: idCarlos } : { usuarioId: -1 })
+    : vista === 'juancruz'  ? (idJuanCruz ? { usuarioId: idJuanCruz } : { usuarioId: -1 })
+    : {}; // 'todos' / sin vista → sin filtro (total empresa)
+
   const cotizacionesActivas = await prisma.cotizacion.findMany({
-    where: { estado: { in: ['enviada', 'en_seguimiento'] } },
+    where: { estado: { in: ['enviada', 'en_seguimiento'] }, ...filtroUsuarioCotizaciones },
     select: {
       id: true,
       estado: true,
@@ -325,6 +375,30 @@ export const getDashboardService = async () => {
         facturasVencidas: facturasVencidasJuanCruz,
         cotizacionesPendientes: cotizacionesPendientesJuanCruz,
         pedidosActivos: pedidosActivosJuanCruz,
+      },
+      propio: {
+        ventas: ventasPropio.length,
+        pallets: ventasPropio.reduce(
+          (acc, v) => acc + v.detalles.reduce((a, d) => a + d.cantidadPedida, 0),
+          0
+        ),
+        facturacion: ventasPropio.reduce(
+          (acc, v) => acc + Number(v.totalConIva || 0),
+          0
+        ),
+        palletsMesAnterior: ventasMesAnteriorPropio.reduce(
+          (acc, v) => acc + v.detalles.reduce((a, d) => a + d.cantidadPedida, 0),
+          0
+        ),
+        facturacionMesAnterior: ventasMesAnteriorPropio.reduce(
+          (acc, v) => acc + Number(v.totalConIva || 0),
+          0
+        ),
+        grafico12Meses: grafico12MesesPropio,
+        cobrosPendientes: totalCobrosPendientesPropio,
+        facturasVencidas: facturasVencidasPropio,
+        cotizacionesPendientes: cotizacionesPendientesPropio,
+        pedidosActivos: pedidosActivosPropio,
       },
     },
     graficos: { ventasUltimos12Meses },

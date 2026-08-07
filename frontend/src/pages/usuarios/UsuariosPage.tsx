@@ -145,6 +145,20 @@ function PanelAcceso({ usuario, onClose }: { usuario: Usuario; onClose: () => vo
         >
           <ShieldCheck size={15} /> {esPendiente ? 'Aprobar y guardar accesos' : 'Guardar accesos'}
         </button>
+        <button
+          type="button"
+          onClick={() => setSeleccion(
+            seleccion.length === MODULOS_SISTEMA.length ? [] : MODULOS_SISTEMA.map(m => m.key)
+          )}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: '#fff', color: C.accent, border: `1px solid ${C.accentMid}`, borderRadius: 6,
+            padding: '0.5rem 1rem', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
+          }}
+        >
+          <CheckCircle2 size={15} />
+          {seleccion.length === MODULOS_SISTEMA.length ? 'Desmarcar todos' : 'Marcar todos los módulos habilitados'}
+        </button>
         {esPendiente && (
           <button
             onClick={handleRechazar}

@@ -24,12 +24,20 @@ const formatPesos = (valor: number) =>
     notation: 'compact', maximumFractionDigits: 1
   }).format(valor);
 
+// Monto exacto, sin redondear ni abreviar — para mostrar el número real completo
+const formatPesosExacto = (valor: number) =>
+  new Intl.NumberFormat('es-AR', {
+    style: 'currency', currency: 'ARS',
+    maximumFractionDigits: 2
+  }).format(valor);
+
 const formatNumero = (valor: number) =>
   new Intl.NumberFormat('es-AR').format(valor);
 
 interface KpiProps {
   titulo: string;
   valor: string | number;
+  valorExacto?: string;
   variacion?: number;
   subtitulo?: string;
   icono: React.ReactNode;
@@ -39,7 +47,7 @@ interface KpiProps {
   onToggle?: () => void;
 }
 
-function KpiCard({ titulo, valor, variacion, subtitulo, icono, onClick, children, isOpen, onToggle }: KpiProps) {
+function KpiCard({ titulo, valor, valorExacto, variacion, subtitulo, icono, onClick, children, isOpen, onToggle }: KpiProps) {
   const positivo = variacion !== undefined && variacion > 0;
   const negativo = variacion !== undefined && variacion < 0;
   const hasDetail = !!children;
@@ -66,6 +74,13 @@ function KpiCard({ titulo, valor, variacion, subtitulo, icono, onClick, children
       <p className="text-2xl font-bold text-gray-900 leading-none mb-1" onClick={hasDetail ? toggle : onClick}>
         {valor}
       </p>
+
+      {/* Valor exacto (sin redondear/abreviar) */}
+      {valorExacto && (
+        <p className="text-[0.7rem] text-gray-400 leading-none mb-1" onClick={hasDetail ? toggle : onClick}>
+          {valorExacto}
+        </p>
+      )}
 
       {/* Subtítulo + variación */}
       <div className="flex items-center justify-between mt-1" onClick={hasDetail ? toggle : onClick}>
@@ -162,6 +177,11 @@ function GananciasCard({ gananciasData, isOpen, onToggle }: {
       >
         {formatPesos(neta)}
       </p>
+      {gananciasData && (
+        <p className="text-[0.7rem] text-gray-400 leading-none mb-1" onClick={toggle}>
+          {formatPesosExacto(neta)}
+        </p>
+      )}
       <p className="text-xs text-gray-400 mb-1" onClick={toggle}>
         {gananciasData ? `${gananciasData.cantidadVentas} venta${gananciasData.cantidadVentas !== 1 ? 's' : ''} · cobrado real` : 'Calculando...'}
       </p>
@@ -173,12 +193,12 @@ function GananciasCard({ gananciasData, isOpen, onToggle }: {
           <div className="flex items-center gap-2">
             <DollarSign size={12} className="text-green-600 shrink-0" />
             <span className="text-gray-500 flex-1">Facturado</span>
-            <span className="font-medium text-gray-700">{formatPesos(gananciasData.facturadoMes)}</span>
+            <span className="font-medium text-gray-700">{formatPesosExacto(gananciasData.facturadoMes)}</span>
           </div>
           <div className="flex items-center gap-2">
             <DollarSign size={12} className="text-green-700 shrink-0" />
             <span className="text-gray-500 flex-1">Cobrado real</span>
-            <span className="font-semibold text-green-700">{formatPesos(gananciasData.cobradoMes)}</span>
+            <span className="font-semibold text-green-700">{formatPesosExacto(gananciasData.cobradoMes)}</span>
           </div>
 
           {/* Separador costos */}
@@ -186,16 +206,16 @@ function GananciasCard({ gananciasData, isOpen, onToggle }: {
             <div className="flex items-center gap-2">
               <Layers size={12} className="text-amber-600 shrink-0" />
               <span className="text-gray-500 flex-1">Compras stock propio</span>
-              <span className="font-medium text-red-500">− {formatPesos(gananciasData.comprasStockPropio)}</span>
+              <span className="font-medium text-red-500">− {formatPesosExacto(gananciasData.comprasStockPropio)}</span>
             </div>
             <div className="flex items-center gap-2">
               <ShoppingCart size={12} className="text-amber-700 shrink-0" />
               <span className="text-gray-500 flex-1">Compras directas</span>
-              <span className="font-medium text-red-500">− {formatPesos(gananciasData.comprasReventa)}</span>
+              <span className="font-medium text-red-500">− {formatPesosExacto(gananciasData.comprasReventa)}</span>
             </div>
             <div className="flex items-center justify-between pt-1 border-t border-gray-200">
               <span className="text-gray-500 font-medium">Total compras</span>
-              <span className="font-semibold text-red-600">− {formatPesos(gananciasData.totalCompras)}</span>
+              <span className="font-semibold text-red-600">− {formatPesosExacto(gananciasData.totalCompras)}</span>
             </div>
           </div>
 
@@ -210,7 +230,7 @@ function GananciasCard({ gananciasData, isOpen, onToggle }: {
               Ganancia neta
             </span>
             <span className={clsx('font-bold text-sm', positivo ? 'text-green-700' : 'text-red-600')}>
-              {positivo ? '+' : ''}{formatPesos(neta)}
+              {positivo ? '+' : ''}{formatPesosExacto(neta)}
             </span>
           </div>
         </div>
@@ -239,12 +259,15 @@ export default function DashboardPage() {
   const pp = dashboard?.porPropietario;
   const alertasList = alertasData?.alertas?.slice(0, 6) || [];
 
-  // Determinar qué bloque de porPropietario corresponde según la vista y el usuario logueado
+  // Determinar qué bloque de porPropietario corresponde según la vista y el usuario logueado.
+  // "mis_datos" siempre usa el bloque "propio" (calculado en base al usuario
+  // realmente logueado), así funciona igual para Carlos, Juan Cruz o cualquier
+  // otro usuario nuevo creado desde el módulo de Usuarios.
   const esCarlos = usuario?.rol === 'propietario_carlos';
 
   const getPropietarioData = () => {
     if (vista === 'total') return null;
-    if (vista === 'mis_datos') return esCarlos ? pp?.carlos : pp?.juanCruz;
+    if (vista === 'mis_datos') return pp?.propio;
     if (vista === 'otro')     return esCarlos ? pp?.juanCruz : pp?.carlos;
     return null;
   };
@@ -316,6 +339,7 @@ export default function DashboardPage() {
         <KpiCard
           titulo="Facturación del mes"
           valor={formatPesos(facturacionMes)}
+          valorExacto={formatPesosExacto(facturacionMes)}
           variacion={variacionFact}
           subtitulo={`${formatPesos(facturacionMesAnt)} el mes pasado`}
           icono={<DollarSign size={18} />}

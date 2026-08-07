@@ -272,7 +272,16 @@
 @keyframes slideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes slideIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
 
-/* ── Desktop overrides (md: 768px+) ── */
+/* ── Desktop overrides (lg: 1024px+, coincide con el breakpoint del sidebar) ── */
+@media (min-width: 1024px) {
+  /* Navbar un poco más alta en desktop */
+  .navbar-top {
+    min-height: 72px;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+}
+
 @media (min-width: 768px) {
   .modal-overlay { align-items: center; padding: 1rem; }
   .modal         { border-radius: 1rem; max-height: 90vh; }
@@ -282,14 +291,25 @@
   .modal-footer  { padding: 1.5rem; }
   .page-header   { margin-bottom: 2rem; }
   .titulo-modulo { font-size: 2.25rem; }
+}
 
-  /* Navbar un poco más alta en desktop */
+/* ── Navbar fija y compensación de contenido: hasta 1023px (lg), para que
+     coincida con el breakpoint del sidebar/hamburguesa. Así el celular
+     en horizontal (que suele superar los 768px lógicos) sigue mostrando
+     el menú hamburguesa en vez de saltar al layout de escritorio. ── */
+@media (max-width: 1023px) {
   .navbar-top {
-    min-height: 72px;
-    padding-top: 1rem;
-    padding-bottom: 1rem;
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 50 !important;
+  }
+  .main-content-mobile {
+    padding-top: 60px;
   }
 }
+
 
 /* ═══════════════════════════════════════════════════════════════
    MOBILE RESPONSIVE — Ajustes para pantallas pequeñas
@@ -328,23 +348,11 @@ html, body, #root {
   /* NO usar overflow-x: hidden aquí — rompe el scroll vertical en body */
 }
 
-/* ── MOBILE BASE (<768px) ─────────────────────────────────────── */
-@media (max-width: 767px) {
+/* ── MOBILE BASE (<1024px, coincide con el breakpoint lg del sidebar) ──── */
+@media (max-width: 1023px) {
 
-  /* ── Navbar: fixed en mobile para salir del scroll context de <main>
-        Esto es la causa principal por la que el botón hamburguesa no
-        recibía el touch en iOS (sticky dentro de overflow-y:auto) ── */
-  .navbar-top {
-    position: fixed !important;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 50 !important;
-  }
-  /* Compensar el espacio que ocupa el navbar fijo (60px) */
-  .main-content-mobile {
-    padding-top: 60px;
-  }
+  /* La regla de navbar fija + compensación de padding ya se define arriba
+     en el bloque @media (max-width: 1023px) dedicado al layout. */
 
   /* ── Inputs con font-size >= 16px: previene el auto-zoom de iOS ── */
   input[type="text"],
