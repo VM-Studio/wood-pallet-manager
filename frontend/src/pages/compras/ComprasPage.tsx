@@ -31,7 +31,7 @@ export default function ComprasPage() {
   const [busqueda, setBusqueda] = useState('');
   const [showNueva, setShowNueva] = useState(false);
   const [expandido, setExpandido] = useState<number | null>(null);
-  const [notifExpandida, setNotifExpandida] = useState(true);
+  const [notifExpandida, setNotifExpandida] = useState(false);
   const [pagoModal, setPagoModal] = useState<number | null>(null);
   const [detalleVentaModal, setDetalleVentaModal] = useState<import('../../types').CompraVentaResumen | null>(null);
   const [pagoForm, setPagoForm] = useState({
