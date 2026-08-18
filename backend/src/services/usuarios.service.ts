@@ -15,6 +15,8 @@ const SELECT_BASE = {
   motivoRechazo: true,
   fechaAprobacion: true,
   fotoPerfil: true,
+  enLinea: true,
+  ultimaConexion: true,
 } as const;
 
 export const listarUsuariosService = async () => {

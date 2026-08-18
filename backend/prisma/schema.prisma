@@ -21,6 +21,10 @@ model Usuario {
   fotoPerfil    String? // base64 data URL
   firma         String? // base64 data URL
 
+  // Seguimiento de conexión (visible solo para Carlos en el módulo de Usuarios)
+  enLinea        Boolean   @default(false)
+  ultimaConexion DateTime?
+
   // Aprobación de cuentas y permisos por módulo (solo Carlos administra esto)
   estadoCuenta          EstadoCuentaUsuario @default(aprobado)
   tieneModulosLimitados Boolean             @default(false)

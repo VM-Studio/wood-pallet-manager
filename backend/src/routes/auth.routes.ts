@@ -3,7 +3,7 @@ import {
   login, crearUsuario, getMe, register, actualizarPerfil, cambiarPassword,
   getMeCompleto, solicitarCodigo, cambiarPasswordConCodigo,
   cambiarEmail, cambiarTelefono, actualizarFoto, actualizarFirma,
-  recuperarPassword, resetPassword,
+  recuperarPassword, resetPassword, logout, logoutBeacon,
 } from '../controllers/auth.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 
@@ -15,12 +15,16 @@ router.post('/register', register);
 router.post('/registro', crearUsuario);
 router.post('/recuperar-password', recuperarPassword);
 router.post('/reset-password', resetPassword);
+// Beacon de cierre de pestaña/navegador: no puede llevar el header Authorization.
+router.post('/logout-beacon', logoutBeacon);
 
 // Requieren autenticación
 router.get('/me', authenticate, getMe);
 router.get('/me/completo', authenticate, getMeCompleto);
 router.put('/perfil', authenticate, actualizarPerfil);
 router.put('/password', authenticate, cambiarPassword);
+router.post('/logout', authenticate, logout);
+
 
 // Mi Cuenta — verificación por código
 router.post('/solicitar-codigo', authenticate, solicitarCodigo);

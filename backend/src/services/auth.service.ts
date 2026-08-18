@@ -40,6 +40,11 @@ export const loginService = async (email: string, password: string) => {
     { expiresIn: '7d' }
   );
 
+  await prisma.usuario.update({
+    where: { id: usuario.id },
+    data: { enLinea: true },
+  });
+
   return {
     token,
     usuario: {
@@ -56,6 +61,16 @@ export const loginService = async (email: string, password: string) => {
       modulosPermitidos: usuario.modulosPermitidos,
     },
   };
+};
+
+// Marca al usuario como desconectado y registra la fecha/hora de su última conexión.
+// Se llama tanto desde el botón "Cerrar sesión" como desde el cierre de pestaña/navegador.
+export const logoutService = async (userId: number) => {
+  await prisma.usuario.update({
+    where: { id: userId },
+    data: { enLinea: false, ultimaConexion: new Date() },
+  });
+  return { mensaje: 'Sesión cerrada correctamente' };
 };
 
 export const actualizarPerfilService = async (

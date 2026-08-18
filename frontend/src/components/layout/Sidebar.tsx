@@ -108,7 +108,12 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
     return () => clearInterval(id);
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch {
+      // Si falla la llamada (ej: sin conexión) igual cerramos sesión localmente
+    }
     queryClient.clear();
     logout();
     navigate('/login');

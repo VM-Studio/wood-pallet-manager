@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
+import jwt from 'jsonwebtoken';
 import {
   loginService, crearUsuarioService, getMeService, registerService,
   actualizarPerfilService, cambiarPasswordService,
@@ -7,9 +8,10 @@ import {
   cambiarEmailService, cambiarTelefonoService,
   actualizarFotoService, actualizarFirmaService,
   solicitarRecuperacionService, resetPasswordService,
-  getMeCompletoService,
+  getMeCompletoService, logoutService,
 } from '../services/auth.service';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import { JwtPayload } from '../types';
 import prisma from '../utils/prisma';
 
 const loginSchema = z.object({
@@ -246,3 +248,29 @@ export const resetPassword = async (req: Request, res: Response) => {
     res.status(400).json({ error: error.message });
   }
 };
+
+// Cierre de sesión explícito (botón "Cerrar sesión"): requiere estar autenticado.
+export const logout = async (req: AuthRequest, res: Response) => {
+  try {
+    const resultado = await logoutService(req.user!.userId);
+    res.json(resultado);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+// Cierre de sesión "silencioso" disparado por navigator.sendBeacon al cerrar
+// la pestaña/navegador. sendBeacon no permite enviar el header Authorization,
+// así que el token viaja en el cuerpo y se valida acá manualmente.
+export const logoutBeacon = async (req: Request, res: Response) => {
+  try {
+    const { token } = z.object({ token: z.string().min(1) }).parse(req.body);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
+    await logoutService(decoded.userId);
+    res.status(204).end();
+  } catch {
+    // Silencioso: el navegador se está cerrando, no hay forma de mostrar un error.
+    res.status(204).end();
+  }
+};
+

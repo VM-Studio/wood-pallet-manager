@@ -24,6 +24,43 @@ const rolLabel: Record<string, string> = {
   admin: 'Administrador',
 };
 
+function formatUltimaConexion(fecha?: string) {
+  if (!fecha) return 'Nunca se conectó';
+  const d = new Date(fecha);
+  const hoy = new Date();
+  const esHoy = d.toDateString() === hoy.toDateString();
+  const ayer = new Date(hoy);
+  ayer.setDate(hoy.getDate() - 1);
+  const esAyer = d.toDateString() === ayer.toDateString();
+  const hora = d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+  if (esHoy) return `Hoy a las ${hora}`;
+  if (esAyer) return `Ayer a las ${hora}`;
+  return `${d.toLocaleDateString('es-AR')} a las ${hora}`;
+}
+
+function ConexionBadge({ usuario }: { usuario: Usuario }) {
+  if (usuario.enLinea) {
+    return (
+      <span style={{
+        display: 'inline-flex', alignItems: 'center', gap: 5,
+        background: '#DCFCE7', color: '#166534', fontSize: '0.72rem', fontWeight: 600,
+        padding: '0.2rem 0.55rem', borderRadius: 99,
+      }}>
+        <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#22C55E', display: 'inline-block' }} />
+        En línea
+      </span>
+    );
+  }
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      color: C.textMuted, fontSize: '0.72rem',
+    }}>
+      <Clock size={11} /> {formatUltimaConexion(usuario.ultimaConexion)}
+    </span>
+  );
+}
+
 function EstadoBadge({ estado }: { estado?: string }) {
   const map: Record<string, { bg: string; color: string; label: string; icon: ReactElement }> = {
     pendiente: { bg: '#FEF3C7', color: '#92400E', label: 'Pendiente', icon: <Clock size={12} /> },
@@ -216,6 +253,9 @@ export default function UsuariosPage() {
             <div style={{ display: 'flex', gap: 10, alignItems: 'center', color: C.textMuted, fontSize: '0.75rem', flexWrap: 'wrap' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Mail size={11} /> {u.email}</span>
               {u.telefono && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Phone size={11} /> {u.telefono}</span>}
+            </div>
+            <div style={{ marginTop: 4 }}>
+              <ConexionBadge usuario={u} />
             </div>
           </div>
         </div>

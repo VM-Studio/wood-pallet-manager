@@ -5,7 +5,7 @@ import Sidebar from './Sidebar';
 import ModuleGuard from './ModuleGuard';
 import { Menu, UserCircle } from 'lucide-react';
 import logoWood from '/sistemalogo.png';
-import api from '../../services/api';
+import api, { API_BASE_URL } from '../../services/api';
 
 export default function MainLayout() {
   const { token, usuario, patchUsuario, logout } = useAuthStore();
@@ -38,6 +38,19 @@ export default function MainLayout() {
     const id = setInterval(sync, 30_000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
+  // Si el usuario cierra la pestaña o el navegador sin usar el botón "Cerrar sesión",
+  // igual avisamos al backend para marcarlo como desconectado y guardar la fecha/hora.
+  // sendBeacon garantiza que la petición salga aunque la página ya se esté destruyendo.
+  useEffect(() => {
+    if (!token) return;
+    const handleUnload = () => {
+      const blob = new Blob([JSON.stringify({ token })], { type: 'application/json' });
+      navigator.sendBeacon(`${API_BASE_URL}/auth/logout-beacon`, blob);
+    };
+    window.addEventListener('pagehide', handleUnload);
+    return () => window.removeEventListener('pagehide', handleUnload);
   }, [token]);
 
   if (!token) return <Navigate to="/login" replace />;

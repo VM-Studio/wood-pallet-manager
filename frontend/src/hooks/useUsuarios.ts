@@ -9,6 +9,8 @@ export const useUsuarios = () => {
       const { data } = await api.get('/usuarios');
       return data;
     },
+    // Refresco frecuente para que Carlos vea "En línea" / última conexión siempre actualizados
+    refetchInterval: 15_000,
   });
 };
 

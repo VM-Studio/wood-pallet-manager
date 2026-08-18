@@ -16,6 +16,8 @@ export interface Usuario {
   modulosPermitidos?: string[];
   motivoRechazo?: string;
   fechaAprobacion?: string;
+  enLinea?: boolean;
+  ultimaConexion?: string;
 }
 
 export interface AuthState {
