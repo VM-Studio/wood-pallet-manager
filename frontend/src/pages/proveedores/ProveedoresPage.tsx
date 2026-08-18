@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Link2, Package, Phone, Mail, Pencil, MapPin, Building2 } from 'lucide-react';
+import { Plus, Trash2, Link2, Package, Phone, Mail, Pencil, MapPin, Building2, X } from 'lucide-react';
 import api from '../../services/api';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
@@ -89,29 +89,30 @@ function ProveedorModal({
 
   return (
     <div className="modal-overlay">
-      <div className="modal max-w-sm animate-slide-up">
-        <div className="modal-header">
-          <h2 className="modal-title">{esEdicion ? 'Editar proveedor' : 'Nuevo proveedor'}</h2>
-          <button onClick={onClose} className="btn-icon">✕</button>
+      <div className="modal max-w-sm animate-slide-up" style={{ borderRadius: 0, border: '1px solid #E5E7EB' }}>
+        <div className="modal-header" style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #EEEEEE' }}>
+          <h2 className="titulo-modulo" style={{ fontSize: '1.4rem' }}>{esEdicion ? 'Editar proveedor' : 'Nuevo proveedor'}</h2>
+          <button onClick={onClose} className="btn-icon" style={{ borderRadius: 0 }}><X size={18} strokeWidth={1.75} /></button>
         </div>
         <form onSubmit={handleSubmit}>
-          <div className="modal-body space-y-4">
+          <div className="modal-body space-y-4" style={{ padding: '1.5rem' }}>
             <div>
-              <label className="label">Nombre del proveedor *</label>
-              <input className="input" value={form.nombreEmpresa} autoFocus
+              <label className="label" style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9CA3AF' }}>Nombre del proveedor *</label>
+              <input className="input" style={{ borderRadius: 0 }} value={form.nombreEmpresa} autoFocus
                 onChange={e => setForm({ ...form, nombreEmpresa: e.target.value })}
                 placeholder="Ej: Galpón Familiar, Todo Pallets..." />
             </div>
 
             <div>
-              <label className="label">Tipo de producto que provee *</label>
+              <label className="label" style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9CA3AF' }}>Tipo de producto que provee *</label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1">
                 {(['seminuevo', 'nuevo_medida', 'ambos'] as const).map(t => (
                   <button key={t} type="button"
                     onClick={() => setForm({ ...form, tipoProducto: t })}
-                    className={`p-2.5 rounded-xl border text-sm font-medium transition-all ${
+                    style={{ borderRadius: 0 }}
+                    className={`p-2.5 border text-sm font-medium transition-all ${
                       form.tipoProducto === t
-                        ? 'border-[#6B3A2A] bg-amber-50 text-[#6B3A2A]'
+                        ? 'border-[#7c4b2c] bg-[#FBF7F4] text-[#7c4b2c]'
                         : 'border-gray-200 bg-white hover:border-gray-300 text-gray-600'
                     }`}>
                     {tipoLabel[t]}
@@ -121,18 +122,18 @@ function ProveedorModal({
             </div>
 
             <div>
-              <label className="label">Ubicación del galpón</label>
-              <input className="input" value={form.ubicacion}
+              <label className="label" style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9CA3AF' }}>Ubicación del galpón</label>
+              <input className="input" style={{ borderRadius: 0 }} value={form.ubicacion}
                 onChange={e => setForm({ ...form, ubicacion: e.target.value })}
                 placeholder="Ej: Av. Roca 1234, Quilmes" />
               <p className="text-xs text-gray-400 mt-1">Se mostrará automáticamente al cliente al coordinar un retiro.</p>
             </div>
 
             {error && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-xl">{error}</p>
+              <p className="text-sm" style={{ color: '#B91C1C', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 0, padding: '0.5rem 0.75rem' }}>{error}</p>
             )}
           </div>
-          <div className="modal-footer">
+          <div className="modal-footer" style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid #EEEEEE' }}>
             <button type="button" onClick={onClose} className="btn-secondary">Cancelar</button>
             <button type="submit" disabled={loading} className="btn-primary">
               {loading ? 'Guardando...' : esEdicion ? 'Guardar cambios' : 'Crear proveedor'}

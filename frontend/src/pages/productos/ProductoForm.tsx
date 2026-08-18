@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Package } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useCrearProducto, useActualizarProducto } from '../../hooks/useProductos';
 import { useSetStockProducto } from '../../hooks/useInventario';
 import type { Producto } from '../../types';
@@ -64,30 +64,30 @@ export default function ProductoForm({ producto, onClose }: ProductoFormProps) {
 
   return (
     <div className="modal-overlay">
-      <div className="modal max-w-xl animate-slide-up">
-        <div className="modal-header">
-          <h2 className="modal-title flex items-center gap-2">
-            <Package size={18} className="text-[#16A34A]" />
+      <div className="modal max-w-xl animate-slide-up" style={{ borderRadius: 0, border: '1px solid #E5E7EB' }}>
+        <div className="modal-header" style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #EEEEEE' }}>
+          <h2 className="titulo-modulo" style={{ fontSize: '1.5rem' }}>
             {esEdicion ? 'Editar producto' : 'Nuevo producto'}
           </h2>
-          <button onClick={onClose} className="btn-icon"><X size={18} /></button>
+          <button onClick={onClose} className="btn-icon" style={{ borderRadius: 0 }}><X size={18} strokeWidth={1.75} /></button>
         </div>
         <form onSubmit={handleSubmit}>
-          <div className="modal-body space-y-4">
+          <div className="modal-body space-y-4" style={{ padding: '1.5rem' }}>
             <div>
-              <label className="label">Nombre <span className="text-red-500">*</span></label>
+              <label className="label" style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9CA3AF' }}>Nombre <span className="text-red-500">*</span></label>
               <input
                 type="text"
                 value={form.nombre}
                 onChange={e => setForm({ ...form, nombre: e.target.value })}
                 className="input"
+                style={{ borderRadius: 0 }}
                 placeholder="Ej: Pallet Reforzado"
                 required
               />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="label">Tipo</label>
+                <label className="label" style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9CA3AF' }}>Tipo</label>
                 <select
                   value={form.tipo}
                   onChange={e => {
@@ -104,6 +104,7 @@ export default function ProductoForm({ producto, onClose }: ProductoFormProps) {
                     });
                   }}
                   className="select"
+                  style={{ borderRadius: 0 }}
                 >
                   <option value="estandar">Estándar</option>
                   <option value="reforzado">Reforzado</option>
@@ -115,11 +116,12 @@ export default function ProductoForm({ producto, onClose }: ProductoFormProps) {
                 </select>
               </div>
               <div>
-                <label className="label">Condición</label>
+                <label className="label" style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9CA3AF' }}>Condición</label>
                 <select
                   value={form.condicion}
                   onChange={e => setForm({ ...form, condicion: e.target.value })}
                   className="select"
+                  style={{ borderRadius: 0 }}
                 >
                   <option value="nuevo">Nuevo</option>
                   <option value="seminuevo">Semi-nuevo</option>
@@ -127,90 +129,78 @@ export default function ProductoForm({ producto, onClose }: ProductoFormProps) {
               </div>
             </div>
             {form.tipo === 'personalizado' ? (
-              <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
+              <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-none text-sm text-amber-700">
                 <span className="text-base">📐</span>
                 <span>Las medidas son personalizadas — se definen en cada cotización.</span>
               </div>
             ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <div>
-                <label className="label">Largo (mm)</label>
+                <label className="label" style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9CA3AF' }}>Largo (mm)</label>
                 <input
                   type="number"
                   value={form.dimensionLargo}
                   onChange={e => setForm({ ...form, dimensionLargo: e.target.value })}
                   className="input"
+                  style={{ borderRadius: 0 }}
                   placeholder="1200"
                 />
               </div>
               <div>
-                <label className="label">Ancho (mm)</label>
+                <label className="label" style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9CA3AF' }}>Ancho (mm)</label>
                 <input
                   type="number"
                   value={form.dimensionAncho}
                   onChange={e => setForm({ ...form, dimensionAncho: e.target.value })}
                   className="input"
+                  style={{ borderRadius: 0 }}
                   placeholder="1000"
                 />
               </div>
               <div>
-                <label className="label">Carga máx. (kg)</label>
+                <label className="label" style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9CA3AF' }}>Carga máx. (kg)</label>
                 <input
                   type="number"
                   value={form.cargaMaximaKg}
                   onChange={e => setForm({ ...form, cargaMaximaKg: e.target.value })}
                   className="input"
+                  style={{ borderRadius: 0 }}
                   placeholder="1500"
                 />
               </div>
             </div>
             )}
             <div>
-              <label className="label">Stock disponible</label>
+              <label className="label" style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9CA3AF' }}>Stock disponible</label>
               <input
                 type="number"
                 min="0"
                 value={form.stockDisponible}
                 onChange={e => setForm({ ...form, stockDisponible: e.target.value })}
                 className="input"
-                style={{ borderRadius: '0.25rem' }}
+                style={{ borderRadius: 0 }}
                 placeholder="0"
               />
             </div>
             <div>
-              <label className="label">Descripción</label>
+              <label className="label" style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9CA3AF' }}>Descripción</label>
               <textarea
                 value={form.descripcion}
                 onChange={e => setForm({ ...form, descripcion: e.target.value })}
                 className="input resize-none"
+                style={{ borderRadius: 0 }}
                 rows={2}
               />
             </div>
             {error && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-200 px-3 py-2.5 rounded-xl">
+              <p className="text-sm" style={{ color: '#B91C1C', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 0, padding: '0.625rem 0.875rem' }}>
                 {error}
               </p>
             )}
           </div>
-          <div className="modal-footer">
-            <button type="button" onClick={onClose}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: '6px',
-                background: '#fff', color: '#374151', border: '1px solid #E5E7EB',
-                fontWeight: 500, fontSize: '0.875rem', padding: '0.5rem 1rem',
-                borderRadius: '0.25rem', cursor: 'pointer', transition: 'all 0.2s'
-              }}
-            >Cancelar</button>
-            <button type="submit" disabled={loading}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: '6px',
-                background: '#7c4b2c',
-                color: 'white', fontWeight: 500, fontSize: '0.875rem',
-                padding: '0.5rem 1rem', borderRadius: '0.25rem', border: 'none',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                opacity: loading ? 0.6 : 1, transition: 'all 0.2s'
-              }}
-            >
+          <div className="modal-footer" style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid #EEEEEE' }}>
+            <button type="button" onClick={onClose} className="btn-secondary">Cancelar</button>
+            <button type="submit" disabled={loading} className="btn-primary">
               {loading ? 'Guardando...' : esEdicion ? 'Guardar cambios' : 'Crear producto'}
             </button>
           </div>

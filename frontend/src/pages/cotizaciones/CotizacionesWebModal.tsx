@@ -233,31 +233,26 @@ function DescartarModal({ cw, onClose }: { cw: CotizacionWeb; onClose: () => voi
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(30,10,5,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-      <div style={{ background: '#fff', width: '100%', maxWidth: 400, border: '1px solid #E8D5C4', boxShadow: '0 20px 60px rgba(60,37,15,0.2)' }}>
+    <div className="modal-overlay">
+      <div className="modal max-w-2xl animate-slide-up" style={{ borderRadius: 0, border: '1px solid #E5E7EB' }}>
         {/* Header */}
-        <div style={{ background: '#7c4b2c', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <p style={{ fontSize: '0.65rem', fontWeight: 700, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Cotización web</p>
-            <h2 style={{ margin: '2px 0 0', fontFamily: "'Cormorant Garamond', Georgia, serif", fontStyle: 'italic', fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>
-              Descartar solicitud
-            </h2>
-          </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.5)', padding: 4 }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}>
-            <X size={18} />
+        <div className="modal-header" style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #EEEEEE' }}>
+          <h2 className="titulo-modulo" style={{ fontSize: '1.3rem' }}>
+            Descartar solicitud
+          </h2>
+          <button onClick={onClose} className="btn-icon" style={{ borderRadius: 0 }}>
+            <X size={18} strokeWidth={1.75} />
           </button>
         </div>
-        <div style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '0.75rem', background: '#FFF1F2', border: '1px solid #FECDD3' }}>
-            <AlertTriangle size={15} style={{ color: '#DC2626', flexShrink: 0, marginTop: 1 }} />
+        <div className="modal-body" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '0.75rem', background: '#FEF2F2', border: '1px solid #FECACA' }}>
+            <AlertTriangle size={15} style={{ color: '#B91C1C', flexShrink: 0, marginTop: 1 }} />
             <p style={{ fontSize: '0.82rem', color: '#9F1239', margin: 0 }}>
               La solicitud de <strong>{cw.nombre}</strong> se marcará como descartada y dejará de contar en el badge.
             </p>
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#7c4b2c', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.375rem' }}>
+            <label className="label" style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9CA3AF' }}>
               Motivo (opcional)
             </label>
             <textarea
@@ -269,21 +264,19 @@ function DescartarModal({ cw, onClose }: { cw: CotizacionWeb; onClose: () => voi
               style={{ borderRadius: 0 }}
             />
           </div>
-          <div style={{ display: 'flex', gap: '0.625rem', justifyContent: 'flex-end' }}>
-            <button onClick={onClose}
-              style={{ padding: '0.5rem 1rem', border: '1px solid #E8D5C4', background: 'white', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 500, color: '#9B7E6A', borderRadius: 0 }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#FDF6EE')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'white')}>
-              Cancelar
-            </button>
-            <button
-              onClick={handleDescartar}
-              disabled={cambiar.isPending}
-              style={{ padding: '0.5rem 1rem', border: 'none', background: '#DC2626', color: '#fff', cursor: cambiar.isPending ? 'not-allowed' : 'pointer', fontSize: '0.82rem', fontWeight: 600, borderRadius: 0, opacity: cambiar.isPending ? 0.7 : 1 }}
-            >
-              {cambiar.isPending ? 'Descartando...' : 'Descartar'}
-            </button>
-          </div>
+        </div>
+        <div className="modal-footer" style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid #EEEEEE' }}>
+          <button onClick={onClose}
+            style={{ padding: '0.55rem 1.1rem', border: '1px solid #E5E7EB', background: 'white', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 500, color: '#374151', borderRadius: 0, transition: 'all 0.15s' }}>
+            Cancelar
+          </button>
+          <button
+            onClick={handleDescartar}
+            disabled={cambiar.isPending}
+            style={{ padding: '0.55rem 1.1rem', border: '1px solid #B91C1C', background: '#B91C1C', color: '#fff', cursor: cambiar.isPending ? 'not-allowed' : 'pointer', fontSize: '0.875rem', fontWeight: 500, borderRadius: 0, opacity: cambiar.isPending ? 0.7 : 1, transition: 'all 0.15s' }}
+          >
+            {cambiar.isPending ? 'Descartando...' : 'Descartar'}
+          </button>
         </div>
       </div>
     </div>
@@ -320,38 +313,28 @@ export default function CotizacionesWebModal({ onClose }: Props) {
         />
       )}
 
-      <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(30,10,5,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-        <div style={{ background: '#fff', width: '100%', maxWidth: '72rem', maxHeight: '92vh', display: 'flex', flexDirection: 'column', border: '1px solid #E8D5C4', boxShadow: '0 20px 60px rgba(60,37,15,0.25)' }}>
+      <div className="modal-overlay">
+        <div className="modal max-w-5xl animate-slide-up" style={{ borderRadius: 0, border: '1px solid #E5E7EB', maxHeight: '92vh', display: 'flex', flexDirection: 'column' }}>
 
           {/* Header */}
-          <div style={{ background: '#7c4b2c', padding: '1rem 1.5rem', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{ width: 32, height: 32, background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Globe size={16} style={{ color: '#fff' }} />
-              </div>
-              <div>
-                <p style={{ fontSize: '0.65rem', fontWeight: 700, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>woodpallets.com.ar</p>
-                <h2 style={{ margin: '2px 0 0', fontFamily: "'Cormorant Garamond', Georgia, serif", fontStyle: 'italic', fontSize: '1.15rem', fontWeight: 700, color: '#fff' }}>
-                  Cotizaciones desde la web
-                  {pendientes > 0 && (
-                    <span style={{ marginLeft: 8, fontFamily: 'Inter, sans-serif', fontStyle: 'normal', fontSize: '0.7rem', fontWeight: 700, background: '#D97706', color: '#fff', padding: '0.15rem 0.5rem', letterSpacing: '0.04em' }}>
-                      {pendientes} sin procesar
-                    </span>
-                  )}
-                </h2>
-              </div>
-            </div>
-            <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.5)', padding: 4 }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}>
-              <X size={18} />
+          <div className="modal-header" style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #EEEEEE', flexShrink: 0 }}>
+            <h2 className="titulo-modulo flex items-center gap-2" style={{ fontSize: '1.5rem' }}>
+              Cotizaciones desde la web
+              {pendientes > 0 && (
+                <span style={{ fontFamily: 'inherit', fontStyle: 'normal', fontSize: '0.7rem', fontWeight: 600, background: '#7c4b2c', color: '#fff', padding: '0.2rem 0.6rem', letterSpacing: '0.02em' }}>
+                  {pendientes} sin procesar
+                </span>
+              )}
+            </h2>
+            <button onClick={onClose} className="btn-icon" style={{ borderRadius: 0 }}>
+              <X size={18} strokeWidth={1.75} />
             </button>
           </div>
 
-          <div style={{ flex: 1, overflowY: 'auto', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', background: '#FDFAF7' }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
             {/* Filtros */}
-            <div style={{ display: 'flex', border: '1px solid #E8D5C4', overflow: 'hidden', alignSelf: 'flex-start' }}>
+            <div style={{ display: 'flex', border: '1px solid #E5E7EB', overflow: 'hidden', alignSelf: 'flex-start' }}>
               {FILTROS.map((f, i) => (
                 <button
                   key={f.key}
@@ -363,9 +346,9 @@ export default function CotizacionesWebModal({ onClose }: Props) {
                     whiteSpace: 'nowrap',
                     transition: 'all 0.15s',
                     background: filtroEstado === f.key ? '#7c4b2c' : '#fff',
-                    color: filtroEstado === f.key ? '#fff' : '#9B7E6A',
+                    color: filtroEstado === f.key ? '#fff' : '#6B7280',
                     border: 'none',
-                    borderLeft: i > 0 ? '1px solid #E8D5C4' : 'none',
+                    borderLeft: i > 0 ? '1px solid #E5E7EB' : 'none',
                     cursor: 'pointer',
                   }}
                 >
@@ -378,24 +361,24 @@ export default function CotizacionesWebModal({ onClose }: Props) {
             {isLoading ? (
               <LoadingSpinner text="Cargando solicitudes web..." />
             ) : cotizaciones.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '3rem', background: 'white', border: '1px solid #E8D5C4' }}>
-                <Globe size={36} style={{ color: '#E8D5C4', margin: '0 auto 12px', display: 'block' }} />
-                <p style={{ fontSize: '0.875rem', color: '#9B7E6A', margin: 0 }}>
+              <div style={{ textAlign: 'center', padding: '3rem', background: '#fff', border: '1px solid #ECECEC' }}>
+                <Globe size={36} style={{ color: '#E5E7EB', margin: '0 auto 12px', display: 'block' }} />
+                <p style={{ fontSize: '0.875rem', color: '#9CA3AF', margin: 0 }}>
                   No hay solicitudes web{filtroEstado !== 'todas' ? ` con estado "${filtroEstado}"` : ''}
                 </p>
               </div>
             ) : (
-              <div style={{ border: '1px solid #E8D5C4', overflow: 'hidden', background: 'white' }}>
+              <div style={{ border: '1px solid #ECECEC', overflow: 'hidden', background: '#fff' }}>
                 <table className="table">
                   <thead>
-                    <tr style={{ background: '#FAF5F0', borderBottom: '1.5px solid #E8D5C4' }}>
-                      <th style={{ color: '#7c4b2c' }}>#</th>
-                      <th style={{ color: '#7c4b2c' }}>Nombre / Empresa</th>
-                      <th style={{ color: '#7c4b2c' }}>Tipo pallet</th>
-                      <th style={{ color: '#7c4b2c' }}>Cantidad</th>
-                      <th style={{ color: '#7c4b2c' }}>Fecha</th>
-                      <th style={{ color: '#7c4b2c' }}>Estado</th>
-                      <th style={{ color: '#7c4b2c' }}>Acciones</th>
+                    <tr style={{ background: '#FAFAFA', borderBottom: '1px solid #E5E7EB' }}>
+                      <th style={{ color: '#6B7280' }}>#</th>
+                      <th style={{ color: '#6B7280' }}>Nombre / Empresa</th>
+                      <th style={{ color: '#6B7280' }}>Tipo pallet</th>
+                      <th style={{ color: '#6B7280' }}>Cantidad</th>
+                      <th style={{ color: '#6B7280' }}>Fecha</th>
+                      <th style={{ color: '#6B7280' }}>Estado</th>
+                      <th style={{ color: '#6B7280' }}>Acciones</th>
                     </tr>
                   </thead>
                   <tbody>

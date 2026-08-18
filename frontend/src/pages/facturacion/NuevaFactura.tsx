@@ -94,24 +94,16 @@ export default function NuevaFactura({ onClose, onSuccess }: NuevaFacturaProps) 
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal max-w-lg animate-slide-up" onClick={e => e.stopPropagation()}>
+      <div className="modal max-w-lg animate-slide-up" style={{ borderRadius: 0, border: '1px solid #E5E7EB' }} onClick={e => e.stopPropagation()}>
 
         {/* Header */}
-        <div className="modal-header">
-          <div className="flex items-center gap-2">
-            <div
-              className="w-8 h-8 flex items-center justify-center shrink-0"
-              style={{ background: '#7c4b2c', borderRadius: '0.375rem' }}
-            >
-              <Receipt size={15} style={{ color: '#fff' }} />
-            </div>
-            <h2 className="modal-title">Registrar factura</h2>
-          </div>
-          <button onClick={onClose} className="btn-icon"><X size={18} /></button>
+        <div className="modal-header" style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #EEEEEE' }}>
+          <h2 className="titulo-modulo" style={{ fontSize: '1.5rem' }}>Registrar factura</h2>
+          <button onClick={onClose} className="btn-icon" style={{ borderRadius: 0 }}><X size={18} strokeWidth={1.75} /></button>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="modal-body space-y-4">
+          <div className="modal-body space-y-4" style={{ padding: '1.5rem' }}>
 
             {/* Selector de venta */}
             <div>
@@ -119,7 +111,7 @@ export default function NuevaFactura({ onClose, onSuccess }: NuevaFacturaProps) 
               {!ventas.length ? (
                 <div
                   className="flex items-center gap-2 p-3 text-sm text-gray-500"
-                  style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.375rem' }}
+                  style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 0 }}
                 >
                   No hay ventas sin factura pendiente
                 </div>
@@ -144,7 +136,7 @@ export default function NuevaFactura({ onClose, onSuccess }: NuevaFacturaProps) 
             {ventaSeleccionada && (
               <div
                 className="p-3 space-y-0.5"
-                style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.375rem' }}
+                style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 0 }}
               >
                 <p className="text-sm font-semibold text-gray-800">{ventaSeleccionada.cliente?.razonSocial}</p>
                 <p className="text-xs text-gray-500">
@@ -159,7 +151,7 @@ export default function NuevaFactura({ onClose, onSuccess }: NuevaFacturaProps) 
             {form.ventaId > 0 && (
               <div
                 className="flex items-center gap-3 p-3"
-                style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.375rem' }}
+                style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 0 }}
               >
                 <span className="text-xl">{form.esSinFactura ? '📋' : '🧾'}</span>
                 <div>
@@ -191,7 +183,7 @@ export default function NuevaFactura({ onClose, onSuccess }: NuevaFacturaProps) 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div
                   className="p-3"
-                  style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.375rem' }}
+                  style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 0 }}
                 >
                   <p className="text-xs text-gray-500 mb-1">Neto (sin IVA)</p>
                   <p className="text-sm font-semibold text-gray-900">
@@ -200,7 +192,7 @@ export default function NuevaFactura({ onClose, onSuccess }: NuevaFacturaProps) 
                 </div>
                 <div
                   className="p-3"
-                  style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.375rem' }}
+                  style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 0 }}
                 >
                   <p className="text-xs text-gray-500 mb-1">IVA 21%</p>
                   <p className="text-sm font-semibold text-gray-900">
@@ -209,10 +201,10 @@ export default function NuevaFactura({ onClose, onSuccess }: NuevaFacturaProps) 
                 </div>
                 <div
                   className="p-3"
-                  style={{ background: '#F3EDE8', border: '1px solid #D4B49A', borderRadius: '0.375rem' }}
+                  style={{ background: '#F3EDE8', border: '1px solid #D4B49A', borderRadius: 0 }}
                 >
                   <p className="text-xs text-gray-500 mb-1">Total con IVA</p>
-                  <p className="text-sm font-bold" style={{ color: '#6B3A2A' }}>
+                  <p className="text-sm font-bold" style={{ color: '#111827' }}>
                     {formatPesos(parseFloat(form.totalConIva) || 0)}
                   </p>
                 </div>
@@ -249,7 +241,7 @@ export default function NuevaFactura({ onClose, onSuccess }: NuevaFacturaProps) 
             {error && (
               <div
                 className="px-3 py-2.5 text-sm text-red-700"
-                style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: '0.375rem' }}
+                style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 0 }}
               >
                 {error}
               </div>
@@ -270,7 +262,7 @@ export default function NuevaFactura({ onClose, onSuccess }: NuevaFacturaProps) 
                   ? '#7c4b2c'
                   : '#D1D5DB',
                 color: 'white', fontWeight: 500, fontSize: '0.875rem',
-                padding: '0.5rem 1.25rem', borderRadius: '0.375rem',
+                padding: '0.5rem 1.25rem', borderRadius: 0,
                 border: 'none', cursor: form.ventaId ? 'pointer' : 'not-allowed',
                 opacity: crearFactura.isPending ? 0.7 : 1,
               }}

@@ -133,27 +133,22 @@ function NuevaDevolucionModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="modal-overlay">
-      <div className="modal" style={{ maxWidth: '640px' }}>
-        <div className="modal-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{ width: 36, height: 36, background: '#F3EDE8', borderRadius: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <RotateCcw size={18} style={{ color: '#6B3A2A' }} />
-            </div>
-            <div>
-              <h2 className="modal-title">Nueva devolución</h2>
-              <p style={{ fontSize: '0.75rem', color: '#6B7280', marginTop: 2 }}>Registrá una devolución de mercadería</p>
-            </div>
+      <div className="modal animate-slide-up" style={{ maxWidth: '640px', borderRadius: 0, border: '1px solid #E5E7EB' }}>
+        <div className="modal-header" style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #EEEEEE' }}>
+          <div>
+            <h2 className="titulo-modulo" style={{ fontSize: '1.5rem' }}>Nueva devolución</h2>
+            <p style={{ fontSize: '0.75rem', color: '#6B7280', marginTop: 2 }}>Registrá una devolución de mercadería</p>
           </div>
-          <button onClick={onClose} className="btn-icon"><X size={18} /></button>
+          <button onClick={onClose} className="btn-icon" style={{ borderRadius: 0 }}><X size={18} strokeWidth={1.75} /></button>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div className="modal-body" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
             {/* Selector de venta */}
             <div>
-              <label className="label">Venta asociada *</label>
-              <select className="select" value={ventaId} onChange={e => handleSelectVenta(Number(e.target.value))} required>
+              <label className="label" style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9CA3AF' }}>Venta asociada *</label>
+              <select className="select" style={{ borderRadius: 0 }} value={ventaId} onChange={e => handleSelectVenta(Number(e.target.value))} required>
                 <option value="">— Seleccioná una venta —</option>
                 {ventas.filter(v => v.estadoPedido !== 'cancelado').map(v => (
                   <option key={v.id} value={v.id}>
@@ -165,7 +160,7 @@ function NuevaDevolucionModal({ onClose }: { onClose: () => void }) {
 
             {/* Detalle de la venta seleccionada */}
             {ventaSeleccionada && (
-              <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.5rem', padding: '0.875rem', display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+              <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 0, padding: '0.875rem', display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
                 <p style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Detalle de la venta #{ventaSeleccionada.id}</p>
 
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -176,19 +171,19 @@ function NuevaDevolucionModal({ onClose }: { onClose: () => void }) {
                 </div>
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
-                  <span style={{ fontSize: '0.75rem', background: '#EFF6FF', color: '#1D4ED8', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 500 }}>
+                  <span style={{ fontSize: '0.75rem', background: '#EFF6FF', color: '#1D4ED8', padding: '0.2rem 0.5rem', borderRadius: 0, fontWeight: 500 }}>
                     📅 {formatFecha(ventaSeleccionada.fechaVenta)}
                   </span>
-                  <span style={{ fontSize: '0.75rem', background: ventaSeleccionada.incluyeFlete ? '#EFF6FF' : '#F3F4F6', color: ventaSeleccionada.incluyeFlete ? '#1D4ED8' : '#6B7280', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 500 }}>
+                  <span style={{ fontSize: '0.75rem', background: ventaSeleccionada.incluyeFlete ? '#EFF6FF' : '#F3F4F6', color: ventaSeleccionada.incluyeFlete ? '#1D4ED8' : '#6B7280', padding: '0.2rem 0.5rem', borderRadius: 0, fontWeight: 500 }}>
                     🚛 Flete: {ventaSeleccionada.incluyeFlete ? `Sí (${formatPesos(Number(ventaSeleccionada.costoFlete ?? 0))})` : 'No'}
                   </span>
-                  <span style={{ fontSize: '0.75rem', background: ventaSeleccionada.requiereSenasa ? '#F0FDF4' : '#F3F4F6', color: ventaSeleccionada.requiereSenasa ? '#15803D' : '#6B7280', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 500 }}>
+                  <span style={{ fontSize: '0.75rem', background: ventaSeleccionada.requiereSenasa ? '#F0FDF4' : '#F3F4F6', color: ventaSeleccionada.requiereSenasa ? '#15803D' : '#6B7280', padding: '0.2rem 0.5rem', borderRadius: 0, fontWeight: 500 }}>
                     🌿 SENASA: {ventaSeleccionada.requiereSenasa ? 'Sí' : 'No'}
                   </span>
-                  <span style={{ fontSize: '0.75rem', background: incluyeIva ? '#FEF3C7' : '#F3F4F6', color: incluyeIva ? '#92400E' : '#6B7280', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 500 }}>
+                  <span style={{ fontSize: '0.75rem', background: incluyeIva ? '#FEF3C7' : '#F3F4F6', color: incluyeIva ? '#92400E' : '#6B7280', padding: '0.2rem 0.5rem', borderRadius: 0, fontWeight: 500 }}>
                     💰 IVA: {incluyeIva ? 'Incluido' : 'Sin IVA'}
                   </span>
-                  <span style={{ fontSize: '0.75rem', background: ventaSeleccionada.origenStock === 'stock_propio' ? '#F0FDF4' : '#EFF6FF', color: ventaSeleccionada.origenStock === 'stock_propio' ? '#15803D' : '#1D4ED8', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 500 }}>
+                  <span style={{ fontSize: '0.75rem', background: ventaSeleccionada.origenStock === 'stock_propio' ? '#F0FDF4' : '#EFF6FF', color: ventaSeleccionada.origenStock === 'stock_propio' ? '#15803D' : '#1D4ED8', padding: '0.2rem 0.5rem', borderRadius: 0, fontWeight: 500 }}>
                     📦 {ventaSeleccionada.origenStock === 'stock_propio' ? 'Stock propio' : 'Compra reventa'}
                   </span>
                 </div>
@@ -220,16 +215,16 @@ function NuevaDevolucionModal({ onClose }: { onClose: () => void }) {
 
             {/* Tipo de devolución */}
             <div>
-              <label className="label">Tipo de devolución *</label>
+              <label className="label" style={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", color: "#9CA3AF" }}>Tipo de devolución *</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {Object.entries(CASO_CONFIG).map(([key, val]) => {
                   const s = CASO_STYLE[key];
                   return (
                     <button key={key} type="button"
                       onClick={() => setTipoCaso(key as CrearDevolucionPayload['tipoCaso'])}
-                      style={{ padding: '0.625rem 0.75rem', borderRadius: '0.25rem', textAlign: 'left', cursor: 'pointer', border: tipoCaso === key ? '2px solid #6B3A2A' : '2px solid #E5E7EB', background: tipoCaso === key ? '#FDF5F0' : '#fff' }}
+                      style={{ padding: '0.625rem 0.75rem', borderRadius: 0, textAlign: 'left', cursor: 'pointer', border: tipoCaso === key ? '2px solid #7c4b2c' : '2px solid #E5E7EB', background: tipoCaso === key ? '#FDF5F0' : '#fff' }}
                     >
-                      <span style={{ display: 'inline-block', marginBottom: 4, padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontSize: '0.72rem', fontWeight: 600, background: s.bg, color: s.color }}>{val.label}</span>
+                      <span style={{ display: 'inline-block', marginBottom: 4, padding: '0.2rem 0.5rem', borderRadius: 0, fontSize: '0.72rem', fontWeight: 600, background: s.bg, color: s.color }}>{val.label}</span>
                       <p style={{ fontSize: '0.71rem', color: '#6B7280', margin: 0 }}>{val.desc}</p>
                     </button>
                   );
@@ -238,7 +233,7 @@ function NuevaDevolucionModal({ onClose }: { onClose: () => void }) {
             </div>
 
             {(tipoCaso === 'cliente_no_quiere' || tipoCaso === 'devolucion_parcial') && (
-              <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '0.25rem', padding: '0.75rem', fontSize: '0.8rem', color: '#92400E' }}>
+              <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 0, padding: '0.75rem', fontSize: '0.8rem', color: '#92400E' }}>
                 <strong>Requiere confirmación del depósito:</strong> El reintegro se procesa recién cuando el galpón confirma la recepción.
               </div>
             )}
@@ -246,10 +241,10 @@ function NuevaDevolucionModal({ onClose }: { onClose: () => void }) {
             {/* Cantidades */}
             {detalles.length > 0 && (
               <div>
-                <label className="label">Cantidad a devolver por producto *</label>
+                <label className="label" style={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", color: "#9CA3AF" }}>Cantidad a devolver por producto *</label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {detalles.map((d, i) => (
-                    <div key={d.productoId} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#F9FAFB', borderRadius: '0.25rem', padding: '0.625rem 0.75rem' }}>
+                    <div key={d.productoId} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#F9FAFB', borderRadius: 0, padding: '0.625rem 0.75rem' }}>
                       <div style={{ flex: 1 }}>
                         <p style={{ fontSize: '0.875rem', fontWeight: 500, color: '#111827', margin: 0 }}>{d.nombre}</p>
                         <p style={{ fontSize: '0.72rem', color: '#9CA3AF', margin: 0 }}>
@@ -273,14 +268,14 @@ function NuevaDevolucionModal({ onClose }: { onClose: () => void }) {
 
             {ventaSeleccionada && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', background: devuelveFlete ? '#EFF6FF' : '#F9FAFB', border: devuelveFlete ? '2px solid #3B82F6' : '2px solid #E5E7EB', borderRadius: '0.25rem', padding: '0.625rem 0.75rem', cursor: 'pointer' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', background: devuelveFlete ? '#EFF6FF' : '#F9FAFB', border: devuelveFlete ? '2px solid #3B82F6' : '2px solid #E5E7EB', borderRadius: 0, padding: '0.625rem 0.75rem', cursor: 'pointer' }}>
                   <input type="checkbox" checked={devuelveFlete} onChange={e => setDevuelveFlete(e.target.checked)} />
                   <div>
                     <p style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.8rem', fontWeight: 500, color: '#1D4ED8', margin: 0 }}><Truck size={13} /> Devolver flete</p>
                     <p style={{ fontSize: '0.72rem', color: '#6B7280', margin: 0 }}>{formatPesos(Number(ventaSeleccionada.costoFlete ?? 0))}</p>
                   </div>
                 </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', background: devuelveSenasa ? '#F0FDF4' : '#F9FAFB', border: devuelveSenasa ? '2px solid #16A34A' : '2px solid #E5E7EB', borderRadius: '0.25rem', padding: '0.625rem 0.75rem', cursor: 'pointer' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', background: devuelveSenasa ? '#F0FDF4' : '#F9FAFB', border: devuelveSenasa ? '2px solid #16A34A' : '2px solid #E5E7EB', borderRadius: 0, padding: '0.625rem 0.75rem', cursor: 'pointer' }}>
                   <input type="checkbox" checked={devuelveSenasa} onChange={e => setDevuelveSenasa(e.target.checked)} />
                   <div>
                     <p style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.8rem', fontWeight: 500, color: '#15803D', margin: 0 }}><Leaf size={13} /> Devolver SENASA</p>
@@ -291,7 +286,7 @@ function NuevaDevolucionModal({ onClose }: { onClose: () => void }) {
             )}
 
             {tipoCaso === 'pallet_danado' && (
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', background: compensaSiguiente ? '#FAF5FF' : '#F9FAFB', border: compensaSiguiente ? '2px solid #9333EA' : '2px solid #E5E7EB', borderRadius: '0.25rem', padding: '0.625rem 0.75rem', cursor: 'pointer' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', background: compensaSiguiente ? '#FAF5FF' : '#F9FAFB', border: compensaSiguiente ? '2px solid #9333EA' : '2px solid #E5E7EB', borderRadius: 0, padding: '0.625rem 0.75rem', cursor: 'pointer' }}>
                 <input type="checkbox" checked={compensaSiguiente} onChange={e => setCompensaSiguiente(e.target.checked)} />
                 <div>
                   <p style={{ fontSize: '0.8rem', fontWeight: 500, color: '#7E22CE', margin: 0 }}>Compensar en siguiente pedido</p>
@@ -303,7 +298,7 @@ function NuevaDevolucionModal({ onClose }: { onClose: () => void }) {
             {!compensaSiguiente && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="label">Método de reintegro</label>
+                  <label className="label" style={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", color: "#9CA3AF" }}>Método de reintegro</label>
                   <select className="select" value={metodoPago} onChange={e => setMetodoPago(e.target.value)}>
                     <option value="">— Sin definir —</option>
                     <option value="transferencia">Transferencia</option>
@@ -312,19 +307,19 @@ function NuevaDevolucionModal({ onClose }: { onClose: () => void }) {
                   </select>
                 </div>
                 <div>
-                  <label className="label">Cuenta / CBU destino</label>
+                  <label className="label" style={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", color: "#9CA3AF" }}>Cuenta / CBU destino</label>
                   <input type="text" className="input" placeholder="CBU o alias" value={cuentaDestino} onChange={e => setCuentaDestino(e.target.value)} />
                 </div>
               </div>
             )}
 
             <div>
-              <label className="label">Observaciones</label>
+              <label className="label" style={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", color: "#9CA3AF" }}>Observaciones</label>
               <textarea className="input" style={{ resize: 'none' }} rows={2} placeholder="Detalle adicional..." value={observaciones} onChange={e => setObservaciones(e.target.value)} />
             </div>
 
             {montoTotal > 0 && (
-              <div style={{ background: '#F9FAFB', borderRadius: '0.25rem', border: '1px solid #E5E7EB', padding: '0.875rem' }}>
+              <div style={{ background: '#F9FAFB', borderRadius: 0, border: '1px solid #E5E7EB', padding: '0.875rem' }}>
                 <p style={{ fontSize: '0.72rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Resumen del reintegro</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#6B7280' }}>
@@ -344,15 +339,15 @@ function NuevaDevolucionModal({ onClose }: { onClose: () => void }) {
             )}
 
             {error && (
-              <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#B91C1C', fontSize: '0.8rem', padding: '0.625rem 0.875rem', borderRadius: '0.25rem' }}>
+              <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#B91C1C', fontSize: '0.8rem', padding: '0.625rem 0.875rem', borderRadius: 0 }}>
                 {error}
               </div>
             )}
           </div>
 
-          <div className="modal-footer">
+          <div className="modal-footer" style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid #EEEEEE' }}>
             <button type="button" onClick={onClose} className="btn-secondary">Cancelar</button>
-            <button type="submit" className="btn-brand" disabled={crear.isPending}>
+            <button type="submit" className="btn-primary" disabled={crear.isPending}>
               {crear.isPending ? 'Registrando...' : 'Registrar devolución'}
             </button>
           </div>

@@ -95,23 +95,18 @@ function NuevoRemitoModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="modal-overlay">
-      <div className="modal" style={{ maxWidth: '520px' }}>
-        <div className="modal-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{ width: 36, height: 36, background: '#F3EDE8', borderRadius: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <FileText size={18} style={{ color: '#6B3A2A' }} />
-            </div>
-            <div>
-              <h2 className="modal-title">Nuevo remito</h2>
-              <p style={{ fontSize: '0.75rem', color: '#6B7280', marginTop: 2 }}>
-                {step === 'form' ? 'Seleccioná la venta' : 'Firmá el remito para enviarlo'}
-              </p>
-            </div>
+      <div className="modal animate-slide-up" style={{ maxWidth: '520px', borderRadius: 0, border: '1px solid #E5E7EB' }}>
+        <div className="modal-header" style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #EEEEEE' }}>
+          <div>
+            <h2 className="titulo-modulo" style={{ fontSize: '1.4rem' }}>Nuevo remito</h2>
+            <p style={{ fontSize: '0.75rem', color: '#6B7280', marginTop: 2 }}>
+              {step === 'form' ? 'Seleccioná la venta' : 'Firmá el remito para enviarlo'}
+            </p>
           </div>
-          <button onClick={onClose} className="btn-icon"><X size={18} /></button>
+          <button onClick={onClose} className="btn-icon" style={{ borderRadius: 0 }}><X size={18} strokeWidth={1.75} /></button>
         </div>
 
-        <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', padding: '1.5rem' }}>
           {step === 'form' ? (
             <>
               <div>
@@ -131,7 +126,7 @@ function NuevoRemitoModal({ onClose }: { onClose: () => void }) {
                 )}
               </div>
               {ventaSeleccionada && (
-                <div style={{ background: '#F9FAFB', borderRadius: '0.25rem', padding: '0.75rem', fontSize: '0.8rem', color: '#374151' }}>
+                <div style={{ background: '#F9FAFB', borderRadius: 0, padding: '0.75rem', fontSize: '0.8rem', color: '#374151' }}>
                   <p style={{ fontWeight: 600, margin: '0 0 4px' }}>{ventaSeleccionada.cliente?.razonSocial}</p>
                   <p style={{ color: '#6B7280', margin: 0 }}>
                     {ventaSeleccionada.detalles?.length ?? 0} producto(s) · {formatPesos(Number(ventaSeleccionada.totalConIva ?? 0))}
@@ -149,7 +144,7 @@ function NuevoRemitoModal({ onClose }: { onClose: () => void }) {
             </>
           ) : (
             <>
-              <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: '0.25rem', padding: '0.75rem', fontSize: '0.8rem', color: '#92400E' }}>
+              <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 0, padding: '0.75rem', fontSize: '0.8rem', color: '#92400E' }}>
                 <strong>Firma obligatoria:</strong> El remito será enviado al cliente con tu firma. Él lo recibirá por email para firmarlo digitalmente.
               </div>
 
@@ -161,7 +156,7 @@ function NuevoRemitoModal({ onClose }: { onClose: () => void }) {
                     onClick={() => { setUsarGuardada(true); setFirma(firmaGuardada); }}
                     style={{
                       flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
-                      padding: '0.55rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.8rem', fontWeight: 600,
+                      padding: '0.55rem 0.75rem', borderRadius: 0, fontSize: '0.8rem', fontWeight: 600,
                       border: `2px solid ${usarGuardada ? '#7c4b2c' : '#E5E7EB'}`,
                       background: usarGuardada ? '#FDF6EE' : 'white',
                       color: usarGuardada ? '#7c4b2c' : '#6B7280',
@@ -176,7 +171,7 @@ function NuevoRemitoModal({ onClose }: { onClose: () => void }) {
                     onClick={() => { setUsarGuardada(false); setFirma(null); }}
                     style={{
                       flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
-                      padding: '0.55rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.8rem', fontWeight: 600,
+                      padding: '0.55rem 0.75rem', borderRadius: 0, fontSize: '0.8rem', fontWeight: 600,
                       border: `2px solid ${!usarGuardada ? '#7c4b2c' : '#E5E7EB'}`,
                       background: !usarGuardada ? '#FDF6EE' : 'white',
                       color: !usarGuardada ? '#7c4b2c' : '#6B7280',
@@ -192,7 +187,7 @@ function NuevoRemitoModal({ onClose }: { onClose: () => void }) {
               {usarGuardada && firmaGuardada ? (
                 <div>
                   <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6B7280', marginBottom: '0.5rem' }}>Vista previa de tu firma guardada:</p>
-                  <div style={{ border: '2px dashed #E8E2DA', borderRadius: '0.375rem', padding: '1rem', background: '#FAFAF9', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 90 }}>
+                  <div style={{ border: '2px dashed #E8E2DA', borderRadius: 0, padding: '1rem', background: '#FAFAF9', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 90 }}>
                     <img src={firmaGuardada} alt="Firma guardada" style={{ maxHeight: 72, maxWidth: '100%', objectFit: 'contain' }} />
                   </div>
                   <p style={{ fontSize: '0.7rem', color: '#9CA3AF', marginTop: 6 }}>
@@ -211,7 +206,7 @@ function NuevoRemitoModal({ onClose }: { onClose: () => void }) {
           )}
 
           {error && (
-            <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#B91C1C', fontSize: '0.8rem', padding: '0.625rem 0.875rem', borderRadius: '0.25rem' }}>
+            <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#B91C1C', fontSize: '0.8rem', padding: '0.625rem 0.875rem', borderRadius: 0 }}>
               {error}
             </div>
           )}

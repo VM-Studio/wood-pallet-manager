@@ -48,9 +48,9 @@ function Seccion({ icon: Icon, titulo, children, accent = false }: {
         <div style={{
           width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
           background: accent ? '#7c4b2c' : '#F3EDE8',
-          borderRadius: '0.25rem', flexShrink: 0,
+          borderRadius: 0, flexShrink: 0,
         }}>
-          <Icon size={14} style={{ color: accent ? '#fff' : '#6B3A2A' }} />
+          <Icon size={14} style={{ color: accent ? '#fff' : '#111827' }} />
         </div>
         <h3 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#1F2937', margin: 0 }}>{titulo}</h3>
       </div>
@@ -66,7 +66,7 @@ function Dato({ label, value, span = false }: { label: string; value: React.Reac
       padding: '0.625rem 0.75rem',
       background: '#F9FAFB',
       border: '1px solid #E5E7EB',
-      borderRadius: '0.25rem',
+      borderRadius: 0,
       gridColumn: span ? 'span 2' : undefined,
     }}>
       <p style={{ fontSize: '0.68rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 3px' }}>{label}</p>
@@ -109,39 +109,36 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
     display: 'inline-flex', alignItems: 'center', gap: 6,
     background: '#7c4b2c',
     color: '#fff', fontWeight: 600, fontSize: '0.82rem',
-    padding: '0.45rem 0.875rem', borderRadius: '0.25rem', border: 'none', cursor: 'pointer',
+    padding: '0.45rem 0.875rem', borderRadius: 0, border: 'none', cursor: 'pointer',
   };
 
   const btnOutline: React.CSSProperties = {
     display: 'inline-flex', alignItems: 'center', gap: 6,
     background: '#fff', color: '#374151', border: '1px solid #E5E7EB',
     fontWeight: 600, fontSize: '0.82rem',
-    padding: '0.45rem 0.875rem', borderRadius: '0.25rem', cursor: 'pointer',
+    padding: '0.45rem 0.875rem', borderRadius: 0, cursor: 'pointer',
   };
 
   return (
     <>
       <div className="modal-overlay">
         <div className="modal animate-slide-up" style={{
-          maxWidth: 740, borderRadius: '0.5rem', display: 'flex', flexDirection: 'column',
+          maxWidth: 740, borderRadius: 0, border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column',
           maxHeight: '90vh',
         }}>
 
           {/* ── Header ─────────────────────────────────────────────── */}
           <div style={{
             display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-            padding: '1.25rem 1.5rem', borderBottom: '1px solid #E5E7EB', flexShrink: 0,
+            padding: '1.25rem 1.5rem', borderBottom: '1px solid #EEEEEE', flexShrink: 0,
           }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                <span style={{
-                  fontSize: '0.72rem', fontWeight: 700, padding: '3px 8px',
-                  background: '#6B3A2A', color: '#fff', borderRadius: '0.25rem', letterSpacing: '0.04em',
-                }}>VENTA #{ventaId}</span>
+                <span className="titulo-modulo" style={{ fontSize: '1.3rem' }}>Venta #{ventaId}</span>
                 {venta && <EstadoBadge estado={venta.estadoPedido} />}
               </div>
               {venta && (
-                <p style={{ fontSize: '1rem', fontWeight: 700, color: '#111827', margin: '6px 0 2px' }}>
+                <p style={{ fontSize: '1rem', fontWeight: 600, color: '#111827', margin: '6px 0 2px' }}>
                   {venta.cliente?.razonSocial}
                 </p>
               )}
@@ -155,15 +152,15 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                 <p style={{ fontSize: '0.8rem', margin: '4px 0 0', display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{
                     fontSize: '0.7rem', fontWeight: 700, padding: '2px 7px',
-                    background: '#EFF6FF', color: '#1D4ED8', borderRadius: '0.25rem',
+                    background: '#EFF6FF', color: '#1D4ED8', borderRadius: 0,
                     border: '1px solid #BFDBFE', letterSpacing: '0.03em',
                   }}>N° ORDEN</span>
                   <span style={{ fontWeight: 600, color: '#1D4ED8' }}>{venta.nroOrden}</span>
                 </p>
               )}
             </div>
-            <button onClick={onClose} className="btn-icon" style={{ borderRadius: '0.25rem', flexShrink: 0 }}>
-              <X size={18} />
+            <button onClick={onClose} className="btn-icon" style={{ borderRadius: 0, flexShrink: 0 }}>
+              <X size={18} strokeWidth={1.75} />
             </button>
           </div>
 
@@ -207,7 +204,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                     const pct = d.cantidadPedida > 0 ? Math.round((totalRetirado / d.cantidadPedida) * 100) : 0;
                     return (
                       <div key={d.id} style={{
-                        padding: '0.75rem', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.25rem',
+                        padding: '0.75rem', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 0,
                       }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
                           <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#111827', margin: 0 }}>{d.producto?.nombre}</p>
@@ -215,7 +212,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                         </div>
                         <div style={{ display: 'flex', gap: 16, fontSize: '0.75rem', color: '#6B7280', marginBottom: 6 }}>
                           <span>Pedido: <strong>{d.cantidadPedida} u</strong></span>
-                          <span style={{ color: '#6B3A2A' }}>Entregado: <strong>{totalRetirado} u</strong></span>
+                          <span style={{ color: '#111827' }}>Entregado: <strong>{totalRetirado} u</strong></span>
                           <span style={{ color: pendiente > 0 ? '#D97706' : '#9CA3AF' }}>Pendiente: <strong>{pendiente} u</strong></span>
                         </div>
                         <div style={{ height: 4, background: '#E5E7EB', borderRadius: 2, overflow: 'hidden' }}>
@@ -228,19 +225,19 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
 
                 {/* Total */}
                 <div className="grid grid-cols-3 gap-2 mb-4">
-                  <div style={{ padding: '0.75rem', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.25rem', textAlign: 'center' }}>
+                  <div style={{ padding: '0.75rem', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 0, textAlign: 'center' }}>
                     <p style={{ fontSize: '0.68rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', margin: '0 0 3px' }}>Subtotal</p>
                     <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#374151', margin: 0 }}>{formatPesos(venta.totalSinIva || 0)}</p>
                   </div>
                   {venta.costoFlete ? (
-                    <div style={{ padding: '0.75rem', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.25rem', textAlign: 'center' }}>
+                    <div style={{ padding: '0.75rem', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 0, textAlign: 'center' }}>
                       <p style={{ fontSize: '0.68rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', margin: '0 0 3px' }}>Flete</p>
                       <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#374151', margin: 0 }}>{formatPesos(venta.costoFlete)}</p>
                     </div>
                   ) : <div />}
                   <div style={{
                     padding: '0.75rem', background: '#7c4b2c',
-                    borderRadius: '0.25rem', textAlign: 'center',
+                    borderRadius: 0, textAlign: 'center',
                   }}>
                     <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', margin: '0 0 3px' }}>Total c/ IVA</p>
                     <p style={{ fontSize: '1rem', fontWeight: 800, color: '#fff', margin: 0 }}>{formatPesos(venta.totalConIva || 0)}</p>
@@ -262,10 +259,10 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                 {venta.requiereSenasa && (
                   <div style={{
                     display: 'flex', alignItems: 'center', gap: 8, padding: '0.5rem 0.75rem',
-                    background: '#FDF6EE', border: '1px solid #C4895A', borderRadius: '0.25rem', marginTop: 8,
+                    background: '#FDF6EE', border: '1px solid #C4895A', borderRadius: 0, marginTop: 8,
                   }}>
                     <AlertCircle size={13} style={{ color: '#C4895A', flexShrink: 0 }} />
-                    <p style={{ fontSize: '0.8rem', color: '#6B3A2A', fontWeight: 600, margin: 0 }}>
+                    <p style={{ fontSize: '0.8rem', color: '#111827', fontWeight: 600, margin: 0 }}>
                       Requiere tratamiento SENASA
                       {venta.costoSenasa ? ` · ${formatPesos(venta.costoSenasa)}` : ''}
                     </p>
@@ -286,7 +283,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                     const pendiente = d.cantidadPedida - totalRetirado;
 
                     return (
-                      <div key={d.id} style={{ padding: '0.875rem', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.25rem' }}>
+                      <div key={d.id} style={{ padding: '0.875rem', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 0 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                           <div>
                             <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#111827', margin: '0 0 2px' }}>{d.producto?.nombre}</p>
@@ -305,7 +302,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                             {retiros.map((r, i) => (
                               <div key={i} style={{
                                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                padding: '4px 10px', background: '#fff', border: '1px solid #E5E7EB', borderRadius: '0.25rem', fontSize: '0.78rem',
+                                padding: '4px 10px', background: '#fff', border: '1px solid #E5E7EB', borderRadius: 0, fontSize: '0.78rem',
                               }}>
                                 <span style={{ color: '#6B7280' }}>{formatFecha(r.fechaRetiro)}</span>
                                 <span style={{ fontWeight: 700, color: '#374151' }}>{r.cantidadRetirada} unidades</span>
@@ -325,7 +322,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                                   placeholder={`Máx. ${pendiente} u`}
                                   style={{
                                     flex: 1, padding: '0.4rem 0.625rem', fontSize: '0.82rem',
-                                    border: '1px solid #E5E7EB', borderRadius: '0.25rem', outline: 'none',
+                                    border: '1px solid #E5E7EB', borderRadius: 0, outline: 'none',
                                   }}
                                   autoFocus
                                 />
@@ -338,7 +335,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                                 </button>
                               </div>
                               {errorRetiro && (
-                                <p style={{ fontSize: '0.78rem', color: '#B91C1C', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '0.25rem', padding: '4px 10px', display: 'flex', alignItems: 'center', gap: 4, margin: 0 }}>
+                                <p style={{ fontSize: '0.78rem', color: '#B91C1C', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 0, padding: '4px 10px', display: 'flex', alignItems: 'center', gap: 4, margin: 0 }}>
                                   <AlertCircle size={12} /> {errorRetiro}
                                 </p>
                               )}
@@ -374,7 +371,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                   <>
                     <div style={{
                       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                      padding: '1.5rem', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.25rem', textAlign: 'center',
+                      padding: '1.5rem', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 0, textAlign: 'center',
                       marginBottom: venta.solicitudesLogistica?.length ? '1rem' : 0,
                     }}>
                       <Truck size={20} style={{ color: '#D1D5DB', marginBottom: 8 }} />
@@ -394,7 +391,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                     <div style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       padding: '0.875rem 1rem', background: '#F9FAFB', border: '1px solid #E5E7EB',
-                      borderRadius: '0.25rem',
+                      borderRadius: 0,
                     }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -456,7 +453,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                       ].map(({ icon: Icon, label, value }) => (
                         <div key={label} style={{
                           padding: '0.625rem 0.75rem', background: '#F9FAFB', border: '1px solid #E5E7EB',
-                          borderRadius: '0.25rem', opacity: value ? 1 : 0.5,
+                          borderRadius: 0, opacity: value ? 1 : 0.5,
                         }}>
                           <p style={{ fontSize: '0.68rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 3px', display: 'flex', alignItems: 'center', gap: 4 }}>
                             <Icon size={10} />{label}
@@ -472,12 +469,12 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                     {venta.logistica.costoFlete && (
                       <div style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '0.625rem 0.875rem', background: '#FDF6EE', border: '1px solid #C4895A', borderRadius: '0.25rem',
+                        padding: '0.625rem 0.875rem', background: '#FDF6EE', border: '1px solid #C4895A', borderRadius: 0,
                       }}>
-                        <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#6B3A2A', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#111827', display: 'flex', alignItems: 'center', gap: 6 }}>
                           <Truck size={13} /> Costo del flete
                         </span>
-                        <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#6B3A2A' }}>
+                        <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#111827' }}>
                           {formatPesos(Number(venta.logistica.costoFlete))}
                         </span>
                       </div>
@@ -490,7 +487,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                         { ok: venta.logistica.confCliente, label: 'Confirmación cliente', icon: User },
                       ].map(({ ok, label, icon: Icon }) => (
                         <div key={label} style={{
-                          padding: '0.625rem 0.75rem', textAlign: 'center', borderRadius: '0.25rem',
+                          padding: '0.625rem 0.75rem', textAlign: 'center', borderRadius: 0,
                           background: ok ? '#F0FDF4' : '#F9FAFB',
                           border: `1px solid ${ok ? '#86EFAC' : '#E5E7EB'}`,
                         }}>
@@ -508,7 +505,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                     {venta.logistica.observaciones && (
                       <div style={{
                         display: 'flex', gap: 8, padding: '0.625rem 0.875rem',
-                        background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.25rem',
+                        background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 0,
                       }}>
                         <MessageSquare size={13} style={{ color: '#9CA3AF', flexShrink: 0, marginTop: 2 }} />
                         <div>
@@ -541,7 +538,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                       {venta.solicitudesLogistica.map((sol) => (
                         <div key={sol.id} style={{
                           padding: '0.75rem', background: '#F9FAFB', border: '1px solid #E5E7EB',
-                          borderRadius: '0.25rem',
+                          borderRadius: 0,
                         }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', color: '#6B7280' }}>
@@ -575,7 +572,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                               marginTop: 6, padding: '4px 8px',
                               background: sol.estado === 'rechazada' ? '#FEF2F2' : '#F0FDF4',
                               border: `1px solid ${sol.estado === 'rechazada' ? '#FECACA' : '#86EFAC'}`,
-                              borderRadius: '0.25rem', fontSize: '0.75rem',
+                              borderRadius: 0, fontSize: '0.75rem',
                               color: sol.estado === 'rechazada' ? '#B91C1C' : '#15803D',
                             }}>
                               <AlertTriangle size={10} style={{ display: 'inline', marginRight: 4 }} />
@@ -603,7 +600,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                 {venta.facturas && venta.facturas.length > 0 ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     {(venta.facturas as Record<string, unknown>[]).map(f => (
-                      <div key={f.id as number} style={{ padding: '0.875rem', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.25rem' }}>
+                      <div key={f.id as number} style={{ padding: '0.875rem', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 0 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                           <div>
                             <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#111827', margin: '0 0 2px' }}>
@@ -617,15 +614,15 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                           <EstadoBadge estado={f.estadoCobro as string} />
                         </div>
                         <div className="grid grid-cols-3 gap-2 mb-2">
-                          <div style={{ padding: '0.5rem', background: '#fff', border: '1px solid #E5E7EB', borderRadius: '0.25rem', textAlign: 'center' }}>
+                          <div style={{ padding: '0.5rem', background: '#fff', border: '1px solid #E5E7EB', borderRadius: 0, textAlign: 'center' }}>
                             <p style={{ fontSize: '0.68rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', margin: '0 0 2px' }}>Neto</p>
                             <p style={{ fontSize: '0.82rem', fontWeight: 700, color: '#374151', margin: 0 }}>{formatPesos(f.totalNeto as number)}</p>
                           </div>
-                          <div style={{ padding: '0.5rem', background: '#fff', border: '1px solid #E5E7EB', borderRadius: '0.25rem', textAlign: 'center' }}>
+                          <div style={{ padding: '0.5rem', background: '#fff', border: '1px solid #E5E7EB', borderRadius: 0, textAlign: 'center' }}>
                             <p style={{ fontSize: '0.68rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', margin: '0 0 2px' }}>IVA 21%</p>
                             <p style={{ fontSize: '0.82rem', fontWeight: 700, color: '#374151', margin: 0 }}>{formatPesos(f.iva as number)}</p>
                           </div>
-                          <div style={{ padding: '0.5rem', background: '#7c4b2c', borderRadius: '0.25rem', textAlign: 'center' }}>
+                          <div style={{ padding: '0.5rem', background: '#7c4b2c', borderRadius: 0, textAlign: 'center' }}>
                             <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', margin: '0 0 2px' }}>Total</p>
                             <p style={{ fontSize: '0.875rem', fontWeight: 800, color: '#fff', margin: 0 }}>{formatPesos(f.totalConIva as number)}</p>
                           </div>
@@ -638,7 +635,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                             {(f.pagos as Record<string, unknown>[]).map(p => (
                               <div key={p.id as number} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: '#6B7280', padding: '3px 0', borderBottom: '1px solid #F3F4F6' }}>
                                 <span>{formatFecha(p.fechaPago as string)} · {p.medioPago as string}</span>
-                                <span style={{ fontWeight: 700, color: '#6B3A2A' }}>{formatPesos(p.monto as number)}</span>
+                                <span style={{ fontWeight: 700, color: '#111827' }}>{formatPesos(p.monto as number)}</span>
                               </div>
                             ))}
                           </div>
@@ -649,7 +646,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                 ) : (
                   <div style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    padding: '1.5rem', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.25rem', textAlign: 'center',
+                    padding: '1.5rem', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 0, textAlign: 'center',
                   }}>
                     <FileText size={20} style={{ color: '#D1D5DB', marginBottom: 8 }} />
                     <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#6B7280', margin: '0 0 4px' }}>Sin factura emitida</p>

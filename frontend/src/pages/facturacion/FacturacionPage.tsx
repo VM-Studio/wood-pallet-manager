@@ -51,13 +51,13 @@ function DetalleFacturaModal({ facturaId, onClose }: { facturaId: number; onClos
     <div className="modal-overlay" onClick={onClose}>
       <div
         className="modal animate-slide-up"
-        style={{ maxWidth: '580px', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
+        style={{ maxWidth: '580px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', borderRadius: 0, border: '1px solid #E5E7EB' }}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="modal-header" style={{ flexShrink: 0 }}>
+        <div className="modal-header" style={{ flexShrink: 0, padding: '1.25rem 1.5rem', borderBottom: '1px solid #EEEEEE' }}>
           <div>
-            <h2 className="modal-title">Detalle de facturación</h2>
+            <h2 className="titulo-modulo" style={{ fontSize: '1.4rem' }}>Detalle de facturación</h2>
             {factura && (
               <p style={{ fontSize: '0.8rem', color: '#6B7280', margin: '2px 0 0' }}>
                 {factura.cliente?.razonSocial}
@@ -65,11 +65,11 @@ function DetalleFacturaModal({ facturaId, onClose }: { facturaId: number; onClos
               </p>
             )}
           </div>
-          <button onClick={onClose} className="btn-icon"><X size={18} /></button>
+          <button onClick={onClose} className="btn-icon" style={{ borderRadius: 0 }}><X size={18} strokeWidth={1.75} /></button>
         </div>
 
         {/* Body */}
-        <div className="modal-body space-y-5" style={{ overflowY: 'auto', flex: 1 }}>
+        <div className="modal-body space-y-5" style={{ overflowY: 'auto', flex: 1, padding: '1.5rem' }}>
           {isLoading ? (
             <div className="py-8 flex justify-center"><LoadingSpinner /></div>
           ) : factura && (
@@ -81,7 +81,7 @@ function DetalleFacturaModal({ facturaId, onClose }: { facturaId: number; onClos
                   { label: 'COBRADO', val: totalCobrado, bg: '#F0FDF4', border: '#BBF7D0', color: '#15803D', sub: '#15803D' },
                   { label: 'SALDO PENDIENTE', val: saldo, bg: saldo > 0 ? '#FFFBEB' : '#F9FAFB', border: saldo > 0 ? '#FDE68A' : '#E5E7EB', color: saldo > 0 ? '#92400E' : '#6B7280', sub: saldo > 0 ? '#92400E' : '#9CA3AF' },
                 ].map(c => (
-                  <div key={c.label} style={{ background: c.bg, border: `1px solid ${c.border}`, borderRadius: '0.375rem', padding: '0.75rem' }}>
+                  <div key={c.label} style={{ background: c.bg, border: `1px solid ${c.border}`, borderRadius: 0, padding: '0.75rem' }}>
                     <p style={{ fontSize: '0.62rem', fontWeight: 700, color: c.sub, marginBottom: 4, letterSpacing: '0.04em' }}>{c.label}</p>
                     <p style={{ fontSize: '0.95rem', fontWeight: 700, color: c.color, margin: 0 }}>{formatPesos(c.val)}</p>
                   </div>
@@ -91,7 +91,7 @@ function DetalleFacturaModal({ facturaId, onClose }: { facturaId: number; onClos
               {/* N° de Orden del cliente */}
               {factura.venta?.nroOrden && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '2px 7px', background: '#EFF6FF', color: '#1D4ED8', borderRadius: '0.25rem', border: '1px solid #BFDBFE', letterSpacing: '0.03em' }}>N° ORDEN</span>
+                  <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '2px 7px', background: '#EFF6FF', color: '#1D4ED8', borderRadius: 0, border: '1px solid #BFDBFE', letterSpacing: '0.03em' }}>N° ORDEN</span>
                   <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#1D4ED8' }}>{factura.venta.nroOrden}</span>
                 </div>
               )}
@@ -102,13 +102,13 @@ function DetalleFacturaModal({ facturaId, onClose }: { facturaId: number; onClos
                 {factura.pagos && factura.pagos.length > 0 ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {factura.pagos.map(p => (
-                      <div key={p.id} style={{ border: '1px solid #E5E7EB', borderRadius: '0.375rem', padding: '0.625rem 0.875rem', background: '#F9FAFB' }}>
+                      <div key={p.id} style={{ border: '1px solid #E5E7EB', borderRadius: 0, padding: '0.625rem 0.875rem', background: '#F9FAFB' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
                           <div style={{ flex: 1 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                               <p style={{ fontSize: '0.95rem', fontWeight: 700, color: '#15803D', margin: 0 }}>{formatPesos(Number(p.monto))}</p>
                               {p.esAdelanto && (
-                                <span style={{ fontSize: '0.62rem', fontWeight: 700, padding: '1px 5px', background: '#FEF9C3', color: '#854D0E', borderRadius: '0.2rem', border: '1px solid #FDE047' }}>ADELANTO</span>
+                                <span style={{ fontSize: '0.62rem', fontWeight: 700, padding: '1px 5px', background: '#FEF9C3', color: '#854D0E', borderRadius: 0, border: '1px solid #FDE047' }}>ADELANTO</span>
                               )}
                             </div>
                             <p style={{ fontSize: '0.75rem', color: '#6B7280', margin: '3px 0 0' }}>
@@ -129,7 +129,7 @@ function DetalleFacturaModal({ facturaId, onClose }: { facturaId: number; onClos
                     ))}
                   </div>
                 ) : (
-                  <div style={{ padding: '1rem', background: '#F9FAFB', borderRadius: '0.375rem', border: '1px solid #E5E7EB', textAlign: 'center' }}>
+                  <div style={{ padding: '1rem', background: '#F9FAFB', borderRadius: 0, border: '1px solid #E5E7EB', textAlign: 'center' }}>
                     <p style={{ fontSize: '0.82rem', color: '#9CA3AF', margin: 0 }}>Sin cobros registrados aún</p>
                   </div>
                 )}
@@ -139,7 +139,7 @@ function DetalleFacturaModal({ facturaId, onClose }: { facturaId: number; onClos
               {factura.venta?.detalles && factura.venta.detalles.length > 0 && (
                 <div>
                   <p style={{ fontSize: '0.72rem', fontWeight: 700, color: '#374151', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Detalle de la venta</p>
-                  <div style={{ border: '1px solid #E5E7EB', borderRadius: '0.375rem', overflow: 'hidden' }}>
+                  <div style={{ border: '1px solid #E5E7EB', borderRadius: 0, overflow: 'hidden' }}>
                     {factura.venta.detalles.map((d, i) => (
                       <div key={d.id} style={{
                         padding: '0.5rem 0.875rem',
@@ -161,7 +161,7 @@ function DetalleFacturaModal({ facturaId, onClose }: { facturaId: number; onClos
 
               {/* Observaciones de facturación */}
               {factura.observaciones && (
-                <div style={{ padding: '0.75rem 0.875rem', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '0.375rem' }}>
+                <div style={{ padding: '0.75rem 0.875rem', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 0 }}>
                   <p style={{ fontSize: '0.68rem', fontWeight: 700, color: '#92400E', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Observaciones de facturación</p>
                   <p style={{ fontSize: '0.82rem', color: '#78350F', margin: 0 }}>{factura.observaciones}</p>
                 </div>
@@ -699,20 +699,20 @@ export default function FacturacionPage() {
       {/* Modal N° ARCA oficial */}
       {arcaModal && (
         <div className="modal-overlay" onClick={() => setArcaModal(null)}>
-          <div className="modal" style={{ maxWidth: '400px' }} onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <span className="modal-title">N° de Factura ARCA</span>
-              <button onClick={() => setArcaModal(null)} className="btn-icon"><X size={18} /></button>
+          <div className="modal animate-slide-up" style={{ maxWidth: '400px', borderRadius: 0, border: '1px solid #E5E7EB' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header" style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #EEEEEE' }}>
+              <h2 className="titulo-modulo" style={{ fontSize: '1.3rem' }}>N° de Factura ARCA</h2>
+              <button onClick={() => setArcaModal(null)} className="btn-icon" style={{ borderRadius: 0 }}><X size={18} strokeWidth={1.75} /></button>
             </div>
-            <div className="modal-body space-y-3">
-              <p className="text-sm text-gray-500">Cliente: <strong>{arcaModal.clienteNombre}</strong></p>
+            <div className="modal-body space-y-3" style={{ padding: '1.5rem' }}>
+              <p className="text-sm" style={{ color: '#6B7280' }}>Cliente: <strong>{arcaModal.clienteNombre}</strong></p>
               <div>
-                <label className="label">Número oficial ARCA</label>
-                <input className="input-field" placeholder="Ej: 00001-00000001"
+                <label className="label" style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9CA3AF' }}>Número oficial ARCA</label>
+                <input className="input-field" style={{ borderRadius: 0 }} placeholder="Ej: 00001-00000001"
                   value={arcaInput} onChange={e => setArcaInput(e.target.value)} autoFocus />
               </div>
             </div>
-            <div className="modal-footer">
+            <div className="modal-footer" style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid #EEEEEE' }}>
               <button onClick={() => setArcaModal(null)} className="btn-secondary">Cancelar</button>
               <button
                 disabled={!arcaInput.trim() || cargarArca.isPending}
@@ -731,17 +731,18 @@ export default function FacturacionPage() {
       {/* Modal N° ARCA */}
       {nroFacturaModal && (
         <div className="modal-overlay" onClick={() => setNroFacturaModal(null)}>
-          <div className="modal" style={{ maxWidth: '400px' }} onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <span className="modal-title">Cargar N° de Factura ARCA</span>
-              <button onClick={() => setNroFacturaModal(null)} className="btn-icon"><X size={18} /></button>
+          <div className="modal animate-slide-up" style={{ maxWidth: '400px', borderRadius: 0, border: '1px solid #E5E7EB' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header" style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #EEEEEE' }}>
+              <h2 className="titulo-modulo" style={{ fontSize: '1.3rem' }}>Cargar N° de Factura ARCA</h2>
+              <button onClick={() => setNroFacturaModal(null)} className="btn-icon" style={{ borderRadius: 0 }}><X size={18} strokeWidth={1.75} /></button>
             </div>
-            <div className="modal-body space-y-3">
-              <p className="text-sm text-gray-500">Cliente: <strong>{nroFacturaModal.clienteNombre}</strong></p>
+            <div className="modal-body space-y-3" style={{ padding: '1.5rem' }}>
+              <p className="text-sm" style={{ color: '#6B7280' }}>Cliente: <strong>{nroFacturaModal.clienteNombre}</strong></p>
               <div>
-                <label className="label">Número de comprobante ARCA</label>
+                <label className="label" style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9CA3AF' }}>Número de comprobante ARCA</label>
                 <input
                   className="input-field"
+                  style={{ borderRadius: 0 }}
                   placeholder="Ej: 00001-00000001"
                   value={nroFacturaInput}
                   onChange={e => setNroFacturaInput(e.target.value)}
@@ -749,7 +750,7 @@ export default function FacturacionPage() {
                 />
               </div>
             </div>
-            <div className="modal-footer">
+            <div className="modal-footer" style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid #EEEEEE' }}>
               <button onClick={() => setNroFacturaModal(null)} className="btn-secondary">Cancelar</button>
               <button
                 disabled={!nroFacturaInput.trim() || actualizarNro.isPending}
@@ -783,18 +784,19 @@ export default function FacturacionPage() {
       {/* Modal Observaciones */}
       {obsModal && (
         <div className="modal-overlay" onClick={() => setObsModal(null)}>
-          <div className="modal" style={{ maxWidth: '480px' }} onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
+          <div className="modal animate-slide-up" style={{ maxWidth: '480px', borderRadius: 0, border: '1px solid #E5E7EB' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header" style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #EEEEEE' }}>
               <div>
-                <span className="modal-title">Observaciones de facturación</span>
+                <h2 className="titulo-modulo" style={{ fontSize: '1.3rem' }}>Observaciones de facturación</h2>
                 <p style={{ fontSize: '0.8rem', color: '#6B7280', margin: '2px 0 0' }}>{obsModal.clienteNombre}</p>
               </div>
-              <button onClick={() => setObsModal(null)} className="btn-icon"><X size={18} /></button>
+              <button onClick={() => setObsModal(null)} className="btn-icon" style={{ borderRadius: 0 }}><X size={18} strokeWidth={1.75} /></button>
             </div>
-            <div className="modal-body space-y-3">
-              <p className="text-xs text-gray-400">Notas internas sobre este cobro o facturación. Solo visibles para los propietarios.</p>
+            <div className="modal-body space-y-3" style={{ padding: '1.5rem' }}>
+              <p className="text-xs" style={{ color: '#9CA3AF' }}>Notas internas sobre este cobro o facturación. Solo visibles para los propietarios.</p>
               <textarea
                 className="input resize-none"
+                style={{ borderRadius: 0 }}
                 rows={4}
                 placeholder="Ej: Acordar con el cliente un plan de pago en cuotas..."
                 value={obsInput}
@@ -802,7 +804,7 @@ export default function FacturacionPage() {
                 autoFocus
               />
             </div>
-            <div className="modal-footer">
+            <div className="modal-footer" style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid #EEEEEE' }}>
               <button onClick={() => setObsModal(null)} className="btn-secondary">Cancelar</button>
               <button
                 disabled={actualizarObs.isPending}

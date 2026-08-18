@@ -146,18 +146,18 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
 
   return (
     <div className="modal-overlay">
-      <div className="modal max-w-2xl animate-slide-up">
-        <div className="modal-header">
-          <h2 className="modal-title">Nueva compra</h2>
-          <button onClick={onClose} className="btn-icon"><X size={18} /></button>
+      <div className="modal max-w-2xl animate-slide-up" style={{ borderRadius: 0, border: '1px solid #E5E7EB' }}>
+        <div className="modal-header" style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #EEEEEE' }}>
+          <h2 className="titulo-modulo" style={{ fontSize: '1.5rem' }}>Nueva compra</h2>
+          <button onClick={onClose} className="btn-icon" style={{ borderRadius: 0 }}><X size={18} strokeWidth={1.75} /></button>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="modal-body space-y-5">
+          <div className="modal-body space-y-5" style={{ padding: '1.5rem' }}>
 
             {/* ── Tipo de compra ─────────────────────────────────── */}
             <div>
-              <label className="label">Tipo de compra</label>
+              <label className="label" style={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", color: "#9CA3AF" }}>Tipo de compra</label>
               <div className="grid grid-cols-2 gap-2">
                 {[
                   {
@@ -173,12 +173,12 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
                 ].map(op => (
                   <button key={op.value} type="button"
                     onClick={() => setForm({ ...form, tipoCompra: op.value as 'reventa_inmediata' | 'stock_propio', ventaId: 0 })}
-                    className={`p-3 rounded-xl border text-left transition-all ${
+                    className={`p-3 rounded-none border text-left transition-all ${
                       form.tipoCompra === op.value
-                        ? 'border-[#6B3A2A] bg-orange-50'
+                        ? 'border-[#7c4b2c] bg-[#FBF7F4]'
                         : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}>
-                    <p className={`text-sm font-semibold ${form.tipoCompra === op.value ? 'text-[#6B3A2A]' : 'text-gray-900'}`}>
+                    <p className={`text-sm font-semibold ${form.tipoCompra === op.value ? 'text-[#7c4b2c]' : 'text-gray-900'}`}>
                       {op.label}
                     </p>
                     <p className="text-xs text-gray-400 mt-0.5">{op.desc}</p>
@@ -190,11 +190,11 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
             {/* ── Selector de venta (solo compra directa) ────────── */}
             {form.tipoCompra === 'reventa_inmediata' && (
               <div>
-                <label className="label">Venta asociada <span className="text-red-500">*</span></label>
+                <label className="label" style={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", color: "#9CA3AF" }}>Venta asociada <span className="text-red-500">*</span></label>
                 {cargandoVentas ? (
-                  <p className="text-sm text-gray-400 p-3 bg-gray-50 rounded-xl border border-gray-100">Cargando ventas...</p>
+                  <p className="text-sm text-gray-400 p-3 bg-gray-50 rounded-none border border-gray-100">Cargando ventas...</p>
                 ) : !ventasDisponibles?.length ? (
-                  <div className="flex items-start gap-2 p-3 bg-amber-50 rounded-xl border border-amber-200">
+                  <div className="flex items-start gap-2 p-3 bg-amber-50 rounded-none border border-amber-200">
                     <AlertTriangle size={15} className="text-amber-600 mt-0.5 shrink-0" />
                     <p className="text-sm text-amber-800">
                       No hay ventas con compra directa pendiente de abastecimiento. Convertí una cotización con origen "Compra directa" primero.
@@ -210,14 +210,14 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
                           setForm(f => ({ ...f, ventaId: v.id }));
                           autocompletarDesdeVenta(v.id);
                         }}
-                        className={`w-full p-3 rounded-xl border text-left transition-all ${
+                        className={`w-full p-3 rounded-none border text-left transition-all ${
                           form.ventaId === v.id
-                            ? 'border-[#6B3A2A] bg-orange-50'
+                            ? 'border-[#7c4b2c] bg-[#FBF7F4]'
                             : 'border-gray-200 bg-white hover:border-gray-300'
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <p className={`text-sm font-semibold ${form.ventaId === v.id ? 'text-[#6B3A2A]' : 'text-gray-900'}`}>
+                          <p className={`text-sm font-semibold ${form.ventaId === v.id ? 'text-[#7c4b2c]' : 'text-gray-900'}`}>
                             Venta #{v.id} — {v.cliente.razonSocial}
                           </p>
                           {v.totalConIva && (
@@ -232,7 +232,7 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
                   </div>
                 )}
                 {ventaSeleccionada && (
-                  <div className="mt-2 flex items-center gap-2 text-xs text-[#6B3A2A] bg-orange-50 px-3 py-2 rounded-lg border border-orange-200">
+                  <div className="mt-2 flex items-center gap-2 text-xs text-[#7c4b2c] bg-[#FBF7F4] px-3 py-2 rounded-none border border-orange-200">
                     <Info size={12} />
                     Productos autocompletados desde la venta. Revisá las cantidades y cargá el precio de costo.
                   </div>
@@ -243,11 +243,11 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
             {/* ── Panel de stock (solo stock propio) ─────────────── */}
             {form.tipoCompra === 'stock_propio' && stock.length > 0 && (
               <div>
-                <label className="label flex items-center gap-1.5">
+                <label className="label flex items-center gap-1.5" style={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", color: "#9CA3AF" }}>
                   <Info size={13} className="text-blue-400" />
                   Stock actual disponible
                 </label>
-                <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 max-h-40 overflow-y-auto">
+                <div className="bg-blue-50 border border-blue-100 rounded-none p-3 max-h-40 overflow-y-auto">
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="text-blue-400 border-b border-blue-100">
@@ -272,13 +272,13 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
 
             {/* ── Proveedor ──────────────────────────────────────── */}
             <div>
-              <label className="label">Proveedor</label>
+              <label className="label" style={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", color: "#9CA3AF" }}>Proveedor</label>
               {cargando ? (
-                <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-sm text-gray-400">
+                <div className="p-3 bg-gray-50 rounded-none border border-gray-100 text-sm text-gray-400">
                   Cargando proveedores...
                 </div>
               ) : proveedores.length === 0 ? (
-                <div className="p-3 bg-red-50 rounded-xl border border-red-200 text-sm text-red-600">
+                <div className="p-3 bg-red-50 rounded-none border border-red-200 text-sm text-red-600">
                   No hay proveedores registrados. Agregá uno desde el módulo de Proveedores.
                 </div>
               ) : (
@@ -286,12 +286,12 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
                   {proveedores.map(p => (
                     <button key={p.id} type="button"
                       onClick={() => setForm({ ...form, proveedorId: p.id })}
-                      className={`w-full p-3 rounded-xl border text-left transition-all ${
+                      className={`w-full p-3 rounded-none border text-left transition-all ${
                         form.proveedorId === p.id
-                          ? 'border-[#6B3A2A] bg-orange-50'
+                          ? 'border-[#7c4b2c] bg-[#FBF7F4]'
                           : 'border-gray-200 bg-white hover:border-gray-300'
                       }`}>
-                      <p className={`text-sm font-semibold ${form.proveedorId === p.id ? 'text-[#6B3A2A]' : 'text-gray-900'}`}>
+                      <p className={`text-sm font-semibold ${form.proveedorId === p.id ? 'text-[#7c4b2c]' : 'text-gray-900'}`}>
                         {p.nombreEmpresa}
                       </p>
                       <p className="text-xs text-gray-400 mt-0.5">
@@ -306,7 +306,7 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
                 </div>
               )}
               {condicionPermitida && (
-                <p className="mt-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg">
+                <p className="mt-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-none">
                   Solo podés seleccionar productos con condición <strong>{condicionPermitida === 'nuevo' ? 'Nuevo' : 'Semi-nuevo'}</strong> para este proveedor.
                 </p>
               )}
@@ -315,14 +315,14 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
             {/* ── Productos ──────────────────────────────────────── */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="label mb-0">Productos</label>
+                <label className="label mb-0" style={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", color: "#9CA3AF" }}>Productos</label>
                 <button type="button" onClick={addDetalle} className="btn-ghost text-xs gap-1 py-1.5">
                   <Plus size={13} /> Agregar
                 </button>
               </div>
               <div className="space-y-2">
                 {detalles.map((d, idx) => (
-                  <div key={idx} className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                  <div key={idx} className="p-3 bg-gray-50 rounded-none border border-gray-100">
                     <div className="grid grid-cols-12 gap-2 items-center">
                       <div className="col-span-5">
                         <select value={d.productoId}
@@ -370,7 +370,7 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
 
             {/* ── N° de remito ───────────────────────────────────── */}
             <div>
-              <label className="label">N° de remito (opcional)</label>
+              <label className="label" style={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", color: "#9CA3AF" }}>N° de remito (opcional)</label>
               <input type="text" value={form.nroRemito}
                 onChange={e => setForm({ ...form, nroRemito: e.target.value })}
                 className="input" placeholder="Número de remito del galpón" />
@@ -378,7 +378,7 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
 
             {/* ── Observaciones ──────────────────────────────────── */}
             <div>
-              <label className="label">Observaciones</label>
+              <label className="label" style={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", color: "#9CA3AF" }}>Observaciones</label>
               <textarea value={form.observaciones}
                 onChange={e => setForm({ ...form, observaciones: e.target.value })}
                 className="input resize-none" rows={2} />
@@ -386,7 +386,7 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
 
             {/* ── Total ──────────────────────────────────────────── */}
             {totalCalc > 0 && (
-              <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+              <div className="p-4 bg-gray-50 rounded-none border border-gray-200">
                 <div className="flex justify-between items-center">
                   <div>
                     <p className="text-sm font-semibold text-gray-700">Total de la compra</p>
@@ -398,13 +398,13 @@ export default function NuevaCompra({ onClose, onSuccess }: NuevaCompraProps) {
             )}
 
             {error && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-200 px-3 py-2.5 rounded-xl">
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 px-3 py-2.5 rounded-none">
                 {error}
               </p>
             )}
           </div>
 
-          <div className="modal-footer">
+          <div className="modal-footer" style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid #EEEEEE' }}>
             <button type="button" onClick={onClose} className="btn-secondary">Cancelar</button>
             <button
               type="submit"

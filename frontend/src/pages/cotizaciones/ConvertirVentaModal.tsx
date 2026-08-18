@@ -180,19 +180,19 @@ export default function ConvertirVentaModal({
 
   return (
     <div className="modal-overlay">
-      <div className="modal max-w-lg animate-slide-up">
+      <div className="modal max-w-lg animate-slide-up" style={{ borderRadius: 0, border: '1px solid #E5E7EB' }}>
         {showAgenda && <AgendaLogisticasModal onClose={() => setShowAgenda(false)} />}
-        <div className="modal-header">
-          <h2 className="modal-title">Convertir a venta</h2>
-          <button onClick={onClose} className="btn-icon"><X size={18} /></button>
+        <div className="modal-header" style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #EEEEEE' }}>
+          <h2 className="titulo-modulo" style={{ fontSize: '1.5rem' }}>Convertir a venta</h2>
+          <button onClick={onClose} className="btn-icon" style={{ borderRadius: 0 }}><X size={18} strokeWidth={1.75} /></button>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="modal-body space-y-5">
+          <div className="modal-body space-y-5" style={{ padding: '1.5rem' }}>
 
             {/* Bloqueo si es cotización rápida sin cliente registrado */}
             {esProspectoSinCliente && !clienteRegistrado && (
-              <div className="bg-amber-50 border border-amber-300 rounded-xl p-4 space-y-3">
+              <div className="bg-amber-50 border border-amber-300 p-4 space-y-3">
                 <div className="flex items-center gap-2 text-amber-700 font-semibold text-sm">
                   <UserPlus size={16} />
                   Registrá el cliente antes de convertir a venta
@@ -265,7 +265,7 @@ export default function ConvertirVentaModal({
 
             <div>
               <label className="label">Tipo de entrega</label>
-              <p className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 mb-2">
+              <p className="text-xs text-gray-500 bg-gray-50 border border-gray-200 px-3 py-1.5 mb-2">
                 {incluyeFlete
                   ? <>La cotización <strong>incluye flete</strong> — tipo de entrega fijado en <strong>Envío</strong>.</>
                   : <>La cotización <strong>no incluye flete</strong> — tipo de entrega fijado en <strong>Retiro en galpón</strong>.</>
@@ -279,7 +279,7 @@ export default function ConvertirVentaModal({
                   const esSeleccionado = form.tipoEntrega === op.value;
                   return (
                     <div key={op.value}
-                      className={`p-3 rounded-xl border text-left text-sm font-medium cursor-default select-none ${
+                      className={`p-3 border text-left text-sm font-medium cursor-default select-none ${
                         esSeleccionado
                           ? 'border-[#16A34A] bg-green-50 text-[#16A34A]'
                           : 'border-gray-200 bg-gray-50 text-gray-300'
@@ -302,7 +302,7 @@ export default function ConvertirVentaModal({
                       className="input"
                     />
                     {form.latEntrega && (
-                      <p style={{ fontSize: '0.7rem', color: '#6B3A2A', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <p style={{ fontSize: '0.7rem', color: '#7c4b2c', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
                         <MapPin size={11} /> Ubicación confirmada por Google Maps
                       </p>
                     )}
@@ -325,7 +325,7 @@ export default function ConvertirVentaModal({
                     onClick={() => setShowAgenda(true)}
                     style={{
                       display: 'inline-flex', alignItems: 'center', gap: 6,
-                      fontSize: '0.8rem', fontWeight: 500, color: '#6B3A2A',
+                      fontSize: '0.8rem', fontWeight: 500, color: '#7c4b2c',
                       background: '#FEF3E2', border: '1px solid #F9C97C',
                       padding: '0.45rem 0.875rem', cursor: 'pointer',
                       transition: 'background 0.15s',
@@ -361,7 +361,7 @@ export default function ConvertirVentaModal({
                       Galpón de retiro
                     </label>
                     {galponAutoNombre ? (
-                      <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 space-y-1">
+                      <div className="border border-amber-200 bg-amber-50 px-3 py-2.5 space-y-1">
                         <div className="flex items-center gap-2">
                           <Package size={14} className="text-amber-700 shrink-0" />
                           <span className="text-sm font-semibold text-amber-900">{galponAutoNombre}</span>
@@ -396,7 +396,7 @@ export default function ConvertirVentaModal({
                 ].map(op => (
                   <button key={String(op.value)} type="button"
                     onClick={() => setUsaStockPropio(op.value)}
-                    className={`p-3 rounded-xl border text-left transition-all text-sm font-medium ${
+                    className={`p-3 border text-left transition-all text-sm font-medium ${
                       usaStockPropio === op.value
                         ? 'border-[#16A34A] bg-green-50 text-[#16A34A]'
                         : 'border-gray-200 bg-white hover:border-gray-300 text-gray-700'
@@ -425,7 +425,7 @@ export default function ConvertirVentaModal({
                             padding: '0.6rem 0.875rem',
                             background: disponible === null ? '#F9FAFB' : suficiente ? '#F0FDF4' : '#FFF7ED',
                             border: `1px solid ${disponible === null ? '#E5E7EB' : suficiente ? '#86EFAC' : '#FED7AA'}`,
-                            borderRadius: '0.5rem',
+                            borderRadius: 0,
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -476,7 +476,7 @@ export default function ConvertirVentaModal({
                       metodoPago: op.value as 'transferencia' | 'e_check' | 'efectivo',
                       cuentaDestino: op.value === 'e_check' ? 'banco_provincia' : '',
                     })}
-                    className={`p-2.5 rounded-xl border text-sm font-medium transition-all ${
+                    className={`p-2.5 border text-sm font-medium transition-all ${
                       form.metodoPago === op.value
                         ? 'border-[#16A34A] bg-green-50 text-[#16A34A]'
                         : 'border-gray-200 bg-white hover:border-gray-300 text-gray-700'
@@ -494,7 +494,7 @@ export default function ConvertirVentaModal({
                     { value: 'mercado_pago_empresa', label: 'Mercado Pago empresa' },
                     { value: 'banco_provincia',     label: 'Banco Provincia' },
                   ].map(op => (
-                    <label key={op.value} className="flex items-center gap-3 cursor-pointer p-2.5 rounded-lg hover:bg-gray-50 border border-transparent hover:border-gray-100">
+                    <label key={op.value} className="flex items-center gap-3 cursor-pointer p-2.5 hover:bg-gray-50 border border-transparent hover:border-gray-100">
                       <input type="radio" name="cuentaDestino" value={op.value}
                         checked={form.cuentaDestino === op.value}
                         onChange={() => setForm({ ...form, cuentaDestino: op.value })}
@@ -506,7 +506,7 @@ export default function ConvertirVentaModal({
               )}
 
               {form.metodoPago === 'e_check' && (
-                <div className="mt-3 p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-center gap-2">
+                <div className="mt-3 p-3 bg-gray-50 border border-gray-100 flex items-center gap-2">
                   <input type="checkbox" checked readOnly className="w-4 h-4" />
                   <span className="text-sm text-gray-700 font-medium">Banco Provincia</span>
                   <span className="text-xs text-gray-400 ml-1">(automático para e-check)</span>
@@ -524,7 +524,7 @@ export default function ConvertirVentaModal({
                 ].map(op => (
                   <button key={op.value} type="button"
                     onClick={() => setForm({ ...form, modalidadPago: op.value as 'adelantado' | 'contra_entrega' | 'por_partes' })}
-                    className={`p-2.5 rounded-xl border text-sm font-medium transition-all ${
+                    className={`p-2.5 border text-sm font-medium transition-all ${
                       form.modalidadPago === op.value
                         ? 'border-[#16A34A] bg-green-50 text-[#16A34A]'
                         : 'border-gray-200 bg-white hover:border-gray-300 text-gray-700'
@@ -556,14 +556,14 @@ export default function ConvertirVentaModal({
             </div>
 
             {incluyeFlete && form.tipoEntrega === 'envio_woodpallet' && (
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl">
+              <div className="p-3 bg-blue-50 border border-blue-200">
                 <p className="text-xs text-blue-700 font-medium">
                   Esta venta se agregará automáticamente al módulo de Logística porque incluye flete.
                 </p>
               </div>
             )}
 
-            <div className="p-3 bg-green-50 border border-green-200 rounded-xl">
+            <div className="p-3 bg-green-50 border border-green-200">
               <p className="text-xs text-green-700 font-medium">
                 Se creará automáticamente una factura en estado pendiente en el módulo de Facturación.
               </p>
@@ -578,9 +578,9 @@ export default function ConvertirVentaModal({
                 {[{ value: false, label: 'No' }, { value: true, label: 'Sí, emitir remito' }].map(op => (
                   <button key={String(op.value)} type="button"
                     onClick={() => { setEmitirRemito(op.value); if (!op.value) setFirmaPropietario(null); }}
-                    className={`p-3 rounded-xl border text-left transition-all text-sm font-medium ${
+                    className={`p-3 border text-left transition-all text-sm font-medium ${
                       emitirRemito === op.value
-                        ? 'border-[#6B3A2A] bg-[#FEF3E2] text-[#6B3A2A]'
+                        ? 'border-[#7c4b2c] bg-[#FEF3E2] text-[#7c4b2c]'
                         : 'border-gray-200 bg-white hover:border-gray-300 text-gray-700'
                     }`}>
                     {op.label}
@@ -603,7 +603,7 @@ export default function ConvertirVentaModal({
             </div>
 
             {error && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-200 px-3 py-2.5 rounded-xl">
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 px-3 py-2.5">
                 {error}
               </p>
             )}

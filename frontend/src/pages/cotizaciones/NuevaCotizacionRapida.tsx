@@ -301,22 +301,21 @@ export default function NuevaCotizacionRapida({ onClose, onSuccess }: NuevaCotiz
 
   return (
     <div className="modal-overlay">
-      <div className="modal max-w-5xl animate-slide-up">
-        <div className="modal-header">
-          <h2 className="modal-title flex items-center gap-2">
-            <Zap size={20} className="text-amber-500" />
+      <div className="modal max-w-5xl animate-slide-up" style={{ borderRadius: 0, border: '1px solid #E5E7EB' }}>
+        <div className="modal-header" style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #EEEEEE' }}>
+          <h2 className="titulo-modulo" style={{ fontSize: '1.5rem' }}>
             Cotización rápida
-            <span className="text-xs font-normal text-gray-400 ml-1">sin cliente registrado</span>
+            <span className="text-xs font-normal ml-2" style={{ color: '#9CA3AF', fontFamily: 'inherit', fontStyle: 'normal' }}>sin cliente registrado</span>
           </h2>
-          <button onClick={onClose} className="btn-icon"><X size={18} /></button>
+          <button onClick={onClose} className="btn-icon" style={{ borderRadius: 0 }}><X size={18} strokeWidth={1.75} /></button>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="modal-body space-y-5">
+          <div className="modal-body space-y-5" style={{ padding: '1.5rem' }}>
 
             {/* Banner informativo */}
-            <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
-              <Zap size={16} className="text-amber-500 shrink-0 mt-0.5" />
+            <div className="flex items-start gap-3 p-3.5 text-sm" style={{ background: '#FAFAFA', border: '1px solid #ECECEC', borderLeft: '2px solid #7c4b2c', color: '#374151' }}>
+              <Zap size={16} style={{ color: '#7c4b2c', flexShrink: 0, marginTop: 2 }} />
               <p>
                 Esta cotización <strong>no requiere que el cliente esté registrado</strong> en el sistema.
                 Si la acepta y quiere comprar, podrás registrar sus datos y convertirla en venta desde el módulo de cotizaciones.
@@ -325,39 +324,39 @@ export default function NuevaCotizacionRapida({ onClose, onSuccess }: NuevaCotiz
 
             {/* Datos del prospecto */}
             <div>
-              <label className="label">Datos del prospecto</label>
+              <label className="label" style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9CA3AF' }}>Datos del prospecto</label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Nombre / Empresa <span className="text-red-500">*</span></label>
+                  <label className="text-xs mb-1 block" style={{ color: '#9CA3AF' }}>Nombre / Empresa <span style={{ color: '#B91C1C' }}>*</span></label>
                   <input
                     type="text"
                     value={prospecto.nombreProspecto}
                     onChange={e => setProspecto({ ...prospecto, nombreProspecto: e.target.value })}
                     className="input"
-                    style={{ borderRadius: '0.25rem' }}
+                    style={{ borderRadius: 0 }}
                     placeholder="Nombre o razón social"
                     required
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Teléfono</label>
+                  <label className="text-xs mb-1 block" style={{ color: '#9CA3AF' }}>Teléfono</label>
                   <input
                     type="text"
                     value={prospecto.telefonoProspecto}
                     onChange={e => setProspecto({ ...prospecto, telefonoProspecto: e.target.value })}
                     className="input"
-                    style={{ borderRadius: '0.25rem' }}
+                    style={{ borderRadius: 0 }}
                     placeholder="11 xxxx-xxxx"
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Email</label>
+                  <label className="text-xs mb-1 block" style={{ color: '#9CA3AF' }}>Email</label>
                   <input
                     type="email"
                     value={prospecto.emailProspecto}
                     onChange={e => setProspecto({ ...prospecto, emailProspecto: e.target.value })}
                     className="input"
-                    style={{ borderRadius: '0.25rem' }}
+                    style={{ borderRadius: 0 }}
                     placeholder="email@ejemplo.com"
                   />
                 </div>
@@ -366,25 +365,25 @@ export default function NuevaCotizacionRapida({ onClose, onSuccess }: NuevaCotiz
 
             {/* Productos */}
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="label mb-0">Productos <span className="text-red-500">*</span></label>
-                <button type="button" onClick={addDetalle} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', fontWeight: 500, padding: '0.375rem 0.75rem', borderRadius: '0.25rem', border: '1px solid #E5E7EB', background: '#fff', color: '#4B5563', cursor: 'pointer' }}>
+              <div className="flex items-center justify-between mb-2.5">
+                <label className="label mb-0" style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9CA3AF' }}>Productos <span style={{ color: '#B91C1C' }}>*</span></label>
+                <button type="button" onClick={addDetalle} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', fontWeight: 500, padding: '0.375rem 0.75rem', borderRadius: 0, border: '1px solid #E5E7EB', background: '#fff', color: '#374151', cursor: 'pointer' }}>
                   <Plus size={14} /> Agregar producto
                 </button>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {detalles.map((d, idx) => (
-                  <div key={idx} className="p-3 bg-gray-50 border border-gray-100" style={{ borderRadius: '0.25rem' }}>
+                  <div key={idx} className="p-3.5" style={{ borderRadius: 0, border: '1px solid #ECECEC', background: '#fff' }}>
                     <div className="flex items-center gap-2 mb-2">
                       <div className="flex-1">
-                        <select value={d.productoId} onChange={e => updateDetalle(idx, 'productoId', parseInt(e.target.value))} className="select text-xs py-2" style={{ borderRadius: '0.25rem' }}>
+                        <select value={d.productoId} onChange={e => updateDetalle(idx, 'productoId', parseInt(e.target.value))} className="select text-xs py-2" style={{ borderRadius: 0 }}>
                           <option value={0}>Seleccioná un producto...</option>
-                          <option value={-1}>📐 Pallet a medida (calculadora)</option>
+                          <option value={-1}>Pallet a medida (calculadora)</option>
                           {productos.map(p => (<option key={p.id} value={p.id}>{p.nombre} — {p.condicion}</option>))}
                         </select>
                       </div>
                       {detalles.length > 1 && (
-                        <button type="button" onClick={() => removeDetalle(idx)} className="btn-icon w-7 h-7 text-red-400 hover:bg-red-50 shrink-0"><Trash2 size={14} /></button>
+                        <button type="button" onClick={() => removeDetalle(idx)} className="btn-icon w-7 h-7 text-red-400 hover:bg-red-50 shrink-0" style={{ borderRadius: 0 }}><Trash2 size={14} /></button>
                       )}
                     </div>
 
@@ -394,13 +393,13 @@ export default function NuevaCotizacionRapida({ onClose, onSuccess }: NuevaCotiz
                       const costoTotal = typeof d.medida.costoPorPie === 'number' ? totalPies * d.medida.costoPorPie : 0;
                       return (
                         <div>
-                          <p className="text-sm font-semibold text-[#6B3A2A] mb-2">📐 Calculadora de pies de madera</p>
-                          <div className="overflow-x-auto">
+                          <p className="text-sm font-semibold mb-2.5" style={{ color: '#374151' }}>Calculadora de pies de madera</p>
+                          <div className="overflow-x-auto" style={{ border: '1px solid #ECECEC' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
                               <thead>
-                                <tr style={{ background: '#7c4b2c' }}>
+                                <tr style={{ background: '#FAFAFA', borderBottom: '1px solid #E5E7EB' }}>
                                   {['Componente', 'Tablas', 'Largo (mm)', 'Ancho (mm)', 'Espesor (mm)', 'Pies', 'Importe'].map(h => (
-                                    <th key={h} style={{ padding: '0.5rem 0.6rem', color: '#fff', fontWeight: 600, textAlign: h === 'Componente' ? 'left' : 'center', whiteSpace: 'nowrap' }}>{h}</th>
+                                    <th key={h} style={{ padding: '0.55rem 0.6rem', color: '#6B7280', fontWeight: 600, fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.03em', textAlign: h === 'Componente' ? 'left' : 'center', whiteSpace: 'nowrap' }}>{h}</th>
                                   ))}
                                 </tr>
                               </thead>
@@ -409,16 +408,16 @@ export default function NuevaCotizacionRapida({ onClose, onSuccess }: NuevaCotiz
                                   const cData = d.medida![comp.key];
                                   const pies = calcularPiesComponente(cData);
                                   return (
-                                    <tr key={comp.key} style={{ background: ci % 2 === 0 ? '#FDFAF7' : '#fff', borderBottom: '1px solid #F3F4F6' }}>
-                                      <td style={{ padding: '0.45rem 0.6rem', fontWeight: 600, color: '#374151', whiteSpace: 'nowrap' }}>{comp.label}</td>
+                                    <tr key={comp.key} style={{ background: ci % 2 === 0 ? '#FAFAFA' : '#fff', borderBottom: '1px solid #F3F4F6' }}>
+                                      <td style={{ padding: '0.45rem 0.6rem', fontWeight: 500, color: '#374151', whiteSpace: 'nowrap' }}>{comp.label}</td>
                                       {(['tablas', 'largo', 'ancho', 'espesor'] as const).map(field => (
                                         <td key={field} style={{ padding: '0.3rem' }}>
                                           <input type="number" min={0} step="0.01" placeholder="—" value={cData[field] === '' ? '' : cData[field]}
                                             onChange={e => updateMedidaComponente(idx, comp.key, field, e.target.value === '' ? '' : parseFloat(e.target.value))}
-                                            style={{ width: '100%', textAlign: 'center', fontSize: '0.82rem', padding: '0.35rem 0.4rem', border: '1px solid #E5E7EB', borderRadius: '0.25rem', background: '#fff', outline: 'none', minWidth: '64px' }} />
+                                            style={{ width: '100%', textAlign: 'center', fontSize: '0.82rem', padding: '0.35rem 0.4rem', border: '1px solid #E5E7EB', borderRadius: 0, background: '#fff', outline: 'none', minWidth: '64px' }} />
                                         </td>
                                       ))}
-                                      <td style={{ padding: '0.45rem 0.6rem', textAlign: 'right', fontWeight: 700, color: pies > 0 ? '#6B3A2A' : '#D1D5DB' }}>{pies > 0 ? pies.toFixed(4) : '—'}</td>
+                                      <td style={{ padding: '0.45rem 0.6rem', textAlign: 'right', fontWeight: 700, color: pies > 0 ? '#7c4b2c' : '#D1D5DB' }}>{pies > 0 ? pies.toFixed(4) : '—'}</td>
                                       <td style={{ padding: '0.45rem 0.6rem', textAlign: 'right', fontWeight: 600, color: '#374151' }}>
                                         {pies > 0 && typeof d.medida!.costoPorPie === 'number' && d.medida!.costoPorPie > 0 ? formatPesos(pies * d.medida!.costoPorPie) : '—'}
                                       </td>
@@ -427,30 +426,30 @@ export default function NuevaCotizacionRapida({ onClose, onSuccess }: NuevaCotiz
                                 })}
                               </tbody>
                               <tfoot>
-                                <tr style={{ background: '#FDF6EE', borderTop: '2px solid #C4895A' }}>
-                                  <td colSpan={5} style={{ padding: '0.45rem 0.6rem', fontWeight: 700, fontSize: '0.85rem', color: '#6B3A2A' }}>Total pies</td>
-                                  <td style={{ padding: '0.45rem 0.6rem', textAlign: 'right', fontWeight: 800, fontSize: '0.9rem', color: '#6B3A2A' }}>{totalPies > 0 ? totalPies.toFixed(4) : '—'}</td>
-                                  <td style={{ padding: '0.45rem 0.6rem', textAlign: 'right', fontWeight: 800, fontSize: '0.9rem', color: '#374151' }}>{totalPies > 0 && typeof d.medida.costoPorPie === 'number' && d.medida.costoPorPie > 0 ? formatPesos(totalPies * d.medida.costoPorPie) : '—'}</td>
+                                <tr style={{ background: '#fff', borderTop: '1px solid #111827' }}>
+                                  <td colSpan={5} style={{ padding: '0.5rem 0.6rem', fontWeight: 600, fontSize: '0.78rem', color: '#111827', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Total pies</td>
+                                  <td style={{ padding: '0.5rem 0.6rem', textAlign: 'right', fontWeight: 700, fontSize: '0.88rem', color: '#111827' }}>{totalPies > 0 ? totalPies.toFixed(4) : '—'}</td>
+                                  <td style={{ padding: '0.5rem 0.6rem', textAlign: 'right', fontWeight: 700, fontSize: '0.88rem', color: '#111827' }}>{totalPies > 0 && typeof d.medida.costoPorPie === 'number' && d.medida.costoPorPie > 0 ? formatPesos(totalPies * d.medida.costoPorPie) : '—'}</td>
                                 </tr>
                               </tfoot>
                             </table>
                           </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 pt-3 border-t border-gray-200">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-3.5 pt-3.5" style={{ borderTop: '1px solid #ECECEC' }}>
                             <div>
-                              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#4B5563', display: 'block', marginBottom: '0.25rem' }}>Costo por pie</label>
+                              <label style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em', color: '#9CA3AF', display: 'block', marginBottom: '0.3rem' }}>Costo por pie</label>
                               <input type="number" min={0} step="0.01" placeholder="$ por pie" value={d.medida.costoPorPie === '' ? '' : d.medida.costoPorPie}
-                                onChange={e => updateMedidaGlobal(idx, 'costoPorPie', e.target.value === '' ? '' : parseFloat(e.target.value))} className="input py-2" style={{ borderRadius: '0.25rem' }} />
-                              {costoTotal > 0 && <p style={{ fontSize: '0.8rem', color: '#6B7280', marginTop: '0.25rem' }}>Costo unitario madera: <strong>{formatPesos(costoTotal)}</strong></p>}
+                                onChange={e => updateMedidaGlobal(idx, 'costoPorPie', e.target.value === '' ? '' : parseFloat(e.target.value))} className="input py-2" style={{ borderRadius: 0 }} />
+                              {costoTotal > 0 && <p style={{ fontSize: '0.78rem', color: '#9CA3AF', marginTop: '0.3rem' }}>Costo unitario madera: <strong style={{ color: '#374151' }}>{formatPesos(costoTotal)}</strong></p>}
                             </div>
                             <div>
-                              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#4B5563', display: 'block', marginBottom: '0.25rem' }}>Cantidad de unidades</label>
+                              <label style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em', color: '#9CA3AF', display: 'block', marginBottom: '0.3rem' }}>Cantidad de unidades</label>
                               <input type="number" min={1} step={1} placeholder="Cantidad" value={d.medida.cantidadUnidades === '' ? '' : d.medida.cantidadUnidades}
-                                onChange={e => updateMedidaGlobal(idx, 'cantidadUnidades', e.target.value === '' ? '' : parseInt(e.target.value))} className="input py-2" style={{ borderRadius: '0.25rem' }} />
+                                onChange={e => updateMedidaGlobal(idx, 'cantidadUnidades', e.target.value === '' ? '' : parseInt(e.target.value))} className="input py-2" style={{ borderRadius: 0 }} />
                             </div>
                             <div>
-                              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#4B5563', display: 'block', marginBottom: '0.25rem' }}>Ganancia por palet</label>
+                              <label style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em', color: '#9CA3AF', display: 'block', marginBottom: '0.3rem' }}>Ganancia por palet</label>
                               <input type="number" min={0} step="0.01" placeholder="$ ganancia" value={d.medida.gananciaPorPalet === '' ? '' : d.medida.gananciaPorPalet}
-                                onChange={e => updateMedidaGlobal(idx, 'gananciaPorPalet', e.target.value === '' ? '' : parseFloat(e.target.value))} className="input py-2" style={{ borderRadius: '0.25rem' }} />
+                                onChange={e => updateMedidaGlobal(idx, 'gananciaPorPalet', e.target.value === '' ? '' : parseFloat(e.target.value))} className="input py-2" style={{ borderRadius: 0 }} />
                             </div>
                             {(() => {
                               const ganancia = typeof d.medida.gananciaPorPalet === 'number' ? d.medida.gananciaPorPalet : 0;
@@ -458,9 +457,9 @@ export default function NuevaCotizacionRapida({ onClose, onSuccess }: NuevaCotiz
                               const cantidad = typeof d.medida.cantidadUnidades === 'number' && d.medida.cantidadUnidades > 0 ? d.medida.cantidadUnidades : 0;
                               if (precioUnit <= 0 || cantidad <= 0) return null;
                               return (
-                                <div style={{ background: '#FDF6EE', border: '1px solid #C4895A', borderRadius: '0.25rem', padding: '0.625rem 0.875rem' }}>
-                                  <p style={{ fontSize: '0.8rem', color: '#6B7280', marginBottom: '0.3rem' }}>Precio por unidad: <strong style={{ color: '#6B3A2A' }}>{formatPesos(precioUnit)}</strong></p>
-                                  <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#6B3A2A' }}>Total ({cantidad} u.): {formatPesos(precioUnit * cantidad)}</p>
+                                <div style={{ background: '#FAFAFA', border: '1px solid #E5E7EB', borderLeft: '2px solid #7c4b2c', borderRadius: 0, padding: '0.7rem 0.9rem' }}>
+                                  <p style={{ fontSize: '0.8rem', color: '#6B7280', marginBottom: '0.3rem' }}>Precio por unidad: <strong style={{ color: '#111827' }}>{formatPesos(precioUnit)}</strong></p>
+                                  <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#111827' }}>Total ({cantidad} u.): {formatPesos(precioUnit * cantidad)}</p>
                                 </div>
                               );
                             })()}
@@ -474,28 +473,28 @@ export default function NuevaCotizacionRapida({ onClose, onSuccess }: NuevaCotiz
                       <>
                         <div className="grid grid-cols-12 gap-2 items-center">
                           <div className="col-span-5">
-                            <input type="number" min={1} value={d.cantidad} onChange={e => updateDetalle(idx, 'cantidad', parseInt(e.target.value))} className="input text-xs py-2" style={{ borderRadius: '0.25rem' }} placeholder="Cantidad" />
+                            <input type="number" min={1} value={d.cantidad} onChange={e => updateDetalle(idx, 'cantidad', parseInt(e.target.value))} className="input text-xs py-2" style={{ borderRadius: 0 }} placeholder="Cantidad" />
                           </div>
                           <div className="col-span-7 text-right">
                             {d.precioCalculado && !d.usarPrecioEspecial && (
-                              <p className="text-xs font-semibold text-gray-900">
-                                {d.cantidad > 0 ? <>{d.cantidad} × {formatPesos(d.precioCalculado.precioUnitario)} = <span style={{ color: '#6B3A2A' }}>{formatPesos(d.cantidad * d.precioCalculado.precioUnitario)}</span></> : formatPesos(d.precioCalculado.precioUnitario)}
+                              <p className="text-xs font-semibold" style={{ color: '#111827' }}>
+                                {d.cantidad > 0 ? <>{d.cantidad} × {formatPesos(d.precioCalculado.precioUnitario)} = <span style={{ color: '#111827' }}>{formatPesos(d.cantidad * d.precioCalculado.precioUnitario)}</span></> : formatPesos(d.precioCalculado.precioUnitario)}
                               </p>
                             )}
                           </div>
                         </div>
-                        <div className="mt-2.5 pt-2.5 border-t border-gray-200">
-                          <p className="text-xs font-medium text-gray-500 mb-1.5">Precio por unidad</p>
+                        <div className="mt-2.5 pt-2.5" style={{ borderTop: '1px solid #ECECEC' }}>
+                          <p className="text-xs font-medium mb-1.5" style={{ color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.03em', fontSize: '0.7rem', fontWeight: 600 }}>Precio por unidad</p>
                           <div className="flex items-center gap-2">
-                            <div className="flex" style={{ borderRadius: '0.25rem', overflow: 'hidden', border: '1px solid #E5E7EB' }}>
-                              <button type="button" onClick={() => setDetalles(prev => prev.map((x, i) => i === idx ? { ...x, usarPrecioEspecial: false } : x))} style={{ fontSize: '0.7rem', fontWeight: 600, padding: '0.25rem 0.625rem', cursor: 'pointer', border: 'none', background: !d.usarPrecioEspecial ? '#7c4b2c' : '#fff', color: !d.usarPrecioEspecial ? '#fff' : '#6B7280' }}>Guardado</button>
-                              <button type="button" onClick={() => setDetalles(prev => prev.map((x, i) => i === idx ? { ...x, usarPrecioEspecial: true } : x))} style={{ fontSize: '0.7rem', fontWeight: 600, padding: '0.25rem 0.625rem', cursor: 'pointer', border: 'none', borderLeft: '1px solid #E5E7EB', background: d.usarPrecioEspecial ? '#7c4b2c' : '#fff', color: d.usarPrecioEspecial ? '#fff' : '#6B7280' }}>Precio especial</button>
+                            <div className="flex" style={{ borderRadius: 0, overflow: 'hidden', border: '1px solid #E5E7EB' }}>
+                              <button type="button" onClick={() => setDetalles(prev => prev.map((x, i) => i === idx ? { ...x, usarPrecioEspecial: false } : x))} style={{ fontSize: '0.7rem', fontWeight: 600, padding: '0.3rem 0.7rem', cursor: 'pointer', border: 'none', background: !d.usarPrecioEspecial ? '#7c4b2c' : '#fff', color: !d.usarPrecioEspecial ? '#fff' : '#6B7280' }}>Guardado</button>
+                              <button type="button" onClick={() => setDetalles(prev => prev.map((x, i) => i === idx ? { ...x, usarPrecioEspecial: true } : x))} style={{ fontSize: '0.7rem', fontWeight: 600, padding: '0.3rem 0.7rem', cursor: 'pointer', border: 'none', borderLeft: '1px solid #E5E7EB', background: d.usarPrecioEspecial ? '#7c4b2c' : '#fff', color: d.usarPrecioEspecial ? '#fff' : '#6B7280' }}>Precio especial</button>
                             </div>
                             {d.usarPrecioEspecial && (
-                              <input type="number" min={0} placeholder="$ por unidad" value={d.precioEspecial || ''} onChange={e => setDetalles(prev => prev.map((x, i) => i === idx ? { ...x, precioEspecial: parseFloat(e.target.value) || 0 } : x))} className="input text-xs py-1" style={{ borderRadius: '0.25rem', maxWidth: '140px' }} />
+                              <input type="number" min={0} placeholder="$ por unidad" value={d.precioEspecial || ''} onChange={e => setDetalles(prev => prev.map((x, i) => i === idx ? { ...x, precioEspecial: parseFloat(e.target.value) || 0 } : x))} className="input text-xs py-1" style={{ borderRadius: 0, maxWidth: '140px' }} />
                             )}
-                            {!d.usarPrecioEspecial && d.precioCalculado && <span className="text-xs text-gray-500">{formatPesos(d.precioCalculado.precioUnitario)} (precio guardado)</span>}
-                            {!d.usarPrecioEspecial && !d.precioCalculado && <span className="text-xs text-gray-400 italic">Sin precio configurado</span>}
+                            {!d.usarPrecioEspecial && d.precioCalculado && <span className="text-xs" style={{ color: '#9CA3AF' }}>{formatPesos(d.precioCalculado.precioUnitario)} (precio guardado)</span>}
+                            {!d.usarPrecioEspecial && !d.precioCalculado && <span className="text-xs italic" style={{ color: '#D1D5DB' }}>Sin precio configurado</span>}
                           </div>
                         </div>
                       </>
@@ -506,31 +505,31 @@ export default function NuevaCotizacionRapida({ onClose, onSuccess }: NuevaCotiz
             </div>
 
             {/* Flete / SENASA */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-4 bg-gray-50 border border-gray-100" style={{ borderRadius: '0.25rem' }}>
-                <label className="flex items-center gap-2 cursor-pointer mb-3">
-                  <input type="checkbox" checked={form.incluyeFlete} onChange={e => setForm({ ...form, incluyeFlete: e.target.checked })} className="w-4 h-4 rounded" />
-                  <span className="text-sm font-medium text-gray-700">Incluye flete</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div className="p-4" style={{ borderRadius: 0, border: '1px solid #ECECEC', background: '#fff' }}>
+                <label className="flex items-center gap-2.5 cursor-pointer mb-3">
+                  <input type="checkbox" checked={form.incluyeFlete} onChange={e => setForm({ ...form, incluyeFlete: e.target.checked })} style={{ width: 16, height: 16, borderRadius: 0, accentColor: '#7c4b2c' }} />
+                  <span className="text-sm font-medium" style={{ color: '#374151' }}>Incluye flete</span>
                 </label>
                 {form.incluyeFlete && (
                   <div className="space-y-2">
-                    <input type="number" placeholder="Costo del flete ($)" value={form.costoFlete || ''} onChange={e => setForm({ ...form, costoFlete: parseInt(e.target.value) || 0 })} className="input text-sm" style={{ borderRadius: '0.25rem' }} />
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={form.fleteIncluido} onChange={e => setForm({ ...form, fleteIncluido: e.target.checked })} className="w-4 h-4 rounded" />
-                      <span className="text-xs text-gray-600">Incluido en el precio</span>
+                    <input type="number" placeholder="Costo del flete ($)" value={form.costoFlete || ''} onChange={e => setForm({ ...form, costoFlete: parseInt(e.target.value) || 0 })} className="input text-sm" style={{ borderRadius: 0 }} />
+                    <label className="flex items-center gap-2.5 cursor-pointer">
+                      <input type="checkbox" checked={form.fleteIncluido} onChange={e => setForm({ ...form, fleteIncluido: e.target.checked })} style={{ width: 16, height: 16, borderRadius: 0, accentColor: '#7c4b2c' }} />
+                      <span className="text-xs" style={{ color: '#6B7280' }}>Incluido en el precio</span>
                     </label>
                   </div>
                 )}
               </div>
-              <div className="p-4 bg-gray-50 border border-gray-100" style={{ borderRadius: '0.25rem' }}>
-                <label className="flex items-center gap-2 cursor-pointer mb-3">
-                  <input type="checkbox" checked={form.requiereSenasa} onChange={e => setForm({ ...form, requiereSenasa: e.target.checked })} className="w-4 h-4 rounded" />
-                  <span className="text-sm font-medium text-gray-700">Requiere SENASA</span>
+              <div className="p-4" style={{ borderRadius: 0, border: '1px solid #ECECEC', background: '#fff' }}>
+                <label className="flex items-center gap-2.5 cursor-pointer mb-3">
+                  <input type="checkbox" checked={form.requiereSenasa} onChange={e => setForm({ ...form, requiereSenasa: e.target.checked })} style={{ width: 16, height: 16, borderRadius: 0, accentColor: '#7c4b2c' }} />
+                  <span className="text-sm font-medium" style={{ color: '#374151' }}>Requiere SENASA</span>
                 </label>
                 {form.requiereSenasa && (
                   <div>
-                    <input type="number" placeholder="Costo SENASA por unidad ($)" value={form.costoSenasa || ''} onChange={e => setForm({ ...form, costoSenasa: parseInt(e.target.value) || 0 })} className="input text-sm" style={{ borderRadius: '0.25rem' }} />
-                    {form.costoSenasa > 0 && totalUnidades > 0 && <p style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '0.375rem' }}>{formatPesos(form.costoSenasa)} × {totalUnidades} u. = <strong style={{ color: '#6B3A2A' }}>{formatPesos(costoSenasaTotal)}</strong></p>}
+                    <input type="number" placeholder="Costo SENASA por unidad ($)" value={form.costoSenasa || ''} onChange={e => setForm({ ...form, costoSenasa: parseInt(e.target.value) || 0 })} className="input text-sm" style={{ borderRadius: 0 }} />
+                    {form.costoSenasa > 0 && totalUnidades > 0 && <p style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '0.375rem' }}>{formatPesos(form.costoSenasa)} × {totalUnidades} u. = <strong style={{ color: '#111827' }}>{formatPesos(costoSenasaTotal)}</strong></p>}
                   </div>
                 )}
               </div>
@@ -538,10 +537,10 @@ export default function NuevaCotizacionRapida({ onClose, onSuccess }: NuevaCotiz
 
             {/* Canal de envío */}
             <div>
-              <label className="label">Canal de envío</label>
+              <label className="label" style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9CA3AF' }}>Canal de envío</label>
               <div className="flex gap-2">
                 {(['whatsapp', 'email'] as const).map(canal => (
-                  <button key={canal} type="button" onClick={() => setForm({ ...form, canalEnvio: canal })} style={{ flex: 1, padding: '0.625rem', fontSize: '0.875rem', fontWeight: 500, borderRadius: '0.25rem', border: '1px solid', cursor: 'pointer', background: form.canalEnvio === canal ? '#7c4b2c' : '#fff', color: form.canalEnvio === canal ? '#fff' : '#4B5563', borderColor: form.canalEnvio === canal ? '#6B3A2A' : '#E5E7EB' }}>
+                  <button key={canal} type="button" onClick={() => setForm({ ...form, canalEnvio: canal })} style={{ flex: 1, padding: '0.625rem', fontSize: '0.875rem', fontWeight: 500, borderRadius: 0, border: '1px solid', cursor: 'pointer', background: form.canalEnvio === canal ? '#7c4b2c' : '#fff', color: form.canalEnvio === canal ? '#fff' : '#4B5563', borderColor: form.canalEnvio === canal ? '#7c4b2c' : '#E5E7EB' }}>
                     {canal === 'whatsapp' ? 'WhatsApp' : 'Email'}
                   </button>
                 ))}
@@ -550,35 +549,35 @@ export default function NuevaCotizacionRapida({ onClose, onSuccess }: NuevaCotiz
 
             {/* Observaciones */}
             <div>
-              <label className="label">Observaciones</label>
-              <textarea value={form.observaciones} onChange={e => setForm({ ...form, observaciones: e.target.value })} className="input resize-none" style={{ borderRadius: '0.25rem' }} rows={2} placeholder="Notas internas..." />
+              <label className="label" style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9CA3AF' }}>Observaciones</label>
+              <textarea value={form.observaciones} onChange={e => setForm({ ...form, observaciones: e.target.value })} className="input resize-none" style={{ borderRadius: 0 }} rows={2} placeholder="Notas internas..." />
             </div>
 
             {/* Total */}
             {totalSinIva > 0 && (
-              <div className="p-4 border border-[#C4895A]/30 bg-[#6B3A2A]/5" style={{ borderRadius: '0.25rem' }}>
-                <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-[#C4895A]/20">
-                  <span className="text-sm font-medium text-gray-700">¿Incluir IVA? (21%)</span>
-                  <div className="flex" style={{ borderRadius: '0.25rem', overflow: 'hidden', border: '1px solid #E5E7EB' }}>
+              <div className="p-4" style={{ borderRadius: 0, border: '1px solid #ECECEC', borderLeft: '2px solid #7c4b2c', background: '#FAFAFA' }}>
+                <div className="flex items-center justify-between mb-3 pb-2.5" style={{ borderBottom: '1px solid #E5E7EB' }}>
+                  <span className="text-sm font-medium" style={{ color: '#374151' }}>¿Incluir IVA? (21%)</span>
+                  <div className="flex" style={{ borderRadius: 0, overflow: 'hidden', border: '1px solid #E5E7EB' }}>
                     <button type="button" onClick={() => setForm(f => ({ ...f, incluyeIva: true }))} style={{ fontSize: '0.75rem', fontWeight: 600, padding: '0.3rem 0.875rem', cursor: 'pointer', border: 'none', background: form.incluyeIva ? '#7c4b2c' : '#fff', color: form.incluyeIva ? '#fff' : '#6B7280' }}>Sí</button>
                     <button type="button" onClick={() => setForm(f => ({ ...f, incluyeIva: false }))} style={{ fontSize: '0.75rem', fontWeight: 600, padding: '0.3rem 0.875rem', cursor: 'pointer', border: 'none', borderLeft: '1px solid #E5E7EB', background: !form.incluyeIva ? '#7c4b2c' : '#fff', color: !form.incluyeIva ? '#fff' : '#6B7280' }}>No</button>
                   </div>
                 </div>
-                <div className="flex justify-between text-sm text-gray-600 mb-1"><span>Subtotal neto</span><span>{formatPesos(totalSinIva)}</span></div>
-                {form.incluyeIva && <div className="flex justify-between text-sm text-gray-500 mb-1"><span>IVA (21%)</span><span>{formatPesos(totalConIva - totalSinIva)}</span></div>}
-                <div className="flex justify-between font-bold text-gray-900 pt-1 border-t border-[#C4895A]/20 mt-1">
+                <div className="flex justify-between text-sm mb-1" style={{ color: '#6B7280' }}><span>Subtotal neto</span><span>{formatPesos(totalSinIva)}</span></div>
+                {form.incluyeIva && <div className="flex justify-between text-sm mb-1" style={{ color: '#9CA3AF' }}><span>IVA (21%)</span><span>{formatPesos(totalConIva - totalSinIva)}</span></div>}
+                <div className="flex justify-between font-bold pt-2 mt-1" style={{ color: '#111827', borderTop: '1px solid #E5E7EB' }}>
                   <span>Total {form.incluyeIva ? 'con IVA' : 'sin IVA'}</span>
-                  <span className="text-[#6B3A2A] text-lg">{formatPesos(totalFinal)}</span>
+                  <span style={{ color: '#7c4b2c', fontSize: '1.15rem' }}>{formatPesos(totalFinal)}</span>
                 </div>
               </div>
             )}
 
-            {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 px-3 py-2.5 rounded-xl">{error}</p>}
+            {error && <p className="text-sm px-3.5 py-2.5" style={{ color: '#B91C1C', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 0 }}>{error}</p>}
           </div>
 
-          <div className="modal-footer">
-            <button type="button" onClick={onClose} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#fff', color: '#374151', border: '1px solid #E5E7EB', fontWeight: 500, fontSize: '0.875rem', padding: '0.5rem 1rem', borderRadius: '0.25rem', cursor: 'pointer' }}>Cancelar</button>
-            <button type="submit" disabled={loading} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#7c4b2c', color: 'white', fontWeight: 500, fontSize: '0.875rem', padding: '0.5rem 1rem', borderRadius: '0.25rem', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1 }}>
+          <div className="modal-footer" style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid #EEEEEE' }}>
+            <button type="button" onClick={onClose} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#fff', color: '#374151', border: '1px solid #E5E7EB', fontWeight: 500, fontSize: '0.875rem', padding: '0.55rem 1.1rem', borderRadius: 0, cursor: 'pointer', transition: 'all 0.15s' }}>Cancelar</button>
+            <button type="submit" disabled={loading} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#7c4b2c', color: 'white', fontWeight: 500, fontSize: '0.875rem', padding: '0.55rem 1.1rem', borderRadius: 0, border: '1px solid #7c4b2c', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, transition: 'all 0.15s' }}>
               {loading ? 'Creando...' : 'Crear cotización rápida'}
             </button>
           </div>
