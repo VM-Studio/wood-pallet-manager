@@ -6,11 +6,16 @@ import {
   rechazarUsuario,
   actualizarAccesoUsuario,
   cambiarEstadoActivo,
+  listarUsuariosParaVista,
 } from '../controllers/usuarios.controller';
 
 const router = Router();
 
-// Todo este módulo es exclusivo del perfil de Carlos
+// Endpoint abierto a cualquier usuario autenticado (no exclusivo de Carlos):
+// alimenta el selector de vista del dashboard con usuarios habilitados.
+router.get('/para-vista', authenticate, listarUsuariosParaVista);
+
+// El resto de este módulo es exclusivo del perfil de Carlos
 router.use(authenticate, requireRol(['propietario_carlos']));
 
 router.get('/', listarUsuarios);

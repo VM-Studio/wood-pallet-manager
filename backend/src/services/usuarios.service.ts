@@ -93,3 +93,35 @@ export const cambiarEstadoActivoService = async (id: number, activo: boolean) =>
     select: SELECT_BASE,
   });
 };
+
+// Usuarios que pueden aparecer en el selector "Mis datos / Otro / Total" del
+// dashboard: aprobados, activos, excluyendo al usuario actual, y filtrados
+// por si ESE usuario (no el que consulta) tiene habilitado el módulo dado.
+// Carlos nunca queda restringido (misma regla que esUsuarioRestringido en el
+// frontend), así que siempre aparece disponible para los demás.
+export const listarUsuariosParaVistaService = async (usuarioActualId: number, modulo: string) => {
+  const usuarios = await prisma.usuario.findMany({
+    where: {
+      id: { not: usuarioActualId },
+      estadoCuenta: 'aprobado',
+      activo: true,
+    },
+    select: {
+      id: true,
+      nombre: true,
+      apellido: true,
+      rol: true,
+      tieneModulosLimitados: true,
+      modulosPermitidos: true,
+    },
+    orderBy: { nombre: 'asc' },
+  });
+
+  return usuarios
+    .filter(u => {
+      if (u.rol === 'propietario_carlos') return true;
+      if (!u.tieneModulosLimitados) return true;
+      return (u.modulosPermitidos ?? []).includes(modulo);
+    })
+    .map(u => ({ id: u.id, nombre: u.nombre, apellido: u.apellido }));
+};

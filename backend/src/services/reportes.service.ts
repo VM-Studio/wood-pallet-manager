@@ -1,5 +1,14 @@
 import prisma from '../utils/prisma';
 
+// Parsea el formato `usuario_<id>` que usa el frontend para el selector
+// dinámico "Otro" del dashboard (reemplaza el viejo hardcodeo carlos/juancruz
+// por cualquier usuario aprobado que tenga el módulo habilitado).
+export const parseOtroUsuarioId = (vista?: string): number | undefined => {
+  if (!vista) return undefined;
+  const match = /^usuario_(\d+)$/.exec(vista);
+  return match ? Number(match[1]) : undefined;
+};
+
 export const getVentasUltimos12MesesService = async (usuarioId?: number) => {
   const meses: { mes: string; ventas: number; pallets: number; facturacion: number }[] = [];
 
@@ -178,6 +187,27 @@ export const getDashboardService = async (usuarioIdActual?: number, vista?: stri
     }),
   ]);
 
+  // ─── Bloque genérico "otro" — usuario arbitrario elegido en el selector
+  // dinámico del dashboard (ya no hardcodeado a Carlos/Juan Cruz: puede ser
+  // cualquier usuario aprobado con el módulo habilitado) ───────────────────
+  const otroUsuarioId = parseOtroUsuarioId(vista);
+  const [
+    cotizacionesPendientesOtro,
+    pedidosActivosOtro,
+    cobrosPendientesOtro,
+  ] = otroUsuarioId ? await Promise.all([
+    prisma.cotizacion.count({
+      where: { estado: { in: ['enviada', 'en_seguimiento'] }, usuarioId: otroUsuarioId },
+    }),
+    prisma.venta.count({
+      where: { usuarioId: otroUsuarioId, estadoPedido: { in: ['confirmado', 'en_preparacion', 'listo_para_envio', 'en_transito'] } },
+    }),
+    prisma.factura.findMany({
+      where: { estadoCobro: { in: ['pendiente', 'cobrada_parcial'] }, venta: { usuarioId: otroUsuarioId } },
+      include: { pagos: true },
+    }),
+  ]) : [0, 0, []];
+
   const alertasStock = stockRaw.filter(
     (s) => s.cantidadDisponible <= (s.cantidadMinima ?? 0)
   ).length;
@@ -228,6 +258,14 @@ export const getDashboardService = async (usuarioIdActual?: number, vista?: stri
     f => f.fechaVencimiento && f.fechaVencimiento < hoy
   ).length;
 
+  const totalCobrosPendientesOtro = cobrosPendientesOtro.reduce((acc, f) => {
+    const cobrado = f.pagos.reduce((a, p) => a + Number(p.monto), 0);
+    return acc + (Number(f.totalConIva) - cobrado);
+  }, 0);
+  const facturasVencidasOtro = cobrosPendientesOtro.filter(
+    f => f.fechaVencimiento && f.fechaVencimiento < hoy
+  ).length;
+
   const ventasCarlos = ventasMesActual.filter(
     (v) => v.usuario.rol === 'propietario_carlos'
   );
@@ -242,6 +280,13 @@ export const getDashboardService = async (usuarioIdActual?: number, vista?: stri
   const ventasMesAnteriorPropio = usuarioIdPropio
     ? ventasMesAnterior.filter((v) => v.usuario.id === usuarioIdPropio)
     : [];
+  // "Otro" = usuario elegido dinámicamente en el selector del dashboard
+  const ventasOtro = otroUsuarioId
+    ? ventasMesActual.filter((v) => v.usuario.id === otroUsuarioId)
+    : [];
+  const ventasMesAnteriorOtro = otroUsuarioId
+    ? ventasMesAnterior.filter((v) => v.usuario.id === otroUsuarioId)
+    : [];
 
   const ventasUltimos12Meses = await getVentasUltimos12MesesService();
   const grafico12MesesCarlos = await getVentasUltimos12MesesService(idCarlos);
@@ -250,6 +295,9 @@ export const getDashboardService = async (usuarioIdActual?: number, vista?: stri
     usuarioIdPropio === idCarlos ? grafico12MesesCarlos
     : usuarioIdPropio === idJuanCruz ? grafico12MesesJuanCruz
     : await getVentasUltimos12MesesService(usuarioIdPropio);
+  const grafico12MesesOtro = otroUsuarioId
+    ? await getVentasUltimos12MesesService(otroUsuarioId)
+    : [];
 
   // Cotizaciones activas con cliente — filtradas según la vista elegida,
   // para que cada usuario vea únicamente lo que le corresponde.
@@ -257,6 +305,7 @@ export const getDashboardService = async (usuarioIdActual?: number, vista?: stri
     vista === 'mis_datos' ? (usuarioIdPropio ? { usuarioId: usuarioIdPropio } : { usuarioId: -1 })
     : vista === 'carlos'    ? (idCarlos ? { usuarioId: idCarlos } : { usuarioId: -1 })
     : vista === 'juancruz'  ? (idJuanCruz ? { usuarioId: idJuanCruz } : { usuarioId: -1 })
+    : otroUsuarioId         ? { usuarioId: otroUsuarioId }
     : {}; // 'todos' / sin vista → sin filtro (total empresa)
 
   const cotizacionesActivas = await prisma.cotizacion.findMany({
@@ -271,6 +320,54 @@ export const getDashboardService = async (usuarioIdActual?: number, vista?: stri
     },
     orderBy: { fechaCotizacion: 'desc' },
   });
+
+  // Pagos faltantes del mes anterior: facturas de ventas realizadas el mes
+  // pasado que aún no fueron cobradas en su totalidad. Se buscan siempre por
+  // fechaVenta (no fechaEmision) para que, aunque el dashboard "arranque en
+  // cero" al cambiar de mes, esta tarjeta siga mostrando la deuda pendiente
+  // real hasta que se registre el cobro completo.
+  const filtroUsuarioVenta =
+    vista === 'mis_datos' ? (usuarioIdPropio ? { usuarioId: usuarioIdPropio } : { usuarioId: -1 })
+    : vista === 'carlos'    ? (idCarlos ? { usuarioId: idCarlos } : { usuarioId: -1 })
+    : vista === 'juancruz'  ? (idJuanCruz ? { usuarioId: idJuanCruz } : { usuarioId: -1 })
+    : otroUsuarioId         ? { usuarioId: otroUsuarioId }
+    : {};
+
+  const facturasPendientesMesAnterior = await prisma.factura.findMany({
+    where: {
+      estadoCobro: { in: ['pendiente', 'cobrada_parcial', 'vencida'] },
+      venta: {
+        fechaVenta: { gte: inicioMesAnterior, lte: finMesAnterior },
+        ...filtroUsuarioVenta,
+      },
+    },
+    include: {
+      pagos: true,
+      cliente: { select: { razonSocial: true } },
+      venta: { select: { id: true, fechaVenta: true } },
+    },
+    orderBy: { fechaEmision: 'asc' },
+  });
+
+  const pagosFaltantesMesAnteriorDetalle = facturasPendientesMesAnterior.map(f => {
+    const cobrado = f.pagos.reduce((a, p) => a + Number(p.monto), 0);
+    const saldoPendiente = Number(f.totalConIva) - cobrado;
+    return {
+      facturaId: f.id,
+      ventaId: f.ventaId,
+      clienteNombre: f.cliente?.razonSocial ?? 'Cliente',
+      nroFactura: f.nroFactura,
+      fechaVenta: f.venta?.fechaVenta,
+      totalConIva: Number(f.totalConIva),
+      cobrado,
+      saldoPendiente,
+      estadoCobro: f.estadoCobro,
+    };
+  }).filter(f => f.saldoPendiente > 0);
+
+  const totalPagosFaltantesMesAnterior = pagosFaltantesMesAnteriorDetalle.reduce(
+    (acc, f) => acc + f.saldoPendiente, 0
+  );
 
   // Resumen ventas del mes por cliente (para detalle del dashboard)
   const ventasMesResumenMap = new Map<number, { razonSocial: string; pallets: number; facturacion: number }>();
@@ -400,6 +497,33 @@ export const getDashboardService = async (usuarioIdActual?: number, vista?: stri
         cotizacionesPendientes: cotizacionesPendientesPropio,
         pedidosActivos: pedidosActivosPropio,
       },
+      // Usuario elegido dinámicamente en el selector "Otro" del dashboard —
+      // ya no hardcodeado a Carlos/Juan Cruz, cualquier usuario aprobado con
+      // el módulo habilitado puede ser consultado acá.
+      otro: {
+        ventas: ventasOtro.length,
+        pallets: ventasOtro.reduce(
+          (acc, v) => acc + v.detalles.reduce((a, d) => a + d.cantidadPedida, 0),
+          0
+        ),
+        facturacion: ventasOtro.reduce(
+          (acc, v) => acc + Number(v.totalConIva || 0),
+          0
+        ),
+        palletsMesAnterior: ventasMesAnteriorOtro.reduce(
+          (acc, v) => acc + v.detalles.reduce((a, d) => a + d.cantidadPedida, 0),
+          0
+        ),
+        facturacionMesAnterior: ventasMesAnteriorOtro.reduce(
+          (acc, v) => acc + Number(v.totalConIva || 0),
+          0
+        ),
+        grafico12Meses: grafico12MesesOtro,
+        cobrosPendientes: totalCobrosPendientesOtro,
+        facturasVencidas: facturasVencidasOtro,
+        cotizacionesPendientes: cotizacionesPendientesOtro,
+        pedidosActivos: pedidosActivosOtro,
+      },
     },
     graficos: { ventasUltimos12Meses },
     ventasMesDetalle,
@@ -410,26 +534,35 @@ export const getDashboardService = async (usuarioIdActual?: number, vista?: stri
       fechaCotizacion: c.fechaCotizacion,
       razonSocial: c.cliente?.razonSocial ?? c.nombreProspecto ?? 'Prospecto',
     })),
+    pagosFaltantesMesAnterior: {
+      cantidad: pagosFaltantesMesAnteriorDetalle.length,
+      totalPendiente: totalPagosFaltantesMesAnterior,
+      detalle: pagosFaltantesMesAnteriorDetalle,
+    },
   };
 };
 
-export const getGananciasDetalleService = async (usuarioId?: number) => {
+export const getGananciasDetalleService = async (
+  desde?: Date,
+  hasta?: Date,
+  usuarioId?: number
+) => {
   const hoy = new Date();
-  const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-  const finMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0, 23, 59, 59);
+  const inicioPeriodo = desde ?? new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+  const finPeriodo = hasta ?? new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0, 23, 59, 59);
 
   // Filtro por usuario en ventas y compras
-  const ventaWhere: any = { fechaVenta: { gte: inicioMes, lte: finMes } };
+  const ventaWhere: any = { fechaVenta: { gte: inicioPeriodo, lte: finPeriodo } };
   if (usuarioId !== undefined) ventaWhere.usuarioId = usuarioId;
 
   const compraWhere: any = {
     estado: 'pagada',
-    fechaCompra: { gte: inicioMes, lte: finMes },
+    fechaCompra: { gte: inicioPeriodo, lte: finPeriodo },
   };
   if (usuarioId !== undefined) compraWhere.usuarioId = usuarioId;
 
   // Para PagoCobro filtramos por la venta asociada a la factura
-  const cobradoWhere: any = { fechaPago: { gte: inicioMes, lte: finMes } };
+  const cobradoWhere: any = { fechaPago: { gte: inicioPeriodo, lte: finPeriodo } };
   if (usuarioId !== undefined) {
     cobradoWhere.factura = { venta: { usuarioId } };
   }
@@ -617,4 +750,113 @@ export const getReporteCobranzasService = async (desde: Date, hasta: Date) => {
     porEstado,
     facturas,
   };
+};
+
+// ─── Reporte PDF de ventas por rango de fechas ─────────────────────────────
+// Todas las agregaciones (sumas, conteos, agrupaciones) se resuelven en SQL
+// vía groupBy/aggregate — nunca se traen las filas completas a Node para
+// sumar con reduce/map. El PDF se genera on-demand en el controller, no se
+// persiste nada acá.
+const TOP_CLIENTES_PDF = 500;
+
+export const getReportePdfDataService = async (desde: Date, hasta: Date) => {
+  // Resumen general del período: cantidad de operaciones y facturación total,
+  // resuelto con aggregate (SUM/COUNT en SQL, no en JS).
+  const agregadoGeneral = await prisma.venta.aggregate({
+    where: { fechaVenta: { gte: desde, lte: hasta } },
+    _sum: { totalConIva: true },
+    _count: { _all: true },
+  });
+
+  const totalFacturado = Number(agregadoGeneral._sum.totalConIva ?? 0);
+  const cantidadOperaciones = agregadoGeneral._count._all;
+  const ticketPromedio = cantidadOperaciones > 0 ? totalFacturado / cantidadOperaciones : 0;
+
+  // Detalle por cliente vía groupBy (SUM + COUNT agrupado por clienteId en
+  // SQL), ordenado por monto descendente. Si supera TOP_CLIENTES_PDF filas,
+  // se recorta a las primeras N + una fila "Otros" con el resto agregado.
+  const grupoClientes = await prisma.venta.groupBy({
+    by: ['clienteId'],
+    where: { fechaVenta: { gte: desde, lte: hasta } },
+    _sum: { totalConIva: true },
+    _count: { _all: true },
+    orderBy: { _sum: { totalConIva: 'desc' } },
+  });
+
+  const idsClientes = grupoClientes.map(g => g.clienteId);
+  const clientesInfo = idsClientes.length
+    ? await prisma.cliente.findMany({
+        where: { id: { in: idsClientes } },
+        select: { id: true, razonSocial: true },
+      })
+    : [];
+  const nombreClientePorId = new Map(clientesInfo.map(c => [c.id, c.razonSocial]));
+
+  const detalleCompleto = grupoClientes.map(g => ({
+    clienteId: g.clienteId,
+    razonSocial: nombreClientePorId.get(g.clienteId) ?? `Cliente #${g.clienteId}`,
+    cantidadCompras: g._count._all,
+    montoTotal: Number(g._sum.totalConIva ?? 0),
+  }));
+
+  let detallePorCliente = detalleCompleto;
+  let filaOtros: { cantidadCompras: number; montoTotal: number } | null = null;
+  if (detalleCompleto.length > TOP_CLIENTES_PDF) {
+    const top = detalleCompleto.slice(0, TOP_CLIENTES_PDF);
+    const resto = detalleCompleto.slice(TOP_CLIENTES_PDF);
+    filaOtros = {
+      cantidadCompras: resto.reduce((acc, c) => acc + c.cantidadCompras, 0),
+      montoTotal: resto.reduce((acc, c) => acc + c.montoTotal, 0),
+    };
+    detallePorCliente = top;
+  }
+
+  // Serie mensual del período (para el gráfico de evolución) resuelta en SQL
+  // con date_trunc + SUM/COUNT agrupado por mes — no se itera en JS.
+  const serieMensualRaw = await prisma.$queryRaw<
+    { mes: Date; facturacion: string | null; operaciones: bigint }[]
+  >`
+    SELECT date_trunc('month', "fechaVenta") AS mes,
+           SUM("totalConIva")::text AS facturacion,
+           COUNT(*)::bigint AS operaciones
+    FROM ventas
+    WHERE "fechaVenta" >= ${desde} AND "fechaVenta" <= ${hasta}
+    GROUP BY date_trunc('month', "fechaVenta")
+    ORDER BY mes ASC
+  `;
+
+  const serieMensual = serieMensualRaw.map(r => ({
+    mes: r.mes,
+    facturacion: Number(r.facturacion ?? 0),
+    operaciones: Number(r.operaciones),
+  }));
+
+  return {
+    desde,
+    hasta,
+    resumen: {
+      totalFacturado,
+      cantidadOperaciones,
+      ticketPromedio,
+    },
+    detallePorCliente,
+    filaOtros,
+    totalClientesDistintos: detalleCompleto.length,
+    serieMensual,
+  };
+};
+
+// Lista de meses (YYYY-MM) que tienen al menos una venta registrada, del más
+// reciente al más antiguo — alimenta el selector de "mes" del frontend para
+// que solo se puedan elegir períodos con datos reales.
+export const getMesesConDatosService = async () => {
+  const filas = await prisma.$queryRaw<{ mes: Date }[]>`
+    SELECT DISTINCT date_trunc('month', "fechaVenta") AS mes
+    FROM ventas
+    ORDER BY mes DESC
+  `;
+  return filas.map(f => {
+    const d = new Date(f.mes);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  });
 };

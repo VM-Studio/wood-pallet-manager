@@ -466,6 +466,8 @@ model Venta {
   devoluciones         Devolucion[]
   remito               Remito?
 
+  @@index([fechaVenta])
+  @@index([clienteId, fechaVenta])
   @@map("ventas")
 }
 

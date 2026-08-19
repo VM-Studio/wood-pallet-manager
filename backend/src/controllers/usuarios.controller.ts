@@ -7,11 +7,25 @@ import {
   rechazarUsuarioService,
   actualizarAccesoUsuarioService,
   cambiarEstadoActivoService,
+  listarUsuariosParaVistaService,
 } from '../services/usuarios.service';
 
 export const listarUsuarios = async (_req: AuthRequest, res: Response) => {
   try {
     const usuarios = await listarUsuariosService();
+    res.json(usuarios);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+// Endpoint accesible para cualquier usuario autenticado (no solo Carlos):
+// alimenta el selector "Mis datos / Otro / Total" del dashboard con la lista
+// de usuarios aprobados+activos que tienen habilitado el módulo indicado.
+export const listarUsuariosParaVista = async (req: AuthRequest, res: Response) => {
+  try {
+    const modulo = typeof req.query.modulo === 'string' ? req.query.modulo : 'dashboard';
+    const usuarios = await listarUsuariosParaVistaService(req.user!.userId, modulo);
     res.json(usuarios);
   } catch (error: any) {
     res.status(400).json({ error: error.message });

@@ -337,10 +337,20 @@ export const enviarRemitoParaFirmar = async (params: {
         ${params.fechaEntrega ? `<tr><td style="padding:7px 0;color:#A89A8A;width:160px;">Fecha estimada de entrega</td><td style="padding:7px 0;color:#374151;font-weight:500;">${params.fechaEntrega}</td></tr>` : ''}
       </table>
       ${firmaImg}
-      <div style="text-align:center;margin:28px 0 8px;">
-        <a href="${params.linkFirma}" style="display:inline-block;background:#6B3A2A;color:#FFFFFF;text-decoration:none;padding:13px 28px;border-radius:6px;font-size:14px;font-weight:600;letter-spacing:0.01em;">✍️ Firmar remito</a>
-      </div>
-      <p style="text-align:center;font-size:11px;color:#A89A8A;margin:8px 0 0;">O accedé al enlace: <a href="${params.linkFirma}" style="color:#6B3A2A;word-break:break-all;">${params.linkFirma}</a></p>
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:28px 0 8px;">
+        <tr>
+          <td align="center">
+            <table role="presentation" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="background:#7c4b2c;border-radius:999px;">
+                  <a href="${params.linkFirma}" style="display:inline-block;color:#FFFFFF;text-decoration:none;padding:14px 34px;font-size:14px;font-weight:700;letter-spacing:0.02em;">✍️ Firmar remito digitalmente</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+      <p style="text-align:center;font-size:11px;color:#A89A8A;margin:12px 0 0;">O copiá y pegá este enlace en tu navegador:<br/><a href="${params.linkFirma}" style="color:#7c4b2c;word-break:break-all;">${params.linkFirma}</a></p>
       <p style="color:#A89A8A;font-size:13px;margin:28px 0 0;line-height:1.6;">Saludos cordiales,<br/><strong style="color:#6B3A2A;">Wood Pallet</strong></p>`
     ),
   });
