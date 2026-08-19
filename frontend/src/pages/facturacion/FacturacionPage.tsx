@@ -202,10 +202,18 @@ export default function FacturacionPage() {
   const cargarArca = useCargarNroArca();
   const [arcaModal, setArcaModal] = useState<{ id: number; clienteNombre: string } | null>(null);
   const [arcaInput, setArcaInput] = useState('');
-  const [detalleFacturaId, setDetalleFacturaId] = useState<number | null>(null);
+  const [detalleFacturaId, setDetalleFacturaId] = useState<number | null>(() => {
+    const idParam = searchParams.get('facturaId');
+    return idParam ? Number(idParam) : null;
+  });
   const [obsModal, setObsModal] = useState<{ id: number; clienteNombre: string } | null>(null);
   const [obsInput, setObsInput] = useState('');
   const actualizarObs = useActualizarObservaciones();
+
+  useEffect(() => {
+    const idParam = searchParams.get('facturaId');
+    if (idParam) setDetalleFacturaId(Number(idParam));
+  }, [searchParams]);
 
   const filtradas = facturas?.filter(f => {
     const matchBusqueda =

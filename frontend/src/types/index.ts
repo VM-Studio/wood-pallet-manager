@@ -26,6 +26,13 @@ export interface AuthState {
   isAuthenticated: boolean;
 }
 
+// Usuario disponible para el selector de vista (dashboard: "Mis datos / Otro / Total")
+export interface UsuarioParaVista {
+  id: number;
+  nombre: string;
+  apellido: string;
+}
+
 // Cliente
 export interface Cliente {
   id: number;
@@ -413,6 +420,20 @@ export interface DashboardData {
       facturasVencidas: number;
       grafico12Meses: { mes: string; ventas: number; pallets: number; facturacion: number }[];
     };
+    // Usuario elegido dinámicamente en el selector "Otro" del dashboard —
+    // cualquier usuario aprobado con el módulo habilitado, no solo Carlos/Juan Cruz
+    otro: {
+      ventas: number;
+      pallets: number;
+      facturacion: number;
+      palletsMesAnterior: number;
+      facturacionMesAnterior: number;
+      cotizacionesPendientes: number;
+      pedidosActivos: number;
+      cobrosPendientes: number;
+      facturasVencidas: number;
+      grafico12Meses: { mes: string; ventas: number; pallets: number; facturacion: number }[];
+    };
   };
   graficos: {
     ventasUltimos12Meses: {
@@ -424,6 +445,21 @@ export interface DashboardData {
   };
   ventasMesDetalle?: { razonSocial: string; pallets: number; facturacion: number }[];
   cotizacionesActivas?: { id: number; razonSocial: string; estado: string; totalConIva: number; fechaCotizacion: string }[];
+  pagosFaltantesMesAnterior?: {
+    cantidad: number;
+    totalPendiente: number;
+    detalle: {
+      facturaId: number;
+      ventaId: number;
+      clienteNombre: string;
+      nroFactura: string | null;
+      fechaVenta?: string;
+      totalConIva: number;
+      cobrado: number;
+      saldoPendiente: number;
+      estadoCobro: string;
+    }[];
+  };
 }
 
 // Solicitud Logística

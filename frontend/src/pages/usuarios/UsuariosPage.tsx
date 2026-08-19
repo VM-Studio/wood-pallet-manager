@@ -10,10 +10,10 @@ import ErrorMessage from '../../components/ui/ErrorMessage';
 import type { Usuario } from '../../types';
 
 const C = {
-  accent: '#7C4A2D',
-  accentSoft: '#F0E8DF',
+  accent: '#7c4b2c',
+  accentSoft: '#F3EDE8',
   accentMid: '#C4895A',
-  border: '#E8E2DA',
+  border: '#E5E7EB',
   text: '#111111',
   textMuted: '#6B7280',
 };
@@ -121,16 +121,16 @@ function PanelAcceso({ usuario, onClose }: { usuario: Usuario; onClose: () => vo
   };
 
   return (
-    <div style={{ padding: '1rem', borderTop: `1px dashed ${C.border}`, background: '#FBF9F6' }}>
+    <div style={{ padding: '1.25rem 1.5rem', borderTop: `1px solid ${C.border}`, background: '#FAF9F7' }}>
       {esPendiente && (
         <div style={{ marginBottom: '0.875rem' }}>
-          <label style={{ fontSize: '0.75rem', fontWeight: 600, color: C.textMuted, display: 'block', marginBottom: 4 }}>
+          <label style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9CA3AF', display: 'block', marginBottom: 4 }}>
             Rol a asignar
           </label>
           <select
             value={rol}
             onChange={e => setRol(e.target.value as 'propietario_carlos' | 'propietario_juancruz' | 'admin')}
-            style={{ padding: '0.4rem 0.6rem', borderRadius: 6, border: `1px solid ${C.border}`, fontSize: '0.82rem' }}
+            style={{ padding: '0.4rem 0.6rem', borderRadius: 0, border: `1px solid ${C.border}`, fontSize: '0.82rem' }}
           >
             <option value="admin">Administrador</option>
             <option value="propietario_carlos">Propietario (Carlos)</option>
@@ -139,7 +139,7 @@ function PanelAcceso({ usuario, onClose }: { usuario: Usuario; onClose: () => vo
         </div>
       )}
 
-      <label style={{ fontSize: '0.75rem', fontWeight: 600, color: C.textMuted, display: 'block', marginBottom: 6 }}>
+      <label style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9CA3AF', display: 'block', marginBottom: 6 }}>
         Módulos habilitados
       </label>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: '1rem' }}>
@@ -151,7 +151,7 @@ function PanelAcceso({ usuario, onClose }: { usuario: Usuario; onClose: () => vo
               type="button"
               onClick={() => toggleModulo(m.key)}
               style={{
-                padding: '0.3rem 0.65rem', borderRadius: 99, fontSize: '0.75rem', fontWeight: 600,
+                padding: '0.3rem 0.65rem', borderRadius: 0, fontSize: '0.75rem', fontWeight: 600,
                 border: `1px solid ${activo ? C.accentMid : C.border}`,
                 background: activo ? C.accentSoft : '#fff',
                 color: activo ? C.accent : C.textMuted,
@@ -165,7 +165,7 @@ function PanelAcceso({ usuario, onClose }: { usuario: Usuario; onClose: () => vo
       </div>
 
       {error && (
-        <div style={{ background: '#FEF2F2', color: '#B91C1C', fontSize: '0.8rem', padding: '0.5rem 0.75rem', borderRadius: 6, marginBottom: '0.75rem' }}>
+        <div style={{ background: '#FEF2F2', color: '#B91C1C', fontSize: '0.8rem', padding: '0.5rem 0.75rem', borderRadius: 0, marginBottom: '0.75rem' }}>
           {error}
         </div>
       )}
@@ -176,7 +176,7 @@ function PanelAcceso({ usuario, onClose }: { usuario: Usuario; onClose: () => vo
           disabled={aprobar.isPending || actualizarAcceso.isPending}
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
-            background: C.accent, color: '#fff', border: 'none', borderRadius: 6,
+            background: C.accent, color: '#fff', border: 'none', borderRadius: 0,
             padding: '0.5rem 1rem', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
           }}
         >
@@ -189,7 +189,7 @@ function PanelAcceso({ usuario, onClose }: { usuario: Usuario; onClose: () => vo
           )}
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
-            background: '#fff', color: C.accent, border: `1px solid ${C.accentMid}`, borderRadius: 6,
+            background: '#fff', color: C.accent, border: `1px solid ${C.accentMid}`, borderRadius: 0,
             padding: '0.5rem 1rem', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
           }}
         >
@@ -202,7 +202,7 @@ function PanelAcceso({ usuario, onClose }: { usuario: Usuario; onClose: () => vo
             disabled={rechazar.isPending}
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
-              background: '#fff', color: '#B91C1C', border: '1px solid #FCA5A5', borderRadius: 6,
+              background: '#fff', color: '#B91C1C', border: '1px solid #FCA5A5', borderRadius: 0,
               padding: '0.5rem 1rem', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
             }}
           >
@@ -235,7 +235,7 @@ export default function UsuariosPage() {
   const resto = usuarios?.filter(u => u.estadoCuenta !== 'pendiente') ?? [];
 
   const renderUsuario = (u: Usuario) => (
-    <div key={u.id} style={{ border: `1px solid ${C.border}`, borderRadius: 10, marginBottom: 10, background: '#fff', overflow: 'hidden' }}>
+    <div key={u.id} style={{ border: `1px solid ${C.border}`, borderRadius: 0, marginBottom: 10, background: '#fff', overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.875rem 1rem', flexWrap: 'wrap', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{
@@ -287,7 +287,7 @@ export default function UsuariosPage() {
             onClick={() => setAbierto(abierto === u.id ? null : u.id)}
             style={{
               fontSize: '0.78rem', fontWeight: 600, border: `1px solid ${C.border}`,
-              background: '#fff', color: C.accent, padding: '0.3rem 0.75rem', borderRadius: 6, cursor: 'pointer',
+              background: '#fff', color: C.accent, padding: '0.3rem 0.75rem', borderRadius: 0, cursor: 'pointer',
             }}
           >
             {abierto === u.id ? 'Cerrar' : (u.estadoCuenta === 'pendiente' ? 'Revisar solicitud' : 'Editar accesos')}
@@ -299,24 +299,24 @@ export default function UsuariosPage() {
   );
 
   return (
-    <div>
-      <div style={{ marginBottom: '1.25rem' }}>
-        <h1 style={{ fontSize: '1.35rem', fontWeight: 700, color: C.text, margin: 0 }}>Usuarios</h1>
-        <p style={{ fontSize: '0.85rem', color: C.textMuted, marginTop: 4 }}>
+    <div className="space-y-6 animate-fade-in">
+      <div>
+        <h1 className="titulo-modulo">Usuarios</h1>
+        <p className="text-sm text-gray-500 mt-1">
           Aprobá o rechazá solicitudes de acceso y definí qué módulos puede usar cada usuario.
         </p>
       </div>
 
       {pendientes.length > 0 && (
         <div style={{ marginBottom: '1.5rem' }}>
-          <h2 style={{ fontSize: '0.85rem', fontWeight: 700, color: '#92400E', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <h2 style={{ fontSize: '0.7rem', fontWeight: 600, color: '#92400E', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             Solicitudes pendientes ({pendientes.length})
           </h2>
           {pendientes.map(renderUsuario)}
         </div>
       )}
 
-      <h2 style={{ fontSize: '0.85rem', fontWeight: 700, color: C.textMuted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+      <h2 style={{ fontSize: '0.7rem', fontWeight: 600, color: '#9CA3AF', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
         Todos los usuarios
       </h2>
       {resto.map(renderUsuario)}

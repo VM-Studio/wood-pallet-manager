@@ -57,7 +57,7 @@ function KpiCard({ titulo, valor, valorExacto, variacion, subtitulo, icono, onCl
   return (
     <div
       className={clsx(
-        'card-kpi',
+        'card-kpi h-full flex flex-col',
         (onClick || hasDetail) && 'cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-0.5'
       )}
     >
@@ -83,7 +83,7 @@ function KpiCard({ titulo, valor, valorExacto, variacion, subtitulo, icono, onCl
       )}
 
       {/* Subtítulo + variación */}
-      <div className="flex items-center justify-between mt-1" onClick={hasDetail ? toggle : onClick}>
+      <div className="flex items-center justify-between mt-auto pt-1" onClick={hasDetail ? toggle : onClick}>
         {subtitulo && (
           <p className="text-xs text-gray-400">{subtitulo}</p>
         )}
@@ -159,7 +159,7 @@ function GananciasCard({ gananciasData, isOpen, onToggle }: {
   const positivo = neta >= 0;
 
   return (
-    <div className={clsx('card-kpi', 'cursor-pointer transition-all duration-200')}>
+    <div className={clsx('card-kpi h-full flex flex-col', 'cursor-pointer transition-all duration-200')}>
       {/* Header — click toggles detail */}
       <div className="flex items-center gap-2 mb-2" onClick={toggle}>
         <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
@@ -182,7 +182,7 @@ function GananciasCard({ gananciasData, isOpen, onToggle }: {
           {formatPesosExacto(neta)}
         </p>
       )}
-      <p className="text-xs text-gray-400 mb-1" onClick={toggle}>
+      <p className="text-xs text-gray-400 mb-1 mt-auto" onClick={toggle}>
         {gananciasData ? `${gananciasData.cantidadVentas} venta${gananciasData.cantidadVentas !== 1 ? 's' : ''} · cobrado real` : 'Calculando...'}
       </p>
 
@@ -247,8 +247,8 @@ export default function DashboardPage() {
   const { data: alertasData, isLoading: loadingAlertas } = useAlertas();
   const { data: gananciasData } = useGanancias();
 
-  const [openCard, setOpenCard] = useState<'pallets' | 'facturacion' | 'ganancias' | 'cotizaciones' | null>(null);
-  const toggleCard = (card: 'pallets' | 'facturacion' | 'ganancias' | 'cotizaciones') =>
+  const [openCard, setOpenCard] = useState<'pallets' | 'facturacion' | 'ganancias' | 'pagosFaltantes' | null>(null);
+  const toggleCard = (card: 'pallets' | 'facturacion' | 'ganancias' | 'pagosFaltantes') =>
     setOpenCard(prev => prev === card ? null : card);
   const [showRapida, setShowRapida] = useState(false);
 
@@ -259,16 +259,15 @@ export default function DashboardPage() {
   const pp = dashboard?.porPropietario;
   const alertasList = alertasData?.alertas?.slice(0, 6) || [];
 
-  // Determinar qué bloque de porPropietario corresponde según la vista y el usuario logueado.
+  // Determinar qué bloque de porPropietario corresponde según la vista.
   // "mis_datos" siempre usa el bloque "propio" (calculado en base al usuario
-  // realmente logueado), así funciona igual para Carlos, Juan Cruz o cualquier
-  // otro usuario nuevo creado desde el módulo de Usuarios.
-  const esCarlos = usuario?.rol === 'propietario_carlos';
-
+  // realmente logueado). "otro" usa el bloque genérico "otro", calculado en
+  // base al usuario que se haya elegido dinámicamente en el dropdown — ya no
+  // hardcodeado a "el otro propietario" (Carlos/Juan Cruz).
   const getPropietarioData = () => {
     if (vista === 'total') return null;
     if (vista === 'mis_datos') return pp?.propio;
-    if (vista === 'otro')     return esCarlos ? pp?.juanCruz : pp?.carlos;
+    if (vista === 'otro')     return pp?.otro;
     return null;
   };
 
@@ -279,7 +278,6 @@ export default function DashboardPage() {
   const facturacionMes    = propData ? (propData.facturacion ?? 0)            : (kpis?.facturacionMesActual ?? 0);
   const palletsMesAnt     = propData ? (propData.palletsMesAnterior ?? 0)     : (kpis?.palletsMesAnterior   ?? 0);
   const facturacionMesAnt = propData ? (propData.facturacionMesAnterior ?? 0) : (kpis?.facturacionMesAnterior ?? 0);
-  const cotizacionesVal   = propData ? (propData.cotizacionesPendientes ?? 0) : (kpis?.cotizacionesPendientes ?? 0);
 
   const variacionPallets = palletsMesAnt > 0 ? Math.round(((palletsMes - palletsMesAnt) / palletsMesAnt) * 100) : 0;
   const variacionFact    = facturacionMesAnt > 0 ? Math.round(((facturacionMes - facturacionMesAnt) / facturacionMesAnt) * 100) : 0;
@@ -314,7 +312,7 @@ export default function DashboardPage() {
       </div>
 
       {/* KPIs fila 1 — 4 tarjetas */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 items-start">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 items-stretch">
         <KpiCard
           titulo="Pallets este mes"
           valor={formatNumero(palletsMes)}
@@ -365,36 +363,46 @@ export default function DashboardPage() {
         />
 
         <KpiCard
-          titulo="Cotizaciones activas"
-          valor={cotizacionesVal}
-          subtitulo="Enviadas o en seguimiento"
+          titulo="Pagos faltantes del mes anterior"
+          valor={formatPesos(dashboard?.pagosFaltantesMesAnterior?.totalPendiente ?? 0)}
+          valorExacto={formatPesosExacto(dashboard?.pagosFaltantesMesAnterior?.totalPendiente ?? 0)}
+          subtitulo={`${dashboard?.pagosFaltantesMesAnterior?.cantidad ?? 0} factura${(dashboard?.pagosFaltantesMesAnterior?.cantidad ?? 0) !== 1 ? 's' : ''} sin cobrar del todo`}
           icono={<FileText size={18} />}
-          isOpen={openCard === 'cotizaciones'}
-          onToggle={() => toggleCard('cotizaciones')}
+          isOpen={openCard === 'pagosFaltantes'}
+          onToggle={() => toggleCard('pagosFaltantes')}
         >
-          {(dashboard?.cotizacionesActivas?.length ?? 0) > 0 && (
+          {(dashboard?.pagosFaltantesMesAnterior?.detalle?.length ?? 0) > 0 ? (
             <div className="space-y-2">
-              {dashboard!.cotizacionesActivas!.map(c => {
-                const estadoLabel: Record<string, string> = { enviada: 'Enviada', en_seguimiento: 'Seguimiento' };
-                const estadoColor: Record<string, string> = { enviada: 'text-blue-600', en_seguimiento: 'text-amber-600' };
+              {dashboard!.pagosFaltantesMesAnterior!.detalle.map(f => {
+                const estadoLabel: Record<string, string> = {
+                  pendiente: 'Sin cobrar', cobrada_parcial: 'Cobro parcial', vencida: 'Vencida',
+                };
+                const estadoColor: Record<string, string> = {
+                  pendiente: 'text-red-600', cobrada_parcial: 'text-amber-600', vencida: 'text-red-700',
+                };
                 return (
                   <button
-                    key={c.id}
+                    key={f.facturaId}
                     className="w-full flex items-center gap-2 text-left hover:bg-gray-50 rounded-lg px-1 py-0.5 transition-colors group"
-                    onClick={() => navigate(`/cotizaciones?id=${c.id}`)}
+                    onClick={() => navigate(`/facturacion?facturaId=${f.facturaId}`)}
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-700 truncate">{c.razonSocial}</p>
-                      <p className={`text-xs font-medium ${estadoColor[c.estado] ?? 'text-gray-500'}`}>{estadoLabel[c.estado] ?? c.estado}</p>
+                      <p className="text-xs font-medium text-gray-700 truncate">{f.clienteNombre}</p>
+                      <p className={`text-xs font-medium ${estadoColor[f.estadoCobro] ?? 'text-gray-500'}`}>
+                        {estadoLabel[f.estadoCobro] ?? f.estadoCobro}
+                        {f.fechaVenta ? ` · ${new Date(f.fechaVenta).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })}` : ''}
+                      </p>
                     </div>
                     <div className="text-right shrink-0">
-                      {c.totalConIva > 0 && <p className="text-xs font-semibold text-gray-700">{formatPesos(c.totalConIva)}</p>}
+                      <p className="text-xs font-semibold text-gray-700">{formatPesos(f.saldoPendiente)}</p>
                       <ArrowRight size={12} className="text-gray-300 group-hover:text-gray-500 ml-auto" />
                     </div>
                   </button>
                 );
               })}
             </div>
+          ) : (
+            <p className="text-xs text-gray-400">Sin deudas pendientes del mes anterior 🎉</p>
           )}
         </KpiCard>
       </div>

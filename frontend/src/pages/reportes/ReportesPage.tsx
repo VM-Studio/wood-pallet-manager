@@ -5,12 +5,15 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell,
   LineChart, Line,
 } from 'recharts';
-import { Calendar, TrendingUp, Users, DollarSign, Package, Clock, CheckCircle, Receipt } from 'lucide-react';
+import { Calendar, TrendingUp, Users, DollarSign, Package, Clock, CheckCircle, Receipt, Download, Loader2, FileText } from 'lucide-react';
 import {
   useReporteVentas,
   useReporteCobranzas,
   useTopClientes,
-  useEstacionalidad
+  useEstacionalidad,
+  useGananciasDetalle,
+  useMesesConDatos,
+  descargarReportePdf,
 } from '../../hooks/useReportes';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 
@@ -71,10 +74,50 @@ export default function ReportesPage() {
   const [hasta, setHasta]         = useState(ultimoDiaMes);
   const [tabActivo, setTabActivo] = useState<TabActivo>('ventas');
 
+  // ── Descarga de reporte PDF (por mes con datos, o rango personalizado) ──
+  const [modoPdf, setModoPdf]           = useState<'mes' | 'rango'>('mes');
+  const [mesPdf, setMesPdf]             = useState<string>('');
+  const [desdePdf, setDesdePdf]         = useState(primerDiaMes);
+  const [hastaPdf, setHastaPdf]         = useState(ultimoDiaMes);
+  const [descargando, setDescargando]   = useState(false);
+  const [errorPdf, setErrorPdf]         = useState<string | null>(null);
+  const { data: mesesConDatos } = useMesesConDatos();
+
+  const mesPdfActual = mesPdf || mesesConDatos?.[0] || '';
+
+  const rangoPdfSeleccionado = useMemo(() => {
+    if (modoPdf === 'rango') return { desde: desdePdf, hasta: hastaPdf };
+    if (!mesPdfActual) return null;
+    const [y, m] = mesPdfActual.split('-').map(Number);
+    const desdeMes = `${y}-${String(m).padStart(2, '0')}-01`;
+    const ultimoDia = new Date(y, m, 0).getDate();
+    const hastaMes = `${y}-${String(m).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
+    return { desde: desdeMes, hasta: hastaMes };
+  }, [modoPdf, mesPdfActual, desdePdf, hastaPdf]);
+
+  const handleDescargarPdf = async () => {
+    if (!rangoPdfSeleccionado || descargando) return;
+    setDescargando(true);
+    setErrorPdf(null);
+    try {
+      await descargarReportePdf(rangoPdfSeleccionado.desde, rangoPdfSeleccionado.hasta);
+    } catch (err) {
+      setErrorPdf(err instanceof Error ? err.message : 'No se pudo generar el reporte PDF.');
+    } finally {
+      setDescargando(false);
+    }
+  };
+
+  const labelMes = (ym: string) => {
+    const [y, m] = ym.split('-').map(Number);
+    return new Date(y, m - 1, 1).toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+  };
+
   const { data: reporteVentas,    isLoading: loadingVentas }   = useReporteVentas(desde, hasta);
   const { data: reporteCobranzas, isLoading: loadingCobr }     = useReporteCobranzas(desde, hasta);
   const { data: topClientes,      isLoading: loadingClientes } = useTopClientes(10);
   const { data: estacionalidad,   isLoading: loadingEst }      = useEstacionalidad();
+  const { data: ganancias,        isLoading: loadingGanancias } = useGananciasDetalle(desde, hasta, 'todos');
 
   const cambiarPeriodo = (p: Periodo) => {
     setPeriodo(p);
@@ -153,6 +196,80 @@ export default function ReportesPage() {
         </div>
       </div>
 
+      {/* Descarga de reporte PDF */}
+      <div className="card-kpi">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-7 h-7 rounded flex items-center justify-center shrink-0"
+            style={{ background: '#F3EDE8', color: '#7c4b2c' }}><FileText size={15} /></div>
+          <p className="titulo-card flex-1">Descargar reporte en PDF</p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex gap-1 p-1" style={{ background: '#F3EDE8', borderRadius: '0.375rem' }}>
+            {([
+              { key: 'mes',   label: 'Por mes' },
+              { key: 'rango', label: 'Rango personalizado' },
+            ] as { key: 'mes' | 'rango'; label: string }[]).map(m => (
+              <button key={m.key} onClick={() => setModoPdf(m.key)}
+                className="px-4 py-2 text-sm font-medium transition-all"
+                style={{
+                  background: modoPdf === m.key ? '#7c4b2c' : 'transparent',
+                  color: modoPdf === m.key ? '#fff' : '#6B7280',
+                  borderRadius: '0.25rem', border: 'none', cursor: 'pointer',
+                }}>
+                {m.label}
+              </button>
+            ))}
+          </div>
+
+          {modoPdf === 'mes' ? (
+            mesesConDatos && mesesConDatos.length > 0 ? (
+              <select
+                value={mesPdfActual}
+                onChange={e => setMesPdf(e.target.value)}
+                className="input w-52 capitalize"
+              >
+                {mesesConDatos.map(ym => (
+                  <option key={ym} value={ym} className="capitalize">{labelMes(ym)}</option>
+                ))}
+              </select>
+            ) : (
+              <p className="text-xs text-gray-400">Todavía no hay ventas registradas para generar un reporte.</p>
+            )
+          ) : (
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Calendar size={15} className="text-gray-400" />
+                <input type="date" value={desdePdf} onChange={e => setDesdePdf(e.target.value)} className="input w-36" />
+              </div>
+              <span className="text-gray-400">→</span>
+              <input type="date" value={hastaPdf} onChange={e => setHastaPdf(e.target.value)} className="input w-36" />
+            </div>
+          )}
+
+          <button
+            onClick={handleDescargarPdf}
+            disabled={descargando || !rangoPdfSeleccionado}
+            className="ml-auto flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+            style={{ background: '#7c4b2c', borderRadius: '0.25rem', border: 'none', cursor: descargando ? 'wait' : 'pointer' }}
+          >
+            {descargando
+              ? <><Loader2 size={15} className="animate-spin" /> Generando PDF...</>
+              : <><Download size={15} /> Descargar PDF</>
+            }
+          </button>
+        </div>
+
+        {rangoPdfSeleccionado && (
+          <p className="text-xs text-gray-400 mt-2">
+            Período: {new Date(rangoPdfSeleccionado.desde).toLocaleDateString('es-AR')} → {new Date(rangoPdfSeleccionado.hasta).toLocaleDateString('es-AR')}
+          </p>
+        )}
+        {errorPdf && (
+          <p className="text-xs mt-2" style={{ color: '#B91C1C' }}>{errorPdf}</p>
+        )}
+      </div>
+
       {/* Selector de período */}
       <div className="card-kpi">
         <div className="flex flex-wrap items-center gap-4">
@@ -189,6 +306,29 @@ export default function ReportesPage() {
             {new Date(desde).toLocaleDateString('es-AR')} → {new Date(hasta).toLocaleDateString('es-AR')}
           </div>
         </div>
+      </div>
+
+      {/* Ganancia del período seleccionado */}
+      <div className="card-kpi" style={{ borderLeft: '3px solid #7c4b2c' }}>
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-7 h-7 rounded flex items-center justify-center shrink-0"
+            style={{ background: '#F3EDE8', color: '#7c4b2c' }}><TrendingUp size={15} /></div>
+          <p className="titulo-card flex-1">Ganancia del mes</p>
+        </div>
+        {loadingGanancias ? (
+          <p className="text-xs text-gray-400">Calculando...</p>
+        ) : (
+          <>
+            <p className="text-2xl font-bold leading-none mb-1"
+              style={{ color: (ganancias?.gananciaNeta ?? 0) >= 0 ? '#166534' : '#B91C1C' }}>
+              {formatPesosCompleto(ganancias?.gananciaNeta ?? 0)}
+            </p>
+            <p className="text-xs text-gray-400 mt-1">
+              Cobrado {formatPesosCompleto(ganancias?.cobradoMes ?? 0)} · Compras pagadas {formatPesosCompleto(ganancias?.totalCompras ?? 0)}
+            </p>
+            <p className="text-xs text-gray-400">en el período seleccionado</p>
+          </>
+        )}
       </div>
 
       {/* Tabs */}

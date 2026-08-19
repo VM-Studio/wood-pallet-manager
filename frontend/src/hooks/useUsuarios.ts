@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
-import type { Usuario } from '../types';
+import type { Usuario, UsuarioParaVista } from '../types';
 
 export const useUsuarios = () => {
   return useQuery<Usuario[]>({
@@ -11,6 +11,19 @@ export const useUsuarios = () => {
     },
     // Refresco frecuente para que Carlos vea "En línea" / última conexión siempre actualizados
     refetchInterval: 15_000,
+  });
+};
+
+// Usuarios aprobados/activos disponibles para el selector "Otro" del
+// dashboard, filtrados por si tienen habilitado el módulo indicado.
+export const useUsuariosParaVista = (modulo: string = 'dashboard') => {
+  return useQuery<UsuarioParaVista[]>({
+    queryKey: ['usuarios-para-vista', modulo],
+    queryFn: async () => {
+      const { data } = await api.get(`/usuarios/para-vista?modulo=${modulo}`);
+      return data;
+    },
+    staleTime: 1000 * 60,
   });
 };
 
