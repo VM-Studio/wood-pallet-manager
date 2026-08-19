@@ -1,5 +1,7 @@
 import nodemailer from 'nodemailer';
 import PDFDocument from 'pdfkit';
+import fs from 'fs';
+import path from 'path';
 
 export const crearTransporter = () => {
   return nodemailer.createTransport({
@@ -118,11 +120,117 @@ export const generarPdfRemito = (params: {
   });
 };
 
-// ─── Logo URL para emails ─────────────────────────────────────────────────
-const LOGO_URL = `${process.env.FRONTEND_URL || 'https://surprising-possibility-production-dc88.up.railway.app'}/sistemalogo.png`;
+// ─── Logo embebido (cid) para emails ───────────────────────────────────────
+// Se adjunta el logo como inline attachment (Content-ID) en lugar de una URL
+// remota: así se ve siempre en Gmail/Outlook/Apple Mail, sin depender de que
+// el dominio del frontend esté online ni de que el cliente "cargue imágenes
+// externas". El archivo vive en backend/src/assets/email-logo.png y se copia
+// a dist/assets en el build (ver script "build" en package.json).
+const LOGO_CID = 'woodpallet-logo';
+let logoBuffer: Buffer | null = null;
+try {
+  logoBuffer = fs.readFileSync(path.join(__dirname, '../assets/email-logo.png'));
+} catch (_) {
+  logoBuffer = null;
+}
+const logoAttachments = logoBuffer
+  ? [{
+      filename: 'wood-pallet-logo.png',
+      content: logoBuffer,
+      cid: LOGO_CID,
+      contentDisposition: 'inline' as const,
+    }]
+  : [];
+
+// Envuelve transporter.sendMail agregando siempre el logo inline, sin pisar
+// otros adjuntos (PDFs, remitos, etc.) que ya venga con el mail.
+async function sendMailConLogo(
+  transporter: ReturnType<typeof nodemailer.createTransport>,
+  mailOptions: Parameters<ReturnType<typeof nodemailer.createTransport>['sendMail']>[0]
+) {
+  return transporter.sendMail({
+    ...mailOptions,
+    attachments: [...logoAttachments, ...(mailOptions.attachments || [])],
+  });
+}
 
 function wrapEmail(titulo: string, subtitulo: string | undefined, body: string): string {
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/></head><body style="margin:0;padding:0;background:#F2EBE1;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;"><table width="100%" cellpadding="0" cellspacing="0" style="background:#F2EBE1;padding:40px 16px;"><tr><td align="center"><table cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#FFFFFF;border-radius:12px;overflow:hidden;box-shadow:0 2px 20px rgba(0,0,0,0.08);"><tr><td style="padding:36px 40px 28px;text-align:center;border-bottom:1px solid #EDE4D8;"><img src="${LOGO_URL}" alt="Wood Pallet" width="64" height="64" style="display:block;margin:0 auto 14px;object-fit:contain;border-radius:6px;"/><h1 style="margin:0 0 4px;font-size:19px;font-weight:700;color:#2D1A0E;letter-spacing:-0.2px;">${titulo}</h1>${subtitulo ? `<p style="margin:0;font-size:13px;color:#A89A8A;">${subtitulo}</p>` : ''}</td></tr><tr><td style="padding:32px 40px;">${body}</td></tr><tr><td style="background:#FAF6F1;border-top:1px solid #EDE4D8;padding:16px 40px;text-align:center;"><p style="margin:0;font-size:11px;color:#C0AFA4;letter-spacing:0.04em;text-transform:uppercase;">Wood Pallet · Sistema de gestión</p></td></tr></table></td></tr></table></body></html>`;
+  const logoImg = logoBuffer
+    ? `<img src="cid:${LOGO_CID}" alt="Wood Pallet" width="72" height="72" style="display:block;margin:0 auto;object-fit:contain;border-radius:50%;background:#FFFFFF;padding:6px;border:1px solid #EDE4D8;" />`
+    : '';
+
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="color-scheme" content="light"/>
+<meta name="supported-color-schemes" content="light"/>
+<title>${titulo}</title>
+<style>
+  @media only screen and (max-width: 480px) {
+    .wp-container { width: 100% !important; border-radius: 0 !important; }
+    .wp-padded { padding-left: 22px !important; padding-right: 22px !important; }
+    .wp-header { padding: 28px 22px 22px !important; }
+    .wp-title { font-size: 18px !important; }
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;background:#EFE7DA;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#EFE7DA;padding:36px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" cellpadding="0" cellspacing="0" class="wp-container" style="max-width:560px;width:100%;">
+
+          <!-- Franja superior -->
+          <tr>
+            <td style="height:5px;line-height:5px;font-size:0;background:linear-gradient(90deg,#7c4b2c,#C4895A);border-radius:14px 14px 0 0;">&nbsp;</td>
+          </tr>
+
+          <!-- Card -->
+          <tr>
+            <td style="background:#FFFFFF;border-radius:0 0 14px 14px;box-shadow:0 4px 28px rgba(45,26,14,0.10);overflow:hidden;">
+
+              <!-- Header con logo -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td class="wp-header" style="padding:38px 40px 26px;text-align:center;background:#FCFAF7;border-bottom:1px solid #EDE4D8;">
+                    ${logoImg}
+                    <p style="margin:14px 0 2px;font-size:11px;font-weight:700;color:#B9A896;letter-spacing:0.18em;text-transform:uppercase;">Wood Pallet</p>
+                    <h1 class="wp-title" style="margin:2px 0 0;font-size:21px;font-weight:600;color:#2D1A0E;letter-spacing:-0.2px;font-family:Georgia,'Times New Roman',serif;font-style:italic;">${titulo}</h1>
+                    ${subtitulo ? `<p style="margin:6px 0 0;font-size:13px;color:#A89A8A;">${subtitulo}</p>` : ''}
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Body -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td class="wp-padded" style="padding:32px 40px;">${body}</td>
+                </tr>
+              </table>
+
+              <!-- Footer -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="background:#FAF6F1;border-top:1px solid #EDE4D8;padding:18px 40px;text-align:center;">
+                    <p style="margin:0;font-size:10.5px;color:#C0AFA4;letter-spacing:0.06em;text-transform:uppercase;">Wood Pallet · Sistema de gestión</p>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- Espaciador inferior -->
+          <tr><td style="height:24px;line-height:24px;font-size:0;">&nbsp;</td></tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
 }
 
 export const enviarPresupuestoPorEmail = async (params: {
@@ -136,7 +244,7 @@ export const enviarPresupuestoPorEmail = async (params: {
   const transporter = crearTransporter();
   const from = process.env.SMTP_FROM || process.env.SMTP_USER;
 
-  await transporter.sendMail({
+  await sendMailConLogo(transporter, {
     from: `"Wood Pallet" <${from}>`,
     to: params.destinatario,
     subject: `Presupuesto Wood Pallet #${String(params.numeroCotizacion).padStart(4, '0')}`,
@@ -199,7 +307,7 @@ export const enviarRemitoParaFirmar = async (params: {
     ? `<div style="margin-top:20px;"><p style="font-size:12px;color:#6B7280;margin:0 0 6px;">Firma del emisor:</p><img src="${params.firmaPropietarioBase64}" style="max-height:80px;border:1px solid #E5E7EB;border-radius:4px;" /></div>`
     : '';
 
-  await transporter.sendMail({
+  await sendMailConLogo(transporter, {
     from: `"Wood Pallet" <${from}>`,
     to: params.destinatario,
     subject: `Remito Wood Pallet #${params.numeroRemito} — Firma requerida`,
@@ -288,7 +396,7 @@ export const enviarRemitoFirmado = async (params: {
     });
   } catch (_) { /* si falla la generación del PDF se envía igual sin adjunto */ }
 
-  await transporter.sendMail({
+  await sendMailConLogo(transporter, {
     from: `"Wood Pallet" <${from}>`,
     to: params.destinatario,
     subject: titulo,
@@ -332,7 +440,7 @@ export const sendVerificationCode = async (params: {
   const from = process.env.SMTP_FROM || process.env.SMTP_USER;
   const accion = tipoLabels[params.tipo] || 'Verificación';
 
-  await transporter.sendMail({
+  await sendMailConLogo(transporter, {
     from,
     to: params.to,
     subject: `${params.codigo} — Tu código de verificación · Wood Pallet`,
@@ -371,7 +479,7 @@ export const sendCodigoRetiro = async (params: {
        </ul>`
     : '';
 
-  await transporter.sendMail({
+  await sendMailConLogo(transporter, {
     from,
     to: params.to,
     subject: `Código de retiro ${params.codigoRetiro} · Wood Pallet`,
@@ -405,7 +513,7 @@ export const sendPasswordRecoveryLink = async (params: {
   const transporter = crearTransporter();
   const from = process.env.SMTP_FROM || process.env.SMTP_USER;
 
-  await transporter.sendMail({
+  await sendMailConLogo(transporter, {
     from,
     to: params.to,
     subject: 'Recuperación de contraseña · Wood Pallet',
@@ -449,7 +557,7 @@ export const enviarNotificacionCotizacionWeb = async (params: {
     ? new Date(params.fechaNecesidad).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
     : '—';
 
-  await transporter.sendMail({
+  await sendMailConLogo(transporter, {
     from: `"Wood Pallet" <${from}>`,
     to: params.destinatarios.join(', '),
     subject: `🌐 Nueva consulta desde woodpallets.com.ar — ${params.nombre}`,
