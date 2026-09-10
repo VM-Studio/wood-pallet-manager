@@ -122,7 +122,7 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
   return (
     <aside
       style={{ background: C.bg, borderRight: `1px solid ${C.border}` }}
-      className={`fixed top-0 left-0 h-screen h-dvh w-[252px] flex flex-col z-30 transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
+      className={`fixed top-0 left-0 h-screen h-dvh w-[252px] flex flex-col z-50 transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:z-30`}
     >
       {/* ── Header / Logo ── */}
       <div

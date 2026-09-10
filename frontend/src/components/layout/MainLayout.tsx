@@ -59,7 +59,7 @@ export default function MainLayout() {
     <div className="flex h-screen overflow-hidden" style={{ backgroundColor: '#F2EDE7' }}>
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/40 z-20 lg:hidden"
+          className="fixed inset-0 bg-black/40 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -75,8 +75,8 @@ export default function MainLayout() {
             background: '#FAFAF8',
             borderBottom: '1px solid #E8E2DA',
             minHeight: '60px',
-            paddingTop: '0.5rem',
-            paddingBottom: '0.5rem',
+            paddingTop: 'max(0.75rem, calc(env(safe-area-inset-top, 0px) + 0.5rem))',
+            paddingBottom: '0.75rem',
           }}
         >
           {/* Izquierda: hamburger (mobile) / spacer (desktop) */}

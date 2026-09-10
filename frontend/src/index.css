@@ -303,10 +303,14 @@
     top: 0;
     left: 0;
     right: 0;
-    z-index: 50 !important;
+    /* Debe quedar DEBAJO del overlay (z-40) y del drawer (z-50) del Sidebar,
+       para que al abrir el menú no tape su franja superior (logo + botón X). */
+    z-index: 30 !important;
   }
   .main-content-mobile {
-    padding-top: 60px;
+    /* 60px base + lo que ocupe el notch/Dynamic Island (env(safe-area-inset-top)),
+       porque el header crece esa misma cantidad via su padding-top. */
+    padding-top: calc(60px + env(safe-area-inset-top, 0px));
   }
 }
 
