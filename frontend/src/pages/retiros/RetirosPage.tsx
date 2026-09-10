@@ -14,6 +14,7 @@ import { useVentas } from '../../hooks/useVentas';
 import { useAuthStore } from '../../store/auth.store';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
+import { getEstadoVentaStyle } from '../../utils/estadoVenta';
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
 } from 'recharts';
@@ -29,14 +30,6 @@ const fmtMonto = (v?: number | null) =>
   v != null
     ? new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(v)
     : '—';
-
-const ESTADO_STYLE: Record<EstadoRetiro, { bg: string; color: string; label: string }> = {
-  pendiente:  { bg: '#FEF3E2', color: '#C4895A', label: 'Pendiente'  },
-  confirmado: { bg: '#EFF6FF', color: '#2563EB', label: 'Confirmado' },
-  parcial:    { bg: '#FEF9C3', color: '#CA8A04', label: 'Parcial'    },
-  completado: { bg: '#DCFCE7', color: '#15803D', label: 'Completado' },
-  cancelado:  { bg: '#FEE2E2', color: '#DC2626', label: 'Cancelado'  },
-};
 
 const ESTADO_REMITO: Record<string, { label: string; color: string }> = {
   pendiente_firma_propietario: { label: 'Pendiente de firma', color: '#C4895A' },
@@ -57,8 +50,11 @@ const origenLabel: Record<string, string> = {
 };
 
 // ─── Badge ────────────────────────────────────────────────────────────────────
-function EstadoBadge({ estado }: { estado: EstadoRetiro }) {
-  const s = ESTADO_STYLE[estado];
+// Muestra el estado de la VENTA (venta.estadoPedido) — la misma fuente que la
+// columna "Estado" de Ventas y las tarjetas de Logística — para que los tres
+// módulos siempre coincidan en la etiqueta de una misma venta con retiro.
+function EstadoBadge({ estadoPedido }: { estadoPedido?: string }) {
+  const s = getEstadoVentaStyle(estadoPedido);
   return (
     <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold"
       style={{ background: s.bg, color: s.color, borderRadius: 0 }}>
@@ -493,7 +489,7 @@ function DetalleRetiroModal({ retiro, onClose }: { retiro: RetiroRow; onClose: (
           <div className="modal-header">
             <div className="flex items-center gap-3">
               <h2 className="modal-title">Retiro #{retiro.venta.id}</h2>
-              <EstadoBadge estado={retiro.estadoRetiro} />
+              <EstadoBadge estadoPedido={retiro.venta.estadoPedido} />
             </div>
             <button onClick={onClose} className="btn-icon"><X size={18} /></button>
           </div>
@@ -791,7 +787,7 @@ function RetiroListRow({ r, onVerDetalle }: { r: RetiroRow; onVerDetalle: () => 
         {r.venta.usuario.nombre} {r.venta.usuario.apellido.charAt(0)}.
       </td>
       <td className="px-4 py-3">
-        <EstadoBadge estado={r.estadoRetiro} />
+        <EstadoBadge estadoPedido={r.venta.estadoPedido} />
       </td>
       <td className="px-4 py-3">
         <button className="flex items-center gap-1 text-xs font-medium text-stone-500 hover:text-stone-800 transition-colors">

@@ -42,6 +42,7 @@ export interface RetiroRow {
   venta: {
     id: number;
     clienteId: number;
+    estadoPedido?: string;
     fechaRetiro?: string;
     tipoEntrega: string;
     origenStock?: string;

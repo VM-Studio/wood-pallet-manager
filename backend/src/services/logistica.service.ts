@@ -156,6 +156,7 @@ const ventaLogisticaInclude = {
   venta: {
     select: {
       id: true,
+      estadoPedido: true,
       costoFlete: true,
       fechaEstimEntrega: true,
       lugarEntrega: true,
@@ -305,10 +306,16 @@ export const avanzarLogisticaService = async (
   }
 
   if (accion === 'aceptada') {
-    return prisma.logistica.update({
-      where: { ventaId },
-      data: { estadoConsulta: 'aceptada' },
-    });
+    return prisma.$transaction([
+      prisma.logistica.update({
+        where: { ventaId },
+        data: { estadoConsulta: 'aceptada' },
+      }),
+      prisma.venta.update({
+        where: { id: ventaId },
+        data: { estadoPedido: 'en_preparacion' },
+      }),
+    ]).then(([l]) => l);
   }
 
   if (accion === 'en_camino') {
@@ -351,10 +358,17 @@ export const confirmarLogisticaCarlosService = async (
   if (rol !== 'propietario_carlos' && rol !== 'admin') {
     throw new Error('Solo Carlos puede confirmar logística');
   }
-  return prisma.logistica.update({
-    where: { ventaId },
-    data: { ...datos, estadoConsulta: 'aceptada', estadoEntrega: 'pendiente' },
-  });
+  const [logistica] = await prisma.$transaction([
+    prisma.logistica.update({
+      where: { ventaId },
+      data: { ...datos, estadoConsulta: 'aceptada', estadoEntrega: 'pendiente' },
+    }),
+    prisma.venta.update({
+      where: { id: ventaId },
+      data: { estadoPedido: 'en_preparacion' },
+    }),
+  ]);
+  return logistica;
 };
 
 // Retorna todas las logísticas con estadoConsulta = 'aceptada', ordenadas por fecha estimada de entrega

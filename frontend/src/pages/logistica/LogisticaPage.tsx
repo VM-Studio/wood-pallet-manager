@@ -5,6 +5,7 @@ import { useAuthStore } from '../../store/auth.store';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
 import RouteMonitorCard from './RouteMonitorCard';
+import { getEstadoVentaStyle } from '../../utils/estadoVenta';
 
 type EstadoConsulta = 'no_aplica' | 'pendiente_consulta' | 'consultada' | 'aceptada' | 'rechazada';
 type EstadoEntrega = 'pendiente' | 'en_camino' | 'entregado' | 'con_problema';
@@ -24,6 +25,7 @@ interface LogisticaRow {
   consultadaPor?: { nombre: string; apellido: string };
   registradoPor?: { nombre: string; apellido: string };
   venta?: {
+    estadoPedido?: string;
     costoFlete?: number;
     fechaEstimEntrega?: string;
     lugarEntrega?: string;
@@ -44,12 +46,6 @@ const fmtFecha = (s?: string) => {
   return new Date(y, m - 1, d).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
-const estadoEntregaStyle = (e: EstadoEntrega) => ({
-  bg:    e === 'pendiente' ? '#FEF3E2' : e === 'en_camino' ? '#EFF6FF' : e === 'entregado' ? '#DCFCE7' : '#FEE2E2',
-  color: e === 'pendiente' ? '#C4895A' : e === 'en_camino' ? '#2563EB' : e === 'entregado' ? '#15803D' : '#DC2626',
-  label: e === 'pendiente' ? 'Pendiente' : e === 'en_camino' ? 'En camino' : e === 'entregado' ? 'Entregado' : 'Con problema',
-});
-
 const consultaBadge: Record<EstadoConsulta, { label: string; bg: string; color: string }> = {
   no_aplica:          { label: 'Sin consulta',  bg: '#F3F4F6', color: '#6B7280' },
   pendiente_consulta: { label: 'Pendiente',     bg: '#FEF3E2', color: '#C4895A' },
@@ -67,7 +63,10 @@ function LogisticaCard({
   consultarMutation: ReturnType<typeof useConsultarLogistica>;
   avanzarMutation: ReturnType<typeof useAvanzarLogistica>;
 }) {
-  const est   = estadoEntregaStyle(l.estadoEntrega);
+  // Etiqueta de estado: se toma de venta.estadoPedido (misma fuente que la
+  // columna "Estado" del módulo de Ventas), para que ambas pantallas muestren
+  // siempre la misma etiqueta y color para una misma venta.
+  const est   = getEstadoVentaStyle(l.venta?.estadoPedido);
   const badge = consultaBadge[l.estadoConsulta ?? 'no_aplica'];
   const [showDetalle, setShowDetalle] = useState(false);
 
@@ -227,7 +226,7 @@ function LogisticaCard({
 
 // ── Modal: Ver detalle completo de la logística/venta ──────────────
 function LogisticaDetalleModal({ l, onClose }: { l: LogisticaRow; onClose: () => void }) {
-  const est = estadoEntregaStyle(l.estadoEntrega);
+  const est = getEstadoVentaStyle(l.venta?.estadoPedido);
   const badge = consultaBadge[l.estadoConsulta ?? 'no_aplica'];
   const cliente = l.venta?.cliente;
   const detalles = l.venta?.detalles ?? [];

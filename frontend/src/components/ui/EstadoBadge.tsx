@@ -1,3 +1,5 @@
+import { estadoVentaConfig } from '../../utils/estadoVenta';
+
 const estadoConfig: Record<string, { label: string; clase: string }> = {
   // Cotizaciones
   enviada:           { label: 'Enviada',          clase: 'badge-blue' },
@@ -6,14 +8,8 @@ const estadoConfig: Record<string, { label: string; clase: string }> = {
   rechazada:         { label: 'Rechazada',        clase: 'badge-red' },
   perdida:           { label: 'Perdida',          clase: 'badge-gray' },
   vencida:           { label: 'Vencida',          clase: 'badge-red' },
-  // Ventas
-  confirmado:        { label: 'Confirmado',       clase: 'badge-blue' },
-  en_preparacion:    { label: 'En preparación',   clase: 'badge-yellow' },
-  listo_para_envio:  { label: 'Listo para envío', clase: 'badge-blue' },
-  en_transito:       { label: 'En tránsito',      clase: 'badge-yellow' },
-  entregado:         { label: 'Entregado',        clase: 'badge-green' },
-  entregado_parcial: { label: 'Parcial',          clase: 'badge-yellow' },
-  cancelado:         { label: 'Cancelado',        clase: 'badge-red' },
+  // Ventas (fuente única compartida con Logística y Retiros)
+  ...estadoVentaConfig,
   // Compras
   solicitada:        { label: 'Solicitada',       clase: 'badge-blue' },
   confirmada:        { label: 'Confirmada',       clase: 'badge-yellow' },

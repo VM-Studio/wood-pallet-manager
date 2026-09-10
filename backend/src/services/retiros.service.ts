@@ -125,8 +125,20 @@ export const cambiarEstadoRetiroService = async (
   const [retiroActualizado] = await prisma.$transaction(async (tx) => {
     const updated = await tx.retiro.update({ where: { id }, data: updateData as any });
 
-    // Sincronizar estado de venta
-    if (estado === 'completado') {
+    // Sincronizar estado de venta — el estado de la venta (venta.estadoPedido)
+    // es la fuente de verdad que se muestra también en Logística y Retiros,
+    // así que cualquier cambio acá se refleja en las tres pantallas.
+    if (estado === 'confirmado') {
+      await tx.venta.update({
+        where: { id: retiro.ventaId },
+        data: { estadoPedido: 'confirmado' },
+      });
+    } else if (estado === 'parcial') {
+      await tx.venta.update({
+        where: { id: retiro.ventaId },
+        data: { estadoPedido: 'entregado_parcial' },
+      });
+    } else if (estado === 'completado') {
       await tx.venta.update({
         where: { id: retiro.ventaId },
         data: { estadoPedido: 'entregado', fechaEntregaReal: new Date() },
@@ -187,10 +199,16 @@ export const registrarRetiroParcialService = async (
   const retiroActualizado = await prisma.$transaction(async (tx) => {
     const updated = await tx.retiro.update({ where: { id }, data: updateData as any });
 
+    // Sincronizar estado de venta con el resultado del retiro parcial
     if (nuevoEstado === 'completado') {
       await tx.venta.update({
         where: { id: retiro.ventaId },
         data: { estadoPedido: 'entregado', fechaEntregaReal: new Date() },
+      });
+    } else {
+      await tx.venta.update({
+        where: { id: retiro.ventaId },
+        data: { estadoPedido: 'entregado_parcial' },
       });
     }
 
