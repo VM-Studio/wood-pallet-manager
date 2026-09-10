@@ -26,12 +26,12 @@ const grupos = [
     items: [
       { path: '/clientes',       label: 'Clientes',           icon: Users },
       { path: '/cotizaciones',   label: 'Cotizaciones',       icon: FileText },
-      { path: '/solicitudes-web', label: 'Solicitudes web',   icon: Globe, badgeKey: 'web' },
       { path: '/ventas',         label: 'Ventas',             icon: DollarSign },
       { path: '/logistica',      label: 'Logística',          icon: Truck },
       { path: '/retiros',        label: 'Retiros',            icon: Warehouse },
       { path: '/remitos',        label: 'Remitos',            icon: FileCheck },
       { path: '/facturacion',    label: 'Facturación',        icon: Receipt },
+      { path: '/solicitudes-web', label: 'Solicitudes web',   icon: Globe, badgeKey: 'web' },
       { path: '/seguimientos',   label: 'Seguimientos',       icon: Mail },
     ]
   },

@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-export type EstadoRetiro = 'pendiente' | 'confirmado' | 'completado' | 'cancelado';
+export type EstadoRetiro = 'pendiente' | 'confirmado' | 'parcial' | 'completado' | 'cancelado';
 
 export interface RetiroDetalleVenta {
   id: number;
@@ -36,6 +36,8 @@ export interface RetiroRow {
   fechaConfirmacion?: string;
   observacionesConf?: string;
   motivoCancelacion?: string;
+  cantidadRetiradaParcial: number;
+  fechaUltimoRetiroParcial?: string;
   creadoEn: string;
   venta: {
     id: number;
@@ -123,6 +125,19 @@ export const useReenviarCodigoRetiro = () => {
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['retiros'] });
+    },
+  });
+};
+
+export const useRegistrarRetiroParcial = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (params: { id: number; cantidad: number }) =>
+      api.post(`/retiros/${params.id}/retiro-parcial`, { cantidad: params.cantidad }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['retiros'] });
+      qc.invalidateQueries({ queryKey: ['retiros-stats'] });
+      qc.invalidateQueries({ queryKey: ['ventas'] });
     },
   });
 };

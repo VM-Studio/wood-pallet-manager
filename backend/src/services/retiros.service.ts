@@ -103,7 +103,7 @@ export const getStatsRetirosService = async () => {
 // ─── CAMBIAR ESTADO ───────────────────────────────────────────────────────────
 export const cambiarEstadoRetiroService = async (
   id: number,
-  estado: 'pendiente' | 'confirmado' | 'completado' | 'cancelado',
+  estado: 'pendiente' | 'confirmado' | 'parcial' | 'completado' | 'cancelado',
   usuarioId: number,
   extra?: { observaciones?: string; motivoCancelacion?: string }
 ) => {
@@ -142,6 +142,62 @@ export const cambiarEstadoRetiroService = async (
   });
 
   return retiroActualizado;
+};
+
+// ─── REGISTRAR RETIRO PARCIAL ─────────────────────────────────────────────────
+export const registrarRetiroParcialService = async (
+  id: number,
+  cantidad: number,
+  usuarioId: number
+) => {
+  if (cantidad <= 0) throw new Error('La cantidad debe ser mayor a 0');
+
+  const retiro = await prisma.retiro.findUnique({
+    where: { id },
+    include: { venta: { include: { detalles: true } } },
+  });
+  if (!retiro) throw new Error('Retiro no encontrado');
+
+  if (retiro.estadoRetiro === 'completado' || retiro.estadoRetiro === 'cancelado') {
+    throw new Error('No se puede registrar un retiro parcial en el estado actual');
+  }
+
+  const totalPedido = retiro.venta.detalles.reduce((acc, d) => acc + d.cantidadPedida, 0);
+  const nuevaCantidadRetirada = retiro.cantidadRetiradaParcial + cantidad;
+
+  if (nuevaCantidadRetirada > totalPedido) {
+    const pendiente = totalPedido - retiro.cantidadRetiradaParcial;
+    throw new Error(`Solo quedan ${pendiente} unidades pendientes de retiro`);
+  }
+
+  const pendienteRestante = totalPedido - nuevaCantidadRetirada;
+  const nuevoEstado: 'parcial' | 'completado' = pendienteRestante === 0 ? 'completado' : 'parcial';
+
+  const updateData: Record<string, unknown> = {
+    cantidadRetiradaParcial: nuevaCantidadRetirada,
+    fechaUltimoRetiroParcial: new Date(),
+    estadoRetiro: nuevoEstado,
+  };
+
+  if (nuevoEstado === 'completado') {
+    updateData.confirmadoPorId = usuarioId;
+    updateData.fechaConfirmacion = new Date();
+  }
+
+  const retiroActualizado = await prisma.$transaction(async (tx) => {
+    const updated = await tx.retiro.update({ where: { id }, data: updateData as any });
+
+    if (nuevoEstado === 'completado') {
+      await tx.venta.update({
+        where: { id: retiro.ventaId },
+        data: { estadoPedido: 'entregado', fechaEntregaReal: new Date() },
+      });
+    }
+
+    return updated;
+  });
+
+  return { ...retiroActualizado, pallettesPendientes: pendienteRestante };
 };
 
 // ─── AUTO-CREAR RETIRO (llamado desde cotizaciones.service) ───────────────────

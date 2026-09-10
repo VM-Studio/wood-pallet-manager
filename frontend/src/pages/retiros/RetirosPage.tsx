@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import {
   useRetiros, useStatsRetiros, useCambiarEstadoRetiro, useReenviarCodigoRetiro,
+  useRegistrarRetiroParcial,
   type RetiroRow, type EstadoRetiro,
 } from '../../hooks/useRetiros';
 import { useVentas } from '../../hooks/useVentas';
@@ -32,6 +33,7 @@ const fmtMonto = (v?: number | null) =>
 const ESTADO_STYLE: Record<EstadoRetiro, { bg: string; color: string; label: string }> = {
   pendiente:  { bg: '#FEF3E2', color: '#C4895A', label: 'Pendiente'  },
   confirmado: { bg: '#EFF6FF', color: '#2563EB', label: 'Confirmado' },
+  parcial:    { bg: '#FEF9C3', color: '#CA8A04', label: 'Parcial'    },
   completado: { bg: '#DCFCE7', color: '#15803D', label: 'Completado' },
   cancelado:  { bg: '#FEE2E2', color: '#DC2626', label: 'Cancelado'  },
 };
@@ -165,6 +167,105 @@ function CancelarRetiroModal({ retiro, onClose }: { retiro: RetiroRow; onClose: 
               {cambiar.isPending ? 'Cancelando...' : 'Cancelar retiro'}
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Retiro parcial modal ─────────────────────────────────────────────────────
+function RetiroParcialModal({ retiro, onClose }: { retiro: RetiroRow; onClose: () => void }) {
+  const registrar = useRegistrarRetiroParcial();
+  const [cantidad, setCantidad] = useState('');
+  const [error, setError]       = useState('');
+  const [done, setDone]         = useState(false);
+  const [pendienteFinal, setPendienteFinal] = useState<number | null>(null);
+
+  const totalPedido = retiro.venta.detalles.reduce((acc, d) => acc + d.cantidadPedida, 0);
+  const yaRetirado = retiro.cantidadRetiradaParcial ?? 0;
+  const pendienteActual = Math.max(0, totalPedido - yaRetirado);
+
+  const handleRegistrar = async () => {
+    setError('');
+    const cant = Number(cantidad);
+    if (!cant || cant <= 0) {
+      setError('Ingresá una cantidad válida.');
+      return;
+    }
+    if (cant > pendienteActual) {
+      setError(`Solo quedan ${pendienteActual} unidades pendientes de retiro.`);
+      return;
+    }
+    try {
+      const res = await registrar.mutateAsync({ id: retiro.id, cantidad: cant });
+      const data = res?.data as { pallettesPendientes?: number } | undefined;
+      setPendienteFinal(data?.pallettesPendientes ?? Math.max(0, pendienteActual - cant));
+      setDone(true);
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { error?: string | { message?: string } } } };
+      const errData = err?.response?.data?.error;
+      const msg = typeof errData === 'string' ? errData : errData?.message;
+      setError(msg ?? 'No se pudo registrar el retiro parcial.');
+    }
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal max-w-md animate-slide-up">
+        <div className="modal-header">
+          <h2 className="modal-title">Registrar retiro parcial</h2>
+          <button onClick={onClose} className="btn-icon"><X size={18} /></button>
+        </div>
+        <div className="modal-body space-y-4">
+          {done ? (
+            <div className="text-center py-6">
+              <CheckCircle className="w-12 h-12 text-amber-500 mx-auto mb-3" />
+              <p className="text-base font-semibold text-stone-800">Retiro parcial registrado</p>
+              <p className="text-sm text-stone-500 mt-1">
+                {pendienteFinal === 0
+                  ? 'Se retiró la totalidad del pedido: el retiro quedó marcado como Completado.'
+                  : `Quedan ${pendienteFinal} unidades pendientes de retiro. El estado quedó como Parcial.`}
+              </p>
+              <button onClick={onClose} className="btn-primary mt-5">Cerrar</button>
+            </div>
+          ) : (
+            <>
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <p className="text-sm text-amber-800">
+                  Total pedido: <strong>{totalPedido}</strong> unidades · Ya retirado: <strong>{yaRetirado}</strong> · Pendiente: <strong>{pendienteActual}</strong>
+                </p>
+              </div>
+              <div>
+                <label className="label">Cantidad de unidades retiradas ahora <span className="text-red-500">*</span></label>
+                <input
+                  type="number"
+                  min={1}
+                  max={pendienteActual}
+                  className="input"
+                  placeholder="Ej: 5"
+                  value={cantidad}
+                  onChange={e => setCantidad(e.target.value)}
+                />
+                {cantidad && Number(cantidad) > 0 && Number(cantidad) <= pendienteActual && (
+                  <p className="text-xs text-stone-400 mt-1">
+                    Quedarían <strong>{pendienteActual - Number(cantidad)}</strong> unidades pendientes por retirar.
+                  </p>
+                )}
+              </div>
+              {error && <p className="text-sm text-red-600">{error}</p>}
+              <div className="flex gap-3 justify-end">
+                <button onClick={onClose} className="btn-secondary">Cancelar</button>
+                <button
+                  onClick={handleRegistrar}
+                  disabled={registrar.isPending}
+                  className="btn-primary"
+                  style={{ background: '#CA8A04' }}
+                >
+                  {registrar.isPending ? 'Registrando...' : 'Registrar retiro parcial'}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -364,6 +465,7 @@ function DetalleRetiroModal({ retiro, onClose }: { retiro: RetiroRow; onClose: (
   const [showCancelar, setShowCancelar]   = useState(false);
   const [showReenviar, setShowReenviar]   = useState(false);
   const [showWhatsApp, setShowWhatsApp]   = useState(false);
+  const [showParcial, setShowParcial]     = useState(false);
   const [copied, setCopied]               = useState(false);
 
   const copiarCodigo = () => {
@@ -381,15 +483,10 @@ function DetalleRetiroModal({ retiro, onClose }: { retiro: RetiroRow; onClose: (
     onClose();
   };
 
-  const isPendienteOConfirmado = retiro.estadoRetiro === 'pendiente' || retiro.estadoRetiro === 'confirmado';
+  const isPendienteOConfirmado = retiro.estadoRetiro === 'pendiente' || retiro.estadoRetiro === 'confirmado' || retiro.estadoRetiro === 'parcial';
 
   return (
     <>
-      {showConfirmar && <ConfirmarRetiroModal retiro={retiro} onClose={() => setShowConfirmar(false)} />}
-      {showCancelar  && <CancelarRetiroModal  retiro={retiro} onClose={() => { setShowCancelar(false); onClose(); }} />}
-      {showReenviar  && <ReenviarCodigoModal  retiro={retiro} onClose={() => setShowReenviar(false)} />}
-      {showWhatsApp  && <WhatsAppGalponModal  retiro={retiro} onClose={() => setShowWhatsApp(false)} />}
-
       <div className="modal-overlay">
         <div className="modal max-w-2xl animate-slide-up" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
           {/* Header */}
@@ -453,6 +550,12 @@ function DetalleRetiroModal({ retiro, onClose }: { retiro: RetiroRow; onClose: (
                   <ShieldCheck className="w-4 h-4" />
                   {cambiar.isPending ? 'Confirmando...' : 'Confirmar retiro completado'}
                 </button>
+                <button onClick={() => setShowParcial(true)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-colors"
+                  style={{ borderColor: '#FDE68A', color: '#CA8A04' }}>
+                  <Package className="w-4 h-4" />
+                  Retiro parcial
+                </button>
                 <button onClick={() => setShowCancelar(true)}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border border-red-200 text-red-600 hover:bg-red-50 transition-colors">
                   <XCircle className="w-4 h-4" />
@@ -470,6 +573,20 @@ function DetalleRetiroModal({ retiro, onClose }: { retiro: RetiroRow; onClose: (
                   <p className="text-xs text-green-700 mt-0.5">
                     Confirmado por <strong>{retiro.confirmadoPor.nombre} {retiro.confirmadoPor.apellido}</strong> el {fmtFecha(retiro.fechaConfirmacion)} a las {fmtHora(retiro.fechaConfirmacion)}
                     {retiro.observacionesConf && ` · ${retiro.observacionesConf}`}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {retiro.estadoRetiro === 'parcial' && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3">
+                <Package className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-amber-800">Retiro parcial</p>
+                  <p className="text-xs text-amber-700 mt-0.5">
+                    Se retiraron <strong>{retiro.cantidadRetiradaParcial}</strong> de{' '}
+                    <strong>{retiro.venta.detalles.reduce((acc, d) => acc + d.cantidadPedida, 0)}</strong> unidades
+                    {retiro.fechaUltimoRetiroParcial && ` · último retiro el ${fmtFecha(retiro.fechaUltimoRetiroParcial)} a las ${fmtHora(retiro.fechaUltimoRetiroParcial)}`}
                   </p>
                 </div>
               </div>
@@ -621,6 +738,12 @@ function DetalleRetiroModal({ retiro, onClose }: { retiro: RetiroRow; onClose: (
           </div>
         </div>
       </div>
+
+      {showConfirmar && <ConfirmarRetiroModal retiro={retiro} onClose={() => setShowConfirmar(false)} />}
+      {showCancelar  && <CancelarRetiroModal  retiro={retiro} onClose={() => { setShowCancelar(false); onClose(); }} />}
+      {showReenviar  && <ReenviarCodigoModal  retiro={retiro} onClose={() => setShowReenviar(false)} />}
+      {showWhatsApp  && <WhatsAppGalponModal  retiro={retiro} onClose={() => setShowWhatsApp(false)} />}
+      {showParcial   && <RetiroParcialModal   retiro={retiro} onClose={() => setShowParcial(false)} />}
     </>
   );
 }
@@ -916,6 +1039,7 @@ export default function RetirosPage() {
               <option value="todos">Todos los estados</option>
               <option value="pendiente">Pendiente</option>
               <option value="confirmado">Confirmado</option>
+              <option value="parcial">Parcial</option>
               <option value="completado">Completado</option>
               <option value="cancelado">Cancelado</option>
             </select>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Truck, Calendar, Clock, AlertCircle, MapPin, Package, CreditCard, CheckCircle, ArrowRight } from 'lucide-react';
+import { Truck, Calendar, Clock, AlertCircle, MapPin, Package, CreditCard, CheckCircle, ArrowRight, Eye, X, User, Phone, FileText } from 'lucide-react';
 import { useLogisticasPorRol, useEntregasHoy, useConsultarLogistica, useAvanzarLogistica } from '../../hooks/useLogistica';
 import { useAuthStore } from '../../store/auth.store';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
@@ -69,6 +69,7 @@ function LogisticaCard({
 }) {
   const est   = estadoEntregaStyle(l.estadoEntrega);
   const badge = consultaBadge[l.estadoConsulta ?? 'no_aplica'];
+  const [showDetalle, setShowDetalle] = useState(false);
 
   const lugarEntrega =
     l.venta?.lugarEntrega ||
@@ -142,7 +143,21 @@ function LogisticaCard({
             <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>{l.venta.usuario.nombre} {l.venta.usuario.apellido}</span>
           </div>
         )}
+        <button
+          onClick={() => setShowDetalle(true)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0,
+            background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.25rem',
+            padding: '0.2rem 0.55rem', fontSize: '0.72rem', fontWeight: 600, color: '#6B3A2A',
+            cursor: 'pointer', transition: 'all 0.15s',
+          }}
+        >
+          <Eye size={12} />
+          Ver detalle
+        </button>
       </div>
+
+      {showDetalle && <LogisticaDetalleModal l={l} onClose={() => setShowDetalle(false)} />}
 
       {/* Acciones */}
       {(!esCarlos && l.venta?.tipoEntrega === 'envio_woodpallet' && l.estadoConsulta === 'no_aplica') || (esCarlos && l.estadoEntrega !== 'entregado') ? (
@@ -210,6 +225,118 @@ function LogisticaCard({
   );
 }
 
+// ── Modal: Ver detalle completo de la logística/venta ──────────────
+function LogisticaDetalleModal({ l, onClose }: { l: LogisticaRow; onClose: () => void }) {
+  const est = estadoEntregaStyle(l.estadoEntrega);
+  const badge = consultaBadge[l.estadoConsulta ?? 'no_aplica'];
+  const cliente = l.venta?.cliente;
+  const detalles = l.venta?.detalles ?? [];
+  const costoFlete = l.venta?.costoFlete ?? l.costoFlete;
+  const fechaEntrega = l.venta?.fechaEstimEntrega ?? l.fechaRetiroGalpon;
+
+  const row = (icon: React.ReactNode, label: string, value?: React.ReactNode) => (
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '0.4rem 0' }}>
+      <div style={{ color: '#9CA3AF', marginTop: 1, flexShrink: 0 }}>{icon}</div>
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <p style={{ fontSize: '0.68rem', color: '#9CA3AF', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.02em', margin: 0 }}>{label}</p>
+        <p style={{ fontSize: '0.85rem', color: '#111827', fontWeight: 600, margin: '2px 0 0', wordBreak: 'break-word' }}>{value ?? '—'}</p>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div
+        className="modal animate-slide-up"
+        style={{ maxWidth: '560px', width: '100%', borderRadius: '0.5rem' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="modal-header" style={{ padding: '1.1rem 1.4rem', borderBottom: '1px solid #EEEEEE' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '3px 8px', background: '#6B3A2A', color: '#fff', borderRadius: '0.25rem' }}>
+              Venta #{l.ventaId}
+            </span>
+            <h2 className="modal-title" style={{ margin: 0 }}>Detalle de la entrega</h2>
+          </div>
+          <button onClick={onClose} className="btn-icon"><X size={18} /></button>
+        </div>
+
+        <div className="modal-body" style={{ padding: '1.1rem 1.4rem', maxHeight: '70vh', overflowY: 'auto' }}>
+          {/* Estados */}
+          <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '3px 9px', background: est.bg, color: est.color, borderRadius: '0.25rem' }}>
+              {est.label}
+            </span>
+            {l.estadoConsulta && l.estadoConsulta !== 'no_aplica' && (
+              <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '3px 9px', background: badge.bg, color: badge.color, borderRadius: '0.25rem' }}>
+                {badge.label}
+              </span>
+            )}
+          </div>
+
+          {/* Cliente */}
+          <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.375rem', padding: '0.75rem 1rem', marginBottom: 14 }}>
+            <p style={{ fontSize: '0.68rem', color: '#9CA3AF', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em', margin: '0 0 6px' }}>Cliente</p>
+            <p style={{ fontSize: '0.95rem', fontWeight: 700, color: '#111827', margin: 0 }}>{cliente?.razonSocial ?? '—'}</p>
+            {cliente?.nombreContacto && (
+              <p style={{ fontSize: '0.78rem', color: '#6B7280', margin: '2px 0 0' }}>{cliente.nombreContacto}{cliente.telefonoContacto ? ` · ${cliente.telefonoContacto}` : ''}</p>
+            )}
+          </div>
+
+          {/* Grid de datos */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 1.25rem', borderTop: '1px solid #F3F4F6', borderBottom: '1px solid #F3F4F6', marginBottom: 14 }}>
+            {row(<MapPin size={13} />, 'Lugar de entrega', l.venta?.lugarEntrega || [cliente?.direccionEntrega, cliente?.localidad].filter(Boolean).join(', ') || '—')}
+            {row(<Calendar size={13} />, 'Fecha estimada', fechaEntrega ? fmtFecha(fechaEntrega) : '—')}
+            {row(<CreditCard size={13} />, 'Costo de flete', costoFlete != null ? fmt(costoFlete) : '—')}
+            {row(<Truck size={13} />, 'Transportista', l.nombreTransportista || '—')}
+            {l.telefonoTransp && row(<Phone size={13} />, 'Tel. transportista', l.telefonoTransp)}
+            {l.venta?.usuario && row(<User size={13} />, 'Vendedor', `${l.venta.usuario.nombre} ${l.venta.usuario.apellido}`)}
+          </div>
+
+          {/* Detalle de productos (detalle de compra/venta) */}
+          <p style={{ fontSize: '0.68rem', color: '#9CA3AF', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Package size={12} /> Productos de la venta
+          </p>
+          <div style={{ border: '1px solid #E5E7EB', borderRadius: '0.375rem', overflow: 'hidden', marginBottom: 14 }}>
+            {detalles.length ? detalles.map((d, i) => (
+              <div
+                key={d.id}
+                style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '0.55rem 0.9rem', fontSize: '0.82rem',
+                  borderTop: i === 0 ? 'none' : '1px solid #F3F4F6',
+                  background: i % 2 === 0 ? '#fff' : '#FAFAFA',
+                }}
+              >
+                <span style={{ color: '#374151', fontWeight: 500 }}>{d.producto?.nombre ?? 'Producto'}</span>
+                <span style={{ color: '#6B3A2A', fontWeight: 700 }}>{d.cantidadPedida} u</span>
+              </div>
+            )) : (
+              <div style={{ padding: '0.75rem 0.9rem', fontSize: '0.8rem', color: '#9CA3AF' }}>Sin productos registrados</div>
+            )}
+          </div>
+
+          {/* Observaciones */}
+          {l.observaciones && (
+            <div>
+              <p style={{ fontSize: '0.68rem', color: '#9CA3AF', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <FileText size={12} /> Observaciones
+              </p>
+              <p style={{ fontSize: '0.82rem', color: '#374151', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.375rem', padding: '0.6rem 0.85rem', margin: 0 }}>
+                {l.observaciones}
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="modal-footer" style={{ padding: '0.9rem 1.4rem', borderTop: '1px solid #EEEEEE' }}>
+          <button type="button" onClick={onClose} className="btn-secondary">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function EmptyState({ esCarlos, label }: { esCarlos: boolean; label?: string }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2.5rem 1rem', textAlign: 'center', background: '#F9FAFB', borderRadius: '0.5rem', border: '1px solid #E5E7EB' }}>
@@ -222,7 +349,7 @@ function EmptyState({ esCarlos, label }: { esCarlos: boolean; label?: string }) 
   );
 }
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 3;
 
 type FiltroKpi = 'pendiente' | 'en_camino' | 'entregado' | 'hoy' | null;
 

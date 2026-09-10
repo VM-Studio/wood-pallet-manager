@@ -355,6 +355,7 @@ export interface Alerta {
   detalle: string;
   referencia: { tipo: string; id: number };
   propietario: string;
+  clave?: string;
 }
 
 export interface AlertasResponse {
@@ -364,6 +365,19 @@ export interface AlertasResponse {
   baja: number;
   alertas: Alerta[];
 }
+
+export interface AlertaResuelta {
+  id: number;
+  tipo: string;
+  titulo: string;
+  detalle: string;
+  urgencia: 'alta' | 'media' | 'baja';
+  propietario: string;
+  referencia: { tipo: string; id: number };
+  resueltaEn: string;
+  resueltaPor: { nombre: string; apellido: string; rol: string };
+}
+
 
 // Dashboard
 export interface DashboardData {

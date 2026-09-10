@@ -7,6 +7,7 @@ import {
   getStatsRetirosService,
   cambiarEstadoRetiroService,
   reenviarCodigoService,
+  registrarRetiroParcialService,
 } from '../services/retiros.service';
 
 export const getRetiros = async (_req: Request, res: Response) => {
@@ -28,7 +29,7 @@ export const getStatsRetiros = async (_req: Request, res: Response) => {
 export const cambiarEstadoRetiro = async (req: AuthRequest, res: Response) => {
   const id = parseId(req.params.id);
   const schema = z.object({
-    estado: z.enum(['pendiente', 'confirmado', 'completado', 'cancelado']),
+    estado: z.enum(['pendiente', 'confirmado', 'parcial', 'completado', 'cancelado']),
     observaciones: z.string().optional(),
     motivoCancelacion: z.string().optional(),
   });
@@ -71,3 +72,20 @@ export const reenviarCodigo = async (req: AuthRequest, res: Response) => {
   );
   res.json(data);
 };
+
+export const registrarRetiroParcial = async (req: AuthRequest, res: Response) => {
+  const id = parseId(req.params.id);
+  const schema = z.object({
+    cantidad: z.number().int().positive(),
+  });
+
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+
+  const data = await registrarRetiroParcialService(id, parsed.data.cantidad, req.user!.userId);
+  res.json(data);
+};
+

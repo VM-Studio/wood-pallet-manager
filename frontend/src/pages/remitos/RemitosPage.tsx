@@ -84,6 +84,7 @@ function NuevoRemitoModal({ onClose }: { onClose: () => void }) {
       // 2. Si tiene email el cliente, enviar
       if (remito.cliente?.emailContacto) {
         await enviar.mutateAsync(remito.id);
+        alert('Remito enviado');
       }
       onClose();
     } catch (err: unknown) {
@@ -305,6 +306,7 @@ function FirmarPropietarioModal({ remito, onClose }: { remito: Remito; onClose: 
     try {
       await firmar.mutateAsync({ id: remito.id, firma });
       await enviar.mutateAsync(remito.id);
+      alert('Remito enviado');
       onClose();
     } catch (err: unknown) {
       setError((err as Error).message ?? 'Error');
@@ -482,7 +484,13 @@ function RemitoRow({ remito }: { remito: Remito }) {
             {/* Enviar email */}
             {(remito.estado === 'enviado_a_cliente' || (remito.estado === 'pendiente_firma_propietario' && remito.firmaPropietario)) && (
               <button
-                onClick={e => { e.stopPropagation(); enviar.mutate(remito.id); }}
+                onClick={e => {
+                  e.stopPropagation();
+                  enviar.mutate(remito.id, {
+                    onSuccess: () => alert('Remito enviado'),
+                    onError: () => alert('Error al enviar el remito'),
+                  });
+                }}
                 disabled={enviar.isPending}
                 title="Enviar email con remito"
                 style={btnAccion('#EFF6FF', '#93C5FD', '#2563EB')}

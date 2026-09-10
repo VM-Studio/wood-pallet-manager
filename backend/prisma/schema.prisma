@@ -60,6 +60,7 @@ model Usuario {
   retirosConfirmados   Retiro[]                 @relation("RetirosConfirmados")
   reenviosRetiro       HistorialReenvioRetiro[]
   cotizacionesWeb      CotizacionWeb[]          @relation("CotizacionesWebAsignadas")
+  alertasResueltas     AlertaResuelta[]
 
   @@map("usuarios")
 }
@@ -511,17 +512,19 @@ model DetalleVenta {
 
 // ─── RETIROS DE GALPÓN ───────────────────────────────────
 model Retiro {
-  id                 Int          @id @default(autoincrement())
-  ventaId            Int          @unique
-  codigoRetiro       String       @unique
-  estadoRetiro       EstadoRetiro @default(pendiente)
-  galpon             String?
-  horaEstimadaRetiro DateTime?
-  confirmadoPorId    Int?
-  fechaConfirmacion  DateTime?
-  observacionesConf  String?
-  motivoCancelacion  String?
-  creadoEn           DateTime     @default(now())
+  id                       Int          @id @default(autoincrement())
+  ventaId                  Int          @unique
+  codigoRetiro             String       @unique
+  estadoRetiro             EstadoRetiro @default(pendiente)
+  galpon                   String?
+  horaEstimadaRetiro       DateTime?
+  confirmadoPorId          Int?
+  fechaConfirmacion        DateTime?
+  observacionesConf        String?
+  motivoCancelacion        String?
+  cantidadRetiradaParcial  Int          @default(0)
+  fechaUltimoRetiroParcial DateTime?
+  creadoEn                 DateTime     @default(now())
 
   venta             Venta                    @relation(fields: [ventaId], references: [id])
   confirmadoPor     Usuario?                 @relation("RetirosConfirmados", fields: [confirmadoPorId], references: [id])
@@ -533,6 +536,7 @@ model Retiro {
 enum EstadoRetiro {
   pendiente
   confirmado
+  parcial
   completado
   cancelado
 }
@@ -1011,4 +1015,27 @@ enum EstadoCotizacionWeb {
   vista
   convertida
   descartada
+}
+
+// ─── ALERTAS RESUELTAS ────────────────────────────────────
+// Las alertas del sistema se calculan dinámicamente (no viven en una
+// tabla propia). Este modelo solo guarda qué alertas fueron marcadas
+// como "resueltas" por un usuario, junto con un snapshot de su
+// contenido y la fecha/hora en la que se resolvió.
+model AlertaResuelta {
+  id             Int      @id @default(autoincrement())
+  tipo           String
+  referenciaTipo String
+  referenciaId   Int
+  titulo         String
+  detalle        String
+  urgencia       String
+  propietario    String
+  resueltaPorId  Int
+  resueltaEn     DateTime @default(now())
+
+  resueltaPor Usuario @relation(fields: [resueltaPorId], references: [id])
+
+  @@unique([tipo, referenciaTipo, referenciaId])
+  @@map("alertas_resueltas")
 }
