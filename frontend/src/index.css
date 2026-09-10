@@ -27,6 +27,14 @@
 @layer base {
   :root {
     --sidebar-width: 260px;
+
+    /* ── Altura del header fijo en mobile (hamburger + logo + perfil) ──
+       Fuente única de verdad: se usa tanto en el propio header (MainLayout)
+       como en el padding-top del contenido, para que nunca se desincronicen.
+       = safe-area del notch + padding vertical (12px arriba y abajo) + alto del contenido (44px, el botón hamburguesa). */
+    --mobile-header-pad-y: 0.75rem;
+    --mobile-header-content-h: 44px;
+    --mobile-header-h: calc(env(safe-area-inset-top, 0px) + (var(--mobile-header-pad-y) * 2) + var(--mobile-header-content-h));
   }
   *, *::before, *::after { box-sizing: border-box; }
   html {
@@ -308,9 +316,9 @@
     z-index: 30 !important;
   }
   .main-content-mobile {
-    /* 60px base + lo que ocupe el notch/Dynamic Island (env(safe-area-inset-top)),
-       porque el header crece esa misma cantidad via su padding-top. */
-    padding-top: calc(60px + env(safe-area-inset-top, 0px));
+    /* Altura real del header (var(--mobile-header-h), definida en :root) + aire extra
+       para que el título del módulo no quede pegado/tapado por el header fijo. */
+    padding-top: calc(var(--mobile-header-h) + 20px);
   }
 }
 

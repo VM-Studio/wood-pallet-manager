@@ -75,7 +75,7 @@ export default function MainLayout() {
             background: '#FAFAF8',
             borderBottom: '1px solid #E8E2DA',
             minHeight: '60px',
-            paddingTop: 'max(0.75rem, calc(env(safe-area-inset-top, 0px) + 0.5rem))',
+            paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--mobile-header-pad-y, 0.75rem))',
             paddingBottom: '0.75rem',
           }}
         >
