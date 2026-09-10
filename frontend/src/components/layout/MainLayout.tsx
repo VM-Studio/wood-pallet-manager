@@ -6,6 +6,7 @@ import ModuleGuard from './ModuleGuard';
 import { Menu, UserCircle } from 'lucide-react';
 import logoWood from '/sistemalogo.png';
 import api, { API_BASE_URL } from '../../services/api';
+import SuccessToast from '../ui/SuccessToast';
 
 export default function MainLayout() {
   const { token, usuario, patchUsuario, logout } = useAuthStore();
@@ -146,6 +147,8 @@ export default function MainLayout() {
           </ModuleGuard>
         </div>
       </main>
+
+      <SuccessToast />
     </div>
   );
 }

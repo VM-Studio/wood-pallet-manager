@@ -404,6 +404,8 @@ export default function ProveedoresPage() {
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
+                    flex: '1 1 auto',
+                    minWidth: 0,
                   }}>
                     {p.nombreEmpresa}
                   </h3>

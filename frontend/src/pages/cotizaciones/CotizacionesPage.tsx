@@ -65,6 +65,11 @@ export default function CotizacionesPage() {
   }, []);
 
   const verPDF = async (c: Cotizacion) => {
+    // Abrimos la pestaña ANTES del await: en Safari/PWA móvil, si el window.open
+    // ocurre después de un await se pierde el "gesto de usuario" y el navegador
+    // lo bloquea como pop-up. Abrimos ya mismo una pestaña en blanco y luego
+    // le seteamos la URL del PDF una vez generado.
+    const nuevaVentana = window.open('', '_blank');
     const fechaStr = new Date(c.fechaCotizacion).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
     // Detectar si incluía IVA comparando totalConIva vs totalSinIva
     const incluyeIva = c.totalConIva != null && c.totalSinIva != null
@@ -91,7 +96,12 @@ export default function CotizacionesPage() {
       cuitEmpresa: usuario?.cuit,
     });
     const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
+    if (nuevaVentana) {
+      nuevaVentana.location.href = url;
+    } else {
+      // Si el navegador bloqueó igual la ventana en blanco, probamos abrirla ahora
+      window.open(url, '_blank');
+    }
     setTimeout(() => URL.revokeObjectURL(url), 10000);
   };
 
@@ -124,7 +134,7 @@ export default function CotizacionesPage() {
           <h1 className="titulo-modulo">Cotizaciones</h1>
           <p className="text-sm text-gray-600 mt-1">{cotizaciones?.length || 0} cotizaciones en total</p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap shrink-0">
+        <div className="flex items-center gap-2 flex-wrap shrink-0 page-header-actions">
           <button
             onClick={() => setShowWebModal(true)}
             style={{

@@ -127,6 +127,7 @@ export const convertirCotizacionWebService = async (
     precioUnitario: number;
     costoFlete?: number;
     incluyeFlete: boolean;
+    incluyeIva: boolean;
   }
 ) => {
   const cw = await prisma.cotizacionWeb.findUnique({ where: { id } });
@@ -172,7 +173,7 @@ export const convertirCotizacionWebService = async (
     const subtotal = datos.precioUnitario * cantidadFinal;
     const flete = datos.incluyeFlete && datos.costoFlete ? datos.costoFlete : 0;
     const totalSinIva = subtotal + flete;
-    const totalConIva = totalSinIva * 1.21;
+    const totalConIva = datos.incluyeIva ? totalSinIva * 1.21 : totalSinIva;
 
     // 3. Crear cotización formal
     const cotizacion = await tx.cotizacion.create({

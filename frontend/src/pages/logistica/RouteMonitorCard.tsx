@@ -242,10 +242,10 @@ export default function RouteMonitorCard() {
           <p style={{ fontSize: '0.8rem', color: '#9CA3AF' }}>Cargando rutas…</p>
         </div>
       ) : sinRutas ? (
-        <div style={{ height: 280, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#F9FAFB', gap: 8 }}>
+        <div style={{ height: 280, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#F9FAFB', gap: 8, padding: '0 1.5rem', textAlign: 'center' }}>
           <MapPin size={28} style={{ color: '#D1D5DB' }} />
           <p style={{ fontSize: '0.8125rem', color: '#9CA3AF', fontWeight: 600, margin: 0 }}>Sin entregas para hoy</p>
-          <p style={{ fontSize: '0.75rem', color: '#C4B9B0', margin: 0 }}>Las rutas aparecen cuando hay logísticas aceptadas con fecha de hoy</p>
+          <p style={{ fontSize: '0.75rem', color: '#C4B9B0', margin: 0, lineHeight: 1.4 }}>Las rutas aparecen cuando hay logísticas aceptadas con fecha de hoy</p>
         </div>
       ) : (
         <MapaRutas rutas={rutas} />

@@ -394,7 +394,7 @@ html, body, #root {
   .btn-icon { width: 2.75rem; height: 2.75rem; }
 
   /* ── Tipografía ── */
-  .titulo-modulo  { font-size: 1.5rem; }
+  .titulo-modulo  { font-size: 2rem; }
   .titulo-seccion { font-size: 1.25rem; }
   .titulo-card    { font-size: 1rem; }
 
@@ -479,16 +479,17 @@ html, body, #root {
     align-items: flex-start;
   }
 
-  /* ── Grupos de botones del header: wrap y ancho completo ── */
-  .flex.items-center.gap-2.flex-wrap.shrink-0,
-  .flex.items-center.gap-2.shrink-0 {
+  /* ── Grupos de botones del header: wrap y ancho completo ──
+     Ojo: se usa una clase dedicada (.page-header-actions) en vez del combo
+     genérico "flex items-center gap-2 shrink-0" porque ese combo también
+     se usa en badges/chips pequeños dentro de tarjetas (Alertas, Compras,
+     Configuración) y forzarlos a width:100% rompía esos layouts. */
+  .page-header-actions {
     width: 100%;
     flex-wrap: wrap;
   }
-  .flex.items-center.gap-2.flex-wrap.shrink-0 > button,
-  .flex.items-center.gap-2.flex-wrap.shrink-0 > a,
-  .flex.items-center.gap-2.shrink-0 > button,
-  .flex.items-center.gap-2.shrink-0 > a {
+  .page-header-actions > button,
+  .page-header-actions > a {
     flex: 1 1 auto;
     min-width: 140px;
     justify-content: center;
@@ -524,7 +525,7 @@ html, body, #root {
 
 /* ── Pantallas muy pequeñas (<390px, ej: iPhone SE) ── */
 @media (max-width: 389px) {
-  .titulo-modulo  { font-size: 1.25rem; }
+  .titulo-modulo  { font-size: 1.75rem; }
   .card-base      { padding: 0.625rem; }
   .kpi-card       { padding: 0.75rem; }
   .modal-body     { padding: 0.875rem; }

@@ -300,7 +300,7 @@ export default function DashboardPage() {
             })}
           </p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 page-header-actions">
           <DropdownVista />
           {alertasData && alertasData.alta > 0 && (
             <button onClick={() => navigate('/alertas')} className="btn-brand-sm">

@@ -71,6 +71,7 @@ export const useConvertirCotizacionWeb = () => {
       precioUnitario: number;
       costoFlete?: number;
       incluyeFlete: boolean;
+      incluyeIva: boolean;
     }) => {
       const { id, ...body } = params;
       return api.post(`/cotizaciones-web/${id}/convertir`, body).then(r => r.data);

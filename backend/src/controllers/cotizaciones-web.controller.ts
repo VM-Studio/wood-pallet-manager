@@ -187,6 +187,7 @@ export const convertirCotizacionWeb = async (req: AuthRequest, res: Response) =>
       precioUnitario: z.number().min(0),
       costoFlete:     z.number().optional(),
       incluyeFlete:   z.boolean().default(false),
+      incluyeIva:     z.boolean().default(true),
     }).refine(d => d.clienteId || d.nuevoCliente, {
       message: 'Debés seleccionar un cliente existente o crear uno nuevo',
     });

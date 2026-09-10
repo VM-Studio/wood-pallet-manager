@@ -18,6 +18,7 @@ import ErrorMessage from '../../components/ui/ErrorMessage';
 import Pagination from '../../components/ui/Pagination';
 import SignaturePad from '../../components/ui/SignaturePad';
 import { useAuthStore } from '../../store/auth.store';
+import { useToastStore } from '../../store/toast.store';
 
 // ─── Helpers ──────────────────────────────────────────────
 
@@ -84,7 +85,7 @@ function NuevoRemitoModal({ onClose }: { onClose: () => void }) {
       // 2. Si tiene email el cliente, enviar
       if (remito.cliente?.emailContacto) {
         await enviar.mutateAsync(remito.id);
-        alert('Remito enviado');
+        useToastStore.getState().show('Remito enviado', `El cliente lo recibirá por email para firmarlo digitalmente.`);
       }
       onClose();
     } catch (err: unknown) {
@@ -306,7 +307,7 @@ function FirmarPropietarioModal({ remito, onClose }: { remito: Remito; onClose: 
     try {
       await firmar.mutateAsync({ id: remito.id, firma });
       await enviar.mutateAsync(remito.id);
-      alert('Remito enviado');
+      useToastStore.getState().show('Remito enviado', `${remito.cliente.razonSocial} lo recibirá por email para firmarlo digitalmente.`);
       onClose();
     } catch (err: unknown) {
       setError((err as Error).message ?? 'Error');
