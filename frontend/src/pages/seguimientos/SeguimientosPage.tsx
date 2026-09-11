@@ -56,7 +56,7 @@ function BtnPrimario({ children, onClick, disabled, type = 'button' }: {
 function BtnSecundario({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) {
   return (
     <button type="button" onClick={onClick} style={{
-      background: '#fff', color: '#374151', border: '1.5px solid #E8E2DA',
+      background: 'var(--color-surface)', color: '#374151', border: '1.5px solid var(--color-border)',
       borderRadius: '0.25rem', padding: '0.45rem 1rem', fontSize: '0.8rem', fontWeight: 600,
       cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
     }}>{children}</button>
@@ -71,8 +71,8 @@ function Campo({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 const inputStyle: React.CSSProperties = {
-  width: '100%', border: '1.5px solid #E8E2DA', borderRadius: '0.25rem',
-  padding: '0.4rem 0.625rem', fontSize: '0.82rem', background: '#fff',
+  width: '100%', border: '1.5px solid var(--color-border)', borderRadius: 'var(--radius-sm)',
+  padding: '0.4rem 0.625rem', fontSize: '0.82rem', background: 'var(--color-input-bg)',
   color: '#1F2937', outline: 'none', boxSizing: 'border-box',
 };
 
@@ -85,7 +85,7 @@ export default function SeguimientosPage() {
         <h1 className="titulo-modulo">Seguimientos</h1>
         <p className="text-sm text-gray-500 mt-1">Email marketing y automatizaciones CRM</p>
       </div>
-      <div style={{ display: 'flex', gap: 2, background: '#F3EDE8', borderRadius: '0.375rem', padding: 3, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+      <div style={{ display: 'flex', gap: 2, background: 'var(--color-brand-soft)', borderRadius: '0.375rem', padding: 3, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
         {TABS.map(({ key, label, icon: Icon }) => (
           <button key={key} onClick={() => setTab(key)} style={{
             flex: '0 0 auto', minWidth: 0, padding: '0.45rem 0.75rem', fontSize: '0.78rem', fontWeight: 600,
@@ -145,7 +145,7 @@ function TabNuevaCampana() {
             <button onClick={() => setStep(s)} style={{
               width: 26, height: 26, borderRadius: '50%', border: 'none',
               fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer',
-              background: step === s ? '#7c4b2c' : step > s ? '#C4895A' : '#E8E2DA',
+              background: step === s ? '#7c4b2c' : step > s ? '#C4895A' : 'var(--color-border)',
               color: step >= s ? '#fff' : '#9CA3AF',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>{step > s ? '✓' : s}</button>
@@ -157,14 +157,14 @@ function TabNuevaCampana() {
 
       {/* Paso 1 */}
       {step === 1 && (
-        <div style={{ background: '#fff', border: '1.5px solid #E8E2DA', borderRadius: '0.375rem', padding: '1.25rem' }}>
+        <div style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-card)', padding: '1.25rem' }}>
           <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1F2937', marginBottom: '0.875rem' }}>¿A quién enviás la campaña?</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.625rem', marginBottom: '0.875rem' }}>
             {SEGMENTOS.map(s => (
               <button key={s.value} onClick={() => setSegmento(s.value)} style={{
                 textAlign: 'left', padding: '0.75rem',
-                border: `1.5px solid ${segmento === s.value ? '#6B3A2A' : '#E8E2DA'}`,
-                borderRadius: '0.25rem', background: segmento === s.value ? '#F3EDE8' : '#fff', cursor: 'pointer',
+                border: `1.5px solid ${segmento === s.value ? '#6B3A2A' : 'var(--color-border)'}`,
+                borderRadius: '0.25rem', background: segmento === s.value ? 'var(--color-brand-soft)' : '#fff', cursor: 'pointer',
               }}>
                 <p style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1F2937', margin: '0 0 2px' }}>{s.label}</p>
                 <p style={{ fontSize: '0.72rem', color: '#9CA3AF', margin: 0 }}>{s.desc}</p>
@@ -190,8 +190,8 @@ function TabNuevaCampana() {
 
           {/* Lista desplegable de destinatarios */}
           {previewMut.data && previewMut.data.total > 0 && (
-            <div style={{ marginTop: 4, border: '1.5px solid #E8E2DA', borderRadius: '0.25rem', overflow: 'hidden' }}>
-              <div style={{ background: '#FAFAF8', padding: '0.45rem 0.75rem', borderBottom: '1px solid #E8E2DA', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ marginTop: 4, border: '1.5px solid var(--color-border)', borderRadius: '0.25rem', overflow: 'hidden' }}>
+              <div style={{ background: 'var(--color-surface-muted)', padding: '0.45rem 0.75rem', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Destinatarios filtrados ({previewMut.data.total})
                 </span>
@@ -204,7 +204,7 @@ function TabNuevaCampana() {
                   </div>
                 ))}
                 {previewMut.data.total > previewMut.data.preview.length && (
-                  <div style={{ padding: '0.4rem 0.75rem', background: '#F3EDE8' }}>
+                  <div style={{ padding: '0.4rem 0.75rem', background: 'var(--color-brand-soft)' }}>
                     <span style={{ fontSize: '0.72rem', color: '#6B3A2A', fontWeight: 600 }}>
                       + {previewMut.data.total - previewMut.data.preview.length} clientes más en esta segmentación
                     </span>
@@ -224,7 +224,7 @@ function TabNuevaCampana() {
 
       {/* Paso 2 */}
       {step === 2 && (
-        <div style={{ background: '#fff', border: '1.5px solid #E8E2DA', borderRadius: '0.375rem', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+        <div style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-card)', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
           <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1F2937', margin: 0 }}>Diseñá el email</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Campo label="Nombre de campaña"><input value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Promo Junio 2026" style={inputStyle} /></Campo>
@@ -238,7 +238,7 @@ function TabNuevaCampana() {
               <div style={{ marginTop: 8, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 6 }}>
                 {plantillas.length === 0 && <p style={{ fontSize: '0.78rem', color: '#9CA3AF', gridColumn: '1/-1' }}>No hay plantillas guardadas</p>}
                 {plantillas.map(p => (
-                  <button key={p.id} onClick={() => { setAsunto(p.asunto); setBloques(p.bloques); setUsarP(false); }} style={{ textAlign: 'left', border: '1.5px solid #E8E2DA', borderRadius: '0.25rem', padding: '0.5rem 0.625rem', cursor: 'pointer', background: '#FAFAF8' }}>
+                  <button key={p.id} onClick={() => { setAsunto(p.asunto); setBloques(p.bloques); setUsarP(false); }} style={{ textAlign: 'left', border: '1.5px solid var(--color-border)', borderRadius: '0.25rem', padding: '0.5rem 0.625rem', cursor: 'pointer', background: 'var(--color-surface-muted)' }}>
                     <p style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1F2937', margin: '0 0 2px' }}>{p.nombre}</p>
                     <p style={{ fontSize: '0.7rem', color: '#9CA3AF', margin: 0 }}>{p.asunto}</p>
                   </button>
@@ -257,9 +257,9 @@ function TabNuevaCampana() {
 
       {/* Paso 3 */}
       {step === 3 && (
-        <div style={{ background: '#fff', border: '1.5px solid #E8E2DA', borderRadius: '0.375rem', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+        <div style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-card)', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
           <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1F2937', margin: 0 }}>Confirmar envío</p>
-          <div style={{ background: '#FAFAF8', border: '1.5px solid #E8E2DA', borderRadius: '0.25rem', padding: '0.875rem', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ background: 'var(--color-surface-muted)', border: '1.5px solid var(--color-border)', borderRadius: '0.25rem', padding: '0.875rem', display: 'flex', flexDirection: 'column', gap: 6 }}>
             {([['Campaña', nombre], ['Asunto', asunto], ['Segmento', SEGMENTOS.find(s => s.value === segmento)?.label ?? '—'], ['Destinatarios', String(previewMut.data?.total ?? '—')], ['Bloques', `${bloques.length} bloques`]] as [string,string][]).map(([k, v]) => (
               <p key={k} style={{ fontSize: '0.82rem', color: '#374151', margin: 0 }}><span style={{ color: '#9CA3AF', marginRight: 6 }}>{k}:</span><strong>{v}</strong></p>
             ))}
@@ -294,28 +294,28 @@ function TabHistorial() {
     </div>
   );
   return (
-    <div style={{ display: 'flex', gap: '1rem', alignItems: 'start' }}>
-      <div style={{ width: 260, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+    <div className="flex flex-col sm:flex-row" style={{ gap: '1rem', alignItems: 'start' }}>
+      <div className="w-full sm:w-65 sm:shrink-0" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {data.map(c => (
           <button key={c.id} onClick={() => setSelectedId(c.id)} style={{
             textAlign: 'left', padding: '0.625rem 0.75rem',
-            border: `1.5px solid ${selectedId === c.id ? '#6B3A2A' : '#E8E2DA'}`,
-            borderRadius: '0.25rem', background: selectedId === c.id ? '#F3EDE8' : '#fff', cursor: 'pointer',
+            border: `1.5px solid ${selectedId === c.id ? '#6B3A2A' : 'var(--color-border)'}`,
+            borderRadius: '0.25rem', background: selectedId === c.id ? 'var(--color-brand-soft)' : '#fff', cursor: 'pointer',
           }}>
             <p style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1F2937', margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.nombre}</p>
             <p style={{ fontSize: '0.72rem', color: '#9CA3AF', margin: '0 0 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.asunto}</p>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ fontSize: '0.68rem', color: '#9CA3AF' }}>{new Date(c.enviadaEn).toLocaleDateString('es-AR')}</span>
-              <span style={{ fontSize: '0.68rem', fontWeight: 600, padding: '1px 6px', background: '#F3EDE8', color: '#6B3A2A', borderRadius: '0.25rem' }}>{c.totalDestinatarios} dest.</span>
+              <span style={{ fontSize: '0.68rem', fontWeight: 600, padding: '1px 6px', background: 'var(--color-brand-soft)', color: '#6B3A2A', borderRadius: '0.25rem' }}>{c.totalDestinatarios} dest.</span>
             </div>
           </button>
         ))}
       </div>
       {detalle ? (
-        <div style={{ flex: 1, background: '#fff', border: '1.5px solid #E8E2DA', borderRadius: '0.375rem', padding: '1.25rem' }}>
+        <div style={{ flex: 1, background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-card)', padding: '1.25rem' }}>
           <p style={{ fontSize: '0.92rem', fontWeight: 700, color: '#1F2937', margin: '0 0 2px' }}>{detalle.nombre}</p>
           <p style={{ fontSize: '0.78rem', color: '#9CA3AF', margin: '0 0 1rem' }}>{detalle.asunto}</p>
-          <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
             {[
               { val: detalle.totalDestinatarios, label: 'Enviados', color: '#6B3A2A' },
               { val: detalle.destinatarios?.filter((d: { enviado: boolean }) => d.enviado).length ?? 0, label: 'Exitosos', color: '#15803D' },
@@ -328,10 +328,10 @@ function TabHistorial() {
             ))}
           </div>
           {detalle.destinatarios && (
-            <div style={{ maxHeight: 260, overflowY: 'auto', border: '1px solid #E8E2DA', borderRadius: '0.25rem' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem' }}>
+            <div style={{ maxHeight: 260, overflowY: 'auto', overflowX: 'auto', WebkitOverflowScrolling: 'touch', border: '1px solid var(--color-border)', borderRadius: '0.25rem' }}>
+              <table style={{ width: '100%', minWidth: 420, borderCollapse: 'collapse', fontSize: '0.75rem' }}>
                 <thead>
-                  <tr style={{ background: '#FAFAF8', borderBottom: '1px solid #E8E2DA' }}>
+                  <tr style={{ background: 'var(--color-surface-muted)', borderBottom: '1px solid var(--color-border)' }}>
                     {['Cliente', 'Email', 'Estado'].map(h => (
                       <th key={h} style={{ textAlign: 'left', padding: '0.5rem 0.75rem', fontWeight: 600, color: '#9CA3AF', fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{h}</th>
                     ))}
@@ -358,7 +358,7 @@ function TabHistorial() {
           )}
         </div>
       ) : (
-        <div style={{ flex: 1, background: '#FAFAF8', border: '1.5px solid #E8E2DA', borderRadius: '0.375rem', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
+        <div style={{ flex: 1, background: 'var(--color-surface-muted)', border: '1.5px solid var(--color-border)', borderRadius: '0.375rem', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
           <p style={{ fontSize: '0.82rem', color: '#9CA3AF' }}>Seleccioná una campaña para ver el detalle</p>
         </div>
       )}
@@ -393,14 +393,14 @@ function TabPlantillas() {
 
   if (isLoading) return <p style={{ fontSize: '0.82rem', color: '#9CA3AF' }}>Cargando...</p>;
   return (
-    <div style={{ display: 'flex', gap: '1rem', alignItems: 'start' }}>
-      <div style={{ width: 240, flexShrink: 0 }}>
-        <button onClick={abrirNueva} style={{ width: '100%', padding: '0.5rem', fontSize: '0.78rem', fontWeight: 600, border: '1.5px dashed #C4895A', borderRadius: '0.25rem', background: '#FEFAF7', color: '#6B3A2A', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 8 }}>
+    <div className="flex flex-col sm:flex-row" style={{ gap: '1rem', alignItems: 'start' }}>
+      <div className="w-full sm:w-60 sm:shrink-0">
+        <button onClick={abrirNueva} style={{ width: '100%', padding: '0.5rem', fontSize: '0.78rem', fontWeight: 600, border: '1.5px dashed #C4895A', borderRadius: '0.25rem', background: 'var(--color-brand-soft)', color: '#6B3A2A', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 8 }}>
           <Plus size={13} />Nueva plantilla
         </button>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
           {data?.map(p => (
-            <div key={p.id} onClick={() => abrirEditar(p)} style={{ border: `1.5px solid ${editando?.id === p.id ? '#6B3A2A' : '#E8E2DA'}`, borderRadius: '0.25rem', padding: '0.5rem 0.625rem', background: editando?.id === p.id ? '#F3EDE8' : '#fff', cursor: 'pointer', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+            <div key={p.id} onClick={() => abrirEditar(p)} style={{ border: `1.5px solid ${editando?.id === p.id ? '#6B3A2A' : 'var(--color-border)'}`, borderRadius: '0.25rem', padding: '0.5rem 0.625rem', background: editando?.id === p.id ? 'var(--color-brand-soft)' : '#fff', cursor: 'pointer', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1F2937', margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.nombre}</p>
                 <p style={{ fontSize: '0.7rem', color: '#9CA3AF', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.asunto}</p>
@@ -412,7 +412,7 @@ function TabPlantillas() {
         </div>
       </div>
       {(editando || nueva) && (
-        <div style={{ flex: 1, background: '#fff', border: '1.5px solid #E8E2DA', borderRadius: '0.375rem', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+        <div style={{ flex: 1, background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-card)', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
           <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1F2937', margin: 0 }}>{editando ? 'Editar plantilla' : 'Nueva plantilla'}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Campo label="Nombre de plantilla"><input value={nombre} onChange={e => setNombre(e.target.value)} style={inputStyle} /></Campo>
@@ -459,7 +459,7 @@ function TabAutomatizaciones() {
         <BtnPrimario onClick={() => setShowForm(v => !v)}>{showForm ? <X size={13} /> : <Plus size={13} />}{showForm ? 'Cancelar' : 'Nueva regla'}</BtnPrimario>
       </div>
       {showForm && (
-        <div style={{ background: '#fff', border: '1.5px solid #E8E2DA', borderRadius: '0.375rem', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        <div style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-card)', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1F2937', margin: 0 }}>Nueva regla de automatización</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Campo label="Nombre de la regla"><input value={nombre} onChange={e => setNombre(e.target.value)} style={inputStyle} /></Campo>
@@ -493,9 +493,9 @@ function TabAutomatizaciones() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {data.map(r => (
-            <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: `1.5px solid ${r.activa ? '#E8E2DA' : '#F3F4F6'}`, borderRadius: '0.375rem', padding: '0.75rem 0.875rem', background: r.activa ? '#fff' : '#FAFAFA', opacity: r.activa ? 1 : 0.65 }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+            <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', border: `1.5px solid ${r.activa ? 'var(--color-border)' : '#F3F4F6'}`, borderRadius: '0.375rem', padding: '0.75rem 0.875rem', background: r.activa ? 'var(--color-surface)' : 'var(--color-surface-muted)', opacity: r.activa ? 1 : 0.65 }}>
+              <div style={{ flex: 1, minWidth: 200 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3, flexWrap: 'wrap' }}>
                   <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1F2937', margin: 0 }}>{r.nombre}</p>
                   <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '1px 7px', borderRadius: '0.25rem', background: r.activa ? '#DCFCE7' : '#F3F4F6', color: r.activa ? '#15803D' : '#9CA3AF' }}>{r.activa ? 'Activa' : 'Inactiva'}</span>
                 </div>

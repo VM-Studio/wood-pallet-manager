@@ -88,7 +88,7 @@ function LogisticaCard({
   const horaEntrega = fmtHora(l.horaEstimadaEntrega);
 
   return (
-    <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '0.375rem', overflow: 'hidden' }}>
+    <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', overflow: 'hidden', boxShadow: 'var(--shadow-card)' }}>
       {/* Fila principal */}
       <div style={{ padding: '0.625rem 0.875rem', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         {/* Badge venta */}
@@ -125,7 +125,7 @@ function LogisticaCard({
       </div>
 
       {/* Fila secundaria: lugar + flete + vendedor */}
-      <div style={{ padding: '0 0.875rem 0.5rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', borderTop: '1px solid #F3F4F6' }}>
+      <div style={{ padding: '0 0.875rem 0.5rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', borderTop: '1px solid var(--color-surface-muted)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, flex: 1 }}>
           <MapPin size={11} style={{ color: '#9CA3AF', flexShrink: 0 }} />
           <span style={{ fontSize: '0.75rem', color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lugarEntrega}</span>
@@ -146,7 +146,7 @@ function LogisticaCard({
           onClick={() => setShowDetalle(true)}
           style={{
             display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0,
-            background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.25rem',
+            background: 'var(--color-surface-muted)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)',
             padding: '0.2rem 0.55rem', fontSize: '0.72rem', fontWeight: 600, color: '#6B3A2A',
             cursor: 'pointer', transition: 'all 0.15s',
           }}
@@ -160,7 +160,7 @@ function LogisticaCard({
 
       {/* Acciones */}
       {(!esCarlos && l.venta?.tipoEntrega === 'envio_woodpallet' && l.estadoConsulta === 'no_aplica') || (esCarlos && l.estadoEntrega !== 'entregado') ? (
-        <div style={{ padding: '0.375rem 0.875rem 0.625rem', borderTop: '1px solid #F3F4F6', display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+        <div style={{ padding: '0.375rem 0.875rem 0.625rem', borderTop: '1px solid var(--color-surface-muted)', display: 'flex', gap: 5, flexWrap: 'wrap' }}>
           {/* Juan: consultar */}
           {!esCarlos && l.estadoConsulta === 'no_aplica' && (
             <button
@@ -189,9 +189,9 @@ function LogisticaCard({
                 disabled={avanzarMutation.isPending || l.estadoConsulta === 'aceptada'}
                 style={{
                   fontSize: '0.72rem', fontWeight: 600, padding: '0.275rem 0.65rem', borderRadius: '0.2rem', cursor: 'pointer',
-                  background: l.estadoConsulta === 'aceptada' ? '#DCFCE7' : '#F3F4F6',
-                  color: l.estadoConsulta === 'aceptada' ? '#15803D' : '#374151',
-                  border: l.estadoConsulta === 'aceptada' ? '1px solid #86EFAC' : '1px solid #E5E7EB',
+                  background: l.estadoConsulta === 'aceptada' ? '#DCFCE7' : 'var(--color-surface-muted)',
+                  color: l.estadoConsulta === 'aceptada' ? '#15803D' : 'var(--color-text-muted)',
+                  border: l.estadoConsulta === 'aceptada' ? '1px solid #86EFAC' : '1px solid var(--color-border)',
                   opacity: avanzarMutation.isPending ? 0.6 : 1,
                 }}>Aceptada</button>
               <button
@@ -199,9 +199,9 @@ function LogisticaCard({
                 disabled={avanzarMutation.isPending || l.estadoEntrega === 'en_camino'}
                 style={{
                   fontSize: '0.72rem', fontWeight: 600, padding: '0.275rem 0.65rem', borderRadius: '0.2rem', cursor: 'pointer',
-                  background: l.estadoEntrega === 'en_camino' ? '#DBEAFE' : '#F3F4F6',
-                  color: l.estadoEntrega === 'en_camino' ? '#1D4ED8' : '#374151',
-                  border: l.estadoEntrega === 'en_camino' ? '1px solid #93C5FD' : '1px solid #E5E7EB',
+                  background: l.estadoEntrega === 'en_camino' ? '#DBEAFE' : 'var(--color-surface-muted)',
+                  color: l.estadoEntrega === 'en_camino' ? '#1D4ED8' : 'var(--color-text-muted)',
+                  border: l.estadoEntrega === 'en_camino' ? '1px solid #93C5FD' : '1px solid var(--color-border)',
                   opacity: avanzarMutation.isPending ? 0.6 : 1,
                 }}>En camino</button>
               <button
@@ -209,14 +209,14 @@ function LogisticaCard({
                 disabled={avanzarMutation.isPending}
                 style={{
                   fontSize: '0.72rem', fontWeight: 600, padding: '0.275rem 0.65rem', borderRadius: '0.2rem', cursor: 'pointer',
-                  background: '#F3F4F6', color: '#374151', border: '1px solid #E5E7EB',
+                  background: 'var(--color-surface-muted)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)',
                   opacity: avanzarMutation.isPending ? 0.6 : 1,
                 }}>Entregada</button>
             </>
           )}
         </div>
       ) : esCarlos && l.estadoEntrega === 'entregado' ? (
-        <div style={{ padding: '0.3rem 0.875rem 0.5rem', borderTop: '1px solid #F3F4F6' }}>
+        <div style={{ padding: '0.3rem 0.875rem 0.5rem', borderTop: '1px solid var(--color-surface-muted)' }}>
           <span style={{ fontSize: '0.72rem', color: '#15803D', fontWeight: 600 }}>Entregada</span>
         </div>
       ) : null}
@@ -247,10 +247,10 @@ function LogisticaDetalleModal({ l, onClose }: { l: LogisticaRow; onClose: () =>
     <div className="modal-overlay" onClick={onClose}>
       <div
         className="modal animate-slide-up"
-        style={{ maxWidth: '560px', width: '100%', borderRadius: '0.5rem' }}
+        style={{ maxWidth: '560px', width: '100%', borderRadius: 'var(--radius-lg)' }}
         onClick={e => e.stopPropagation()}
       >
-        <div className="modal-header" style={{ padding: '1.1rem 1.4rem', borderBottom: '1px solid #EEEEEE' }}>
+        <div className="modal-header" style={{ padding: '1.1rem 1.4rem', borderBottom: '1px solid var(--color-border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '3px 8px', background: '#6B3A2A', color: '#fff', borderRadius: '0.25rem' }}>
               Venta #{l.ventaId}
@@ -274,16 +274,16 @@ function LogisticaDetalleModal({ l, onClose }: { l: LogisticaRow; onClose: () =>
           </div>
 
           {/* Cliente */}
-          <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.375rem', padding: '0.75rem 1rem', marginBottom: 14 }}>
+          <div style={{ background: 'var(--color-surface-muted)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem', marginBottom: 14 }}>
             <p style={{ fontSize: '0.68rem', color: '#9CA3AF', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em', margin: '0 0 6px' }}>Cliente</p>
-            <p style={{ fontSize: '0.95rem', fontWeight: 700, color: '#111827', margin: 0 }}>{cliente?.razonSocial ?? '—'}</p>
+            <p style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--color-text)', margin: 0 }}>{cliente?.razonSocial ?? '—'}</p>
             {cliente?.nombreContacto && (
               <p style={{ fontSize: '0.78rem', color: '#6B7280', margin: '2px 0 0' }}>{cliente.nombreContacto}{cliente.telefonoContacto ? ` · ${cliente.telefonoContacto}` : ''}</p>
             )}
           </div>
 
           {/* Grid de datos */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 1.25rem', borderTop: '1px solid #F3F4F6', borderBottom: '1px solid #F3F4F6', marginBottom: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 1.25rem', borderTop: '1px solid var(--color-surface-muted)', borderBottom: '1px solid var(--color-surface-muted)', marginBottom: 14 }}>
             {row(<MapPin size={13} />, 'Lugar de entrega', l.venta?.lugarEntrega || [cliente?.direccionEntrega, cliente?.localidad].filter(Boolean).join(', ') || '—')}
             {row(<Calendar size={13} />, 'Fecha estimada', fechaEntrega ? fmtFecha(fechaEntrega) : '—')}
             {row(<CreditCard size={13} />, 'Costo de flete', costoFlete != null ? fmt(costoFlete) : '—')}
@@ -296,15 +296,15 @@ function LogisticaDetalleModal({ l, onClose }: { l: LogisticaRow; onClose: () =>
           <p style={{ fontSize: '0.68rem', color: '#9CA3AF', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: 6 }}>
             <Package size={12} /> Productos de la venta
           </p>
-          <div style={{ border: '1px solid #E5E7EB', borderRadius: '0.375rem', overflow: 'hidden', marginBottom: 14 }}>
+          <div style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', overflow: 'hidden', marginBottom: 14 }}>
             {detalles.length ? detalles.map((d, i) => (
               <div
                 key={d.id}
                 style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                   padding: '0.55rem 0.9rem', fontSize: '0.82rem',
-                  borderTop: i === 0 ? 'none' : '1px solid #F3F4F6',
-                  background: i % 2 === 0 ? '#fff' : '#FAFAFA',
+                  borderTop: i === 0 ? 'none' : '1px solid var(--color-surface-muted)',
+                  background: i % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-muted)',
                 }}
               >
                 <span style={{ color: '#374151', fontWeight: 500 }}>{d.producto?.nombre ?? 'Producto'}</span>
@@ -321,14 +321,14 @@ function LogisticaDetalleModal({ l, onClose }: { l: LogisticaRow; onClose: () =>
               <p style={{ fontSize: '0.68rem', color: '#9CA3AF', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <FileText size={12} /> Observaciones
               </p>
-              <p style={{ fontSize: '0.82rem', color: '#374151', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '0.375rem', padding: '0.6rem 0.85rem', margin: 0 }}>
+              <p style={{ fontSize: '0.82rem', color: '#374151', background: 'var(--color-surface-muted)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.6rem 0.85rem', margin: 0 }}>
                 {l.observaciones}
               </p>
             </div>
           )}
         </div>
 
-        <div className="modal-footer" style={{ padding: '0.9rem 1.4rem', borderTop: '1px solid #EEEEEE' }}>
+        <div className="modal-footer" style={{ padding: '0.9rem 1.4rem', borderTop: '1px solid var(--color-border)' }}>
           <button type="button" onClick={onClose} className="btn-secondary">Cerrar</button>
         </div>
       </div>
@@ -338,7 +338,7 @@ function LogisticaDetalleModal({ l, onClose }: { l: LogisticaRow; onClose: () =>
 
 function EmptyState({ esCarlos, label }: { esCarlos: boolean; label?: string }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2.5rem 1rem', textAlign: 'center', background: '#F9FAFB', borderRadius: '0.5rem', border: '1px solid #E5E7EB' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2.5rem 1rem', textAlign: 'center', background: 'var(--color-surface-muted)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)' }}>
       <Truck size={22} style={{ color: '#D1D5DB', marginBottom: 8 }} />
       <p style={{ fontSize: '0.85rem', color: '#6B7280', fontWeight: 600, margin: '0 0 4px' }}>{label ?? 'Sin entregas registradas'}</p>
       <p style={{ fontSize: '0.75rem', color: '#9CA3AF', margin: 0 }}>
@@ -396,8 +396,8 @@ function LogisticaList({
           onClick={() => setVisibles(v => v + PAGE_SIZE)}
           style={{
             marginTop: 2, padding: '0.45rem 1rem', fontSize: '0.78rem', fontWeight: 600,
-            background: '#F9FAFB', color: '#6B3A2A', border: '1.5px solid #E8E2DA',
-            borderRadius: '0.375rem', cursor: 'pointer', display: 'flex', alignItems: 'center',
+            background: 'var(--color-surface-muted)', color: '#6B3A2A', border: '1.5px solid var(--color-border)',
+            borderRadius: 'var(--radius-md)', cursor: 'pointer', display: 'flex', alignItems: 'center',
             justifyContent: 'center', gap: 6,
           }}
         >
@@ -475,7 +475,7 @@ export default function LogisticaPage() {
               key={t.key}
               className="card-kpi cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
               onClick={() => setFiltroActivo(activa ? null : t.key)}
-              style={activa ? { outline: '2px solid #C4895A', outlineOffset: '-2px' } : {}}
+              style={activa ? { outline: '2px solid #7c4b2c', outlineOffset: '-2px' } : {}}
             >
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
@@ -500,7 +500,7 @@ export default function LogisticaPage() {
 
       {/* Banner consultas pendientes — solo Carlos */}
       {esCarlos && consultasPendientes > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0.625rem 0.875rem', background: '#FEF3E2', border: '1px solid #FDBA74', borderRadius: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0.625rem 0.875rem', background: '#FEF3E2', border: '1px solid #FDBA74', borderRadius: 'var(--radius-lg)' }}>
           <AlertCircle size={16} style={{ color: '#C4895A', flexShrink: 0 }} />
           <p style={{ fontSize: '0.85rem', color: '#92400E', fontWeight: 600, margin: 0 }}>
             {consultasPendientes} consulta{consultasPendientes > 1 ? 's' : ''} de logística pendiente{consultasPendientes > 1 ? 's' : ''} de Juan Cruz
@@ -534,7 +534,7 @@ export default function LogisticaPage() {
           {/* Columna izquierda: selector + lista */}
           <div>
             {/* Selector tipo tab/dropdown */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 12, border: '1px solid #E5E7EB', borderRadius: '0.375rem', overflow: 'hidden', background: '#F9FAFB' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 12, border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', overflow: 'hidden', background: 'var(--color-surface-muted)' }}>
               <button
                 onClick={() => setVistaCarlos('mis')}
                 style={{
@@ -542,7 +542,7 @@ export default function LogisticaPage() {
                   border: 'none', cursor: 'pointer', transition: 'all 0.15s',
                   background: vistaCarlos === 'mis' ? '#6B3A2A' : 'transparent',
                   color: vistaCarlos === 'mis' ? '#fff' : '#6B7280',
-                  borderRight: '1px solid #E5E7EB',
+                  borderRight: '1px solid var(--color-border)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 }}
               >

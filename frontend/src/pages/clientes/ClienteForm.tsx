@@ -49,14 +49,14 @@ export default function ClienteForm({ cliente, onClose, onSuccess }: ClienteForm
 
   return (
     <div className="modal-overlay">
-      <div className="modal max-w-2xl animate-slide-up" style={{ borderRadius: 0, border: '1px solid #E5E7EB' }}>
+      <div className="modal max-w-2xl animate-slide-up" style={{ borderRadius: 8, border: '1px solid var(--color-border)' }}>
 
         {/* Header */}
         <div className="modal-header" style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #EEEEEE' }}>
           <h2 className="titulo-modulo" style={{ fontSize: '1.5rem' }}>
             {esEdicion ? 'Editar cliente' : 'Nuevo cliente'}
           </h2>
-          <button onClick={onClose} className="btn-icon" style={{ borderRadius: 0 }}><X size={18} strokeWidth={1.75} /></button>
+          <button onClick={onClose} className="btn-icon" style={{ borderRadius: 8 }}><X size={18} strokeWidth={1.75} /></button>
         </div>
 
         {/* Form */}
@@ -72,7 +72,7 @@ export default function ClienteForm({ cliente, onClose, onSuccess }: ClienteForm
                 value={form.razonSocial}
                 onChange={(e) => setForm({ ...form, razonSocial: e.target.value })}
                 className="input-field"
-                style={{ borderRadius: 0 }}
+                style={{ borderRadius: 8 }}
                 placeholder="Nombre de la empresa"
                 required
               />
@@ -85,7 +85,7 @@ export default function ClienteForm({ cliente, onClose, onSuccess }: ClienteForm
                 value={form.cuit}
                 onChange={(e) => setForm({ ...form, cuit: e.target.value })}
                 className="input-field"
-                style={{ borderRadius: 0 }}
+                style={{ borderRadius: 8 }}
                 placeholder="30-12345678-9"
               />
             </div>
@@ -96,7 +96,7 @@ export default function ClienteForm({ cliente, onClose, onSuccess }: ClienteForm
                 value={form.canalEntrada}
                 onChange={(e) => setForm({ ...form, canalEntrada: e.target.value })}
                 className="input-field"
-                style={{ borderRadius: 0 }}
+                style={{ borderRadius: 8 }}
               >
                 <option value="whatsapp">WhatsApp</option>
                 <option value="instagram">Instagram</option>
@@ -115,7 +115,7 @@ export default function ClienteForm({ cliente, onClose, onSuccess }: ClienteForm
                 value={form.nombreContacto}
                 onChange={(e) => setForm({ ...form, nombreContacto: e.target.value })}
                 className="input-field"
-                style={{ borderRadius: 0 }}
+                style={{ borderRadius: 8 }}
                 placeholder="Nombre del responsable de compras"
               />
             </div>
@@ -127,7 +127,7 @@ export default function ClienteForm({ cliente, onClose, onSuccess }: ClienteForm
                 value={form.telefonoContacto}
                 onChange={(e) => setForm({ ...form, telefonoContacto: e.target.value })}
                 className="input-field"
-                style={{ borderRadius: 0 }}
+                style={{ borderRadius: 8 }}
                 placeholder="11 1234 5678"
               />
             </div>
@@ -139,7 +139,7 @@ export default function ClienteForm({ cliente, onClose, onSuccess }: ClienteForm
                 value={form.emailContacto}
                 onChange={(e) => setForm({ ...form, emailContacto: e.target.value })}
                 className="input-field"
-                style={{ borderRadius: 0 }}
+                style={{ borderRadius: 8 }}
                 placeholder="contacto@empresa.com"
               />
             </div>
@@ -152,7 +152,7 @@ export default function ClienteForm({ cliente, onClose, onSuccess }: ClienteForm
                 value={form.observaciones}
                 onChange={(e) => setForm({ ...form, observaciones: e.target.value })}
                 className="input-field resize-none"
-                style={{ borderRadius: 0 }}
+                style={{ borderRadius: 8 }}
                 rows={3}
                 placeholder="Notas internas sobre el cliente..."
               />
@@ -164,9 +164,9 @@ export default function ClienteForm({ cliente, onClose, onSuccess }: ClienteForm
                   type="checkbox"
                   checked={form.esExportador}
                   onChange={(e) => setForm({ ...form, esExportador: e.target.checked })}
-                  style={{ width: 16, height: 16, borderRadius: 0, accentColor: '#7c4b2c' }}
+                  style={{ width: 16, height: 16, borderRadius: 8, accentColor: '#7c4b2c' }}
                 />
-                <span className="text-sm" style={{ color: '#374151' }}>
+                <span className="text-sm" style={{ color: 'var(--color-text)' }}>
                   Cliente exportador (requiere tratamiento SENASA)
                 </span>
               </label>
@@ -174,7 +174,7 @@ export default function ClienteForm({ cliente, onClose, onSuccess }: ClienteForm
           </div>
 
           {error && (
-            <p className="text-sm px-3.5 py-2.5" style={{ color: '#B91C1C', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 0 }}>
+            <p className="text-sm px-3.5 py-2.5" style={{ color: '#B91C1C', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8 }}>
               {error}
             </p>
           )}
@@ -186,10 +186,10 @@ export default function ClienteForm({ cliente, onClose, onSuccess }: ClienteForm
               onClick={onClose}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: '6px',
-                background: '#fff', color: '#374151',
-                border: '1px solid #E5E7EB', fontWeight: 500,
+                background: 'var(--color-surface)', color: 'var(--color-text)',
+                border: '1px solid var(--color-border)', fontWeight: 500,
                 fontSize: '0.875rem', padding: '0.55rem 1.1rem',
-                borderRadius: 0, cursor: 'pointer', transition: 'all 0.15s'
+                borderRadius: 8, cursor: 'pointer', transition: 'all 0.15s'
               }}
             >
               Cancelar
@@ -202,7 +202,7 @@ export default function ClienteForm({ cliente, onClose, onSuccess }: ClienteForm
                 background: '#7c4b2c',
                 color: 'white', fontWeight: 500,
                 fontSize: '0.875rem', padding: '0.55rem 1.1rem',
-                borderRadius: 0, border: '1px solid #7c4b2c',
+                borderRadius: 8, border: '1px solid #7c4b2c',
                 cursor: loading ? 'not-allowed' : 'pointer',
                 opacity: loading ? 0.6 : 1, transition: 'all 0.15s'
               }}

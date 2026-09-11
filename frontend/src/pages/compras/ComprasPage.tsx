@@ -388,7 +388,10 @@ export default function ComprasPage() {
         <div className="card-base" style={{ padding: 0, overflow: 'hidden' }}>
           <div className="divide-y divide-gray-100">
             {comprasPaginadas.map(c => (
-              <div key={c.id} className="px-4 py-3">
+              <div key={c.id} className="px-4 py-3 transition-colors"
+                onMouseEnter={e => (e.currentTarget.style.background = '#fff')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
               {/* Header de la compra */}
               <div
                 className="flex items-center justify-between cursor-pointer"

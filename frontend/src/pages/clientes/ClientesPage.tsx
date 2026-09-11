@@ -55,7 +55,7 @@ export default function ClientesPage() {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div style={{ minWidth: 0 }}>
           <h1 className="titulo-modulo">Clientes</h1>
-          <p style={{ fontSize: '0.8125rem', color: '#9E8878', marginTop: '0.2rem' }}>
+          <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-soft)', marginTop: '0.2rem' }}>
             {clientes?.length || 0} clientes registrados
           </p>
         </div>
@@ -65,7 +65,7 @@ export default function ClientesPage() {
             display: 'inline-flex', alignItems: 'center', gap: '6px',
             background: '#7c4b2c',
             color: 'white', fontWeight: 600, fontSize: '0.875rem',
-            padding: '0.6rem 1.25rem', borderRadius: 0,
+            padding: '0.6rem 1.25rem', borderRadius: 8,
             border: 'none', cursor: 'pointer', transition: 'all 0.2s',
             boxShadow: '0 2px 8px rgba(107,58,42,0.25)',
           }}
@@ -87,7 +87,7 @@ export default function ClientesPage() {
       <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
         {/* Buscador */}
         <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
-          <Search size={15} style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#B8A89A', pointerEvents: 'none' }} />
+          <Search size={15} style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-soft)', pointerEvents: 'none' }} />
           <input
             type="text"
             placeholder="Buscar por razón social, CUIT, contacto o localidad..."
@@ -95,16 +95,16 @@ export default function ClientesPage() {
             onChange={(e) => setBusqueda(e.target.value)}
             style={{
               width: '100%', padding: '0.6rem 0.875rem 0.6rem 2.375rem',
-              border: '1.5px solid #E8E2DA', borderRadius: 0,
-              fontSize: '0.875rem', color: '#1a1a1a', background: '#FAFAF8',
+              border: '1.5px solid var(--color-border)', borderRadius: 8,
+              fontSize: '0.875rem', color: 'var(--color-text)', background: 'var(--color-input-bg)',
               outline: 'none', transition: 'border-color 0.15s', boxSizing: 'border-box',
             }}
             onFocus={e => (e.currentTarget.style.borderColor = '#C4895A')}
-            onBlur={e => (e.currentTarget.style.borderColor = '#E8E2DA')}
+            onBlur={e => (e.currentTarget.style.borderColor = 'var(--color-border)')}
           />
         </div>
         {/* Toggle tabs */}
-        <div style={{ display: 'flex', background: '#FAFAF8', border: '1.5px solid #E8E2DA', borderRadius: 0, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', background: 'var(--color-input-bg)', border: '1.5px solid var(--color-border)', borderRadius: 8, overflow: 'hidden' }}>
           {(['todos', 'mios'] as const).map((f) => (
             <button
               key={f}
@@ -114,8 +114,8 @@ export default function ClientesPage() {
                 fontSize: '0.8375rem', fontWeight: 500,
                 border: 'none', cursor: 'pointer', transition: 'all 0.15s',
                 background: filtro === f ? '#7c4b2c' : 'transparent',
-                color: filtro === f ? '#fff' : '#6B7280',
-                borderRight: f === 'todos' ? '1px solid #E8E2DA' : 'none',
+                color: filtro === f ? '#fff' : 'var(--color-text-muted)',
+                borderRight: f === 'todos' ? '1px solid var(--color-border)' : 'none',
               }}
             >
               {f === 'todos'
@@ -127,16 +127,16 @@ export default function ClientesPage() {
       </div>
 
       {/* ── Tabla de clientes ── */}
-      <div style={{ background: '#fff', border: '1.5px solid #E8E2DA', borderRadius: 0, overflow: 'hidden' }}>
+      <div style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: 8, overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
           <thead>
-            <tr style={{ borderBottom: '1.5px solid #E8E2DA', background: '#FAFAF8' }}>
-              <th style={{ padding: '0.65rem 1rem', textAlign: 'left', fontWeight: 600, fontSize: '0.75rem', color: '#9E8878', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Cliente</th>
-              <th style={{ padding: '0.65rem 1rem', textAlign: 'left', fontWeight: 600, fontSize: '0.75rem', color: '#9E8878', letterSpacing: '0.04em', textTransform: 'uppercase' }}>CUIT</th>
-              <th style={{ padding: '0.65rem 1rem', textAlign: 'left', fontWeight: 600, fontSize: '0.75rem', color: '#9E8878', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Contacto</th>
-              <th style={{ padding: '0.65rem 1rem', textAlign: 'left', fontWeight: 600, fontSize: '0.75rem', color: '#9E8878', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Tipo</th>
-              <th style={{ padding: '0.65rem 1rem', textAlign: 'right', fontWeight: 600, fontSize: '0.75rem', color: '#9E8878', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Acciones</th>
+            <tr style={{ borderBottom: '1.5px solid var(--color-border)', background: 'var(--color-input-bg)' }}>
+              <th style={{ padding: '0.65rem 1rem', textAlign: 'left', fontWeight: 600, fontSize: '0.75rem', color: 'var(--color-text-soft)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Cliente</th>
+              <th style={{ padding: '0.65rem 1rem', textAlign: 'left', fontWeight: 600, fontSize: '0.75rem', color: 'var(--color-text-soft)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>CUIT</th>
+              <th style={{ padding: '0.65rem 1rem', textAlign: 'left', fontWeight: 600, fontSize: '0.75rem', color: 'var(--color-text-soft)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Contacto</th>
+              <th style={{ padding: '0.65rem 1rem', textAlign: 'left', fontWeight: 600, fontSize: '0.75rem', color: 'var(--color-text-soft)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Tipo</th>
+              <th style={{ padding: '0.65rem 1rem', textAlign: 'right', fontWeight: 600, fontSize: '0.75rem', color: 'var(--color-text-soft)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -144,11 +144,11 @@ export default function ClientesPage() {
               <tr>
                 <td colSpan={5} style={{ padding: '3rem 1rem', textAlign: 'center' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-                    <div style={{ width: 44, height: 44, background: '#F0E8DF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: 44, height: 44, background: 'var(--color-brand-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <Users size={20} style={{ color: '#C4895A' }} />
                     </div>
-                    <p style={{ fontWeight: 600, color: '#3D2B1F', fontSize: '0.9rem' }}>No se encontraron clientes</p>
-                    <p style={{ fontSize: '0.8rem', color: '#9E8878' }}>
+                    <p style={{ fontWeight: 600, color: 'var(--color-text)', fontSize: '0.9rem' }}>No se encontraron clientes</p>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--color-text-soft)' }}>
                       {busqueda ? 'Probá con otro término de búsqueda' : 'Creá el primer cliente con el botón de arriba'}
                     </p>
                   </div>
@@ -159,13 +159,13 @@ export default function ClientesPage() {
                 <tr
                   key={cliente.id}
                   style={{
-                    borderBottom: '1px solid #F0EBE4',
-                    background: idx % 2 === 0 ? '#fff' : '#FDFAF8',
+                    borderBottom: '1px solid var(--color-border)',
+                    background: idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-strong)',
                     transition: 'background 0.12s',
                     cursor: 'default',
                   }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#F5EFE8'}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = idx % 2 === 0 ? '#fff' : '#FDFAF8'}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#fff'}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-strong)'}
                 >
                   {/* Cliente */}
                   <td style={{ padding: '0.7rem 1rem' }}>
@@ -181,11 +181,11 @@ export default function ClientesPage() {
                         {cliente.razonSocial[0].toUpperCase()}
                       </div>
                       <div style={{ minWidth: 0 }}>
-                        <p style={{ fontWeight: 400, color: '#1a1a1a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 200, margin: 0 }}>
+                        <p style={{ fontWeight: 400, color: 'var(--color-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 200, margin: 0 }}>
                           {cliente.razonSocial}
                         </p>
                         {cliente.nombreContacto && (
-                          <p style={{ fontSize: '0.72rem', color: '#9E8878', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 200, margin: 0 }}>
+                          <p style={{ fontSize: '0.72rem', color: 'var(--color-text-soft)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 200, margin: 0 }}>
                             {cliente.nombreContacto}
                           </p>
                         )}
@@ -194,8 +194,8 @@ export default function ClientesPage() {
                   </td>
 
                   {/* CUIT */}
-                  <td style={{ padding: '0.7rem 1rem', color: '#6B7280', fontSize: '0.8rem' }}>
-                    {cliente.cuit ?? <span style={{ fontStyle: 'italic', color: '#C4B5A8' }}>—</span>}
+                  <td style={{ padding: '0.7rem 1rem', color: 'var(--color-text-muted)', fontSize: '0.8rem' }}>
+                    {cliente.cuit ?? <span style={{ fontStyle: 'italic', color: 'var(--color-text-soft)' }}>—</span>}
                   </td>
 
                   {/* Contacto */}
@@ -203,18 +203,18 @@ export default function ClientesPage() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
                       {cliente.nombreContacto && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                          <Users size={11} style={{ color: '#B8A89A', flexShrink: 0 }} />
-                          <span style={{ fontSize: '0.8rem', color: '#374151' }}>{cliente.nombreContacto}</span>
+                          <Users size={11} style={{ color: 'var(--color-text-soft)', flexShrink: 0 }} />
+                          <span style={{ fontSize: '0.8rem', color: 'var(--color-text)' }}>{cliente.nombreContacto}</span>
                         </div>
                       )}
                       {cliente.telefonoContacto && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                          <Phone size={11} style={{ color: '#B8A89A', flexShrink: 0 }} />
-                          <span style={{ fontSize: '0.78rem', color: '#6B7280' }}>{cliente.telefonoContacto}</span>
+                          <Phone size={11} style={{ color: 'var(--color-text-soft)', flexShrink: 0 }} />
+                          <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>{cliente.telefonoContacto}</span>
                         </div>
                       )}
                       {!cliente.nombreContacto && !cliente.telefonoContacto && (
-                        <span style={{ fontSize: '0.78rem', fontStyle: 'italic', color: '#C4B5A8' }}>—</span>
+                        <span style={{ fontSize: '0.78rem', fontStyle: 'italic', color: 'var(--color-text-soft)' }}>—</span>
                       )}
                     </div>
                   </td>
@@ -224,13 +224,13 @@ export default function ClientesPage() {
                     {cliente.esExportador ? (
                       <span style={{
                         fontSize: '0.65rem', fontWeight: 700, padding: '0.15rem 0.45rem',
-                        borderRadius: 0, background: '#DBEAFE', color: '#1D4ED8',
+                        borderRadius: 8, background: '#DBEAFE', color: '#1D4ED8',
                         whiteSpace: 'nowrap', letterSpacing: '0.02em',
                       }}>Exportador</span>
                     ) : (
                       <span style={{
                         fontSize: '0.65rem', fontWeight: 700, padding: '0.15rem 0.45rem',
-                        borderRadius: 0, background: '#F0F9FF', color: '#0369A1',
+                        borderRadius: 8, background: '#F0F9FF', color: '#0369A1',
                         whiteSpace: 'nowrap', letterSpacing: '0.02em',
                       }}>Local</span>
                     )}
@@ -244,7 +244,7 @@ export default function ClientesPage() {
                         title="Ver historial"
                         style={{
                           display: 'flex', alignItems: 'center', gap: '0.3rem',
-                          padding: '0.28rem 0.55rem', border: '1px solid #E8D5C0',
+                          padding: '0.28rem 0.55rem', border: '1px solid var(--color-border)',
                           background: '#FEF3E8', color: '#92400E', fontSize: '0.67rem',
                           fontWeight: 600, cursor: 'pointer', transition: 'background 0.15s',
                         }}
@@ -258,27 +258,27 @@ export default function ClientesPage() {
                         title="Cargar historial"
                         style={{
                           display: 'flex', alignItems: 'center', gap: '0.3rem',
-                          padding: '0.28rem 0.75rem', border: '1px solid #A0623A',
-                          background: '#7C4A2D', color: '#fff', fontSize: '0.67rem',
+                          padding: '0.28rem 0.75rem', border: '1px solid #C4895A',
+                          background: '#7c4b2c', color: '#fff', fontSize: '0.67rem',
                           fontWeight: 600, cursor: 'pointer', transition: 'background 0.15s',
                           whiteSpace: 'nowrap',
                         }}
                         onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#5E3520'}
-                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = '#7C4A2D'}
+                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = '#7c4b2c'}
                       >
                         <Building2 size={11} /> Cargar historial
                       </button>
-                      <div style={{ width: 1, height: 16, background: '#E8E2DA', margin: '0 0.1rem' }} />
+                      <div style={{ width: 1, height: 16, background: 'var(--color-border)', margin: '0 0.1rem' }} />
                       {esAsignado(cliente) && (
                         <button
                           onClick={() => { setClienteEditar(cliente); setShowForm(true); }}
                           title="Editar"
                           style={{
-                            padding: '0.32rem', border: '1px solid #E8E2DA',
-                            background: 'transparent', color: '#B8A89A', cursor: 'pointer', transition: 'all 0.15s',
+                            padding: '0.32rem', border: '1px solid var(--color-border)',
+                            background: 'transparent', color: 'var(--color-text-soft)', cursor: 'pointer', transition: 'all 0.15s',
                           }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#E8E2DA'; (e.currentTarget as HTMLElement).style.color = '#1a1a1a'; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#B8A89A'; }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--color-border)'; (e.currentTarget as HTMLElement).style.color = 'var(--color-text)'; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = 'var(--color-text-soft)'; }}
                         >
                           <Pencil size={13} />
                         </button>
@@ -291,11 +291,11 @@ export default function ClientesPage() {
                         }}
                         title="Eliminar"
                         style={{
-                          padding: '0.32rem', border: '1px solid #E8E2DA',
-                          background: 'transparent', color: '#B8A89A', cursor: 'pointer', transition: 'all 0.15s',
+                          padding: '0.32rem', border: '1px solid var(--color-border)',
+                          background: 'transparent', color: 'var(--color-text-soft)', cursor: 'pointer', transition: 'all 0.15s',
                         }}
                         onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#FEE2E2'; (e.currentTarget as HTMLElement).style.color = '#DC2626'; (e.currentTarget as HTMLElement).style.borderColor = '#FCA5A5'; }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#B8A89A'; (e.currentTarget as HTMLElement).style.borderColor = '#E8E2DA'; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = 'var(--color-text-soft)'; (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border)'; }}
                       >
                         <Trash2 size={13} />
                       </button>
@@ -306,11 +306,11 @@ export default function ClientesPage() {
                           rel="noopener noreferrer"
                           title="Abrir WhatsApp"
                           style={{
-                            padding: '0.32rem', border: '1px solid #E8E2DA',
-                            color: '#B8A89A', display: 'flex', transition: 'all 0.15s',
+                            padding: '0.32rem', border: '1px solid var(--color-border)',
+                            color: 'var(--color-text-soft)', display: 'flex', transition: 'all 0.15s',
                           }}
                           onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#DCFCE7'; (e.currentTarget as HTMLElement).style.color = '#16A34A'; (e.currentTarget as HTMLElement).style.borderColor = '#86EFAC'; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#B8A89A'; (e.currentTarget as HTMLElement).style.borderColor = '#E8E2DA'; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = 'var(--color-text-soft)'; (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border)'; }}
                         >
                           <MessageCircle size={13} />
                         </a>

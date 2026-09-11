@@ -188,7 +188,7 @@ function MapaRutas({ rutas }: { rutas: RutaHoy[] }) {
 
   if (error) {
     return (
-      <div style={{ height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F9FAFB', flexDirection: 'column', gap: 8 }}>
+      <div style={{ height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-surface-muted)', flexDirection: 'column', gap: 8 }}>
         <MapPin size={24} style={{ color: '#D1D5DB' }} />
         <p style={{ fontSize: '0.8rem', color: '#9CA3AF', textAlign: 'center', maxWidth: 220 }}>{error}</p>
       </div>
@@ -199,8 +199,8 @@ function MapaRutas({ rutas }: { rutas: RutaHoy[] }) {
     <div style={{ position: 'relative', height: 280 }}>
       <div ref={mapRef} style={{ height: '100%', width: '100%' }} />
       {cargando && (
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(249,250,251,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 8 }}>
-          <div style={{ width: 24, height: 24, border: '3px solid #E8E2DA', borderTopColor: '#6B3A2A', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(247,239,225,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 8 }}>
+          <div style={{ width: 24, height: 24, border: '3px solid var(--color-border)', borderTopColor: '#6B3A2A', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
           <p style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>
             {geocodingPendiente ? 'Geolocalizando destinos…' : 'Cargando mapa…'}
           </p>
@@ -219,18 +219,18 @@ export default function RouteMonitorCard() {
   const fechaLabel = fechaHoy.charAt(0).toUpperCase() + fechaHoy.slice(1);
 
   return (
-    <div style={{ background: '#FAFAF8', border: '1.5px solid #E8E2DA', borderRadius: 0, overflow: 'hidden' }}>
+    <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', boxShadow: 'var(--shadow-card)' }}>
       {/* Header */}
-      <div style={{ padding: '0.875rem 1rem', borderBottom: '1.5px solid #E8E2DA', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+      <div style={{ padding: '0.875rem 1rem', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Truck size={16} style={{ color: '#6B3A2A' }} />
-            <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1a1a', margin: 0 }}>Monitor de Rutas del Día</h3>
+            <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-text)', margin: 0 }}>Monitor de Rutas del Día</h3>
           </div>
-          <p style={{ fontSize: '0.72rem', color: '#9E8878', marginTop: '0.2rem' }}>{fechaLabel}</p>
+          <p style={{ fontSize: '0.72rem', color: 'var(--color-text-soft)', marginTop: '0.2rem' }}>{fechaLabel}</p>
         </div>
         {sinRutas && (
-          <span style={{ fontSize: '0.6rem', fontWeight: 600, padding: '0.15rem 0.45rem', background: '#F3F4F6', color: '#6B7280', border: '1px solid #E5E7EB', borderRadius: 0 }}>
+          <span style={{ fontSize: '0.6rem', fontWeight: 600, padding: '0.15rem 0.45rem', background: 'var(--color-surface-muted)', color: '#6B7280', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)' }}>
             SIN ENTREGAS
           </span>
         )}
@@ -238,14 +238,14 @@ export default function RouteMonitorCard() {
 
       {/* Mapa */}
       {isLoading ? (
-        <div style={{ height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F9FAFB' }}>
+        <div style={{ height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-surface-muted)' }}>
           <p style={{ fontSize: '0.8rem', color: '#9CA3AF' }}>Cargando rutas…</p>
         </div>
       ) : sinRutas ? (
-        <div style={{ height: 280, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#F9FAFB', gap: 8, padding: '0 1.5rem', textAlign: 'center' }}>
+        <div style={{ height: 280, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--color-surface-muted)', gap: 8, padding: '0 1.5rem', textAlign: 'center' }}>
           <MapPin size={28} style={{ color: '#D1D5DB' }} />
           <p style={{ fontSize: '0.8125rem', color: '#9CA3AF', fontWeight: 600, margin: 0 }}>Sin entregas para hoy</p>
-          <p style={{ fontSize: '0.75rem', color: '#C4B9B0', margin: 0, lineHeight: 1.4 }}>Las rutas aparecen cuando hay logísticas aceptadas con fecha de hoy</p>
+          <p style={{ fontSize: '0.75rem', color: 'var(--color-text-soft)', margin: 0, lineHeight: 1.4 }}>Las rutas aparecen cuando hay logísticas aceptadas con fecha de hoy</p>
         </div>
       ) : (
         <MapaRutas rutas={rutas} />

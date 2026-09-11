@@ -769,7 +769,13 @@ function RetiroListRow({ r, onVerDetalle }: { r: RetiroRow; onVerDetalle: () => 
   const masProductos = r.venta.detalles.length > 2 ? ` +${r.venta.detalles.length - 2}` : '';
 
   return (
-    <tr className="hover:bg-stone-50 cursor-pointer border-b border-stone-100 last:border-0" onClick={onVerDetalle}>
+    <tr
+      className="cursor-pointer border-b last:border-0"
+      style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', transition: 'background 0.15s' }}
+      onMouseEnter={e => (e.currentTarget.style.background = '#fff')}
+      onMouseLeave={e => (e.currentTarget.style.background = 'var(--color-surface)')}
+      onClick={onVerDetalle}
+    >
       <td className="px-4 py-3 text-sm font-semibold text-stone-700">#{r.venta.id}</td>
       <td className="px-4 py-3">
         <p className="text-sm font-medium text-stone-800">{r.venta.cliente.razonSocial}</p>
@@ -1056,7 +1062,7 @@ export default function RetirosPage() {
         </div>
 
         {/* Tabla */}
-        <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
+        <div className="rounded-2xl shadow-sm border overflow-hidden" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
           {filtrados.length === 0 ? (
             <div className="py-16 text-center">
               <Warehouse className="w-10 h-10 text-stone-200 mx-auto mb-3" />
@@ -1070,7 +1076,7 @@ export default function RetirosPage() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-stone-100 bg-stone-50">
+                  <tr className="border-b" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-muted)' }}>
                     {['Venta', 'Cliente', 'Productos', 'Galpón', 'Fecha', 'Hora', 'Vendedor', 'Estado', ''].map(col => (
                       <th key={col} className="px-4 py-3 text-left text-xs font-semibold text-stone-500 uppercase tracking-wider whitespace-nowrap">
                         {col}
@@ -1087,7 +1093,7 @@ export default function RetirosPage() {
             </div>
           )}
           {filtrados.length > 0 && (
-            <div className="px-4 py-3 border-t border-stone-100 bg-stone-50">
+            <div className="px-4 py-3 border-t" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-muted)' }}>
               <p className="text-xs text-stone-400">
                 {filtrados.length} retiro{filtrados.length !== 1 ? 's' : ''} mostrado{filtrados.length !== 1 ? 's' : ''}
                 {usuario && ` · conectado como ${usuario.nombre}`}

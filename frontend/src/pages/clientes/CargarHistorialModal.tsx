@@ -118,7 +118,7 @@ export default function CargarHistorialModal({ clienteId, razonSocial, onClose }
 
   return (
     <div className="fixed inset-0 flex items-start justify-center z-50 p-4 overflow-y-auto" style={{ background: 'rgba(30,10,5,0.55)' }}>
-      <div className="bg-white shadow-2xl w-full max-w-3xl my-8" style={{ border: '1px solid #E8D5C4', borderRadius: 0 }}>
+      <div className="bg-white shadow-2xl w-full max-w-3xl my-8" style={{ border: '1px solid var(--color-border)', borderRadius: 8 }}>
 
         {/* Header */}
         <div style={{ background: '#7c4b2c', padding: '1rem 1.5rem' }}>
@@ -143,16 +143,16 @@ export default function CargarHistorialModal({ clienteId, razonSocial, onClose }
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-5" style={{ background: '#FDFAF7' }}>
+        <div className="p-6 space-y-5" style={{ background: 'var(--color-surface-strong)' }}>
           {exito && (
-            <div className="border px-4 py-3 text-sm font-medium" style={{ background: '#F0FDF4', borderColor: '#BBF7D0', color: '#166534', borderRadius: 0 }}>
+            <div className="border px-4 py-3 text-sm font-medium" style={{ background: '#F0FDF4', borderColor: '#BBF7D0', color: '#166534', borderRadius: 8 }}>
               ✓ Historial cargado correctamente
             </div>
           )}
 
           {ventas.map((venta, vi) => (
-            <div key={vi} className="border p-4 space-y-4" style={{ borderColor: '#E8D5C4', background: 'white', borderRadius: 0 }}>
-              <div className="flex items-center justify-between pb-2 border-b" style={{ borderColor: '#E8D5C4' }}>
+            <div key={vi} className="border p-4 space-y-4" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)', borderRadius: 8 }}>
+              <div className="flex items-center justify-between pb-2 border-b" style={{ borderColor: 'var(--color-border)' }}>
                 <h3 className="text-sm font-semibold uppercase tracking-widest" style={{ color: '#7c4b2c' }}>Venta {vi + 1}</h3>
                 {ventas.length > 1 && (
                   <button
@@ -168,12 +168,12 @@ export default function CargarHistorialModal({ clienteId, razonSocial, onClose }
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#7c4b2c' }}>Fecha de venta *</label>
                   <input type="date" value={venta.fechaVenta} onChange={e => updateVenta(vi, 'fechaVenta', e.target.value)}
-                    className="input-field text-sm" style={{ borderRadius: 0 }} />
+                    className="input-field text-sm" style={{ borderRadius: 8 }} />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#7c4b2c' }}>Tipo entrega</label>
                   <select value={venta.tipoEntrega} onChange={e => updateVenta(vi, 'tipoEntrega', e.target.value)}
-                    className="input-field text-sm" style={{ borderRadius: 0 }}>
+                    className="input-field text-sm" style={{ borderRadius: 8 }}>
                     <option value="retira_cliente">Retira cliente</option>
                     <option value="envio_woodpallet">Envío WoodPallet</option>
                   </select>
@@ -181,7 +181,7 @@ export default function CargarHistorialModal({ clienteId, razonSocial, onClose }
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#7c4b2c' }}>Estado cobro</label>
                   <select value={venta.estadoCobro} onChange={e => updateVenta(vi, 'estadoCobro', e.target.value)}
-                    className="input-field text-sm" style={{ borderRadius: 0 }}>
+                    className="input-field text-sm" style={{ borderRadius: 8 }}>
                     <option value="cobrada_total">Cobrada total</option>
                     <option value="cobrada_parcial">Cobrada parcial</option>
                     <option value="pendiente">Pendiente</option>
@@ -192,12 +192,12 @@ export default function CargarHistorialModal({ clienteId, razonSocial, onClose }
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#7c4b2c' }}>Monto cobrado</label>
                       <input type="number" value={venta.montoCobrado} onChange={e => updateVenta(vi, 'montoCobrado', e.target.value)}
-                        className="input-field text-sm" style={{ borderRadius: 0 }} placeholder="0" />
+                        className="input-field text-sm" style={{ borderRadius: 8 }} placeholder="0" />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#7c4b2c' }}>Medio de pago</label>
                       <select value={venta.medioPago} onChange={e => updateVenta(vi, 'medioPago', e.target.value)}
-                        className="input-field text-sm" style={{ borderRadius: 0 }}>
+                        className="input-field text-sm" style={{ borderRadius: 8 }}>
                         <option value="transferencia">Transferencia</option>
                         <option value="e_check">E-check</option>
                         <option value="efectivo">Efectivo</option>
@@ -206,12 +206,12 @@ export default function CargarHistorialModal({ clienteId, razonSocial, onClose }
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#7c4b2c' }}>Fecha de pago</label>
                       <input type="date" value={venta.fechaPago} onChange={e => updateVenta(vi, 'fechaPago', e.target.value)}
-                        className="input-field text-sm" style={{ borderRadius: 0 }} />
+                        className="input-field text-sm" style={{ borderRadius: 8 }} />
                     </div>
                   </>
                 )}
                 <div className="md:col-span-3 flex items-center gap-3">
-                  <label className="flex items-center gap-2 text-xs cursor-pointer" style={{ color: '#9B7E6A' }}>
+                  <label className="flex items-center gap-2 text-xs cursor-pointer" style={{ color: 'var(--color-text-soft)' }}>
                     <input type="checkbox" checked={venta.incluyeIva} onChange={e => updateVenta(vi, 'incluyeIva', e.target.checked)}
                       className="w-3.5 h-3.5" />
                     Precios con IVA incluido
@@ -220,7 +220,7 @@ export default function CargarHistorialModal({ clienteId, razonSocial, onClose }
                 <div className="md:col-span-3">
                   <label className="block text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#7c4b2c' }}>Observaciones</label>
                   <input type="text" value={venta.observaciones} onChange={e => updateVenta(vi, 'observaciones', e.target.value)}
-                    className="input-field text-sm" style={{ borderRadius: 0 }} placeholder="Opcional..." />
+                    className="input-field text-sm" style={{ borderRadius: 8 }} placeholder="Opcional..." />
                 </div>
               </div>
 
@@ -232,7 +232,7 @@ export default function CargarHistorialModal({ clienteId, razonSocial, onClose }
                     <div key={pi} className="grid grid-cols-12 gap-2 items-center">
                       <div className="col-span-4">
                         <select value={prod.productoId} onChange={e => updateProducto(vi, pi, 'productoId', e.target.value)}
-                          className="input-field text-sm w-full" style={{ borderRadius: 0 }}>
+                          className="input-field text-sm w-full" style={{ borderRadius: 8 }}>
                           <option value="">Producto...</option>
                           {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                           {productos.map((p: any) => (
@@ -243,17 +243,17 @@ export default function CargarHistorialModal({ clienteId, razonSocial, onClose }
                       <div className="col-span-2">
                         <input type="number" placeholder="Cant." value={prod.cantidad}
                           onChange={e => updateProducto(vi, pi, 'cantidad', e.target.value)}
-                          className="input-field text-sm w-full" style={{ borderRadius: 0 }} />
+                          className="input-field text-sm w-full" style={{ borderRadius: 8 }} />
                       </div>
                       <div className="col-span-3">
                         <input type="number" placeholder="Precio unit." value={prod.precioUnitario}
                           onChange={e => updateProducto(vi, pi, 'precioUnitario', e.target.value)}
-                          className="input-field text-sm w-full" style={{ borderRadius: 0 }} />
+                          className="input-field text-sm w-full" style={{ borderRadius: 8 }} />
                       </div>
                       <div className="col-span-2">
                         <input type="number" placeholder="Costo (opt.)" value={prod.costoUnitario}
                           onChange={e => updateProducto(vi, pi, 'costoUnitario', e.target.value)}
-                          className="input-field text-sm w-full" style={{ borderRadius: 0 }} />
+                          className="input-field text-sm w-full" style={{ borderRadius: 8 }} />
                       </div>
                       <div className="col-span-1 flex justify-center">
                         {venta.productos.length > 1 && (
@@ -279,29 +279,29 @@ export default function CargarHistorialModal({ clienteId, razonSocial, onClose }
           <button
             onClick={() => setVentas(v => [...v, ventaVacia()])}
             className="w-full text-sm py-2.5 flex items-center justify-center gap-2 transition-colors border border-dashed"
-            style={{ borderColor: '#E8D5C4', color: '#9B7E6A', background: 'transparent', borderRadius: 0 }}
+            style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-soft)', background: 'transparent', borderRadius: 8 }}
             onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#C4895A'; (e.currentTarget as HTMLButtonElement).style.color = '#7c4b2c'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#E8D5C4'; (e.currentTarget as HTMLButtonElement).style.color = '#9B7E6A'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-border)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-text-soft)'; }}
           >
             <Plus size={14} /> Agregar otra venta
           </button>
 
           {error && (
-            <div className="border px-4 py-3 text-sm" style={{ background: '#FFF1F2', borderColor: '#FECDD3', color: '#9F1239', borderRadius: 0 }}>
+            <div className="border px-4 py-3 text-sm" style={{ background: '#FFF1F2', borderColor: '#FECDD3', color: '#9F1239', borderRadius: 8 }}>
               {error}
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 px-6 py-4 border-t" style={{ borderColor: '#E8D5C4', background: 'white' }}>
+        <div className="flex justify-end gap-3 px-6 py-4 border-t" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}>
           <button onClick={onClose}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: '6px',
-              background: 'white', color: '#9B7E6A',
-              border: '1px solid #E8D5C4', fontWeight: 500,
+              background: 'var(--color-surface)', color: 'var(--color-text-soft)',
+              border: '1px solid var(--color-border)', fontWeight: 500,
               fontSize: '0.875rem', padding: '0.5rem 1.25rem',
-              borderRadius: 0, cursor: 'pointer', transition: 'background 0.15s',
+              borderRadius: 8, cursor: 'pointer', transition: 'background 0.15s',
             }}
             onMouseEnter={e => (e.currentTarget.style.background = '#FDF6EE')}
             onMouseLeave={e => (e.currentTarget.style.background = 'white')}
@@ -315,7 +315,7 @@ export default function CargarHistorialModal({ clienteId, razonSocial, onClose }
               display: 'inline-flex', alignItems: 'center', gap: '6px',
               background: '#7c4b2c', color: 'white', fontWeight: 500,
               fontSize: '0.875rem', padding: '0.5rem 1.25rem',
-              borderRadius: 0, border: 'none',
+              borderRadius: 8, border: 'none',
               cursor: cargarHistorial.isPending ? 'not-allowed' : 'pointer',
               opacity: cargarHistorial.isPending ? 0.6 : 1,
               transition: 'background 0.15s',

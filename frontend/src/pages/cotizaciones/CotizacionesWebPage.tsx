@@ -103,7 +103,7 @@ function ModalConvertir({
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(30,10,5,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-      <div style={{ background: '#fff', width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto', border: '1px solid #E8D5C4', boxShadow: '0 20px 60px rgba(60,37,15,0.25)' }}>
+      <div style={{ background: 'var(--color-surface)', width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-modal)' }}>
         {/* Header */}
         <div style={{ background: '#7c4b2c', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
           <div>
@@ -121,7 +121,7 @@ function ModalConvertir({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1.125rem', background: '#FDFAF7' }}>
+        <form onSubmit={handleSubmit} style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1.125rem', background: 'var(--color-surface-muted)' }}>
 
           {/* Selector cliente nuevo / existente */}
           <div>
@@ -131,10 +131,10 @@ function ModalConvertir({
                 <button key={m} type="button"
                   onClick={() => setModo(m)}
                   style={{
-                    padding: '0.6rem', border: modo === m ? '2px solid #7c4b2c' : '2px solid #E8D5C4',
-                    background: modo === m ? '#FDF5F0' : '#fff', borderRadius: 0,
+                    padding: '0.6rem', border: modo === m ? '2px solid #7c4b2c' : '2px solid var(--color-border)',
+                    background: modo === m ? 'var(--color-brand-soft)' : 'var(--color-surface)', borderRadius: 'var(--radius-md)',
                     cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600,
-                    color: modo === m ? '#7c4b2c' : '#9B7E6A',
+                    color: modo === m ? '#7c4b2c' : 'var(--color-text-soft)',
                   }}>
                   {m === 'nuevo' ? '+ Crear cliente nuevo' : 'Seleccionar existente'}
                 </button>
@@ -145,7 +145,7 @@ function ModalConvertir({
           {modo === 'existente' ? (
             <div>
               <label className="label">Seleccionar cliente</label>
-              <select className="select" value={clienteId} onChange={e => setClienteId(e.target.value)} style={{ borderRadius: 0 }}>
+              <select className="select" value={clienteId} onChange={e => setClienteId(e.target.value)} style={{ borderRadius: 'var(--radius-md)' }}>
                 <option value="">— Elegir cliente —</option>
                 {clientes.map(c => <option key={c.id} value={c.id}>{c.razonSocial}</option>)}
               </select>
@@ -154,27 +154,27 @@ function ModalConvertir({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="label">Razón social / Empresa *</label>
-                <input className="input" style={{ borderRadius: 0 }} value={nuevoCliente.razonSocial}
+                <input className="input" style={{ borderRadius: 'var(--radius-md)' }} value={nuevoCliente.razonSocial}
                   onChange={e => setNuevoCliente(p => ({ ...p, razonSocial: e.target.value }))} />
               </div>
               <div>
                 <label className="label">Nombre de contacto *</label>
-                <input className="input" style={{ borderRadius: 0 }} value={nuevoCliente.nombreContacto}
+                <input className="input" style={{ borderRadius: 'var(--radius-md)' }} value={nuevoCliente.nombreContacto}
                   onChange={e => setNuevoCliente(p => ({ ...p, nombreContacto: e.target.value }))} />
               </div>
               <div>
                 <label className="label">Email *</label>
-                <input className="input" type="email" style={{ borderRadius: 0 }} value={nuevoCliente.emailContacto}
+                <input className="input" type="email" style={{ borderRadius: 'var(--radius-md)' }} value={nuevoCliente.emailContacto}
                   onChange={e => setNuevoCliente(p => ({ ...p, emailContacto: e.target.value }))} />
               </div>
               <div>
                 <label className="label">Teléfono *</label>
-                <input className="input" style={{ borderRadius: 0 }} value={nuevoCliente.telefonoContacto}
+                <input className="input" style={{ borderRadius: 'var(--radius-md)' }} value={nuevoCliente.telefonoContacto}
                   onChange={e => setNuevoCliente(p => ({ ...p, telefonoContacto: e.target.value }))} />
               </div>
               <div>
                 <label className="label">Localidad</label>
-                <input className="input" style={{ borderRadius: 0 }} value={nuevoCliente.localidad}
+                <input className="input" style={{ borderRadius: 'var(--radius-md)' }} value={nuevoCliente.localidad}
                   onChange={e => setNuevoCliente(p => ({ ...p, localidad: e.target.value }))} />
               </div>
             </div>
@@ -184,13 +184,13 @@ function ModalConvertir({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="label">Precio unitario por pallet *</label>
-              <input className="input" type="number" min="1" placeholder="$ 0" style={{ borderRadius: 0 }}
+              <input className="input" type="number" min="1" placeholder="$ 0" style={{ borderRadius: 'var(--radius-md)' }}
                 value={precioUnitario} onChange={e => setPrecioUnitario(e.target.value)} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 0.75rem', border: incluyeFlete ? '2px solid #7c4b2c' : '2px solid #E8D5C4', borderRadius: 0, cursor: 'pointer', background: incluyeFlete ? '#FDF5F0' : '#fff' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 0.75rem', border: incluyeFlete ? '2px solid #7c4b2c' : '2px solid var(--color-border)', borderRadius: 'var(--radius-md)', cursor: 'pointer', background: incluyeFlete ? 'var(--color-brand-soft)' : 'var(--color-surface)' }}>
                 <input type="checkbox" checked={incluyeFlete} onChange={e => setIncluyeFlete(e.target.checked)} />
-                <span style={{ fontSize: '0.82rem', fontWeight: 500, color: incluyeFlete ? '#7c4b2c' : '#9B7E6A' }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 500, color: incluyeFlete ? '#7c4b2c' : 'var(--color-text-soft)' }}>
                   <Truck size={12} style={{ display: 'inline', marginRight: 4 }} />
                   Incluye flete
                 </span>
@@ -201,13 +201,13 @@ function ModalConvertir({
           {incluyeFlete && (
             <div>
               <label className="label">Costo del flete</label>
-              <input className="input" type="number" min="0" placeholder="$ 0" style={{ borderRadius: 0 }}
+              <input className="input" type="number" min="0" placeholder="$ 0" style={{ borderRadius: 'var(--radius-md)' }}
                 value={costoFlete} onChange={e => setCostoFlete(e.target.value)} />
             </div>
           )}
 
           {error && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0.625rem 0.875rem', background: '#FFF1F2', border: '1px solid #FECACA', borderRadius: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0.625rem 0.875rem', background: '#FFF1F2', border: '1px solid #FECACA', borderRadius: 'var(--radius-md)' }}>
               <AlertTriangle size={14} color="#DC2626" />
               <span style={{ fontSize: '0.82rem', color: '#DC2626' }}>{error}</span>
             </div>
@@ -215,15 +215,15 @@ function ModalConvertir({
 
           <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', paddingTop: '0.25rem' }}>
             <button type="button" onClick={onClose}
-              style={{ padding: '0.5rem 1rem', border: '1px solid #E8D5C4', background: '#fff', borderRadius: 0, cursor: 'pointer', fontSize: '0.82rem', fontWeight: 500, color: '#9B7E6A' }}
+              style={{ padding: '0.5rem 1rem', border: '1px solid var(--color-border)', background: 'var(--color-surface)', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 500, color: 'var(--color-text-soft)' }}
               onMouseEnter={e => (e.currentTarget.style.background = '#FDF6EE')}
-              onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
+              onMouseLeave={e => (e.currentTarget.style.background = 'var(--color-surface)')}>
               Cancelar
             </button>
             <button type="submit" disabled={loading}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0.5rem 1.25rem', background: loading ? '#9B7E6A' : '#7c4b2c', color: '#fff', border: 'none', borderRadius: 0, cursor: loading ? 'not-allowed' : 'pointer', fontSize: '0.82rem', fontWeight: 600 }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0.5rem 1.25rem', background: loading ? 'var(--color-text-soft)' : '#7c4b2c', color: '#fff', border: 'none', borderRadius: 'var(--radius-md)', cursor: loading ? 'not-allowed' : 'pointer', fontSize: '0.82rem', fontWeight: 600 }}
               onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.background = '#5E3520'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = loading ? '#9B7E6A' : '#7c4b2c'; }}>
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = loading ? 'var(--color-text-soft)' : '#7c4b2c'; }}>
               <ArrowRight size={14} />
               {loading ? 'Convirtiendo…' : 'Convertir a cotización'}
             </button>
@@ -253,14 +253,15 @@ function TarjetaWeb({
 
   return (
     <div style={{
-      background: '#fff',
-      border: `1.5px solid ${cw.estado === 'pendiente' ? '#FDE68A' : '#E8E2DA'}`,
+      background: 'var(--color-surface)',
+      border: `1.5px solid ${cw.estado === 'pendiente' ? '#FDE68A' : 'var(--color-border)'}`,
       borderLeft: `3px solid ${cfg.color}`,
-      borderRadius: '0.375rem',
+      borderRadius: 'var(--radius-md)',
+      boxShadow: 'var(--shadow-card)',
       overflow: 'hidden',
     }}>
       {/* ── Header de la tarjeta ── */}
-      <div style={{ padding: '1rem 1.125rem', background: cw.estado === 'pendiente' ? '#FFFDF5' : '#FAFAF8' }}>
+      <div style={{ padding: '1rem 1.125rem', background: cw.estado === 'pendiente' ? 'var(--color-brand-soft)' : 'var(--color-surface-muted)' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             {/* Badge estado */}
@@ -337,7 +338,7 @@ function TarjetaWeb({
 
       {/* ── Detalle expandido ── */}
       {expandido && (
-        <div style={{ padding: '0.875rem 1.125rem', borderTop: '1px solid #F3EDE5', background: '#fff', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+        <div style={{ padding: '0.875rem 1.125rem', borderTop: '1px solid var(--color-border)', background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
           {/* Fechas */}
           {cw.fechaNecesidad && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -350,7 +351,7 @@ function TarjetaWeb({
 
           {/* Observaciones */}
           {cw.observaciones && (
-            <div style={{ background: '#FAFAF8', border: '1px solid #E8E2DA', borderRadius: '0.25rem', padding: '0.625rem 0.875rem' }}>
+            <div style={{ background: 'var(--color-surface-muted)', border: '1px solid var(--color-border)', borderRadius: '0.25rem', padding: '0.625rem 0.875rem' }}>
               <p style={{ fontSize: '0.68rem', fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <MessageSquare size={10} /> Mensaje del cliente
               </p>
@@ -384,7 +385,7 @@ function TarjetaWeb({
 
       {/* ── Acciones ── */}
       {cw.estado !== 'convertida' && cw.estado !== 'descartada' && (
-        <div style={{ padding: '0.625rem 1.125rem', borderTop: '1px solid #F3EDE5', display: 'flex', flexWrap: 'wrap', gap: '0.5rem', background: '#FAFAF8' }}>
+        <div style={{ padding: '0.625rem 1.125rem', borderTop: '1px solid var(--color-border)', display: 'flex', flexWrap: 'wrap', gap: '0.5rem', background: 'var(--color-surface-muted)' }}>
           {cw.estado === 'pendiente' && (
             <button
               onClick={() => onCambiarEstado(cw.id, 'vista')}
@@ -402,7 +403,7 @@ function TarjetaWeb({
           {!descartando ? (
             <button
               onClick={() => setDescartando(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '0.4rem 0.75rem', border: '1.5px solid #FEE2E2', background: '#fff', borderRadius: '0.25rem', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 500, color: '#DC2626' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '0.4rem 0.75rem', border: '1.5px solid #FEE2E2', background: 'var(--color-surface)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 500, color: '#DC2626' }}
             >
               <XCircle size={12} /> Descartar
             </button>
@@ -476,7 +477,7 @@ export default function CotizacionesWebPage() {
   }, {} as Record<string, number>);
 
   return (
-    <div style={{ padding: '1.5rem', maxWidth: 900, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+    <div className="p-4 sm:p-6" style={{ maxWidth: 900, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
       {/* ── Header ── */}
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -501,7 +502,7 @@ export default function CotizacionesWebPage() {
         </div>
         <button
           onClick={cargar}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0.5rem 0.875rem', border: '1.5px solid #E8E2DA', background: '#fff', borderRadius: '0.375rem', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 500, color: '#374151' }}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0.5rem 0.875rem', border: '1.5px solid var(--color-border)', background: 'var(--color-surface)', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 500, color: '#374151' }}
         >
           <RefreshCw size={13} /> Actualizar
         </button>
@@ -509,7 +510,7 @@ export default function CotizacionesWebPage() {
 
       {/* ── Tabs ── */}
       <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-        <div style={{ display: 'flex', gap: 4, borderBottom: '2px solid #E8E2DA', minWidth: 'max-content' }}>
+        <div style={{ display: 'flex', gap: 4, borderBottom: '2px solid var(--color-border)', minWidth: 'max-content' }}>
           {TABS.map(t => {
             const count = t.key === 'todas'
               ? cotizaciones.length
@@ -566,7 +567,7 @@ export default function CotizacionesWebPage() {
           {error}
         </div>
       ) : cotizaciones.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '4rem 1rem', background: '#fff', border: '1.5px solid #E8E2DA', borderRadius: '0.5rem' }}>
+        <div style={{ textAlign: 'center', padding: '4rem 1rem', background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
           <Globe size={28} style={{ color: '#D1D5DB', display: 'block', margin: '0 auto 12px' }} />
           <p style={{ fontSize: '0.9rem', fontWeight: 600, color: '#374151', margin: '0 0 6px' }}>Sin solicitudes</p>
           <p style={{ fontSize: '0.8rem', color: '#9CA3AF', margin: 0 }}>
