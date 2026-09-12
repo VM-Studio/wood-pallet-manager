@@ -293,8 +293,7 @@ export default function FacturacionPage() {
         <div className="shrink-0">
           <button
             onClick={() => setShowNuevaFactura(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white"
-            style={{ background: '#7c4b2c', borderRadius: '0.375rem' }}
+            className="btn-secondary"
           >
             <Plus size={14} /> Agregar facturación
           </button>

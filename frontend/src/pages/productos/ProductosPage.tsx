@@ -80,22 +80,7 @@ export default function ProductosPage() {
         {filtro === 'mios' && (
           <button
             onClick={() => { setProductoEditar(null); setShowForm(true); }}
-            className="shrink-0"
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: '6px',
-              background: '#7c4b2c',
-              color: 'white', fontWeight: 500, fontSize: '0.875rem',
-              padding: '0.5rem 1rem', borderRadius: '0.25rem',
-              border: 'none', cursor: 'pointer', transition: 'all 0.2s'
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, #5A3022 0%, #B07848 100%)';
-              (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.background = '#7c4b2c';
-              (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-            }}
+            className="shrink-0 btn-secondary"
           >
             <Plus size={16} />
             Nuevo producto

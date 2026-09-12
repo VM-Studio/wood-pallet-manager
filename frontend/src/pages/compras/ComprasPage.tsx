@@ -131,7 +131,7 @@ export default function ComprasPage() {
           <h1 className="titulo-modulo">Compras</h1>
           <p className="text-sm text-gray-500 mt-1">{compras?.length || 0} compras registradas</p>
         </div>
-        <button onClick={() => setShowNueva(true)} className="btn-brand">
+        <button onClick={() => setShowNueva(true)} className="btn-secondary">
           <Plus size={16} /> Nueva compra
         </button>
       </div>

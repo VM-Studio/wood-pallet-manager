@@ -629,7 +629,7 @@ export default function DevolucionesPage() {
             {todas.length} devolución{todas.length !== 1 ? 'es' : ''} registrada{todas.length !== 1 ? 's' : ''}
           </p>
         </div>
-        <button onClick={() => setShowModal(true)} className="btn-brand">
+        <button onClick={() => setShowModal(true)} className="btn-secondary">
           <Plus size={16} /> Nueva devolución
         </button>
       </div>

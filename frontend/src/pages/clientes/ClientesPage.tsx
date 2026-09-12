@@ -61,22 +61,7 @@ export default function ClientesPage() {
         </div>
         <button
           onClick={() => { setClienteEditar(null); setShowForm(true); }}
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: '6px',
-            background: '#7c4b2c',
-            color: 'white', fontWeight: 600, fontSize: '0.875rem',
-            padding: '0.6rem 1.25rem', borderRadius: 8,
-            border: 'none', cursor: 'pointer', transition: 'all 0.2s',
-            boxShadow: '0 2px 8px rgba(107,58,42,0.25)',
-          }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
-            (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 14px rgba(107,58,42,0.35)';
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-            (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 8px rgba(107,58,42,0.25)';
-          }}
+          className="btn-secondary"
         >
           <Plus size={16} />
           Nuevo cliente
@@ -170,22 +155,20 @@ export default function ClientesPage() {
                   {/* Cliente */}
                   <td style={{ padding: '0.7rem 1rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                      <div style={{
-                        width: 34, height: 34, flexShrink: 0,
-                        background: esAsignado(cliente)
-                          ? '#7c4b2c'
-                          : 'linear-gradient(135deg, #6B7280 0%, #9CA3AF 100%)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: 'white', fontWeight: 700, fontSize: '0.85rem',
-                      }}>
-                        {cliente.razonSocial[0].toUpperCase()}
-                      </div>
+                      <img
+                        src="/icono.png"
+                        alt=""
+                        style={{
+                          width: 34, height: 34, flexShrink: 0,
+                          objectFit: 'cover',
+                        }}
+                      />
                       <div style={{ minWidth: 0 }}>
                         <p style={{ fontWeight: 400, color: 'var(--color-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 200, margin: 0 }}>
                           {cliente.razonSocial}
                         </p>
                         {cliente.nombreContacto && (
-                          <p style={{ fontSize: '0.72rem', color: 'var(--color-text-soft)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 200, margin: 0 }}>
+                          <p style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-text-soft)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 200, margin: 0 }}>
                             {cliente.nombreContacto}
                           </p>
                         )}
@@ -204,7 +187,7 @@ export default function ClientesPage() {
                       {cliente.nombreContacto && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                           <Users size={11} style={{ color: 'var(--color-text-soft)', flexShrink: 0 }} />
-                          <span style={{ fontSize: '0.8rem', color: 'var(--color-text)' }}>{cliente.nombreContacto}</span>
+                          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--color-text)' }}>{cliente.nombreContacto}</span>
                         </div>
                       )}
                       {cliente.telefonoContacto && (

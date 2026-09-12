@@ -120,7 +120,7 @@ export default function InventarioPage() {
         </div>
         <button
           onClick={() => setMovimientosData({ id: 0, nombre: 'Todos los productos' })}
-          className="btn-brand"
+          className="btn-secondary"
         >
           <History size={16} /> Ver movimientos
         </button>

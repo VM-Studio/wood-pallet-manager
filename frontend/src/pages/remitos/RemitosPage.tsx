@@ -637,7 +637,7 @@ export default function RemitosPage() {
             {todos.length} remito{todos.length !== 1 ? 's' : ''} registrado{todos.length !== 1 ? 's' : ''}
           </p>
         </div>
-        <button onClick={() => setShowModal(true)} className="btn-brand">
+        <button onClick={() => setShowModal(true)} className="btn-secondary">
           <Plus size={16} /> Nuevo remito
         </button>
       </div>

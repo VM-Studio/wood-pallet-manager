@@ -75,9 +75,9 @@ export default function MainLayout() {
           style={{
             background: '#FAFAF8',
             borderBottom: '1px solid #E8E2DA',
-            minHeight: '60px',
-            paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--mobile-header-pad-y, 0.75rem))',
-            paddingBottom: '0.75rem',
+            minHeight: '62px',
+            paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.6875rem)',
+            paddingBottom: '0.6875rem',
           }}
         >
           {/* Izquierda: hamburger (mobile) / spacer (desktop) */}
@@ -115,11 +115,11 @@ export default function MainLayout() {
           {/* Derecha: usuario — clic abre Mi Cuenta */}
           <button
             onClick={() => navigate('/mi-cuenta')}
-            className="flex items-center gap-2.5 rounded-lg px-3 py-1.5 transition-colors hover:bg-stone-100"
-            style={{ cursor: 'pointer', border: 'none', background: 'transparent', minHeight: 40 }}
+            className="flex items-center gap-2.5 rounded-lg px-3 py-1 transition-colors hover:bg-stone-100"
+            style={{ cursor: 'pointer', border: 'none', background: 'transparent', minHeight: 38 }}
           >
             <div style={{
-              width: 36, height: 36, borderRadius: '50%',
+              width: 34, height: 34, borderRadius: '50%',
               overflow: 'hidden', flexShrink: 0,
               background: '#F0E8DF',
               border: '1.5px solid #E8E2DA',
@@ -127,7 +127,7 @@ export default function MainLayout() {
             }}>
               {usuario?.fotoPerfil
                 ? <img src={usuario.fotoPerfil} alt="foto" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                : <UserCircle size={20} style={{ color: '#C4895A' }} />
+                : <UserCircle size={19} style={{ color: '#C4895A' }} />
               }
             </div>
             <div className="text-left hidden sm:block">

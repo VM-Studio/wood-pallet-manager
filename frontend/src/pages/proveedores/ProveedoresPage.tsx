@@ -321,12 +321,7 @@ export default function ProveedoresPage() {
         </div>
         <button
           onClick={() => { setEditando(null); setShowModal(true); }}
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            background: '#7c4b2c',
-            color: '#fff', border: 'none', borderRadius: '0.25rem',
-            padding: '0.5rem 1.1rem', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
-          }}
+          className="btn-secondary"
         >
           <Plus size={14} /> Nuevo proveedor
         </button>

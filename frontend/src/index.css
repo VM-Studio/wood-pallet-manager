@@ -219,7 +219,7 @@
   /* ── Fuente de títulos (SIN CAMBIOS de tipografía) ── */
   .titulo-modulo {
     font-family: 'Cormorant Garamond', Georgia, serif;
-    font-size: 1.75rem;
+    font-size: 2rem;
     font-weight: 600;
     font-style: italic;
     color: var(--color-text);
@@ -318,7 +318,7 @@
 @media (min-width: 640px) {
   .modal-overlay { align-items: center; padding: 1rem; }
   .modal         { border-radius: var(--radius-lg); max-height: 90vh; max-width: 600px; }
-  .titulo-modulo { font-size: 2.25rem; }
+  .titulo-modulo { font-size: 2.5rem; }
   .modal-header  { padding: 1.5rem; }
   .modal-title   { font-size: 1.125rem; }
   .modal-body    { padding: 1.5rem; }
@@ -347,7 +347,7 @@
   .modal-body    { padding: 1.5rem; }
   .modal-footer  { padding: 1.5rem; }
   .page-header   { margin-bottom: 2rem; }
-  .titulo-modulo { font-size: 2.25rem; }
+  .titulo-modulo { font-size: 2.5rem; }
 }
 
 /* ── Navbar fija y compensación de contenido: hasta 1023px (lg), para que
@@ -443,7 +443,7 @@ html, body, #root {
   .btn-icon { width: 2.75rem; height: 2.75rem; }
 
   /* ── Tipografía ── */
-  .titulo-modulo  { font-size: 2rem; }
+  .titulo-modulo  { font-size: 2.25rem; }
   .titulo-seccion { font-size: 1.25rem; }
   .titulo-card    { font-size: 1rem; }
 
@@ -574,7 +574,7 @@ html, body, #root {
 
 /* ── Pantallas muy pequeñas (<390px, ej: iPhone SE) ── */
 @media (max-width: 389px) {
-  .titulo-modulo  { font-size: 1.75rem; }
+  .titulo-modulo  { font-size: 2rem; }
   .card-base      { padding: 0.625rem; }
   .kpi-card       { padding: 0.75rem; }
   .modal-body     { padding: 0.875rem; }

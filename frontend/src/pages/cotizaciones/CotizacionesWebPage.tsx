@@ -477,26 +477,16 @@ export default function CotizacionesWebPage() {
   }, {} as Record<string, number>);
 
   return (
-    <div className="p-4 sm:p-6" style={{ maxWidth: 900, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }} className="animate-fade-in">
 
       {/* ── Header ── */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.25rem' }}>
-            <Globe size={18} color="#7c4b2c" />
-            <h1 style={{
-              fontFamily: "'Cormorant Garamond', Georgia, serif",
-              fontStyle: 'italic',
-              fontSize: 'clamp(1.5rem, 3vw, 1.875rem)',
-              fontWeight: 600,
-              color: '#1F2937',
-              margin: 0,
-              lineHeight: 1.1,
-            }}>
-              Solicitudes del cotizador web
-            </h1>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Globe size={20} color="#7c4b2c" />
+            <h1 className="titulo-modulo">Solicitudes del cotizador web</h1>
           </div>
-          <p style={{ fontSize: '0.8rem', color: '#6B7280', margin: 0 }}>
+          <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-soft)', marginTop: '0.2rem' }}>
             Pedidos recibidos desde woodpallets.com.ar/cotizador
           </p>
         </div>

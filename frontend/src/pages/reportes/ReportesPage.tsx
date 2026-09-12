@@ -196,80 +196,6 @@ export default function ReportesPage() {
         </div>
       </div>
 
-      {/* Descarga de reporte PDF */}
-      <div className="card-kpi">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-7 h-7 rounded flex items-center justify-center shrink-0"
-            style={{ background: '#F3EDE8', color: '#7c4b2c' }}><FileText size={15} /></div>
-          <p className="titulo-card flex-1">Descargar reporte en PDF</p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex gap-1 p-1" style={{ background: '#F3EDE8', borderRadius: '0.375rem' }}>
-            {([
-              { key: 'mes',   label: 'Por mes' },
-              { key: 'rango', label: 'Rango personalizado' },
-            ] as { key: 'mes' | 'rango'; label: string }[]).map(m => (
-              <button key={m.key} onClick={() => setModoPdf(m.key)}
-                className="px-4 py-2 text-sm font-medium transition-all"
-                style={{
-                  background: modoPdf === m.key ? '#7c4b2c' : 'transparent',
-                  color: modoPdf === m.key ? '#fff' : '#6B7280',
-                  borderRadius: '0.25rem', border: 'none', cursor: 'pointer',
-                }}>
-                {m.label}
-              </button>
-            ))}
-          </div>
-
-          {modoPdf === 'mes' ? (
-            mesesConDatos && mesesConDatos.length > 0 ? (
-              <select
-                value={mesPdfActual}
-                onChange={e => setMesPdf(e.target.value)}
-                className="input w-52 capitalize"
-              >
-                {mesesConDatos.map(ym => (
-                  <option key={ym} value={ym} className="capitalize">{labelMes(ym)}</option>
-                ))}
-              </select>
-            ) : (
-              <p className="text-xs text-gray-400">Todavía no hay ventas registradas para generar un reporte.</p>
-            )
-          ) : (
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2">
-                <Calendar size={15} className="text-gray-400" />
-                <input type="date" value={desdePdf} onChange={e => setDesdePdf(e.target.value)} className="input w-36" />
-              </div>
-              <span className="text-gray-400">→</span>
-              <input type="date" value={hastaPdf} onChange={e => setHastaPdf(e.target.value)} className="input w-36" />
-            </div>
-          )}
-
-          <button
-            onClick={handleDescargarPdf}
-            disabled={descargando || !rangoPdfSeleccionado}
-            className="ml-auto flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-            style={{ background: '#7c4b2c', borderRadius: '0.25rem', border: 'none', cursor: descargando ? 'wait' : 'pointer' }}
-          >
-            {descargando
-              ? <><Loader2 size={15} className="animate-spin" /> Generando PDF...</>
-              : <><Download size={15} /> Descargar PDF</>
-            }
-          </button>
-        </div>
-
-        {rangoPdfSeleccionado && (
-          <p className="text-xs text-gray-400 mt-2">
-            Período: {new Date(rangoPdfSeleccionado.desde).toLocaleDateString('es-AR')} → {new Date(rangoPdfSeleccionado.hasta).toLocaleDateString('es-AR')}
-          </p>
-        )}
-        {errorPdf && (
-          <p className="text-xs mt-2" style={{ color: '#B91C1C' }}>{errorPdf}</p>
-        )}
-      </div>
-
       {/* Selector de período */}
       <div className="card-kpi">
         <div className="flex flex-wrap items-center gap-4">
@@ -827,6 +753,79 @@ export default function ReportesPage() {
           </div>
         )
       )}
+
+      {/* Descarga de reporte PDF */}
+      <div className="card-kpi">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-7 h-7 rounded flex items-center justify-center shrink-0"
+            style={{ background: '#F3EDE8', color: '#7c4b2c' }}><FileText size={15} /></div>
+          <p className="titulo-card flex-1">Descargar reporte en PDF</p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex gap-1 p-1" style={{ background: '#F3EDE8', borderRadius: '0.375rem' }}>
+            {([
+              { key: 'mes',   label: 'Por mes' },
+              { key: 'rango', label: 'Rango personalizado' },
+            ] as { key: 'mes' | 'rango'; label: string }[]).map(m => (
+              <button key={m.key} onClick={() => setModoPdf(m.key)}
+                className="px-4 py-2 text-sm font-medium transition-all"
+                style={{
+                  background: modoPdf === m.key ? '#7c4b2c' : 'transparent',
+                  color: modoPdf === m.key ? '#fff' : '#6B7280',
+                  borderRadius: '0.25rem', border: 'none', cursor: 'pointer',
+                }}>
+                {m.label}
+              </button>
+            ))}
+          </div>
+
+          {modoPdf === 'mes' ? (
+            mesesConDatos && mesesConDatos.length > 0 ? (
+              <select
+                value={mesPdfActual}
+                onChange={e => setMesPdf(e.target.value)}
+                className="input w-52 capitalize"
+              >
+                {mesesConDatos.map(ym => (
+                  <option key={ym} value={ym} className="capitalize">{labelMes(ym)}</option>
+                ))}
+              </select>
+            ) : (
+              <p className="text-xs text-gray-400">Todavía no hay ventas registradas para generar un reporte.</p>
+            )
+          ) : (
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Calendar size={15} className="text-gray-400" />
+                <input type="date" value={desdePdf} onChange={e => setDesdePdf(e.target.value)} className="input w-36" />
+              </div>
+              <span className="text-gray-400">→</span>
+              <input type="date" value={hastaPdf} onChange={e => setHastaPdf(e.target.value)} className="input w-36" />
+            </div>
+          )}
+
+          <button
+            onClick={handleDescargarPdf}
+            disabled={descargando || !rangoPdfSeleccionado}
+            className="ml-auto btn-secondary disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {descargando
+              ? <><Loader2 size={15} className="animate-spin" /> Generando PDF...</>
+              : <><Download size={15} /> Descargar PDF</>
+            }
+          </button>
+        </div>
+
+        {rangoPdfSeleccionado && (
+          <p className="text-xs text-gray-400 mt-2">
+            Período: {new Date(rangoPdfSeleccionado.desde).toLocaleDateString('es-AR')} → {new Date(rangoPdfSeleccionado.hasta).toLocaleDateString('es-AR')}
+          </p>
+        )}
+        {errorPdf && (
+          <p className="text-xs mt-2" style={{ color: '#B91C1C' }}>{errorPdf}</p>
+        )}
+      </div>
     </div>
   );
 }

@@ -420,7 +420,6 @@ export default function DashboardPage() {
             </div>
             <p className="flex-1 text-white font-semibold" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '17px', fontStyle: 'italic' }}>Nuevo cliente</p>
           </div>
-          <p className="text-sm text-white/70">Alta de cliente y asignación de contacto</p>
           <div className="flex items-center gap-1 mt-3 text-xs font-medium text-white/90">
             <Plus size={12} /> Crear ahora
           </div>
@@ -437,7 +436,6 @@ export default function DashboardPage() {
             </div>
             <p className="flex-1 text-white font-semibold" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '17px', fontStyle: 'italic' }}>Nueva cotización</p>
           </div>
-          <p className="text-sm text-white/70">Generá un presupuesto para un cliente</p>
           <div className="flex items-center gap-1 mt-3 text-xs font-medium text-white/90">
             <Plus size={12} /> Crear ahora
           </div>
@@ -454,7 +452,6 @@ export default function DashboardPage() {
             </div>
             <p className="flex-1 text-white font-semibold" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '17px', fontStyle: 'italic' }}>Registrar cobro</p>
           </div>
-          <p className="text-sm text-white/70">Marcá facturas como cobradas o parciales</p>
           <div className="flex items-center gap-1 mt-3 text-xs font-medium text-white/90">
             <ArrowRight size={12} /> Ver pendientes
           </div>
@@ -471,7 +468,6 @@ export default function DashboardPage() {
             </div>
             <p className="flex-1 text-white font-semibold" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '17px', fontStyle: 'italic' }}>Cotización rápida</p>
           </div>
-          <p className="text-sm text-white/70">Presupuesto express sin cliente registrado</p>
           <div className="flex items-center gap-1 mt-3 text-xs font-medium text-white/90">
             <Plus size={12} /> Generar ahora
           </div>
