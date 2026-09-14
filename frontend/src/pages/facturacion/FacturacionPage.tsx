@@ -611,7 +611,7 @@ export default function FacturacionPage() {
                         return (
                           <span style={{
                             fontSize: '0.75rem', fontWeight: 600,
-                            padding: '0.2rem 0.6rem', borderRadius: '999px',
+                            padding: '0.2rem 0.6rem', borderRadius: '0.3rem',
                             background: color.bg, color: color.text,
                             border: `1px solid ${color.border}`,
                           }}>

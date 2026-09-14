@@ -412,7 +412,7 @@ export default function DashboardPage() {
         <button
           onClick={() => navigate('/clientes?nuevo=true')}
           className="text-left hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-pointer p-4"
-          style={{ background: '#7c4b2c', borderRadius: 0 }}
+          style={{ background: '#7c4b2c', borderRadius: 'var(--radius-md)' }}
         >
           <div className="flex items-center gap-2 mb-2">
             <div className="w-7 h-7 bg-white/20 flex items-center justify-center text-white shrink-0">
@@ -428,7 +428,7 @@ export default function DashboardPage() {
         <button
           onClick={() => navigate('/cotizaciones?nueva=true')}
           className="text-left hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-pointer p-4"
-          style={{ background: '#7c4b2c', borderRadius: 0 }}
+          style={{ background: '#7c4b2c', borderRadius: 'var(--radius-md)' }}
         >
           <div className="flex items-center gap-2 mb-2">
             <div className="w-7 h-7 bg-white/20 flex items-center justify-center text-white shrink-0">
@@ -444,7 +444,7 @@ export default function DashboardPage() {
         <button
           onClick={() => navigate('/facturacion?cobro=true')}
           className="text-left hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-pointer p-4"
-          style={{ background: '#7c4b2c', borderRadius: 0 }}
+          style={{ background: '#7c4b2c', borderRadius: 'var(--radius-md)' }}
         >
           <div className="flex items-center gap-2 mb-2">
             <div className="w-7 h-7 bg-white/20 flex items-center justify-center text-white shrink-0">
@@ -460,7 +460,7 @@ export default function DashboardPage() {
         <button
           onClick={() => setShowRapida(true)}
           className="text-left hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-pointer p-4"
-          style={{ background: '#7c4b2c', borderRadius: 0 }}
+          style={{ background: '#7c4b2c', borderRadius: 'var(--radius-md)' }}
         >
           <div className="flex items-center gap-2 mb-2">
             <div className="w-7 h-7 bg-white/20 flex items-center justify-center text-white shrink-0">

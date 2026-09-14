@@ -267,7 +267,7 @@ function TarjetaWeb({
             {/* Badge estado */}
             <span style={{
               display: 'inline-flex', alignItems: 'center', gap: 4,
-              padding: '0.2rem 0.55rem', borderRadius: 99,
+              padding: '0.2rem 0.55rem', borderRadius: 4,
               background: cfg.bg, border: `1px solid ${cfg.border}`,
               fontSize: '0.63rem', fontWeight: 700, color: cfg.color,
               textTransform: 'uppercase', letterSpacing: '0.04em',

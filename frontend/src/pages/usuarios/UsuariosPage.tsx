@@ -44,7 +44,7 @@ function ConexionBadge({ usuario }: { usuario: Usuario }) {
       <span style={{
         display: 'inline-flex', alignItems: 'center', gap: 5,
         background: '#DCFCE7', color: '#166534', fontSize: '0.72rem', fontWeight: 600,
-        padding: '0.2rem 0.55rem', borderRadius: 99,
+        padding: '0.2rem 0.55rem', borderRadius: 4,
       }}>
         <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#22C55E', display: 'inline-block' }} />
         En línea
@@ -72,7 +72,7 @@ function EstadoBadge({ estado }: { estado?: string }) {
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: 4,
       background: cfg.bg, color: cfg.color, fontSize: '0.72rem', fontWeight: 600,
-      padding: '0.2rem 0.55rem', borderRadius: 99,
+      padding: '0.2rem 0.55rem', borderRadius: 4,
     }}>
       {cfg.icon}{cfg.label}
     </span>
@@ -262,7 +262,7 @@ export default function UsuariosPage() {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <EstadoBadge estado={u.estadoCuenta} />
-          <span style={{ fontSize: '0.75rem', color: C.textMuted, background: '#F5F1EB', padding: '0.2rem 0.55rem', borderRadius: 99 }}>
+          <span style={{ fontSize: '0.75rem', color: C.textMuted, background: '#F5F1EB', padding: '0.2rem 0.55rem', borderRadius: 4 }}>
             {rolLabel[u.rol] ?? u.rol}
           </span>
           {u.tieneModulosLimitados && u.estadoCuenta === 'aprobado' && (
@@ -277,7 +277,7 @@ export default function UsuariosPage() {
                 fontSize: '0.72rem', fontWeight: 600, border: 'none', cursor: 'pointer',
                 background: u.activo ? '#FEE2E2' : '#DCFCE7',
                 color: u.activo ? '#991B1B' : '#166534',
-                padding: '0.25rem 0.6rem', borderRadius: 99,
+                padding: '0.25rem 0.6rem', borderRadius: 4,
               }}
             >
               {u.activo ? 'Desactivar' : 'Activar'}

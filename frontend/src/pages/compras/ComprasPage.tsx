@@ -403,21 +403,21 @@ export default function ComprasPage() {
                       <p className="font-semibold text-gray-900 text-sm">
                         #{c.id} — {c.proveedor?.nombreEmpresa}
                       </p>
-                      <span className="text-xs font-medium px-2 py-0.5 rounded-lg bg-gray-100 text-gray-600">
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-sm bg-gray-100 text-gray-600">
                         {tipoCompraLabel[c.tipoCompra] || c.tipoCompra}
                       </span>
                       {c.saldoDeudor && (
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-lg bg-amber-100 text-amber-700">
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-sm bg-amber-100 text-amber-700">
                           Saldo deudor
                         </span>
                       )}
                       {c.estado === 'pagada' && (
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-lg bg-green-100 text-green-700">
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-sm bg-green-100 text-green-700">
                           Pagada
                         </span>
                       )}
                       {c.estado === 'cancelada' && (
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-lg bg-red-100 text-red-700">
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-sm bg-red-100 text-red-700">
                           Cancelada
                         </span>
                       )}

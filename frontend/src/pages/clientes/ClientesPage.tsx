@@ -207,13 +207,13 @@ export default function ClientesPage() {
                     {cliente.esExportador ? (
                       <span style={{
                         fontSize: '0.65rem', fontWeight: 700, padding: '0.15rem 0.45rem',
-                        borderRadius: 8, background: '#DBEAFE', color: '#1D4ED8',
+                        borderRadius: 4, background: '#DBEAFE', color: '#1D4ED8',
                         whiteSpace: 'nowrap', letterSpacing: '0.02em',
                       }}>Exportador</span>
                     ) : (
                       <span style={{
                         fontSize: '0.65rem', fontWeight: 700, padding: '0.15rem 0.45rem',
-                        borderRadius: 8, background: '#F0F9FF', color: '#0369A1',
+                        borderRadius: 4, background: '#F0F9FF', color: '#0369A1',
                         whiteSpace: 'nowrap', letterSpacing: '0.02em',
                       }}>Local</span>
                     )}
