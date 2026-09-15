@@ -18,7 +18,7 @@ interface VentaSinFactura {
 }
 
 const formatPesos = (v: number) =>
-  new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(v);
+  new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', currencyDisplay: 'code', maximumFractionDigits: 0 }).format(v);
 
 export default function NuevaFactura({ onClose, onSuccess }: NuevaFacturaProps) {
   const crearFactura = useCrearFactura();

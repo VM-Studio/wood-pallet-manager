@@ -147,3 +147,17 @@ export const useActualizarObservaciones = () => {
     }
   });
 };
+
+export const useActualizarNroCheque = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, nroCheque }: { id: number; nroCheque: string }) => {
+      const { data } = await api.patch(`/facturas/${id}/nro-cheque`, { nroCheque });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['facturas'] });
+      queryClient.invalidateQueries({ queryKey: ['factura'] });
+    }
+  });
+};

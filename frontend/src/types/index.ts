@@ -115,7 +115,7 @@ export interface Cotizacion {
   emailProspecto?: string;
   fechaCotizacion: string;
   fechaVencimiento?: string;
-  estado: 'enviada' | 'en_seguimiento' | 'aceptada' | 'rechazada' | 'perdida' | 'vencida';
+  estado: 'enviada' | 'en_seguimiento' | 'aceptada' | 'rechazada' | 'perdida' | 'vencida' | 'anulada';
   incluyeFlete: boolean;
   costoFlete?: number;
   fleteIncluido: boolean;
@@ -315,6 +315,9 @@ export interface Factura {
   estadoCobro: 'pendiente' | 'cobrada_parcial' | 'cobrada_total' | 'vencida' | 'incobrable';
   modalidadPago?: string;
   medioPago?: string;
+  metodoPago?: 'transferencia' | 'e_check' | 'efectivo';
+  cuentaDestino?: string;
+  nroCheque?: string;
   observaciones?: string;
   cliente?: { razonSocial: string; cuit?: string };
   pagos?: PagoCobro[];

@@ -44,6 +44,7 @@ const estadoCotizConfig: Record<string, { label: string; color: string }> = {
   aceptada:   { label: 'Aceptada',   color: 'bg-green-100 text-green-700' },
   rechazada:  { label: 'Rechazada',  color: 'bg-red-100 text-red-700' },
   vencida:    { label: 'Vencida',    color: 'bg-gray-100 text-gray-500' },
+  anulada:    { label: 'Anulada',    color: 'bg-gray-100 text-gray-500' },
   convertida: { label: 'Convertida', color: 'bg-teal-100 text-teal-700' },
 };
 

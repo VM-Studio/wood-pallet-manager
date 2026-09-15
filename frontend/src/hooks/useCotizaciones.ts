@@ -71,6 +71,35 @@ export const useActualizarEstadoCotizacion = () => {
   });
 };
 
+export const useEditarCotizacion = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, datos }: { id: number; datos: any }) => {
+      const { data } = await api.put(`/cotizaciones/${id}`, datos);
+      return data;
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['cotizaciones'] });
+      queryClient.invalidateQueries({ queryKey: ['cotizacion', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    }
+  });
+};
+
+export const useReactivarCotizacion = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const { data } = await api.post(`/cotizaciones/${id}/reactivar`);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cotizaciones'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    }
+  });
+};
+
 export const useRegistrarSeguimiento = () => {
   const queryClient = useQueryClient();
   return useMutation({

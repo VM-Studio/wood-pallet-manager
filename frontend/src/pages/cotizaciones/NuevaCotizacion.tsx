@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { X, Plus, Trash2 } from 'lucide-react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { X, Plus, Trash2, Search, CheckCircle } from 'lucide-react';
 import { useCrearCotizacion } from '../../hooks/useCotizaciones';
 import { useClientes } from '../../hooks/useClientes';
 import { useAuthStore } from '../../store/auth.store';
@@ -91,6 +91,9 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
   const { usuario } = useAuthStore();
   const [productos, setProductos] = useState<{ id: number; nombre: string; condicion: string; tipo: string }[]>([]);
   const [error, setError] = useState('');
+  const [busquedaCliente, setBusquedaCliente] = useState('');
+  const [mostrarListaClientes, setMostrarListaClientes] = useState(false);
+  const clienteSelectorRef = useRef<HTMLDivElement>(null);
 
   const isPersonalizado = (productoId: number) =>
     productos.find(p => p.id === productoId)?.tipo === 'personalizado';
@@ -113,6 +116,32 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
 
   useEffect(() => {
     api.get('/productos').then(({ data }) => setProductos(data));
+  }, []);
+
+  const clientesAsignados = useMemo(
+    () => clientes?.filter(c => c.usuarioAsignadoId === usuario?.id) ?? [],
+    [clientes, usuario?.id]
+  );
+
+  const clientesFiltrados = useMemo(() => {
+    const q = busquedaCliente.trim().toLowerCase();
+    if (!q) return clientesAsignados;
+    return clientesAsignados.filter(c =>
+      c.razonSocial?.toLowerCase().includes(q) ||
+      c.nombreContacto?.toLowerCase().includes(q)
+    );
+  }, [clientesAsignados, busquedaCliente]);
+
+  const clienteSeleccionado = clientesAsignados.find(c => c.id === form.clienteId);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (clienteSelectorRef.current && !clienteSelectorRef.current.contains(e.target as Node)) {
+        setMostrarListaClientes(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const calcularPrecio = async (idx: number, productoId: number, cantidad: number) => {
@@ -380,24 +409,54 @@ export default function NuevaCotizacion({ onClose, onSuccess }: NuevaCotizacionP
           <div className="modal-body space-y-6" style={{ padding: '1.5rem' }}>
 
             {/* Cliente */}
-            <div>
+            <div ref={clienteSelectorRef} style={{ position: 'relative' }}>
               <label className="label" style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9CA3AF' }}>
                 Cliente <span style={{ color: '#B91C1C' }}>*</span>
               </label>
-              <select
-                value={form.clienteId}
-                onChange={e => setForm({ ...form, clienteId: parseInt(e.target.value) })}
-                className="select"
-                style={{ borderRadius: 0, border: '1px solid #E5E7EB' }}
-                required
-              >
-                <option value={0}>Seleccioná un cliente...</option>
-                {clientes?.filter(c => c.usuarioAsignadoId === usuario?.id).map(c => (
-                  <option key={c.id} value={c.id}>
-                    {[c.nombreContacto, c.razonSocial].filter(Boolean).join(' — ')}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  className="input pl-9"
+                  style={{ borderRadius: 0, border: '1px solid #E5E7EB' }}
+                  placeholder="Buscar cliente por nombre o empresa..."
+                  value={
+                    mostrarListaClientes
+                      ? busquedaCliente
+                      : clienteSeleccionado
+                        ? [clienteSeleccionado.nombreContacto, clienteSeleccionado.razonSocial].filter(Boolean).join(' — ')
+                        : busquedaCliente
+                  }
+                  onChange={e => {
+                    setBusquedaCliente(e.target.value);
+                    setForm(prev => ({ ...prev, clienteId: 0 }));
+                  }}
+                  onFocus={() => setMostrarListaClientes(true)}
+                />
+              </div>
+              {mostrarListaClientes && (
+                <div className="overflow-y-auto" style={{ border: '1px solid #E5E7EB', borderTop: 'none', maxHeight: '11rem', position: 'absolute', left: 0, right: 0, zIndex: 20, background: '#fff' }}>
+                  {clientesFiltrados.length === 0 ? (
+                    <p className="text-sm text-gray-400 p-3 text-center">Sin resultados</p>
+                  ) : clientesFiltrados.map(c => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => {
+                        setForm(prev => ({ ...prev, clienteId: c.id }));
+                        setBusquedaCliente('');
+                        setMostrarListaClientes(false);
+                      }}
+                      className={`w-full text-left px-3 py-2 text-sm transition-colors ${form.clienteId === c.id ? 'bg-amber-50 text-amber-800 font-medium' : 'hover:bg-gray-50 text-gray-700'}`}
+                    >
+                      {c.razonSocial}
+                      {c.nombreContacto && <span className="text-xs text-gray-400 ml-1">· {c.nombreContacto}</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {clienteSeleccionado && !mostrarListaClientes && (
+                <p className="text-xs text-green-600 flex items-center gap-1 mt-1"><CheckCircle size={11} /> Cliente seleccionado</p>
+              )}
             </div>
 
             {/* Productos */}

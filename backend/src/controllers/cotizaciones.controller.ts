@@ -7,6 +7,8 @@ import {
   getCotizacionByIdService,
   crearCotizacionService,
   actualizarEstadoCotizacionService,
+  editarCotizacionService,
+  reactivarCotizacionService,
   registrarSeguimientoService,
   convertirCotizacionAVentaService,
   generarTextoWhatsAppService,
@@ -45,6 +47,11 @@ const crearCotizacionSchema = z.object({
   incluyeIva: z.boolean().optional().default(true),
   canalEnvio: z.enum(['whatsapp', 'email']).optional(),
   observaciones: z.string().optional(),
+  detalles: z.array(detalleSchema).min(1, 'Debe haber al menos un producto'),
+});
+
+const editarCotizacionSchema = z.object({
+  incluyeIva: z.boolean().optional(),
   detalles: z.array(detalleSchema).min(1, 'Debe haber al menos un producto'),
 });
 
@@ -112,6 +119,30 @@ export const actualizarEstado = async (req: AuthRequest, res: Response) => {
     const id = parseId(req.params.id);
     const { estado } = req.body;
     const cotizacion = await actualizarEstadoCotizacionService(id, estado, req.user!.userId);
+    res.json(cotizacion);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const editarCotizacion = async (req: AuthRequest, res: Response) => {
+  try {
+    const id = parseId(req.params.id);
+    const datos = editarCotizacionSchema.parse(req.body);
+    const cotizacion = await editarCotizacionService(id, datos);
+    res.json(cotizacion);
+  } catch (error: any) {
+    if (error.name === 'ZodError') {
+      return res.status(400).json({ error: error.issues[0].message });
+    }
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const reactivarCotizacion = async (req: AuthRequest, res: Response) => {
+  try {
+    const id = parseId(req.params.id);
+    const cotizacion = await reactivarCotizacionService(id);
     res.json(cotizacion);
   } catch (error: any) {
     res.status(400).json({ error: error.message });

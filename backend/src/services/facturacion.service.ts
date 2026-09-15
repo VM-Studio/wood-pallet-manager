@@ -242,3 +242,15 @@ export const actualizarObservacionesService = async (id: number, observaciones: 
     data: { observaciones: observaciones.trim() || null },
   });
 };
+
+export const actualizarNroChequeService = async (id: number, nroCheque: string) => {
+  const factura = await prisma.factura.findUnique({ where: { id } });
+  if (!factura) throw new Error('Factura no encontrada');
+  if (factura.metodoPago !== 'e_check') {
+    throw new Error('Solo se puede cargar el número de cheque en facturas pagadas con e-check');
+  }
+  return prisma.factura.update({
+    where: { id },
+    data: { nroCheque: nroCheque.trim() || null },
+  });
+};

@@ -1,7 +1,7 @@
 import cron from 'node-cron';
 import {
   marcarFacturasVencidasService,
-  marcarCotizacionesVencidasService,
+  marcarCotizacionesAnuladasService,
 } from '../services/alertas.service';
 import { ejecutarReglasAutomaticasService } from '../services/seguimientos.service';
 
@@ -17,16 +17,18 @@ export const iniciarTareasProgramadas = () => {
     }
   });
 
-  // Todos los días a las 8:05 AM
-  cron.schedule('5 8 * * *', async () => {
-    console.log('[CRON] Verificando cotizaciones vencidas...');
+  // Cada 15 minutos — las cotizaciones tienen validez de 72hs, se anulan
+  // automáticamente si no fueron aceptadas ni rechazadas en ese plazo.
+  cron.schedule('*/15 * * * *', async () => {
+    console.log('[CRON] Verificando cotizaciones vencidas (72hs)...');
     try {
-      const count = await marcarCotizacionesVencidasService();
-      console.log(`[CRON] ${count} cotizaciones marcadas como vencidas`);
+      const count = await marcarCotizacionesAnuladasService();
+      console.log(`[CRON] ${count} cotizaciones anuladas automáticamente`);
     } catch (error) {
       console.error('[CRON] Error al verificar cotizaciones:', error);
     }
   });
+
 
   // Todos los días a las 8:10 AM — automatizaciones de seguimientos
   cron.schedule('10 8 * * *', async () => {

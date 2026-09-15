@@ -147,7 +147,7 @@ erDiagram
         int      usuarioId         FK
         datetime fechaCotizacion
         datetime fechaVencimiento
-        string   estado            "enum: enviada | en_seguimiento | aceptada | rechazada | perdida | vencida"
+        string   estado            "enum: enviada | en_seguimiento | aceptada | rechazada | perdida | vencida | anulada"
         boolean  incluyeFlete
         decimal  costoFlete
         boolean  fleteIncluido

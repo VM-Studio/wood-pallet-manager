@@ -4,6 +4,8 @@ import {
   getCotizacionById,
   crearCotizacion,
   actualizarEstado,
+  editarCotizacion,
+  reactivarCotizacion,
   registrarSeguimiento,
   convertirAVenta,
   getTextoWhatsApp,
@@ -29,6 +31,8 @@ router.post('/rapida', crearCotizacionRapida);
 router.get('/:id', getCotizacionById);
 router.get('/:id/whatsapp', getTextoWhatsApp);
 router.put('/:id/estado', actualizarEstado);
+router.put('/:id', editarCotizacion);
+router.post('/:id/reactivar', reactivarCotizacion);
 router.post('/:id/seguimiento', registrarSeguimiento);
 router.post('/:id/convertir', convertirAVenta);
 router.post('/:id/enviar-email', enviarEmailCotizacion);

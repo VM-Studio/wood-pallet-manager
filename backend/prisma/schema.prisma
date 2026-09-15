@@ -355,6 +355,7 @@ enum EstadoCotizacion {
   rechazada
   perdida
   vencida
+  anulada
 }
 
 enum CanalEnvioCotizacion {
@@ -678,6 +679,7 @@ model Factura {
   medioPago        String?
   metodoPago       MetodoPago?
   cuentaDestino    String?
+  nroCheque        String?
   observaciones    String?
 
   venta        Venta         @relation(fields: [ventaId], references: [id])

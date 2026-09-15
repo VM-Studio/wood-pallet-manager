@@ -2,12 +2,13 @@ import { useState, useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Plus, MoreHorizontal,
-  CheckCircle, XCircle, Search, FileText, Truck, Leaf, Trash2, MessageCircle, Zap, Globe
+  CheckCircle, XCircle, Search, FileText, Truck, Leaf, Trash2, MessageCircle, Zap, Globe, Pencil, RotateCcw
 } from 'lucide-react';
-import { useCotizaciones, useActualizarEstadoCotizacion, useEliminarCotizacion } from '../../hooks/useCotizaciones';
+import { useCotizaciones, useActualizarEstadoCotizacion, useEliminarCotizacion, useReactivarCotizacion } from '../../hooks/useCotizaciones';
 import { useContadorCotizacionesWeb } from '../../hooks/useCotizacionesWeb';
 import NuevaCotizacion from './NuevaCotizacion';
 import NuevaCotizacionRapida from './NuevaCotizacionRapida';
+import EditarCotizacion from './EditarCotizacion';
 import WhatsAppModal from './WhatsAppModal';
 import ConvertirVentaModal from './ConvertirVentaModal';
 import CotizacionesWebModal from './CotizacionesWebModal';
@@ -27,17 +28,30 @@ const formatPesos = (v: number) =>
 const formatFecha = (f: string) =>
   new Date(f).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' });
 
+// Muestra cuánto falta para que la cotización se anule automáticamente (validez 72hs)
+const vencimientoLabel = (fechaVencimiento: string) => {
+  const ms = new Date(fechaVencimiento).getTime() - Date.now();
+  if (ms <= 0) return 'Vence en breve';
+  const horas = Math.floor(ms / (1000 * 60 * 60));
+  if (horas < 1) return 'Vence en menos de 1h';
+  if (horas < 24) return `Vence en ${horas}h`;
+  const dias = Math.floor(horas / 24);
+  return `Vence en ${dias}d`;
+};
+
 const estadoFiltros = [
   { key: 'todos',          label: 'Todas' },
   { key: 'en_seguimiento', label: 'Seguimiento' },
   { key: 'aceptada',       label: 'Aceptadas' },
   { key: 'rechazada',      label: 'Rechazadas' },
+  { key: 'anulada',        label: 'Anuladas' },
 ];
 
 export default function CotizacionesPage() {
   const { data: cotizaciones, isLoading, error } = useCotizaciones();
   const actualizarEstado = useActualizarEstadoCotizacion();
   const eliminarCotizacion = useEliminarCotizacion();
+  const reactivarCotizacion = useReactivarCotizacion();
   const { usuario } = useAuthStore();
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('todos');
@@ -50,6 +64,8 @@ export default function CotizacionesPage() {
   const pendientesWeb = (contadorWeb?.pendiente ?? 0) + (contadorWeb?.vista ?? 0);
   const [whatsappId, setWhatsappId] = useState<number | null>(null);
   const [convertirId, setConvertirId] = useState<number | null>(null);
+  const [editarId, setEditarId] = useState<number | null>(null);
+  const [reactivandoId, setReactivandoId] = useState<number | null>(null);
   const [confirmEliminar, setConfirmEliminar] = useState<number | null>(null);
   const [dropdownAbierto, setDropdownAbierto] = useState<number | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -113,7 +129,7 @@ export default function CotizacionesPage() {
     const matchEstado =
       filtroEstado === 'todos' ||
       (filtroEstado === 'en_seguimiento'
-        ? c.estado === 'enviada' || c.estado === 'en_seguimiento'
+        ? c.estado === 'enviada' || c.estado === 'en_seguimiento' || c.estado === 'anulada'
         : c.estado === filtroEstado);
     return matchBusqueda && matchEstado;
   });
@@ -185,9 +201,9 @@ export default function CotizacionesPage() {
           },
           {
             key: 'en_seguimiento',
-            label: 'En seguimiento',
-            sublabel: 'enviadas o en curso',
-            count: cotizaciones?.filter(c => c.estado === 'enviada' || c.estado === 'en_seguimiento').length ?? 0,
+            label: 'Seguimientos / Anuladas',
+            sublabel: 'enviadas, en curso o vencidas',
+            count: cotizaciones?.filter(c => c.estado === 'enviada' || c.estado === 'en_seguimiento' || c.estado === 'anulada').length ?? 0,
             icono: <Truck size={16} />,
           },
           {
@@ -310,7 +326,14 @@ export default function CotizacionesPage() {
                     <p className="font-semibold text-gray-900 text-sm">{formatPesos(c.totalConIva || 0)}</p>
                     <p className="text-xs text-gray-400">con IVA</p>
                   </td>
-                  <td><EstadoBadge estado={c.estado} /></td>
+                  <td>
+                    <EstadoBadge estado={c.estado} />
+                    {(c.estado === 'enviada' || c.estado === 'en_seguimiento') && c.fechaVencimiento && (
+                      <p className="text-[0.65rem] text-gray-400 mt-0.5">
+                        {vencimientoLabel(c.fechaVencimiento)}
+                      </p>
+                    )}
+                  </td>
                   <td className="text-xs text-gray-400">{formatFecha(c.fechaCotizacion)}</td>
                   <td>
                     <div className="flex items-center gap-1.5">
@@ -345,6 +368,41 @@ export default function CotizacionesPage() {
                             <XCircle size={15} />
                           </button>
                         </>
+                      )}
+                      {(c.estado === 'anulada' || c.estado === 'vencida') && (
+                        <button
+                          onClick={() => setReactivandoId(c.id)}
+                          disabled={reactivarCotizacion.isPending}
+                          title="Reactivar cotización por 72hs más"
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            width: '1.875rem', height: '1.875rem', borderRadius: '0.25rem',
+                            background: '#EFF6FF', border: '1.5px solid #93C5FD',
+                            color: '#2563EB', cursor: reactivarCotizacion.isPending ? 'not-allowed' : 'pointer',
+                            transition: 'all 0.15s', flexShrink: 0,
+                            opacity: reactivarCotizacion.isPending ? 0.6 : 1,
+                          }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#DBEAFE'; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#EFF6FF'; }}
+                        >
+                          <RotateCcw size={14} />
+                        </button>
+                      )}
+                      {c.estado !== 'aceptada' && (
+                        <button
+                          onClick={() => setEditarId(c.id)}
+                          title="Editar cotización"
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            width: '1.875rem', height: '1.875rem', borderRadius: '0.25rem',
+                            background: '#FAF5FF', border: '1.5px solid #D8B4FE',
+                            color: '#7E22CE', cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0
+                          }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#F3E8FF'; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#FAF5FF'; }}
+                        >
+                          <Pencil size={14} />
+                        </button>
                       )}
                       <button
                         onClick={() => verPDF(c)}
@@ -470,6 +528,50 @@ export default function CotizacionesPage() {
 
       {showWebModal && (
         <CotizacionesWebModal onClose={() => setShowWebModal(false)} />
+      )}
+
+      {editarId !== null && (
+        <EditarCotizacion
+          cotizacionId={editarId}
+          onClose={() => setEditarId(null)}
+          onSuccess={() => setEditarId(null)}
+        />
+      )}
+
+      {/* Modal confirmar reactivación */}
+      {reactivandoId !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-80 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                <RotateCcw size={18} className="text-blue-500" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">Reactivar cotización</p>
+                <p className="text-sm text-gray-500">
+                  La cotización #{reactivandoId} volverá a estar activa por 72 horas más, a partir de este momento.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setReactivandoId(null)}
+                className="px-4 py-2 text-sm rounded border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  reactivarCotizacion.mutate(reactivandoId);
+                  setReactivandoId(null);
+                }}
+                className="px-4 py-2 text-sm rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+              >
+                Reactivar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

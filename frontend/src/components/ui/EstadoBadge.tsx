@@ -8,6 +8,7 @@ const estadoConfig: Record<string, { label: string; clase: string }> = {
   rechazada:         { label: 'Rechazada',        clase: 'badge-red' },
   perdida:           { label: 'Perdida',          clase: 'badge-gray' },
   vencida:           { label: 'Vencida',          clase: 'badge-red' },
+  anulada:           { label: 'Anulada',          clase: 'badge-gray' },
   // Ventas (fuente única compartida con Logística y Retiros)
   ...estadoVentaConfig,
   // Compras

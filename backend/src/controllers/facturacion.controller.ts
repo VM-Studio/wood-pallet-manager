@@ -12,6 +12,7 @@ import {
   getCobrosPendientesService,
   cargarNroFacturaArcaService,
   actualizarObservacionesService,
+  actualizarNroChequeService,
 } from '../services/facturacion.service';
 
 const crearFacturaSchema = z.object({
@@ -138,6 +139,21 @@ export const actualizarObservaciones = async (req: AuthRequest, res: Response) =
     const id = parseId(req.params.id);
     const { observaciones } = req.body;
     const factura = await actualizarObservacionesService(id, observaciones ?? '');
+    res.json(factura);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const actualizarNroCheque = async (req: AuthRequest, res: Response) => {
+  try {
+    const id = parseId(req.params.id);
+    const { nroCheque } = req.body;
+    if (!nroCheque?.trim()) {
+      res.status(400).json({ error: 'El número de cheque es requerido' });
+      return;
+    }
+    const factura = await actualizarNroChequeService(id, nroCheque);
     res.json(factura);
   } catch (error: any) {
     res.status(400).json({ error: error.message });

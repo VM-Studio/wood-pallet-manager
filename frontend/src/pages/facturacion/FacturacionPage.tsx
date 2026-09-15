@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search, DollarSign, AlertTriangle, Clock, CheckCircle, Receipt, X, Plus, Eye, MessageSquare } from 'lucide-react';
-import { useFacturas, useFacturasVencidas, useCobrosPendientes, useActualizarNroFactura, useCargarNroArca, useFactura, useActualizarObservaciones } from '../../hooks/useFacturacion';
+import { Search, DollarSign, AlertTriangle, Clock, CheckCircle, Receipt, X, Plus, Eye, MessageSquare, Landmark } from 'lucide-react';
+import { useFacturas, useFacturasVencidas, useCobrosPendientes, useActualizarNroFactura, useCargarNroArca, useFactura, useActualizarObservaciones, useActualizarNroCheque } from '../../hooks/useFacturacion';
 import type { Factura } from '../../types';
 import RegistrarCobro from './RegistrarCobro';
 import NuevaFactura from './NuevaFactura';
@@ -30,7 +30,7 @@ interface CobroData {
 }
 
 const formatPesos = (v: number) =>
-  new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(v);
+  new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', currencyDisplay: 'code', maximumFractionDigits: 0 }).format(v);
 
 // ── Modal: Detalle de facturación ────────────────────────────────────
 function DetalleFacturaModal({ facturaId, onClose }: { facturaId: number; onClose: () => void }) {
@@ -202,6 +202,9 @@ export default function FacturacionPage() {
   const cargarArca = useCargarNroArca();
   const [arcaModal, setArcaModal] = useState<{ id: number; clienteNombre: string } | null>(null);
   const [arcaInput, setArcaInput] = useState('');
+  const cargarCheque = useActualizarNroCheque();
+  const [chequeModal, setChequeModal] = useState<{ id: number; clienteNombre: string } | null>(null);
+  const [chequeInput, setChequeInput] = useState('');
   const [detalleFacturaId, setDetalleFacturaId] = useState<number | null>(() => {
     const idParam = searchParams.get('facturaId');
     return idParam ? Number(idParam) : null;
@@ -681,6 +684,26 @@ export default function FacturacionPage() {
                           </button>
                         )}
 
+                        {/* Botón cargar N° de cheque — solo si el pago fue con e-check */}
+                        {f.metodoPago === 'e_check' && (
+                          <button
+                            onClick={() => {
+                              setChequeModal({ id: f.id, clienteNombre: f.cliente?.razonSocial ?? '' });
+                              setChequeInput(f.nroCheque ?? '');
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium"
+                            style={{
+                              background: f.nroCheque ? '#F0FDF4' : '#EFF6FF',
+                              color: f.nroCheque ? '#15803D' : '#1D4ED8',
+                              borderRadius: '0.25rem',
+                              border: `1px solid ${f.nroCheque ? '#BBF7D0' : '#BFDBFE'}`,
+                            }}
+                          >
+                            <Landmark size={13} />
+                            {f.nroCheque ? `Cheque: ${f.nroCheque}` : 'Agregar N° de cheque'}
+                          </button>
+                        )}
+
                         {/* Badge si ya tiene nro ARCA */}
                         {f.nroFactura && (
                           <span className="text-xs text-gray-500 font-mono">{f.nroFactura}</span>
@@ -786,6 +809,45 @@ export default function FacturacionPage() {
           facturaId={detalleFacturaId}
           onClose={() => setDetalleFacturaId(null)}
         />
+      )}
+
+      {/* Modal N° de cheque (solo pagos e-check) */}
+      {chequeModal && (
+        <div className="modal-overlay" onClick={() => setChequeModal(null)}>
+          <div className="modal animate-slide-up" style={{ maxWidth: '400px', borderRadius: 0, border: '1px solid #E5E7EB' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header" style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #EEEEEE' }}>
+              <h2 className="titulo-modulo" style={{ fontSize: '1.3rem' }}>N° de cheque</h2>
+              <button onClick={() => setChequeModal(null)} className="btn-icon" style={{ borderRadius: 0 }}><X size={18} strokeWidth={1.75} /></button>
+            </div>
+            <div className="modal-body space-y-3" style={{ padding: '1.5rem' }}>
+              <p className="text-sm" style={{ color: '#6B7280' }}>Cliente: <strong>{chequeModal.clienteNombre}</strong></p>
+              <div>
+                <label className="label" style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9CA3AF' }}>Número de cheque</label>
+                <input
+                  className="input-field"
+                  style={{ borderRadius: 0 }}
+                  placeholder="Ej: 00012345"
+                  value={chequeInput}
+                  onChange={e => setChequeInput(e.target.value)}
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div className="modal-footer" style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid #EEEEEE' }}>
+              <button onClick={() => setChequeModal(null)} className="btn-secondary">Cancelar</button>
+              <button
+                disabled={!chequeInput.trim() || cargarCheque.isPending}
+                onClick={async () => {
+                  await cargarCheque.mutateAsync({ id: chequeModal.id, nroCheque: chequeInput.trim() });
+                  setChequeModal(null);
+                }}
+                className="btn-primary"
+              >
+                {cargarCheque.isPending ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Modal Observaciones */}

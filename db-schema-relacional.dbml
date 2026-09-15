@@ -60,6 +60,7 @@ Enum estado_cotizacion {
   rechazada
   perdida
   vencida
+  anulada
 }
 
 Enum canal_envio_cotizacion {

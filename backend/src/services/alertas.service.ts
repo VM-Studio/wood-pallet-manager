@@ -371,3 +371,19 @@ export const marcarCotizacionesVencidasService = async () => {
 
   return actualizadas.count;
 };
+
+// Las cotizaciones tienen validez de 72 horas (ver fechaVencimiento seteada al crearlas).
+// Pasado ese plazo, si no fueron aceptadas ni rechazadas, se anulan automáticamente.
+export const marcarCotizacionesAnuladasService = async () => {
+  const ahora = new Date();
+
+  const actualizadas = await prisma.cotizacion.updateMany({
+    where: {
+      estado: { in: ['enviada', 'en_seguimiento'] },
+      fechaVencimiento: { lt: ahora },
+    },
+    data: { estado: 'anulada' },
+  });
+
+  return actualizadas.count;
+};

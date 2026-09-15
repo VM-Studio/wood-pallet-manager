@@ -149,8 +149,10 @@ export const crearCotizacionService = async (
   const incluyeIva = datos.incluyeIva ?? true;
   const totalConIva = incluyeIva ? totalSinIva * 1.21 : totalSinIva;
 
+  // La cotización tiene validez de 72 horas: pasado ese plazo sin aceptar/rechazar
+  // se anula automáticamente (ver marcarCotizacionesAnuladasService en el cron).
   const fechaVencimiento = new Date();
-  fechaVencimiento.setDate(fechaVencimiento.getDate() + 7);
+  fechaVencimiento.setHours(fechaVencimiento.getHours() + 72);
 
   return prisma.cotizacion.create({
     data: {
@@ -186,12 +188,147 @@ export const crearCotizacionService = async (
 
 export const actualizarEstadoCotizacionService = async (
   id: number,
-  estado: 'enviada' | 'en_seguimiento' | 'aceptada' | 'rechazada' | 'perdida' | 'vencida',
+  estado: 'enviada' | 'en_seguimiento' | 'aceptada' | 'rechazada' | 'perdida' | 'vencida' | 'anulada',
   usuarioId: number
 ) => {
   const cotizacion = await prisma.cotizacion.findUnique({ where: { id } });
   if (!cotizacion) throw new Error('Cotización no encontrada');
   return prisma.cotizacion.update({ where: { id }, data: { estado } });
+};
+
+// ─── Editar cotización ────────────────────────────────────────────────────────
+// Solo se permite modificar: cantidades de productos existentes, agregar/quitar
+// productos, y si la cotización incluye factura (IVA) o no. El cliente NO se
+// puede modificar una vez creada la cotización.
+export const editarCotizacionService = async (
+  id: number,
+  datos: {
+    incluyeIva?: boolean;
+    detalles: {
+      productoId: number;
+      cantidad: number;
+      precioUnitario?: number;
+      esAMedida?: boolean;
+      especificacion?: {
+        largoMm?: number;
+        anchoMm?: number;
+        altoMm?: number;
+        cargaMaximaKg?: number;
+        tipoMadera?: string;
+        observacionesCliente?: string;
+      };
+    }[];
+  }
+) => {
+  const cotizacion = await prisma.cotizacion.findUnique({
+    where: { id },
+    include: { detalles: true, venta: true },
+  });
+  if (!cotizacion) throw new Error('Cotización no encontrada');
+  if (cotizacion.venta) throw new Error('No se puede editar una cotización ya convertida en venta');
+  if (cotizacion.estado === 'aceptada') throw new Error('No se puede editar una cotización aceptada');
+  if (!datos.detalles.length) throw new Error('Debe haber al menos un producto');
+
+  let totalSinIva = 0;
+  const detallesConPrecio: {
+    productoId: number;
+    cantidad: number;
+    precioUnitario: number;
+    subtotal: number;
+    esAMedida?: boolean;
+    especificacion?: typeof datos.detalles[number]['especificacion'];
+  }[] = [];
+
+  for (const detalle of datos.detalles) {
+    let precioUnit: number;
+    if (detalle.precioUnitario !== undefined && detalle.precioUnitario > 0) {
+      // Precio ya fijado (pallets a medida o precio especial): se respeta tal cual
+      precioUnit = detalle.precioUnitario;
+    } else {
+      // Producto de catálogo estándar: se recalcula según la nueva cantidad
+      // (puede cambiar el escalón de precio)
+      const precio = await calcularPrecioService(detalle.productoId, detalle.cantidad);
+      precioUnit = Number(precio.precioUnitario);
+    }
+    const subtotal = precioUnit * detalle.cantidad;
+    totalSinIva += subtotal;
+    detallesConPrecio.push({
+      productoId: detalle.productoId,
+      cantidad: detalle.cantidad,
+      precioUnitario: precioUnit,
+      subtotal,
+      esAMedida: detalle.esAMedida ?? false,
+      especificacion: detalle.especificacion,
+    });
+  }
+
+  if (cotizacion.incluyeFlete && cotizacion.costoFlete && cotizacion.fleteIncluido) {
+    totalSinIva += Number(cotizacion.costoFlete);
+  }
+  if (cotizacion.requiereSenasa && cotizacion.costoSenasa) {
+    totalSinIva += Number(cotizacion.costoSenasa);
+  }
+
+  // Si no se especifica, se mantiene el estado de facturación actual
+  const teniaIva = cotizacion.totalConIva != null && cotizacion.totalSinIva != null
+    ? Math.abs(Number(cotizacion.totalConIva) - Number(cotizacion.totalSinIva)) > 0.5
+    : true;
+  const incluyeIva = datos.incluyeIva ?? teniaIva;
+  const totalConIva = incluyeIva ? totalSinIva * 1.21 : totalSinIva;
+
+  return prisma.$transaction(async (tx) => {
+    const detalleIds = cotizacion.detalles.map((d) => d.id);
+    if (detalleIds.length) {
+      await tx.especificacionMedida.deleteMany({ where: { detalleCotizacionId: { in: detalleIds } } });
+      await tx.detalleCotizacion.deleteMany({ where: { cotizacionId: id } });
+    }
+
+    return tx.cotizacion.update({
+      where: { id },
+      data: {
+        totalSinIva,
+        totalConIva,
+        detalles: {
+          create: detallesConPrecio.map((d) => ({
+            productoId: d.productoId,
+            cantidad: d.cantidad,
+            precioUnitario: d.precioUnitario,
+            subtotal: d.subtotal,
+            esAMedida: d.esAMedida ?? false,
+            especificacion: d.especificacion ? { create: d.especificacion } : undefined,
+          })),
+        },
+      },
+      include: {
+        cliente: true,
+        detalles: { include: { producto: true, especificacion: true } },
+      },
+    });
+  });
+};
+
+// ─── Reactivar cotización anulada ──────────────────────────────────────────────
+// Solo aplica a cotizaciones que se anularon automáticamente por falta de
+// respuesta en 72 horas. Al reactivar, se le otorgan otras 72 horas de validez.
+export const reactivarCotizacionService = async (id: number) => {
+  const cotizacion = await prisma.cotizacion.findUnique({ where: { id }, include: { venta: true } });
+  if (!cotizacion) throw new Error('Cotización no encontrada');
+  if (cotizacion.venta) throw new Error('Esta cotización ya fue convertida en venta');
+  if (cotizacion.estado !== 'anulada' && cotizacion.estado !== 'vencida') {
+    throw new Error('Solo se pueden reactivar cotizaciones anuladas');
+  }
+
+  const fechaVencimiento = new Date();
+  fechaVencimiento.setHours(fechaVencimiento.getHours() + 72);
+
+  return prisma.cotizacion.update({
+    where: { id },
+    data: { estado: 'enviada', fechaVencimiento },
+    include: {
+      cliente: true,
+      detalles: { include: { producto: true, especificacion: true } },
+    },
+  });
 };
 
 export const registrarSeguimientoService = async (
@@ -593,8 +730,10 @@ export const crearCotizacionRapidaService = async (
   if (datos.requiereSenasa && datos.costoSenasa) totalSinIva += datos.costoSenasa;
 
   const totalConIva = totalSinIva * 1.21;
+  // La cotización tiene validez de 72 horas: pasado ese plazo sin aceptar/rechazar
+  // se anula automáticamente (ver marcarCotizacionesAnuladasService en el cron).
   const fechaVencimiento = new Date();
-  fechaVencimiento.setDate(fechaVencimiento.getDate() + 7);
+  fechaVencimiento.setHours(fechaVencimiento.getHours() + 72);
 
   return prisma.cotizacion.create({
     data: {
