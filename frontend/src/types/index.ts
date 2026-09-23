@@ -46,6 +46,7 @@ export interface Cliente {
   usuarioAsignado?: { nombre: string; apellido: string; rol: string };
   direccionEntrega?: string;
   localidad?: string;
+  esLocal: boolean;
   esExportador: boolean;
   observaciones?: string;
   fechaAlta: string;
@@ -67,6 +68,7 @@ export interface Producto {
   stockDisponible?: number;
   stocks?: Stock[];
   listaPrecios?: ListaPrecio[];
+  prodProveedores?: { id: number; proveedorId: number; precioCosto: number; proveedor?: { id: number; nombreEmpresa: string } }[];
 }
 
 // Precio
@@ -172,6 +174,9 @@ export interface Venta {
   costoSenasa?: number;
   origenStock?: string;
   esHistorica?: boolean;
+  motivoCancelacion?: string | null;
+  fechaCancelacion?: string | null;
+  canceladaPor?: { id: number; nombre: string; apellido: string } | null;
 }
 
 export interface DetalleVenta {
@@ -312,7 +317,7 @@ export interface Factura {
   totalNeto: number;
   iva: number;
   totalConIva: number;
-  estadoCobro: 'pendiente' | 'cobrada_parcial' | 'cobrada_total' | 'vencida' | 'incobrable';
+  estadoCobro: 'pendiente' | 'cobrada_parcial' | 'cobrada_total' | 'vencida' | 'incobrable' | 'anulada';
   modalidadPago?: string;
   medioPago?: string;
   metodoPago?: 'transferencia' | 'e_check' | 'efectivo';
@@ -326,6 +331,7 @@ export interface Factura {
     estadoPedido: string;
     tipoEntrega: string;
     nroOrden?: string;
+    motivoCancelacion?: string | null;
     detalles?: {
       id: number;
       cantidadPedida: number;

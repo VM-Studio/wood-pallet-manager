@@ -159,7 +159,7 @@ export const getAlertasActivasService = async () => {
   // ────────────────────────────────────────────────────────────────
   const logisticasHoy = await prisma.logistica.findMany({
     where: {
-      estadoEntrega: { not: 'entregado' },
+      estadoEntrega: { notIn: ['entregado', 'cancelado'] },
     },
     include: {
       venta: {

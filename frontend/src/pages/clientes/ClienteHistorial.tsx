@@ -34,7 +34,7 @@ const estadoPedidoConfig: Record<string, { label: string; color: string }> = {
   listo_para_envio:  { label: 'Listo para envío', color: 'bg-purple-100 text-purple-700' },
   en_transito:       { label: 'En tránsito',      color: 'bg-indigo-100 text-indigo-700' },
   entregado:         { label: 'Entregado',        color: 'bg-green-100 text-green-700' },
-  entregado_parcial: { label: 'Parcial',          color: 'bg-orange-100 text-orange-700' },
+  entregado_parcial: { label: 'Retiro parcial',   color: 'bg-orange-100 text-orange-700' },
   cancelado:         { label: 'Cancelado',        color: 'bg-red-100 text-red-700' },
 };
 

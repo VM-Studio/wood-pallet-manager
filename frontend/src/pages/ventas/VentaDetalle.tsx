@@ -4,13 +4,14 @@ import {
   Package, ChevronRight, CheckCircle, Clock, MapPin,
   CreditCard, FileText, Building2, Phone, User,
   CalendarClock, MessageSquare, AlertTriangle, Navigation,
-  ArrowRight, Info
+  ArrowRight, Info, XCircle
 } from 'lucide-react';
 import { useVenta, useActualizarEstadoVenta, useRegistrarRetiro } from '../../hooks/useVentas';
 import { useAuthStore } from '../../store/auth.store';
 import EstadoBadge from '../../components/ui/EstadoBadge';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import SolicitudLogisticaModal from './SolicitudLogisticaModal';
+import CancelarVentaModal from '../../components/ventas/CancelarVentaModal';
 
 interface VentaDetalleProps {
   ventaId: number;
@@ -31,7 +32,7 @@ const estadoLabel: Record<string, string> = {
   listo_para_envio:  'Listo para envío',
   en_transito:       'En tránsito',
   entregado:         'Entregado',
-  entregado_parcial: 'Entregado parcial',
+  entregado_parcial: 'Retiro parcial',
   cancelado:         'Cancelado',
 };
 
@@ -86,6 +87,9 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
   const [cantidadRetiro, setCantidadRetiro] = useState(0);
   const [errorRetiro, setErrorRetiro] = useState('');
   const [showSolicitudModal, setShowSolicitudModal] = useState(false);
+  const [showCancelar, setShowCancelar] = useState(false);
+  const cancelada = venta?.estadoPedido === 'cancelado';
+  const puedeCancelar = !!venta && !cancelada && venta.estadoPedido !== 'entregado';
 
   const handleRetiro = async (detalleId: number) => {
     setErrorRetiro('');
@@ -159,9 +163,19 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                 </p>
               )}
             </div>
-            <button onClick={onClose} className="btn-icon" style={{ borderRadius: 0, flexShrink: 0 }}>
-              <X size={18} strokeWidth={1.75} />
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+              {puedeCancelar && (
+                <button
+                  onClick={() => setShowCancelar(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-600 border border-red-200 hover:bg-red-50 transition-colors"
+                >
+                  <XCircle size={14} /> Cancelar venta
+                </button>
+              )}
+              <button onClick={onClose} className="btn-icon" style={{ borderRadius: 0 }}>
+                <X size={18} strokeWidth={1.75} />
+              </button>
+            </div>
           </div>
 
           {/* ── Body ──────────────────────────────────────────────── */}
@@ -169,6 +183,27 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
             <div className="p-8"><LoadingSpinner /></div>
           ) : venta && (
             <div style={{ overflowY: 'auto', flex: 1, padding: '1.5rem' }}>
+
+              {cancelada && (
+                <div style={{ display: 'flex', gap: 10, padding: '0.75rem 1rem', background: '#FEF2F2', border: '1px solid #FECACA', marginBottom: '1.25rem' }}>
+                  <XCircle size={18} style={{ color: '#DC2626', flexShrink: 0, marginTop: 1 }} />
+                  <div>
+                    <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#991B1B', margin: 0 }}>Venta cancelada</p>
+                    <p style={{ fontSize: '0.8rem', color: '#B91C1C', margin: '2px 0 0' }}>
+                      {venta.motivoCancelacion ? `Motivo: ${venta.motivoCancelacion}` : 'Sin motivo registrado'}
+                    </p>
+                    {(venta.fechaCancelacion || venta.canceladaPor) && (
+                      <p style={{ fontSize: '0.75rem', color: '#9CA3AF', margin: '2px 0 0' }}>
+                        {venta.fechaCancelacion ? formatFecha(venta.fechaCancelacion) : ''}
+                        {venta.canceladaPor ? ` · ${venta.canceladaPor.nombre} ${venta.canceladaPor.apellido}` : ''}
+                      </p>
+                    )}
+                    <p style={{ fontSize: '0.75rem', color: '#6B7280', margin: '4px 0 0' }}>
+                      Factura, logística, retiro y remito de esta venta quedaron cancelados.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* ══ 1. PEDIDO ══════════════════════════════════════ */}
               <Seccion icon={Package} titulo="Pedido" accent>
@@ -245,7 +280,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                 </div>
 
                 {/* Avanzar estado */}
-                {siguienteEstado(venta.estadoPedido) && (
+                {!cancelada && siguienteEstado(venta.estadoPedido) && (
                   <button
                     onClick={() => actualizarEstado.mutate({ id: ventaId, estado: siguienteEstado(venta.estadoPedido)! })}
                     disabled={actualizarEstado.isPending}
@@ -311,7 +346,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                           </div>
                         )}
 
-                        {pendiente > 0 && (
+                        {!cancelada && pendiente > 0 && (
                           retiroDetalle === d.id ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                               <div style={{ display: 'flex', gap: 6 }}>
@@ -358,7 +393,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
               <Seccion icon={Truck} titulo="Logística">
 
                 {/* Botón solicitar (Juan) */}
-                {esJuan && !venta.logistica && (
+                {esJuan && !cancelada && !venta.logistica && (
                   <div style={{ marginBottom: '0.875rem' }}>
                     <button onClick={() => setShowSolicitudModal(true)} style={btnBrown}>
                       <Send size={13} /> Solicitar logística a Carlos
@@ -586,7 +621,7 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
                 )}
 
                 {/* Botón solicitar si ya hay logística (Juan puede volver a solicitar) */}
-                {esJuan && venta.logistica && (
+                {esJuan && !cancelada && venta.logistica && (
                   <div style={{ marginTop: '0.875rem' }}>
                     <button onClick={() => setShowSolicitudModal(true)} style={btnOutline}>
                       <Send size={13} /> Nueva solicitud a Carlos
@@ -661,6 +696,10 @@ export default function VentaDetalle({ ventaId, onClose }: VentaDetalleProps) {
           )}
         </div>
       </div>
+
+      {showCancelar && (
+        <CancelarVentaModal ventaId={ventaId} onClose={() => setShowCancelar(false)} />
+      )}
 
       {showSolicitudModal && venta && (
         <SolicitudLogisticaModal

@@ -22,6 +22,7 @@ export default function ClienteForm({ cliente, onClose, onSuccess }: ClienteForm
     emailContacto: cliente?.emailContacto || '',
     canalEntrada: cliente?.canalEntrada || 'whatsapp',
     direccionEntrega: cliente?.direccionEntrega || '',
+    esLocal: cliente?.esLocal ?? true,
     esExportador: cliente?.esExportador || false,
     observaciones: cliente?.observaciones || ''
   });
@@ -31,6 +32,10 @@ export default function ClienteForm({ cliente, onClose, onSuccess }: ClienteForm
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (!form.esLocal && !form.esExportador) {
+      setError('Seleccioná al menos un tipo de cliente: Local y/o Exportador');
+      return;
+    }
     try {
       if (esEdicion) {
         await actualizarCliente.mutateAsync({ id: cliente.id, datos: form });
@@ -158,7 +163,19 @@ export default function ClienteForm({ cliente, onClose, onSuccess }: ClienteForm
               />
             </div>
 
-            <div className="md:col-span-2">
+            <div className="md:col-span-2" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <label className="label" style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9CA3AF' }}>Tipo de cliente</label>
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.esLocal}
+                  onChange={(e) => setForm({ ...form, esLocal: e.target.checked })}
+                  style={{ width: 16, height: 16, borderRadius: 8, accentColor: '#7c4b2c' }}
+                />
+                <span className="text-sm" style={{ color: 'var(--color-text)' }}>
+                  Cliente local
+                </span>
+              </label>
               <label className="flex items-center gap-2.5 cursor-pointer">
                 <input
                   type="checkbox"

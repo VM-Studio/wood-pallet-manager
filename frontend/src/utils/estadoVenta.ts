@@ -8,7 +8,7 @@ export const estadoVentaConfig: Record<string, { label: string; clase: string }>
   listo_para_envio:  { label: 'Listo para envío', clase: 'badge-blue' },
   en_transito:       { label: 'En tránsito',      clase: 'badge-yellow' },
   entregado:         { label: 'Entregado',        clase: 'badge-green' },
-  entregado_parcial: { label: 'Parcial',          clase: 'badge-yellow' },
+  entregado_parcial: { label: 'Retiro parcial',   clase: 'badge-yellow' },
   cancelado:         { label: 'Cancelado',        clase: 'badge-red' },
 };
 

@@ -62,6 +62,7 @@ function ProveedorModal({
     nombreEmpresa: proveedor?.nombreEmpresa ?? '',
     tipoProducto: proveedor?.tipoProducto ?? 'seminuevo' as 'seminuevo' | 'nuevo_medida' | 'ambos',
     ubicacion: proveedor?.ubicacion ?? '',
+    telefono: proveedor?.telefono ?? '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -127,6 +128,14 @@ function ProveedorModal({
                 onChange={e => setForm({ ...form, ubicacion: e.target.value })}
                 placeholder="Ej: Av. Roca 1234, Quilmes" />
               <p className="text-xs text-gray-400 mt-1">Se mostrará automáticamente al cliente al coordinar un retiro.</p>
+            </div>
+
+            <div>
+              <label className="label" style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9CA3AF' }}>Teléfono (WhatsApp)</label>
+              <input className="input" style={{ borderRadius: 0 }} type="tel" value={form.telefono}
+                onChange={e => setForm({ ...form, telefono: e.target.value })}
+                placeholder="Ej: 11 4455-6677" />
+              <p className="text-xs text-gray-400 mt-1">A este número se le envía el código único de retiro de cada cliente.</p>
             </div>
 
             {error && (
@@ -425,7 +434,7 @@ export default function ProveedoresPage() {
               </div>
 
               {/* ── Contacto ── */}
-              <div style={{ padding: '0 1.25rem 1rem', display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ padding: '0.75rem 1.25rem 1rem', display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {p.telefono && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Phone size={12} style={{ color: '#D1D5DB', flexShrink: 0 }} />

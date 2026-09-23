@@ -27,6 +27,7 @@ export const getVentaByIdService = async (id: number) => {
     include: {
       cliente: true,
       usuario: { select: { id: true, nombre: true, apellido: true, rol: true } },
+      canceladaPor: { select: { id: true, nombre: true, apellido: true } },
       cotizacion: { select: { id: true, fechaCotizacion: true } },
       detalles: {
         include: {
@@ -71,103 +72,151 @@ export const actualizarEstadoVentaService = async (
     | 'entregado_parcial'
     | 'cancelado'
 ) => {
-  const venta = await prisma.venta.findUnique({ where: { id } });
+  const venta = await prisma.venta.findUnique({ where: { id }, include: { retiroGalpon: true } });
   if (!venta) throw new Error('Venta no encontrada');
+  if (venta.estadoPedido === 'cancelado') throw new Error('La venta está cancelada: no se puede cambiar su estado');
+  // La cancelación pide motivo y se propaga a todos los módulos: va por su propio endpoint
+  if (estado === 'cancelado') throw new Error('Para cancelar la venta usá el botón "Cancelar venta"');
 
-  return prisma.venta.update({
-    where: { id },
-    data: {
-      estadoPedido: estado,
-      fechaEntregaReal: estado === 'entregado' ? new Date() : undefined,
-    },
+  return prisma.$transaction(async (tx) => {
+    const actualizada = await tx.venta.update({
+      where: { id },
+      data: {
+        estadoPedido: estado,
+        fechaEntregaReal: estado === 'entregado' ? new Date() : undefined,
+      },
+    });
+
+    // Mantener el retiro de galpón (módulo Retiros) alineado con el estado de la venta
+    if (venta.retiroGalpon) {
+      const actual = venta.retiroGalpon.estadoRetiro;
+      // Estados intermedios de la venta: si el retiro estaba cerrado o parcial, se reabre como pendiente
+      const estadoRetiro =
+        estado === 'entregado' ? 'completado'
+        : estado === 'entregado_parcial' ? 'parcial'
+        : estado === 'confirmado' ? 'confirmado'
+        : ['parcial', 'completado'].includes(actual) ? 'pendiente' : actual;
+      if (estadoRetiro !== actual) {
+        await tx.retiro.update({ where: { id: venta.retiroGalpon.id }, data: { estadoRetiro } });
+      }
+    }
+
+    return actualizada;
   });
 };
 
+// ─── RETIROS PARCIALES (fuente única) ─────────────────────────────────────────
+// Registra retiros por producto de una venta y sincroniza, en una sola
+// transacción: detalle de venta, estado de la venta (Ventas/Logística)
+// y el retiro de galpón (módulo Retiros). Lo usan tanto el detalle de la venta
+// como el botón "Retiro parcial" del módulo Retiros.
+export const registrarRetirosVentaService = async (
+  ventaId: number,
+  items: { detalleVentaId: number; cantidad: number }[],
+  usuarioId: number
+) => {
+  const itemsValidos = items.filter((i) => i.cantidad > 0);
+  if (!itemsValidos.length) throw new Error('Ingresá la cantidad retirada de al menos un producto');
+
+  return prisma.$transaction(async (tx) => {
+    const venta = await tx.venta.findUnique({
+      where: { id: ventaId },
+      include: { detalles: { include: { retiros: true, producto: { select: { nombre: true } } } }, retiroGalpon: true },
+    });
+    if (!venta) throw new Error('Venta no encontrada');
+    if (venta.estadoPedido === 'cancelado') throw new Error('La venta está cancelada');
+    if (venta.retiroGalpon && ['completado', 'cancelado'].includes(venta.retiroGalpon.estadoRetiro)) {
+      throw new Error('No se puede registrar un retiro parcial en el estado actual del retiro');
+    }
+
+    const retiradoPorDetalle = new Map(
+      venta.detalles.map((d) => [d.id, d.retiros.reduce((acc, r) => acc + r.cantidadRetirada, 0)])
+    );
+
+    for (const item of itemsValidos) {
+      const detalle = venta.detalles.find((d) => d.id === item.detalleVentaId);
+      if (!detalle) throw new Error('El producto no pertenece a esta venta');
+      const pendiente = detalle.cantidadPedida - retiradoPorDetalle.get(detalle.id)!;
+      if (item.cantidad > pendiente) {
+        throw new Error(`Solo quedan ${pendiente} unidades pendientes de retiro de ${detalle.producto.nombre}`);
+      }
+
+      await tx.retiroParcial.create({
+        data: { detalleVentaId: detalle.id, cantidadRetirada: item.cantidad, registradoPorId: usuarioId },
+      });
+      const nuevoRetirado = retiradoPorDetalle.get(detalle.id)! + item.cantidad;
+      retiradoPorDetalle.set(detalle.id, nuevoRetirado);
+      await tx.detalleVenta.update({
+        where: { id: detalle.id },
+        data: { cantidadEntregada: nuevoRetirado },
+      });
+      // El stock NO se toca acá: si la venta es de stock propio ya se descontó
+      // completo al confirmarla, y si es compra directa nunca fue stock propio.
+    }
+
+    const totalPedido = venta.detalles.reduce((acc, d) => acc + d.cantidadPedida, 0);
+    const totalRetirado = [...retiradoPorDetalle.values()].reduce((acc, n) => acc + n, 0);
+    const completo = venta.detalles.every((d) => retiradoPorDetalle.get(d.id)! >= d.cantidadPedida);
+    const ahora = new Date();
+
+    await tx.venta.update({
+      where: { id: ventaId },
+      data: {
+        estadoPedido: completo ? 'entregado' : 'entregado_parcial',
+        fechaEntregaReal: completo ? ahora : undefined,
+      },
+    });
+
+    if (venta.retiroGalpon) {
+      await tx.retiro.update({
+        where: { id: venta.retiroGalpon.id },
+        data: {
+          estadoRetiro: completo ? 'completado' : 'parcial',
+          cantidadRetiradaParcial: totalRetirado,
+          fechaUltimoRetiroParcial: ahora,
+          ...(completo ? { confirmadoPorId: usuarioId, fechaConfirmacion: ahora } : {}),
+        },
+      });
+    }
+
+    return {
+      completo,
+      totalPedido,
+      totalRetirado,
+      pendiente: totalPedido - totalRetirado,
+      detalles: venta.detalles.map((d) => ({
+        detalleVentaId: d.id,
+        producto: d.producto.nombre,
+        cantidadPedida: d.cantidadPedida,
+        cantidadRetirada: retiradoPorDetalle.get(d.id)!,
+        cantidadPendiente: d.cantidadPedida - retiradoPorDetalle.get(d.id)!,
+      })),
+    };
+  });
+};
+
+// Retiro de un solo producto (usado desde el detalle de la venta)
 export const registrarRetiroParcialService = async (
   detalleVentaId: number,
   cantidadRetirada: number,
   usuarioId: number
 ) => {
-  const detalle = await prisma.detalleVenta.findUnique({
-    where: { id: detalleVentaId },
-    include: { retiros: true, venta: true },
-  });
+  const detalle = await prisma.detalleVenta.findUnique({ where: { id: detalleVentaId } });
   if (!detalle) throw new Error('Detalle de venta no encontrado');
 
-  const totalRetirado = detalle.retiros.reduce((acc, r) => acc + r.cantidadRetirada, 0);
-  const pendienteRetiro = detalle.cantidadPedida - totalRetirado;
-
-  if (cantidadRetirada > pendienteRetiro) {
-    throw new Error(`Solo quedan ${pendienteRetiro} unidades pendientes de retiro`);
-  }
-
-  const retiro = await prisma.retiroParcial.create({
-    data: { detalleVentaId, cantidadRetirada, registradoPorId: usuarioId },
-  });
-
-  const nuevaCantidadEntregada = totalRetirado + cantidadRetirada;
-  await prisma.detalleVenta.update({
-    where: { id: detalleVentaId },
-    data: { cantidadEntregada: nuevaCantidadEntregada },
-  });
-
-  // Descontar del stock (solo si hay stock disponible para este producto)
-  const stockEntry = await prisma.stock.findFirst({
-    where: { productoId: detalle.productoId },
-  });
-  if (stockEntry && stockEntry.cantidadDisponible > 0) {
-    // Floor en 0: el stock propio nunca puede quedar negativo
-    const nuevaCantidad = Math.max(0, stockEntry.cantidadDisponible - cantidadRetirada);
-    await prisma.stock.update({
-      where: { id: stockEntry.id },
-      data: { cantidadDisponible: nuevaCantidad },
-    });
-    await prisma.movimientoStock.create({
-      data: {
-        stockId: stockEntry.id,
-        tipoMovimiento: 'salida',
-        cantidad: cantidadRetirada,
-        motivo: 'venta',
-        idReferencia: detalle.ventaId,
-        registradoPorId: usuarioId,
-      },
-    });
-  }
-
-  // Actualizar estado de la venta
-  const todosDetalles = await prisma.detalleVenta.findMany({
-    where: { ventaId: detalle.ventaId },
-    include: { retiros: true },
-  });
-
-  const todosEntregados = todosDetalles.every((d) => {
-    const totalD = d.retiros.reduce((acc, r) => acc + r.cantidadRetirada, 0);
-    return totalD >= d.cantidadPedida;
-  });
-
-  await prisma.venta.update({
-    where: { id: detalle.ventaId },
-    data: {
-      estadoPedido: todosEntregados ? 'entregado' : 'entregado_parcial',
-      fechaEntregaReal: todosEntregados ? new Date() : undefined,
-    },
-  });
-
-  const detalleActualizado = await prisma.detalleVenta.findUnique({
-    where: { id: detalleVentaId },
-    include: { retiros: true },
-  });
-  const totalRetiradoFinal = detalleActualizado!.retiros.reduce(
-    (acc, r) => acc + r.cantidadRetirada,
-    0
+  const resultado = await registrarRetirosVentaService(
+    detalle.ventaId,
+    [{ detalleVentaId, cantidad: cantidadRetirada }],
+    usuarioId
   );
+  const resumen = resultado.detalles.find((d) => d.detalleVentaId === detalleVentaId)!;
 
   return {
-    retiro,
+    completo: resultado.completo,
     resumen: {
-      cantidadPedida: detalle.cantidadPedida,
-      cantidadRetirada: totalRetiradoFinal,
-      cantidadPendiente: detalle.cantidadPedida - totalRetiradoFinal,
+      cantidadPedida: resumen.cantidadPedida,
+      cantidadRetirada: resumen.cantidadRetirada,
+      cantidadPendiente: resumen.cantidadPendiente,
     },
   };
 };
@@ -230,7 +279,7 @@ export const getVentasPorPeriodoService = async (
   hasta: Date,
   usuarioId?: number
 ) => {
-  const where: any = { fechaVenta: { gte: desde, lte: hasta } };
+  const where: any = { fechaVenta: { gte: desde, lte: hasta }, estadoPedido: { not: 'cancelado' } };
   if (usuarioId) where.usuarioId = usuarioId;
 
   const ventas = await prisma.venta.findMany({

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
+import { invalidarEstadosVenta } from './invalidarEstadosVenta';
 import type { Venta } from '../types';
 
 export const useVentas = () => {
@@ -53,9 +54,7 @@ export const useActualizarEstadoVenta = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ventas'] });
-      queryClient.invalidateQueries({ queryKey: ['ventas-activas'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      invalidarEstadosVenta(queryClient);
     }
   });
 };
@@ -74,10 +73,8 @@ export const useRegistrarRetiro = () => {
       });
       return data;
     },
-    onSuccess: (_, { ventaId }) => {
-      queryClient.invalidateQueries({ queryKey: ['ventas'] });
-      queryClient.invalidateQueries({ queryKey: ['venta', ventaId] });
-      queryClient.invalidateQueries({ queryKey: ['retiros', ventaId] });
+    onSuccess: () => {
+      invalidarEstadosVenta(queryClient);
       queryClient.invalidateQueries({ queryKey: ['inventario'] });
       queryClient.invalidateQueries({ queryKey: ['inventario-consolidado'] });
       queryClient.invalidateQueries({ queryKey: ['alertas-stock'] });
@@ -100,5 +97,39 @@ export const useEliminarVenta = () => {
       queryClient.invalidateQueries({ queryKey: ['facturas'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     }
+  });
+};
+
+// ─── Cancelación de venta (en cascada) ────────────────────────────────────────
+export interface CancelacionPreview {
+  ventaId: number;
+  cliente: string;
+  estadoPedido: string;
+  puedeCancelar: boolean;
+  motivoNoCancelable: string | null;
+  impactos: { modulo: string; detalle: string }[];
+  advertencias: string[];
+  comprasPendientes: { id: number; proveedor: string; total: number }[];
+}
+
+export const useCancelacionPreview = (ventaId: number | null) =>
+  useQuery<CancelacionPreview>({
+    queryKey: ['venta-cancelacion', ventaId],
+    queryFn: async () => (await api.get(`/ventas/${ventaId}/cancelacion`)).data,
+    enabled: !!ventaId,
+    staleTime: 0,
+  });
+
+export const useCancelarVenta = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { ventaId: number; motivo: string; cancelarCompras?: boolean }) =>
+      (await api.post(`/ventas/${params.ventaId}/cancelar`, {
+        motivo: params.motivo,
+        cancelarCompras: params.cancelarCompras,
+      })).data as { stockRestaurado: { producto: string; cantidad: number }[]; comprasCanceladas: number[] },
+    // La cancelación toca ventas, facturación, logística, retiros, remitos,
+    // compras, inventario, devoluciones, alertas y dashboard: se refresca todo.
+    onSuccess: () => queryClient.invalidateQueries(),
   });
 };

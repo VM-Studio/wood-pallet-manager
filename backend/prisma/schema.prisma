@@ -58,6 +58,7 @@ model Usuario {
   reglasAutomatizacion ReglaAutomatizacion[]
   verificacionesCodigo VerificacionCodigo[]
   retirosConfirmados   Retiro[]                 @relation("RetirosConfirmados")
+  ventasCanceladas     Venta[]                  @relation("VentasCanceladas")
   reenviosRetiro       HistorialReenvioRetiro[]
   cotizacionesWeb      CotizacionWeb[]          @relation("CotizacionesWebAsignadas")
   alertasResueltas     AlertaResuelta[]
@@ -114,6 +115,7 @@ model Cliente {
   usuarioAsignadoId Int
   direccionEntrega  String?
   localidad         String?
+  esLocal           Boolean       @default(true)
   esExportador      Boolean       @default(false)
   observaciones     String?
   fechaAlta         DateTime      @default(now())
@@ -206,6 +208,8 @@ model Proveedor {
   stocks          Stock[]
   compras         Compra[]
   pagos           PagoProveedor[]
+  retiros         Retiro[]
+  enviosRetiro    HistorialReenvioRetiro[]
 
   @@map("proveedores")
 }
@@ -314,6 +318,7 @@ enum MotivoMovimiento {
   compra
   devolucion
   ajuste_manual
+  cancelacion_venta
 }
 
 // ─── COTIZACIONES ────────────────────────────────────────
@@ -455,10 +460,14 @@ model Venta {
   nroOrden          String?
   origenStock       String?        @default("stock_propio")
   esHistorica       Boolean        @default(false)
+  motivoCancelacion String?
+  fechaCancelacion  DateTime?
+  canceladaPorId    Int?
 
   cotizacion           Cotizacion?          @relation(fields: [cotizacionId], references: [id])
   cliente              Cliente              @relation(fields: [clienteId], references: [id])
   usuario              Usuario              @relation(fields: [usuarioId], references: [id])
+  canceladaPor         Usuario?             @relation("VentasCanceladas", fields: [canceladaPorId], references: [id])
   detalles             DetalleVenta[]
   logistica            Logistica?
   retiroGalpon         Retiro?
@@ -525,9 +534,11 @@ model Retiro {
   motivoCancelacion        String?
   cantidadRetiradaParcial  Int          @default(0)
   fechaUltimoRetiroParcial DateTime?
+  proveedorId              Int?
   creadoEn                 DateTime     @default(now())
 
   venta             Venta                    @relation(fields: [ventaId], references: [id])
+  proveedor         Proveedor?               @relation(fields: [proveedorId], references: [id])
   confirmadoPor     Usuario?                 @relation("RetirosConfirmados", fields: [confirmadoPorId], references: [id])
   historialReenvios HistorialReenvioRetiro[]
 
@@ -547,11 +558,14 @@ model HistorialReenvioRetiro {
   retiroId        Int
   emailEnviado    String?
   telefonoEnviado String?
+  proveedorId     Int?
+  tipoMensaje     String?
   enviadoPorId    Int
   creadoEn        DateTime @default(now())
 
-  retiro     Retiro  @relation(fields: [retiroId], references: [id])
-  enviadoPor Usuario @relation(fields: [enviadoPorId], references: [id])
+  retiro     Retiro     @relation(fields: [retiroId], references: [id])
+  proveedor  Proveedor? @relation(fields: [proveedorId], references: [id])
+  enviadoPor Usuario    @relation(fields: [enviadoPorId], references: [id])
 
   @@map("historial_reenvio_retiro")
 }
@@ -658,6 +672,7 @@ enum EstadoEntrega {
   en_camino
   entregado
   con_problema
+  cancelado
 }
 
 // ─── FACTURAS ────────────────────────────────────────────
@@ -701,6 +716,7 @@ enum EstadoCobro {
   cobrada_total
   vencida
   incobrable
+  anulada
 }
 
 // ─── PAGOS / COBROS ──────────────────────────────────────
@@ -792,6 +808,7 @@ enum EstadoSolicitudLogistica {
   pendiente
   aceptada
   rechazada
+  cancelada
 }
 
 enum MetodoPago {

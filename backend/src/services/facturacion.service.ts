@@ -1,4 +1,5 @@
 import prisma from '../utils/prisma';
+import { asegurarVentaNoCancelada } from './cancelacion-venta.service';
 
 export const getFacturasService = async (usuarioId: number, rol: string) => {
   const where = rol === 'admin'
@@ -10,7 +11,7 @@ export const getFacturasService = async (usuarioId: number, rol: string) => {
     include: {
       cliente: { select: { id: true, razonSocial: true, cuit: true } },
       usuario: { select: { id: true, nombre: true, apellido: true, rol: true } },
-      venta: { select: { id: true, estadoPedido: true, tipoEntrega: true } },
+      venta: { select: { id: true, estadoPedido: true, tipoEntrega: true, motivoCancelacion: true } },
       pagos: true,
     },
     orderBy: { fechaEmision: 'desc' },
@@ -51,6 +52,7 @@ export const crearFacturaService = async (
   },
   usuarioId: number
 ) => {
+  await asegurarVentaNoCancelada(prisma, datos.ventaId);
   const venta = await prisma.venta.findUnique({ where: { id: datos.ventaId } });
   if (!venta) throw new Error('Venta no encontrada');
 
@@ -96,6 +98,7 @@ export const registrarCobroService = async (
   });
 
   if (!factura) throw new Error('Factura no encontrada');
+  if (factura.estadoCobro === 'anulada') throw new Error('La factura está anulada (venta cancelada)');
   if (factura.estadoCobro === 'cobrada_total') {
     throw new Error('Esta factura ya fue cobrada en su totalidad');
   }

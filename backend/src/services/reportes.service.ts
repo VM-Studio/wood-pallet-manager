@@ -29,7 +29,8 @@ export const getVentasUltimos12MesesService = async (usuarioId?: number) => {
     const inicio = new Date(mesInicio.getFullYear(), mesInicio.getMonth() + i, 1);
     const fin    = new Date(mesInicio.getFullYear(), mesInicio.getMonth() + i + 1, 0, 23, 59, 59);
 
-    const whereQuery: any = { fechaVenta: { gte: inicio, lte: fin } };
+    // Las ventas canceladas no suman ni ventas, ni pallets, ni facturación
+    const whereQuery: any = { fechaVenta: { gte: inicio, lte: fin }, estadoPedido: { not: 'cancelado' } };
     if (usuarioId !== undefined) whereQuery.usuarioId = usuarioId;
 
     const ventas = await prisma.venta.findMany({
@@ -90,7 +91,7 @@ export const getDashboardService = async (usuarioIdActual?: number, vista?: stri
     cobrosPendientesJuanCruz,
   ] = await Promise.all([
     prisma.venta.findMany({
-      where: { fechaVenta: { gte: inicioMes } },
+      where: { fechaVenta: { gte: inicioMes }, estadoPedido: { not: 'cancelado' as const } },
       include: {
         detalles: true,
         usuario: { select: { id: true, rol: true, nombre: true } },
@@ -98,7 +99,7 @@ export const getDashboardService = async (usuarioIdActual?: number, vista?: stri
       },
     }),
     prisma.venta.findMany({
-      where: { fechaVenta: { gte: inicioMesAnterior, lte: finMesAnterior } },
+      where: { fechaVenta: { gte: inicioMesAnterior, lte: finMesAnterior }, estadoPedido: { not: 'cancelado' as const } },
       include: { detalles: true, usuario: { select: { id: true } } },
     }),
     prisma.factura.findMany({
@@ -123,6 +124,7 @@ export const getDashboardService = async (usuarioIdActual?: number, vista?: stri
     }),
     prisma.logistica.count({
       where: {
+        estadoEntrega: { not: 'cancelado' },
         fechaRetiroGalpon: {
           gte: new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()),
           lt: new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 1),
@@ -552,7 +554,7 @@ export const getGananciasDetalleService = async (
   const finPeriodo = hasta ?? new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0, 23, 59, 59);
 
   // Filtro por usuario en ventas y compras
-  const ventaWhere: any = { fechaVenta: { gte: inicioPeriodo, lte: finPeriodo } };
+  const ventaWhere: any = { fechaVenta: { gte: inicioPeriodo, lte: finPeriodo }, estadoPedido: { not: 'cancelado' } };
   if (usuarioId !== undefined) ventaWhere.usuarioId = usuarioId;
 
   const compraWhere: any = {
@@ -610,7 +612,7 @@ export const getReporteVentasService = async (
   hasta: Date,
   usuarioId?: number
 ) => {
-  const where: any = { fechaVenta: { gte: desde, lte: hasta } };
+  const where: any = { fechaVenta: { gte: desde, lte: hasta }, estadoPedido: { not: 'cancelado' } };
   if (usuarioId) where.usuarioId = usuarioId;
 
   const ventas = await prisma.venta.findMany({
@@ -687,7 +689,7 @@ export const getTopClientesService = async (limite: number = 10) => {
   const clientes = await prisma.cliente.findMany({
     where: { activo: true },
     include: {
-      ventas: { include: { detalles: true } },
+      ventas: { where: { estadoPedido: { not: 'cancelado' as const } }, include: { detalles: true } },
     },
   });
 
@@ -716,7 +718,7 @@ export const getTopClientesService = async (limite: number = 10) => {
 
 export const getReporteCobranzasService = async (desde: Date, hasta: Date) => {
   const facturas = await prisma.factura.findMany({
-    where: { fechaEmision: { gte: desde, lte: hasta } },
+    where: { fechaEmision: { gte: desde, lte: hasta }, estadoCobro: { not: 'anulada' } },
     include: {
       cliente: { select: { razonSocial: true } },
       usuario: { select: { nombre: true, apellido: true, rol: true } },
@@ -763,7 +765,7 @@ export const getReportePdfDataService = async (desde: Date, hasta: Date) => {
   // Resumen general del período: cantidad de operaciones y facturación total,
   // resuelto con aggregate (SUM/COUNT en SQL, no en JS).
   const agregadoGeneral = await prisma.venta.aggregate({
-    where: { fechaVenta: { gte: desde, lte: hasta } },
+    where: { fechaVenta: { gte: desde, lte: hasta }, estadoPedido: { not: 'cancelado' as const } },
     _sum: { totalConIva: true },
     _count: { _all: true },
   });
@@ -777,7 +779,7 @@ export const getReportePdfDataService = async (desde: Date, hasta: Date) => {
   // se recorta a las primeras N + una fila "Otros" con el resto agregado.
   const grupoClientes = await prisma.venta.groupBy({
     by: ['clienteId'],
-    where: { fechaVenta: { gte: desde, lte: hasta } },
+    where: { fechaVenta: { gte: desde, lte: hasta }, estadoPedido: { not: 'cancelado' as const } },
     _sum: { totalConIva: true },
     _count: { _all: true },
     orderBy: { _sum: { totalConIva: 'desc' } },
@@ -821,6 +823,7 @@ export const getReportePdfDataService = async (desde: Date, hasta: Date) => {
            COUNT(*)::bigint AS operaciones
     FROM ventas
     WHERE "fechaVenta" >= ${desde} AND "fechaVenta" <= ${hasta}
+      AND "estadoPedido" <> 'cancelado'
     GROUP BY date_trunc('month', "fechaVenta")
     ORDER BY mes ASC
   `;

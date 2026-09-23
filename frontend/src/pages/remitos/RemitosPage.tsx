@@ -408,16 +408,18 @@ function RemitoRow({ remito }: { remito: Remito }) {
 
   const estado = ESTADO_CONFIG[remito.estado] ?? { label: remito.estado, badgeClass: 'badge-gray', icon: null };
   const nro = remito.numeroRemito ?? `#${String(remito.id).padStart(4, '0')}`;
+  // Remito cancelado (a mano o por cancelación de la venta): visible pero tachado
+  const tachado = remito.estado === 'cancelado' ? { textDecoration: 'line-through', opacity: 0.55 } : undefined;
 
   return (
     <>
-      <tr>
+      <tr style={remito.estado === 'cancelado' ? { background: '#FEF2F2' } : undefined}>
         {/* # */}
-        <td className="font-semibold text-xs" style={{ color: '#6B3A2A', fontFamily: 'monospace' }}>{nro}</td>
+        <td className="font-semibold text-xs" style={{ color: '#6B3A2A', fontFamily: 'monospace', ...tachado }}>{nro}</td>
 
         {/* Cliente */}
         <td>
-          <p className="font-semibold text-gray-900 text-sm">{remito.cliente.razonSocial}</p>
+          <p className="font-semibold text-gray-900 text-sm" style={tachado}>{remito.cliente.razonSocial}</p>
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
             <span className="text-xs text-gray-400">Venta #{remito.ventaId}</span>
             {remito.fechaEntrega && (
@@ -441,7 +443,7 @@ function RemitoRow({ remito }: { remito: Remito }) {
 
         {/* Total */}
         <td>
-          <p className="font-semibold text-gray-900 text-sm">{formatPesos(Number(remito.venta.totalConIva ?? 0))}</p>
+          <p className="font-semibold text-gray-900 text-sm" style={tachado}>{formatPesos(Number(remito.venta.totalConIva ?? 0))}</p>
           <p className="text-xs text-gray-400">con IVA</p>
         </td>
 

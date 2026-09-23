@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
+import { invalidarEstadosVenta } from './invalidarEstadosVenta';
 import type { Logistica } from '../types';
 import { useVistaStore } from '../store/vista.store';
 import { useVistaParams } from './useVista';
@@ -109,7 +110,7 @@ export const useCrearLogistica = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['logisticas'] });
       queryClient.invalidateQueries({ queryKey: ['entregas-hoy'] });
-      queryClient.invalidateQueries({ queryKey: ['ventas'] });
+      invalidarEstadosVenta(queryClient);
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     }
   });
@@ -125,7 +126,7 @@ export const useActualizarEstadoEntrega = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['logisticas'] });
       queryClient.invalidateQueries({ queryKey: ['entregas-hoy'] });
-      queryClient.invalidateQueries({ queryKey: ['ventas'] });
+      invalidarEstadosVenta(queryClient);
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     }
   });
@@ -218,7 +219,7 @@ export const useAvanzarLogistica = () => {
       queryClient.invalidateQueries({ queryKey: ['logistica-por-rol'] });
       queryClient.invalidateQueries({ queryKey: ['logisticas'] });
       queryClient.invalidateQueries({ queryKey: ['entregas-hoy'] });
-      queryClient.invalidateQueries({ queryKey: ['ventas'] });
+      invalidarEstadosVenta(queryClient);
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['logisticas-aceptadas'] });
       queryClient.invalidateQueries({ queryKey: ['rutas-hoy'] });

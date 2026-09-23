@@ -16,6 +16,7 @@ import {
   descargarReportePdf,
 } from '../../hooks/useReportes';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import RentabilidadPorVenta from './RentabilidadPorVenta';
 
 
 const formatPesos = (v: number) =>
@@ -50,7 +51,7 @@ const primerDiaAnio = `${hoy.getFullYear()}-01-01`;
 const ultimoDiaAnio = `${hoy.getFullYear()}-12-31`;
 
 type Periodo  = 'mes' | 'anio' | 'custom';
-type TabActivo = 'ventas' | 'cobranzas' | 'clientes' | 'estacionalidad';
+type TabActivo = 'ventas' | 'por_venta' | 'cobranzas' | 'clientes' | 'estacionalidad';
 
 interface VentaReporte {
   id: number;
@@ -262,6 +263,7 @@ export default function ReportesPage() {
         <div className="flex gap-1 p-1 min-w-max" style={{ background: '#F3EDE8', borderRadius: '0.375rem' }}>
           {([
             { key: 'ventas',         label: 'Ventas',         icon: <Package size={14} /> },
+            { key: 'por_venta',      label: 'Por venta',      icon: <DollarSign size={14} /> },
             { key: 'cobranzas',      label: 'Cobranzas',      icon: <DollarSign size={14} /> },
             { key: 'clientes',       label: 'Top Clientes',   icon: <Users size={14} /> },
             { key: 'estacionalidad', label: 'Estacionalidad', icon: <TrendingUp size={14} /> },
@@ -425,6 +427,9 @@ export default function ReportesPage() {
           </div>
         )
       )}
+
+      {/* ── TAB: POR VENTA (rentabilidad de cada venta del mes elegido) ── */}
+      {tabActivo === 'por_venta' && <RentabilidadPorVenta />}
 
       {/* ── TAB: COBRANZAS ── */}
       {tabActivo === 'cobranzas' && (

@@ -8,7 +8,7 @@ const estadoConfig: Record<string, { label: string; clase: string }> = {
   rechazada:         { label: 'Rechazada',        clase: 'badge-red' },
   perdida:           { label: 'Perdida',          clase: 'badge-gray' },
   vencida:           { label: 'Vencida',          clase: 'badge-red' },
-  anulada:           { label: 'Anulada',          clase: 'badge-gray' },
+  anulada:           { label: 'Anulada',          clase: 'badge-red' },
   // Ventas (fuente única compartida con Logística y Retiros)
   ...estadoVentaConfig,
   // Compras
@@ -21,6 +21,8 @@ const estadoConfig: Record<string, { label: string; clase: string }> = {
   cobrada_parcial:   { label: 'Cobro parcial',    clase: 'badge-yellow' },
   cobrada_total:     { label: 'Cobrada',          clase: 'badge-green' },
   incobrable:        { label: 'Incobrable',       clase: 'badge-red' },
+  // Devoluciones / solicitudes cerradas por cancelación de la venta
+  cancelada:         { label: 'Cancelada',        clase: 'badge-red' },
   // Logística
   en_camino:         { label: 'En camino',        clase: 'badge-blue' },
   con_problema:      { label: 'Con problema',     clase: 'badge-red' },

@@ -11,6 +11,7 @@ import {
   getVentasPorPeriodoService,
 } from '../services/ventas.service';
 import prisma from '../utils/prisma';
+import { getCancelacionPreviewService, cancelarVentaService } from '../services/cancelacion-venta.service';
 import { parseFechaLocal } from '../utils/fecha';
 
 const actualizarEstadoSchema = z.object({
@@ -151,5 +152,35 @@ export const eliminarVenta = async (req: AuthRequest, res: Response) => {
   } catch (err) {
     console.error('Error al eliminar venta:', err);
     res.status(500).json({ error: 'No se pudo eliminar la venta' });
+  }
+};
+
+const cancelarVentaSchema = z.object({
+  motivo: z.string().trim().min(3, 'Ingresá el motivo de la cancelación'),
+  cancelarCompras: z.boolean().optional(),
+});
+
+export const getCancelacionPreview = async (req: AuthRequest, res: Response) => {
+  try {
+    const id = parseId(req.params.id);
+    res.json(await getCancelacionPreviewService(id));
+  } catch (error: any) {
+    res.status(404).json({ error: error.message });
+  }
+};
+
+export const cancelarVenta = async (req: AuthRequest, res: Response) => {
+  try {
+    const id = parseId(req.params.id);
+    const datos = cancelarVentaSchema.parse(req.body);
+    const resultado = await cancelarVentaService(id, datos.motivo, req.user!.userId, {
+      cancelarCompras: datos.cancelarCompras,
+    });
+    res.json(resultado);
+  } catch (error: any) {
+    if (error.name === 'ZodError') {
+      return res.status(400).json({ error: error.issues[0].message });
+    }
+    res.status(400).json({ error: error.message });
   }
 };

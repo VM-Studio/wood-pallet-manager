@@ -23,6 +23,7 @@ const crearClienteSchema = z.object({
     .optional(),
   direccionEntrega: z.string().optional(),
   localidad: z.string().optional(),
+  esLocal: z.boolean().optional(),
   esExportador: z.boolean().optional(),
   observaciones: z.string().optional(),
 });

@@ -8,6 +8,7 @@ import {
   cambiarEstadoRetiroService,
   reenviarCodigoService,
   registrarRetiroParcialService,
+  registrarEnvioGalponService,
 } from '../services/retiros.service';
 
 export const getRetiros = async (_req: Request, res: Response) => {
@@ -40,13 +41,17 @@ export const cambiarEstadoRetiro = async (req: AuthRequest, res: Response) => {
     return;
   }
 
-  const data = await cambiarEstadoRetiroService(
-    id,
-    parsed.data.estado,
-    req.user!.userId,
-    { observaciones: parsed.data.observaciones, motivoCancelacion: parsed.data.motivoCancelacion }
-  );
-  res.json(data);
+  try {
+    const data = await cambiarEstadoRetiroService(
+      id,
+      parsed.data.estado,
+      req.user!.userId,
+      { observaciones: parsed.data.observaciones, motivoCancelacion: parsed.data.motivoCancelacion }
+    );
+    res.json(data);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
 };
 
 export const reenviarCodigo = async (req: AuthRequest, res: Response) => {
@@ -76,7 +81,10 @@ export const reenviarCodigo = async (req: AuthRequest, res: Response) => {
 export const registrarRetiroParcial = async (req: AuthRequest, res: Response) => {
   const id = parseId(req.params.id);
   const schema = z.object({
-    cantidad: z.number().int().positive(),
+    items: z.array(z.object({
+      detalleVentaId: z.number().int(),
+      cantidad: z.number().int().min(0),
+    })).min(1),
   });
 
   const parsed = schema.safeParse(req.body);
@@ -85,7 +93,32 @@ export const registrarRetiroParcial = async (req: AuthRequest, res: Response) =>
     return;
   }
 
-  const data = await registrarRetiroParcialService(id, parsed.data.cantidad, req.user!.userId);
-  res.json(data);
+  try {
+    const data = await registrarRetiroParcialService(id, parsed.data.items, req.user!.userId);
+    res.json(data);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
 };
 
+
+export const enviarAGalpon = async (req: AuthRequest, res: Response) => {
+  const id = parseId(req.params.id);
+  const schema = z.object({
+    proveedorId: z.number().int(),
+    tipoMensaje: z.enum(['codigo', 'retiro_parcial', 'cancelacion']),
+  });
+
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+
+  try {
+    const data = await registrarEnvioGalponService(id, parsed.data.proveedorId, parsed.data.tipoMensaje, req.user!.userId);
+    res.json(data);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};

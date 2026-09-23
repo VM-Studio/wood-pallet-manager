@@ -14,6 +14,7 @@ import {
   getMesesConDatosService,
 } from '../services/reportes.service';
 import { generarReportePdfStream } from '../utils/reportePdf';
+import { getRentabilidadVentasService } from '../services/rentabilidad.service';
 
 export const getDashboard = async (req: AuthRequest, res: Response) => {
   const vista = typeof req.query.vista === 'string' ? req.query.vista : undefined;
@@ -196,5 +197,27 @@ export const getReportePdf = async (req: AuthRequest, res: Response) => {
     doc.end();
   } catch (error: any) {
     res.status(500).json({ error: error.message || 'No se pudo generar el reporte PDF.' });
+  }
+};
+
+// ─── Rentabilidad por venta (mes seleccionado, formato YYYY-MM) ─────────────
+export const getRentabilidadVentas = async (req: AuthRequest, res: Response) => {
+  try {
+    const { mes, vista } = req.query;
+    if (typeof mes !== 'string' || !/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)) {
+      res.status(400).json({ error: 'El parámetro mes (YYYY-MM) es requerido' });
+      return;
+    }
+    const [y, m] = mes.split('-').map(Number);
+    const desde = new Date(y, m - 1, 1, 0, 0, 0, 0);
+    const hasta = new Date(y, m, 0, 23, 59, 59, 999);
+
+    let usuarioId: number | undefined;
+    if (vista === 'mis_datos') usuarioId = req.user!.userId;
+    else if (typeof vista === 'string') usuarioId = parseOtroUsuarioId(vista);
+
+    res.json(await getRentabilidadVentasService(desde, hasta, usuarioId));
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 };

@@ -6,6 +6,7 @@ import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
 import Pagination from '../../components/ui/Pagination';
 import VentaDetalle from './VentaDetalle';
+import CancelarVentaModal from '../../components/ventas/CancelarVentaModal';
 
 const POR_PAGINA = 10;
 
@@ -25,6 +26,7 @@ export default function VentasPage() {
   const [pagina, setPagina] = useState(1);
   const [ventaSeleccionada, setVentaSeleccionada] = useState<number | null>(null);
   const [confirmEliminar, setConfirmEliminar] = useState<number | null>(null);
+  const [ventaACancelar, setVentaACancelar] = useState<number | null>(null);
 
   const ESTADOS_ACTIVOS = ['confirmado', 'en_preparacion', 'listo_para_envio', 'en_transito', 'entregado_parcial'];
 
@@ -43,7 +45,8 @@ export default function VentasPage() {
 
   const ventasPaginadas = filtradas.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
 
-  const totalPallets = (ventas || []).reduce((acc, v) => {
+  // Las ventas canceladas quedan listadas (tachadas) pero no suman pallets
+  const totalPallets = (ventas || []).filter(v => v.estadoPedido !== 'cancelado').reduce((acc, v) => {
     return acc + (v.detalles?.reduce((a, d) => a + d.cantidadPedida, 0) || 0);
   }, 0);
   const entregadas = (ventas || []).filter(v => v.estadoPedido === 'entregado').length;
@@ -198,12 +201,22 @@ export default function VentasPage() {
                   No hay ventas con los filtros seleccionados
                 </td>
               </tr>
-            ) : ventasPaginadas.map(v => (
+            ) : ventasPaginadas.map(v => {
+              const cancelada = v.estadoPedido === 'cancelado';
+              const tachado = cancelada ? { textDecoration: 'line-through', opacity: 0.55 } : undefined;
+              return (
               <tr key={v.id} className="cursor-pointer hover:bg-gray-50 transition-colors"
+                style={cancelada ? { background: '#FEF2F2' } : undefined}
                 onClick={() => setVentaSeleccionada(v.id)}>
-                <td className="font-mono text-xs text-gray-400">#{v.id}</td>
+                <td className="font-mono text-xs text-gray-400" style={tachado}>#{v.id}</td>
                 <td>
-                  <p className="font-semibold text-gray-900 text-sm">{v.cliente?.razonSocial}</p>
+                  <p className="font-semibold text-gray-900 text-sm" style={tachado}>{v.cliente?.razonSocial}</p>
+                  {cancelada && v.motivoCancelacion && (
+                    <p className="text-xs text-red-600 mt-0.5" title={v.motivoCancelacion}
+                      style={{ maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      Motivo: {v.motivoCancelacion}
+                    </p>
+                  )}
                   <p className="text-xs text-gray-400">{v.cliente?.cuit}</p>
                   {v.nroOrden && (
                     <span style={{
@@ -213,7 +226,7 @@ export default function VentasPage() {
                     }}>{v.nroOrden}</span>
                   )}
                 </td>
-                <td className="text-sm text-gray-600">{formatFecha(v.fechaVenta)}</td>
+                <td className="text-sm text-gray-600" style={tachado}>{formatFecha(v.fechaVenta)}</td>
                 <td>
                   <span className="text-xs text-gray-500 flex items-center gap-1">
                     {v.tipoEntrega === 'retira_cliente'
@@ -226,7 +239,7 @@ export default function VentasPage() {
                   )}
                 </td>
                 <td><EstadoBadge estado={v.estadoPedido} /></td>
-                <td className="text-right font-bold text-gray-900 text-sm">
+                <td className="text-right font-bold text-gray-900 text-sm" style={tachado}>
                   {formatPesos(v.totalConIva || 0)}
                 </td>
                 <td>
@@ -237,6 +250,16 @@ export default function VentasPage() {
                     >
                       Detalle
                     </button>
+                    {!cancelada && v.estadoPedido !== 'entregado' && (
+                      <button
+                        onClick={e => { e.stopPropagation(); setVentaACancelar(v.id); }}
+                        className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-red-600 border border-red-200 hover:bg-red-50 rounded transition-colors"
+                        title="Cancelar venta"
+                      >
+                        <XCircle size={13} />
+                        Cancelar
+                      </button>
+                    )}
                     <button
                       onClick={e => { e.stopPropagation(); setConfirmEliminar(v.id); }}
                       className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
@@ -247,7 +270,8 @@ export default function VentasPage() {
                   </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
         </div>
@@ -259,6 +283,10 @@ export default function VentasPage() {
           nombreItems="ventas"
         />
       </div>
+
+      {ventaACancelar !== null && (
+        <CancelarVentaModal ventaId={ventaACancelar} onClose={() => setVentaACancelar(null)} />
+      )}
 
       {ventaSeleccionada && (
         <VentaDetalle

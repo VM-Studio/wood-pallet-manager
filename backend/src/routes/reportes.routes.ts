@@ -9,6 +9,7 @@ import {
   getGananciasDetalle,
   getReportePdf,
   getMesesConDatos,
+  getRentabilidadVentas,
 } from '../controllers/reportes.controller';
 
 const router = Router();
@@ -21,6 +22,7 @@ router.get('/top-clientes', getTopClientes);
 router.get('/estacionalidad', getEstacionalidad);
 router.get('/ganancias-detalle', getGananciasDetalle);
 router.get('/meses-con-datos', getMesesConDatos);
+router.get('/rentabilidad-ventas', getRentabilidadVentas);
 router.get('/pdf', getReportePdf);
 
 export default router;

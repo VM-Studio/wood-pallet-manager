@@ -1,4 +1,5 @@
 import prisma from '../utils/prisma';
+import { asegurarVentaNoCancelada } from './cancelacion-venta.service';
 
 // Buscar usuario Carlos (destinatario fijo)
 async function getCarlosId(): Promise<number> {
@@ -23,6 +24,7 @@ export async function crearSolicitudService(
     notas?: string;
   }
 ) {
+  if (data.ventaId) await asegurarVentaNoCancelada(prisma, data.ventaId);
   const destinatarioId = await getCarlosId();
   return prisma.solicitudLogistica.create({
     data: {
@@ -75,6 +77,7 @@ export async function responderSolicitudService(
   const solicitud = await prisma.solicitudLogistica.findUnique({ where: { id } });
   if (!solicitud) throw new Error('Solicitud no encontrada');
   if (solicitud.destinatarioId !== usuarioId) throw new Error('No tenés permiso para responder esta solicitud');
+  if (solicitud.estado === 'cancelada') throw new Error('La solicitud fue cancelada porque se canceló la venta');
 
   // Si la solicitud es aceptada, además creamos la logística correspondiente y actualizamos la venta
   if (estado === 'aceptada') {

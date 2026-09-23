@@ -265,18 +265,35 @@ export default function ProductosPage() {
                   )}
                 </div>
 
-                {/* Precio base */}
+                {/* Precio de compra (lo que se le paga al galpón), más chico, arriba del de venta */}
+                <div className="mb-2">
+                  <span className="text-xs text-gray-400">Precio de compra</span>
+                  {p.prodProveedores?.length ? (
+                    p.prodProveedores.map(pp => (
+                      <p key={pp.id} className="text-sm text-gray-600 leading-snug">
+                        ${new Intl.NumberFormat('es-AR').format(Number(pp.precioCosto))}
+                        {p.prodProveedores!.length > 1 && pp.proveedor && (
+                          <span className="text-xs text-gray-400 ml-1">· {pp.proveedor.nombreEmpresa}</span>
+                        )}
+                      </p>
+                    ))
+                  ) : (
+                    <p className="text-xs text-gray-400 italic">Sin cargar</p>
+                  )}
+                </div>
+
+                {/* Precio de venta */}
                 {precio != null ? (
                   <div className="mb-4">
                     <div className="flex items-center justify-between mb-0.5">
-                      <span className="text-xs text-gray-400">Precio base</span>
+                      <span className="text-xs text-gray-400">Precio de venta</span>
                       {tieneEscalones && (
                         <span className="text-xs font-medium" style={{ color: '#C4895A' }}>
                           {p.listaPrecios?.length} escalones
                         </span>
                       )}
                     </div>
-                    <p className="text-lg font-bold" style={{ color: '#6B3A2A' }}>
+                    <p className="text-lg font-normal" style={{ color: '#111827' }}>
                       ${new Intl.NumberFormat('es-AR').format(precio)}
                       <span className="text-xs font-normal text-gray-400 ml-1">+ IVA / u</span>
                     </p>

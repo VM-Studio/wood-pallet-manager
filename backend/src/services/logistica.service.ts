@@ -1,4 +1,5 @@
 import prisma from '../utils/prisma';
+import { asegurarVentaNoCancelada } from './cancelacion-venta.service';
 import { geocodeAddress } from '../utils/geocode';
 
 export const getLogisticasService = async () => {
@@ -46,6 +47,7 @@ export const crearLogisticaService = async (
   usuarioId: number,
   rol: string
 ) => {
+  await asegurarVentaNoCancelada(prisma, data.ventaId);
   if (rol !== 'admin' && rol !== 'propietario_carlos') {
     throw new Error('Solo Carlos o un administrador puede crear logística');
   }
@@ -86,6 +88,7 @@ export const actualizarEstadoEntregaService = async (
   estado: string,
   rol: string
 ) => {
+  await asegurarVentaNoCancelada(prisma, ventaId);
   if (rol !== 'admin' && rol !== 'propietario_carlos') {
     throw new Error('Solo Carlos o un administrador puede actualizar el estado');
   }
@@ -117,6 +120,7 @@ export const actualizarEstadoEntregaService = async (
 };
 
 export const confirmarEntregaClienteService = async (ventaId: number) => {
+  await asegurarVentaNoCancelada(prisma, ventaId);
   const logistica = await prisma.logistica.findUnique({ where: { ventaId } });
   if (!logistica) throw new Error('Logística no encontrada');
 
@@ -134,6 +138,7 @@ export const getEntregasDelDiaService = async () => {
 
   return prisma.logistica.findMany({
     where: {
+      estadoEntrega: { not: 'cancelado' },
       fechaRetiroGalpon: {
         not: null,
         gte: inicio,
@@ -157,6 +162,7 @@ const ventaLogisticaInclude = {
     select: {
       id: true,
       estadoPedido: true,
+      motivoCancelacion: true,
       costoFlete: true,
       fechaEstimEntrega: true,
       lugarEntrega: true,
@@ -224,6 +230,7 @@ export const getLogisticasPorRolService = async (usuarioId: number, rol: string,
 };
 
 export const consultarLogisticaService = async (ventaId: number, usuarioId: number) => {
+  await asegurarVentaNoCancelada(prisma, ventaId);
   // Si ya existe el registro, solo actualiza estadoConsulta
   const existente = await prisma.logistica.findUnique({ where: { ventaId } });
 
@@ -266,6 +273,7 @@ export const responderConsultaLogisticaService = async (
     observaciones?: string;
   }
 ) => {
+  await asegurarVentaNoCancelada(prisma, ventaId);
   if (rol !== 'propietario_carlos' && rol !== 'admin') {
     throw new Error('Solo Carlos puede aceptar o rechazar consultas de logística');
   }
@@ -291,6 +299,7 @@ export const avanzarLogisticaService = async (
   accion: 'consultando' | 'aceptada' | 'en_camino' | 'entregada',
   rol: string
 ) => {
+  await asegurarVentaNoCancelada(prisma, ventaId);
   if (rol !== 'propietario_carlos' && rol !== 'admin') {
     throw new Error('Solo Carlos puede avanzar el estado de la logística');
   }
@@ -355,6 +364,7 @@ export const confirmarLogisticaCarlosService = async (
     observaciones?: string;
   }
 ) => {
+  await asegurarVentaNoCancelada(prisma, ventaId);
   if (rol !== 'propietario_carlos' && rol !== 'admin') {
     throw new Error('Solo Carlos puede confirmar logística');
   }
@@ -376,7 +386,7 @@ export const getLogisticasAceptadasService = async () => {
   return prisma.logistica.findMany({
     where: {
       estadoConsulta: 'aceptada',
-      estadoEntrega: { not: 'entregado' }, // excluir ya entregadas
+      estadoEntrega: { notIn: ['entregado', 'cancelado'] }, // excluir entregadas y canceladas
     },
     include: {
       venta: {
@@ -416,7 +426,7 @@ export const getRutasHoyService = async () => {
       AND: [
         // Solo logísticas aceptadas (aprobadas por Carlos) y no entregadas
         { estadoConsulta: 'aceptada' },
-        { estadoEntrega: { not: 'entregado' } },
+        { estadoEntrega: { notIn: ['entregado', 'cancelado'] } },
         {
           OR: [
             // Fecha estimada de entrega en la venta es hoy

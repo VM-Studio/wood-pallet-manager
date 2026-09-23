@@ -1,4 +1,5 @@
 import prisma from '../utils/prisma';
+import { asegurarVentaNoCancelada } from './cancelacion-venta.service';
 import { enviarRemitoParaFirmar, enviarRemitoFirmado } from '../utils/mailer';
 
 const REMITO_INCLUDE = {
@@ -47,6 +48,7 @@ export const crearRemitoService = async (
   },
   usuarioId: number
 ) => {
+  await asegurarVentaNoCancelada(prisma, datos.ventaId);
   const venta = await prisma.venta.findUnique({
     where: { id: datos.ventaId },
     include: { remito: true },
@@ -77,6 +79,7 @@ export const firmarPropietarioService = async (
 ) => {
   const remito = await prisma.remito.findUnique({ where: { id } });
   if (!remito) throw new Error('Remito no encontrado');
+  if (remito.estado === 'cancelado') throw new Error('El remito está cancelado');
   if (remito.estado !== 'pendiente_firma_propietario') {
     throw new Error('El remito ya tiene firma del propietario');
   }

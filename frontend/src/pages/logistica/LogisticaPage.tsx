@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Truck, Calendar, Clock, AlertCircle, MapPin, Package, CreditCard, CheckCircle, ArrowRight, Eye, X, User, Phone, FileText } from 'lucide-react';
+import { Truck, Calendar, Clock, AlertCircle, MapPin, Package, CreditCard, CheckCircle, ArrowRight, Eye, X, User, Phone, FileText, Search } from 'lucide-react';
 import { useLogisticasPorRol, useEntregasHoy, useConsultarLogistica, useAvanzarLogistica } from '../../hooks/useLogistica';
 import { useAuthStore } from '../../store/auth.store';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
@@ -8,7 +8,7 @@ import RouteMonitorCard from './RouteMonitorCard';
 import { getEstadoVentaStyle } from '../../utils/estadoVenta';
 
 type EstadoConsulta = 'no_aplica' | 'pendiente_consulta' | 'consultada' | 'aceptada' | 'rechazada';
-type EstadoEntrega = 'pendiente' | 'en_camino' | 'entregado' | 'con_problema';
+type EstadoEntrega = 'pendiente' | 'en_camino' | 'entregado' | 'con_problema' | 'cancelado';
 
 interface LogisticaRow {
   id: number;
@@ -26,6 +26,7 @@ interface LogisticaRow {
   registradoPor?: { nombre: string; apellido: string };
   venta?: {
     estadoPedido?: string;
+    motivoCancelacion?: string | null;
     costoFlete?: number;
     fechaEstimEntrega?: string;
     lugarEntrega?: string;
@@ -86,9 +87,11 @@ function LogisticaCard({
     return `${hh}:${mm}`;
   };
   const horaEntrega = fmtHora(l.horaEstimadaEntrega);
+  // Venta cancelada: la tarjeta queda visible pero tachada y sin acciones
+  const cancelada = l.estadoEntrega === 'cancelado' || l.venta?.estadoPedido === 'cancelado';
 
   return (
-    <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', overflow: 'hidden', boxShadow: 'var(--shadow-card)' }}>
+    <div style={{ background: cancelada ? '#FEF2F2' : 'var(--color-surface)', border: `1px solid ${cancelada ? '#FECACA' : 'var(--color-border)'}`, borderRadius: 'var(--radius-md)', overflow: 'hidden', boxShadow: 'var(--shadow-card)' }}>
       {/* Fila principal */}
       <div style={{ padding: '0.625rem 0.875rem', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         {/* Badge venta */}
@@ -109,7 +112,7 @@ function LogisticaCard({
         )}
 
         {/* Empresa — flex grow */}
-        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', ...(cancelada ? { textDecoration: 'line-through', opacity: 0.55 } : {}) }}>
           {l.venta?.cliente?.razonSocial ?? '—'}
         </span>
 
@@ -159,7 +162,13 @@ function LogisticaCard({
       {showDetalle && <LogisticaDetalleModal l={l} onClose={() => setShowDetalle(false)} />}
 
       {/* Acciones */}
-      {(!esCarlos && l.venta?.tipoEntrega === 'envio_woodpallet' && l.estadoConsulta === 'no_aplica') || (esCarlos && l.estadoEntrega !== 'entregado') ? (
+      {cancelada ? (
+        <div style={{ padding: '0.3rem 0.875rem 0.5rem', borderTop: '1px solid #FECACA' }}>
+          <span style={{ fontSize: '0.72rem', color: '#DC2626', fontWeight: 600 }}>
+            Venta cancelada{l.venta?.motivoCancelacion ? ` · ${l.venta.motivoCancelacion}` : ''}
+          </span>
+        </div>
+      ) : (!esCarlos && l.venta?.tipoEntrega === 'envio_woodpallet' && l.estadoConsulta === 'no_aplica') || (esCarlos && l.estadoEntrega !== 'entregado') ? (
         <div style={{ padding: '0.375rem 0.875rem 0.625rem', borderTop: '1px solid var(--color-surface-muted)', display: 'flex', gap: 5, flexWrap: 'wrap' }}>
           {/* Juan: consultar */}
           {!esCarlos && l.estadoConsulta === 'no_aplica' && (
@@ -352,9 +361,30 @@ const PAGE_SIZE = 3;
 
 type FiltroKpi = 'pendiente' | 'en_camino' | 'entregado' | 'hoy' | null;
 
+// Normaliza texto para búsqueda: minúsculas y sin tildes
+const normalizar = (s?: string) =>
+  (s ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+// Coincidencia del buscador: empresa, contacto del cliente, zona (lugar/dirección/localidad) o N° de venta
+const coincideBusqueda = (l: LogisticaRow, busqueda: string, fecha: string) => {
+  if (fecha) {
+    const f = (l.venta?.fechaEstimEntrega ?? l.fechaRetiroGalpon)?.slice(0, 10);
+    if (f !== fecha) return false;
+  }
+  const q = normalizar(busqueda.trim());
+  if (!q) return true;
+  const c = l.venta?.cliente;
+  const campos = [
+    c?.razonSocial, c?.nombreContacto,
+    l.venta?.lugarEntrega, c?.direccionEntrega, c?.localidad,
+    String(l.ventaId),
+  ];
+  return campos.some(v => normalizar(v).includes(q));
+};
+
 // ── Lista paginada de tarjetas ──────────────────────────────────────
 function LogisticaList({
-  items, esCarlos, consultarMutation, avanzarMutation, emptyLabel, filtro, entregasHoy,
+  items, esCarlos, consultarMutation, avanzarMutation, emptyLabel, filtro, entregasHoy, busqueda = '', fecha = '',
 }: {
   items: LogisticaRow[];
   esCarlos: boolean;
@@ -363,25 +393,29 @@ function LogisticaList({
   emptyLabel?: string;
   filtro?: FiltroKpi;
   entregasHoy?: LogisticaRow[];
+  busqueda?: string;
+  fecha?: string;
 }) {
   const [visibles, setVisibles] = useState(PAGE_SIZE);
 
   // Aplicar filtro de tarjetas
-  const itemsFiltrados = filtro
+  const itemsFiltrados = (filtro
     ? filtro === 'hoy'
       ? (entregasHoy ?? []).filter(h => items.some(i => i.id === h.id))
       : items.filter(l => l.estadoEntrega === filtro)
-    : items;
+    : items
+  ).filter(l => coincideBusqueda(l, busqueda, fecha));
+  const hayBusqueda = !!(busqueda.trim() || fecha);
 
   // Reiniciar paginación cuando cambie el filtro o la lista
-  const itemsKey = `${items.length}-${filtro}`;
+  const itemsKey = `${items.length}-${filtro}-${busqueda}-${fecha}`;
   const [lastKey, setLastKey] = useState(itemsKey);
   if (itemsKey !== lastKey) {
     setLastKey(itemsKey);
     setVisibles(PAGE_SIZE);
   }
 
-  if (!itemsFiltrados.length) return <EmptyState esCarlos={esCarlos} label={filtro ? 'Sin resultados para este filtro' : emptyLabel} />;
+  if (!itemsFiltrados.length) return <EmptyState esCarlos={esCarlos} label={filtro || hayBusqueda ? 'Sin resultados para este filtro' : emptyLabel} />;
 
   const mostrados = itemsFiltrados.slice(0, visibles);
   const hayMas    = visibles < itemsFiltrados.length;
@@ -421,6 +455,8 @@ export default function LogisticaPage() {
 
   const [filtroActivo, setFiltroActivo] = useState<FiltroKpi>(null);
   const [vistaCarlos, setVistaCarlos] = useState<'mis' | 'juan'>('mis');
+  const [busqueda, setBusqueda] = useState('');
+  const [fechaBusqueda, setFechaBusqueda] = useState('');
 
   const consultarMutation = useConsultarLogistica();
   const avanzarMutation   = useAvanzarLogistica();
@@ -508,6 +544,40 @@ export default function LogisticaPage() {
         </div>
       )}
 
+      {/* Buscador */}
+      <div className="card-base">
+        <div className="flex gap-3 flex-col sm:flex-row">
+          <div className="relative flex-1">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              className="input-field pl-9"
+              placeholder="Buscar por empresa, cliente, zona o N° venta..."
+              value={busqueda}
+              onChange={e => setBusqueda(e.target.value)}
+            />
+          </div>
+          <div className="relative sm:w-56 flex gap-2 items-center">
+            <input
+              type="date"
+              className="input-field"
+              value={fechaBusqueda}
+              onChange={e => setFechaBusqueda(e.target.value)}
+              title="Filtrar por fecha de entrega"
+            />
+            {(busqueda || fechaBusqueda) && (
+              <button
+                type="button"
+                className="btn-icon"
+                onClick={() => { setBusqueda(''); setFechaBusqueda(''); }}
+                title="Limpiar búsqueda"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Vista Juan */}
       {!esCarlos && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
@@ -519,6 +589,8 @@ export default function LogisticaPage() {
               avanzarMutation={avanzarMutation}
               filtro={filtroActivo}
               entregasHoy={entregasHoy ?? []}
+              busqueda={busqueda}
+              fecha={fechaBusqueda}
             />
           </div>
           <div>
@@ -588,6 +660,8 @@ export default function LogisticaPage() {
                 emptyLabel="Sin logísticas propias"
                 filtro={filtroActivo}
                 entregasHoy={entregasHoy ?? []}
+                busqueda={busqueda}
+                fecha={fechaBusqueda}
               />
             ) : (
               <LogisticaList
@@ -598,6 +672,8 @@ export default function LogisticaPage() {
                 emptyLabel="Juan no tiene logísticas registradas"
                 filtro={filtroActivo}
                 entregasHoy={entregasHoy ?? []}
+                busqueda={busqueda}
+                fecha={fechaBusqueda}
               />
             )}
           </div>

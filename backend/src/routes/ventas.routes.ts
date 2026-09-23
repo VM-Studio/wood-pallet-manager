@@ -8,6 +8,8 @@ import {
   getVentasActivas,
   getVentasPorPeriodo,
   eliminarVenta,
+  getCancelacionPreview,
+  cancelarVenta,
 } from '../controllers/ventas.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 
@@ -24,6 +26,8 @@ router.get('/', getVentas);
 router.get('/:id', getVentaById);
 router.get('/:id/retiros', getResumenRetiro);
 router.put('/:id/estado', actualizarEstadoVenta);
+router.get('/:id/cancelacion', getCancelacionPreview);
+router.post('/:id/cancelar', cancelarVenta);
 router.post('/:id/retiro', registrarRetiro);
 router.delete('/:id', eliminarVenta);
 

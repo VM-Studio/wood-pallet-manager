@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search, Plus, History, Pencil, MapPin, Phone, MessageCircle, Users, Trash2, Building2 } from 'lucide-react';
+import { Search, Plus, History, Pencil, MapPin, Phone, MessageCircle, Users, Trash2, Building2, ArrowUpDown } from 'lucide-react';
 import { useClientes } from '../../hooks/useClientes';
 import { useEliminarCliente } from '../../hooks/useClientes';
 import { useAuthStore } from '../../store/auth.store';
@@ -14,12 +14,42 @@ import Pagination from '../../components/ui/Pagination';
 
 const POR_PAGINA = 10;
 
+type Orden = 'alfa_asc' | 'alfa_desc' | 'nuevos' | 'viejos' | 'locales' | 'exportadores' | 'localidad';
+
+const OPCIONES_ORDEN: { value: Orden; label: string }[] = [
+  { value: 'alfa_asc',     label: 'Alfabético (A → Z)' },
+  { value: 'alfa_desc',    label: 'Alfabético (Z → A)' },
+  { value: 'nuevos',       label: 'Más nuevos primero' },
+  { value: 'viejos',       label: 'Más viejos primero' },
+  { value: 'locales',      label: 'Locales primero' },
+  { value: 'exportadores', label: 'Exportadores primero' },
+  { value: 'localidad',    label: 'Por localidad (A → Z)' },
+];
+
+const porNombre = (a: Cliente, b: Cliente) => a.razonSocial.localeCompare(b.razonSocial, 'es', { sensitivity: 'base' });
+
+// Comparadores de orden; en empates se desempata alfabéticamente
+const COMPARADORES: Record<Orden, (a: Cliente, b: Cliente) => number> = {
+  alfa_asc:     porNombre,
+  alfa_desc:    (a, b) => porNombre(b, a),
+  nuevos:       (a, b) => new Date(b.fechaAlta).getTime() - new Date(a.fechaAlta).getTime() || porNombre(a, b),
+  viejos:       (a, b) => new Date(a.fechaAlta).getTime() - new Date(b.fechaAlta).getTime() || porNombre(a, b),
+  locales:      (a, b) => Number(b.esLocal) - Number(a.esLocal) || porNombre(a, b),
+  exportadores: (a, b) => Number(b.esExportador) - Number(a.esExportador) || porNombre(a, b),
+  // Los clientes sin localidad van al final
+  localidad:    (a, b) =>
+    (a.localidad ? 0 : 1) - (b.localidad ? 0 : 1) ||
+    (a.localidad ?? '').localeCompare(b.localidad ?? '', 'es', { sensitivity: 'base' }) ||
+    porNombre(a, b),
+};
+
 export default function ClientesPage() {
   const { usuario } = useAuthStore();
   const { data: clientes, isLoading, error } = useClientes();
   const eliminarCliente = useEliminarCliente();
   const [busqueda, setBusqueda] = useState('');
   const [filtro, setFiltro] = useState<'todos' | 'mios'>('mios');
+  const [orden, setOrden] = useState<Orden>('alfa_asc');
   const [pagina, setPagina] = useState(1);
   const [searchParams] = useSearchParams();
   const [showForm, setShowForm] = useState(() => searchParams.get('nuevo') === 'true');
@@ -37,11 +67,11 @@ export default function ClientesPage() {
       filtro === 'todos' ||
       (filtro === 'mios' && c.usuarioAsignadoId === usuario?.id);
     return matchBusqueda && matchFiltro;
-  });
+  }).sort(COMPARADORES[orden]);
 
   const clientesPaginados = clientesFiltrados?.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
 
-  useEffect(() => { setPagina(1); }, [busqueda, filtro]);
+  useEffect(() => { setPagina(1); }, [busqueda, filtro, orden]);
 
   const esAsignado = (cliente: Cliente) => cliente.usuarioAsignadoId === usuario?.id;
 
@@ -87,6 +117,25 @@ export default function ClientesPage() {
             onFocus={e => (e.currentTarget.style.borderColor = '#C4895A')}
             onBlur={e => (e.currentTarget.style.borderColor = 'var(--color-border)')}
           />
+        </div>
+        {/* Ordenar */}
+        <div style={{ position: 'relative' }}>
+          <ArrowUpDown size={15} style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-soft)', pointerEvents: 'none' }} />
+          <select
+            value={orden}
+            onChange={(e) => setOrden(e.target.value as Orden)}
+            title="Ordenar clientes"
+            style={{
+              height: '100%', padding: '0.6rem 0.875rem 0.6rem 2.375rem',
+              border: '1.5px solid var(--color-border)', borderRadius: 8,
+              fontSize: '0.8375rem', fontWeight: 500, color: 'var(--color-text)', background: 'var(--color-input-bg)',
+              outline: 'none', cursor: 'pointer', transition: 'border-color 0.15s',
+            }}
+            onFocus={e => (e.currentTarget.style.borderColor = '#C4895A')}
+            onBlur={e => (e.currentTarget.style.borderColor = 'var(--color-border)')}
+          >
+            {OPCIONES_ORDEN.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
         </div>
         {/* Toggle tabs */}
         <div style={{ display: 'flex', background: 'var(--color-input-bg)', border: '1.5px solid var(--color-border)', borderRadius: 8, overflow: 'hidden' }}>
@@ -204,19 +253,22 @@ export default function ClientesPage() {
 
                   {/* Tipo / Badge */}
                   <td style={{ padding: '0.7rem 1rem' }}>
-                    {cliente.esExportador ? (
-                      <span style={{
-                        fontSize: '0.65rem', fontWeight: 700, padding: '0.15rem 0.45rem',
-                        borderRadius: 4, background: '#DBEAFE', color: '#1D4ED8',
-                        whiteSpace: 'nowrap', letterSpacing: '0.02em',
-                      }}>Exportador</span>
-                    ) : (
-                      <span style={{
-                        fontSize: '0.65rem', fontWeight: 700, padding: '0.15rem 0.45rem',
-                        borderRadius: 4, background: '#F0F9FF', color: '#0369A1',
-                        whiteSpace: 'nowrap', letterSpacing: '0.02em',
-                      }}>Local</span>
-                    )}
+                    <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
+                      {cliente.esLocal && (
+                        <span style={{
+                          fontSize: '0.65rem', fontWeight: 700, padding: '0.15rem 0.45rem',
+                          borderRadius: 4, background: '#F0F9FF', color: '#0369A1',
+                          whiteSpace: 'nowrap', letterSpacing: '0.02em',
+                        }}>Local</span>
+                      )}
+                      {cliente.esExportador && (
+                        <span style={{
+                          fontSize: '0.65rem', fontWeight: 700, padding: '0.15rem 0.45rem',
+                          borderRadius: 4, background: '#DBEAFE', color: '#1D4ED8',
+                          whiteSpace: 'nowrap', letterSpacing: '0.02em',
+                        }}>Exportador</span>
+                      )}
+                    </div>
                   </td>
 
                   {/* Acciones */}

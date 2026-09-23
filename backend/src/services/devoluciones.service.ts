@@ -1,4 +1,5 @@
 import prisma from '../utils/prisma';
+import { asegurarVentaNoCancelada } from './cancelacion-venta.service';
 
 const devolucionInclude = {
   cliente: { select: { id: true, razonSocial: true, nombreContacto: true, telefonoContacto: true } },
@@ -49,6 +50,7 @@ export const crearDevolucionService = async (
   },
   usuarioId: number
 ) => {
+  await asegurarVentaNoCancelada(prisma, datos.ventaId);
   // Traer venta completa
   const venta = await prisma.venta.findUnique({
     where: { id: datos.ventaId },

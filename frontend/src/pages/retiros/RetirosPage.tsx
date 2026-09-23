@@ -3,11 +3,11 @@ import {
   Warehouse, Calendar, Clock, CheckCircle2, XCircle, ChevronRight,
   X, MailIcon, Phone, Copy, Send, User, Package, CreditCard,
   History, FileText, RefreshCw, AlertTriangle, CheckCircle,
-  ShieldCheck, QrCode, MessageCircle,
+  ShieldCheck, QrCode, MessageCircle, Search,
 } from 'lucide-react';
 import {
   useRetiros, useStatsRetiros, useCambiarEstadoRetiro, useReenviarCodigoRetiro,
-  useRegistrarRetiroParcial,
+  useRegistrarRetiroParcial, useGalpones, useEnviarAGalpon,
   type RetiroRow, type EstadoRetiro,
 } from '../../hooks/useRetiros';
 import { useVentas } from '../../hooks/useVentas';
@@ -15,6 +15,8 @@ import { useAuthStore } from '../../store/auth.store';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../components/ui/ErrorMessage';
 import { getEstadoVentaStyle } from '../../utils/estadoVenta';
+import CancelarVentaModal from '../../components/ventas/CancelarVentaModal';
+import { linkWhatsApp, telefonoWhatsApp } from '../../utils/whatsapp';
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
 } from 'recharts';
@@ -56,7 +58,7 @@ const origenLabel: Record<string, string> = {
 function EstadoBadge({ estadoPedido }: { estadoPedido?: string }) {
   const s = getEstadoVentaStyle(estadoPedido);
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold"
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold whitespace-nowrap"
       style={{ background: s.bg, color: s.color, borderRadius: 0 }}>
       {s.label}
     </span>
@@ -132,36 +134,95 @@ function ConfirmarRetiroModal({
 }
 
 // ─── Cancelar retiro modal ────────────────────────────────────────────────────
-function CancelarRetiroModal({ retiro, onClose }: { retiro: RetiroRow; onClose: () => void }) {
-  const cambiar = useCambiarEstadoRetiro();
-  const [motivo, setMotivo] = useState('');
+// ─── Retiro parcial modal ─────────────────────────────────────────────────────
+// Registra lo retirado por producto sobre el detalle de la venta: el mismo
+// registro que ve el detalle de la venta en Ventas, y el estado resultante
+// ("Retiro parcial" / "Entregado") se refleja en Ventas, Logística y Retiros.
+const retiradoDe = (d: RetiroRow['venta']['detalles'][number]) =>
+  (d.retiros ?? []).reduce((acc, r) => acc + r.cantidadRetirada, 0);
 
-  const handleCancelar = async () => {
-    if (!motivo.trim()) return;
-    await cambiar.mutateAsync({ id: retiro.id, estado: 'cancelado', motivoCancelacion: motivo });
-    onClose();
-  };
+const admiteRetiroParcial = (r: RetiroRow) =>
+  (r.estadoRetiro === 'pendiente' || r.estadoRetiro === 'confirmado' || r.estadoRetiro === 'parcial') &&
+  r.venta.estadoPedido !== 'cancelado';
+
+// Buscador de retiros (por cliente, N° de venta o código) para elegir sobre cuál operar
+function BuscadorRetiros({ retiros, onSeleccionar }: { retiros: RetiroRow[]; onSeleccionar: (id: number) => void }) {
+  const [busqueda, setBusqueda] = useState('');
+  const q = busqueda.trim().toLowerCase();
+  const encontrados = q
+    ? retiros.filter(r =>
+        r.venta.cliente.razonSocial.toLowerCase().includes(q) ||
+        (r.venta.cliente.nombreContacto ?? '').toLowerCase().includes(q) ||
+        `#${r.venta.id}`.includes(q) || String(r.venta.id) === q ||
+        r.codigoRetiro.toLowerCase().includes(q))
+    : retiros;
 
   return (
+    <>
+      <div className="relative">
+        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+        <input
+          autoFocus
+          className="input pl-9"
+          placeholder="Buscar por cliente, N° de venta o código de retiro..."
+          value={busqueda}
+          onChange={e => setBusqueda(e.target.value)}
+        />
+      </div>
+      <div className="border rounded-xl overflow-hidden max-h-80 overflow-y-auto" style={{ borderColor: 'var(--color-border)' }}>
+        {encontrados.length === 0 ? (
+          <p className="text-sm text-stone-400 text-center py-6">
+            {retiros.length ? 'No hay ventas que coincidan con la búsqueda.' : 'No hay retiros pendientes.'}
+          </p>
+        ) : encontrados.map((r, i) => {
+          const pedido   = r.venta.detalles.reduce((acc, d) => acc + d.cantidadPedida, 0);
+          const retirado = r.venta.detalles.reduce((acc, d) => acc + retiradoDe(d), 0);
+          return (
+            <button
+              key={r.id}
+              onClick={() => onSeleccionar(r.id)}
+              className="w-full text-left flex items-center gap-3 px-3 py-2.5 hover:bg-amber-50 transition-colors"
+              style={{ borderTop: i === 0 ? 'none' : '1px solid var(--color-border)' }}
+            >
+              <span className="text-sm font-semibold text-stone-500 shrink-0">#{r.venta.id}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-stone-800 truncate">{r.venta.cliente.razonSocial}</p>
+                <p className="text-xs text-stone-400">
+                  {r.codigoRetiro} · {fmtFecha(r.venta.fechaRetiro)} · Retirado {retirado} de {pedido}
+                </p>
+              </div>
+              <EstadoBadge estadoPedido={r.venta.estadoPedido} />
+              <ChevronRight className="w-4 h-4 text-stone-300 shrink-0" />
+            </button>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+// ─── Cancelar retiro (botón del módulo): elegir el retiro y confirmar ─────────
+// Cancelar un retiro cancela la venta en todo el sistema (misma confirmación
+// y misma cascada que "Cancelar venta" en Ventas).
+function CancelarRetiroSelectorModal({ retiros, onClose }: { retiros: RetiroRow[]; onClose: () => void }) {
+  const [seleccionId, setSeleccionId] = useState<number | null>(null);
+  const retiro = retiros.find(r => r.id === seleccionId) ?? null;
+
+  if (retiro) {
+    return <CancelarVentaModal ventaId={retiro.venta.id} titulo={`Cancelar retiro ${retiro.codigoRetiro}`} onClose={onClose} />;
+  }
+  return (
     <div className="modal-overlay">
-      <div className="modal max-w-md animate-slide-up">
+      <div className="modal max-w-lg animate-slide-up">
         <div className="modal-header">
           <h2 className="modal-title">Cancelar retiro</h2>
           <button onClick={onClose} className="btn-icon"><X size={18} /></button>
         </div>
         <div className="modal-body space-y-4">
-          <div>
-            <label className="label">Motivo de cancelación <span className="text-red-500">*</span></label>
-            <textarea className="input" rows={3} value={motivo}
-              onChange={e => setMotivo(e.target.value)}
-              placeholder="Explicá por qué se cancela este retiro..." />
-          </div>
-          <div className="flex gap-3 justify-end">
+          <p className="text-sm text-stone-500">Elegí el retiro que querés cancelar (completo o parcial).</p>
+          <BuscadorRetiros retiros={retiros.filter(admiteRetiroParcial)} onSeleccionar={setSeleccionId} />
+          <div className="flex justify-end">
             <button onClick={onClose} className="btn-secondary">Volver</button>
-            <button onClick={handleCancelar} disabled={!motivo.trim() || cambiar.isPending}
-              className="btn-primary bg-red-600 hover:bg-red-700">
-              {cambiar.isPending ? 'Cancelando...' : 'Cancelar retiro'}
-            </button>
           </div>
         </div>
       </div>
@@ -169,34 +230,79 @@ function CancelarRetiroModal({ retiro, onClose }: { retiro: RetiroRow; onClose: 
   );
 }
 
-// ─── Retiro parcial modal ─────────────────────────────────────────────────────
-function RetiroParcialModal({ retiro, onClose }: { retiro: RetiroRow; onClose: () => void }) {
-  const registrar = useRegistrarRetiroParcial();
-  const [cantidad, setCantidad] = useState('');
-  const [error, setError]       = useState('');
-  const [done, setDone]         = useState(false);
-  const [pendienteFinal, setPendienteFinal] = useState<number | null>(null);
+function RetiroParcialModal({ retiros, onClose }: { retiros: RetiroRow[]; onClose: () => void }) {
+  const [seleccionId, setSeleccionId] = useState<number | null>(null);
+  // Se busca en la lista viva para que, al registrar, se vean las cantidades actualizadas
+  const retiro = retiros.find(r => r.id === seleccionId) ?? null;
 
-  const totalPedido = retiro.venta.detalles.reduce((acc, d) => acc + d.cantidadPedida, 0);
-  const yaRetirado = retiro.cantidadRetiradaParcial ?? 0;
-  const pendienteActual = Math.max(0, totalPedido - yaRetirado);
+  return (
+    <div className="modal-overlay">
+      <div className="modal max-w-lg animate-slide-up">
+        <div className="modal-header">
+          <div>
+            <h2 className="modal-title">Registrar retiro parcial</h2>
+            {retiro && (
+              <p className="text-xs text-stone-400 mt-0.5">Venta #{retiro.venta.id} · {retiro.venta.cliente.razonSocial}</p>
+            )}
+          </div>
+          <button onClick={onClose} className="btn-icon"><X size={18} /></button>
+        </div>
+        <div className="modal-body space-y-4">
+          {retiro ? (
+            <RetiroParcialForm
+              key={retiro.id}
+              retiro={retiro}
+              onCambiarVenta={() => setSeleccionId(null)}
+              onClose={onClose}
+            />
+          ) : (
+            <>
+              <BuscadorRetiros retiros={retiros.filter(admiteRetiroParcial)} onSeleccionar={setSeleccionId} />
+              <div className="flex justify-end">
+                <button onClick={onClose} className="btn-secondary">Volver</button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RetiroParcialForm({ retiro, onCambiarVenta, onClose }: { retiro: RetiroRow; onCambiarVenta: () => void; onClose: () => void }) {
+  const registrar = useRegistrarRetiroParcial();
+  const [cantidades, setCantidades] = useState<Record<number, string>>({});
+  const [error, setError]           = useState('');
+  const [resultado, setResultado]   = useState<{ completo: boolean; pendiente: number } | null>(null);
+  const [avisarGalpon, setAvisarGalpon]   = useState(false);
+
+  const detalles = retiro.venta.detalles.map(d => {
+    const retirado = retiradoDe(d);
+    return { ...d, retirado, pendiente: Math.max(0, d.cantidadPedida - retirado) };
+  });
+  const totalPedido    = detalles.reduce((acc, d) => acc + d.cantidadPedida, 0);
+  const totalRetirado  = detalles.reduce((acc, d) => acc + d.retirado, 0);
+  const totalPendiente = totalPedido - totalRetirado;
+  const totalAhora     = detalles.reduce((acc, d) => acc + (Number(cantidades[d.id]) || 0), 0);
 
   const handleRegistrar = async () => {
     setError('');
-    const cant = Number(cantidad);
-    if (!cant || cant <= 0) {
-      setError('Ingresá una cantidad válida.');
+    const items = detalles
+      .map(d => ({ detalleVentaId: d.id, cantidad: Number(cantidades[d.id]) || 0, d }))
+      .filter(i => i.cantidad !== 0);
+    if (!items.length) {
+      setError('Ingresá la cantidad retirada de al menos un producto.');
       return;
     }
-    if (cant > pendienteActual) {
-      setError(`Solo quedan ${pendienteActual} unidades pendientes de retiro.`);
+    const invalido = items.find(i => !Number.isInteger(i.cantidad) || i.cantidad < 0 || i.cantidad > i.d.pendiente);
+    if (invalido) {
+      setError(`Cantidad inválida para ${invalido.d.producto.nombre}: quedan ${invalido.d.pendiente} unidades pendientes.`);
       return;
     }
     try {
-      const res = await registrar.mutateAsync({ id: retiro.id, cantidad: cant });
-      const data = res?.data as { pallettesPendientes?: number } | undefined;
-      setPendienteFinal(data?.pallettesPendientes ?? Math.max(0, pendienteActual - cant));
-      setDone(true);
+      const payload = items.map(({ detalleVentaId, cantidad }) => ({ detalleVentaId, cantidad }));
+      const res = await registrar.mutateAsync({ id: retiro.id, items: payload });
+      setResultado({ completo: res.data.completo, pendiente: res.data.pendiente });
     } catch (e: unknown) {
       const err = e as { response?: { data?: { error?: string | { message?: string } } } };
       const errData = err?.response?.data?.error;
@@ -206,50 +312,76 @@ function RetiroParcialModal({ retiro, onClose }: { retiro: RetiroRow; onClose: (
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal max-w-md animate-slide-up">
-        <div className="modal-header">
-          <h2 className="modal-title">Registrar retiro parcial</h2>
-          <button onClick={onClose} className="btn-icon"><X size={18} /></button>
-        </div>
-        <div className="modal-body space-y-4">
-          {done ? (
+        <>
+          {resultado ? (
             <div className="text-center py-6">
               <CheckCircle className="w-12 h-12 text-amber-500 mx-auto mb-3" />
-              <p className="text-base font-semibold text-stone-800">Retiro parcial registrado</p>
+              <p className="text-base font-semibold text-stone-800">Retiro registrado</p>
               <p className="text-sm text-stone-500 mt-1">
-                {pendienteFinal === 0
-                  ? 'Se retiró la totalidad del pedido: el retiro quedó marcado como Completado.'
-                  : `Quedan ${pendienteFinal} unidades pendientes de retiro. El estado quedó como Parcial.`}
+                {resultado.completo
+                  ? 'Se retiró la totalidad del pedido: la venta quedó como Entregado.'
+                  : `Quedan ${resultado.pendiente} unidades pendientes. La venta quedó como Retiro parcial en Ventas, Logística y Retiros.`}
               </p>
-              <button onClick={onClose} className="btn-primary mt-5">Cerrar</button>
+              <div className="flex gap-3 justify-center mt-5">
+                <button onClick={onClose} className="btn-secondary">Cerrar</button>
+                <button
+                  onClick={() => setAvisarGalpon(true)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white"
+                  style={{ background: '#25D366', borderRadius: '0.375rem' }}
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  Avisar al galpón
+                </button>
+              </div>
+              {avisarGalpon && (
+                <EnviarGalponModal
+                  retiro={retiro}
+                  tipoInicial="retiro_parcial"
+                  onClose={() => setAvisarGalpon(false)}
+                />
+              )}
             </div>
           ) : (
             <>
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
                 <p className="text-sm text-amber-800">
-                  Total pedido: <strong>{totalPedido}</strong> unidades · Ya retirado: <strong>{yaRetirado}</strong> · Pendiente: <strong>{pendienteActual}</strong>
+                  Pallets pedidos: <strong>{totalPedido}</strong> · Ya retirado: <strong>{totalRetirado}</strong> · Pendiente: <strong>{totalPendiente}</strong>
                 </p>
               </div>
-              <div>
-                <label className="label">Cantidad de unidades retiradas ahora <span className="text-red-500">*</span></label>
-                <input
-                  type="number"
-                  min={1}
-                  max={pendienteActual}
-                  className="input"
-                  placeholder="Ej: 5"
-                  value={cantidad}
-                  onChange={e => setCantidad(e.target.value)}
-                />
-                {cantidad && Number(cantidad) > 0 && Number(cantidad) <= pendienteActual && (
-                  <p className="text-xs text-stone-400 mt-1">
-                    Quedarían <strong>{pendienteActual - Number(cantidad)}</strong> unidades pendientes por retirar.
-                  </p>
-                )}
+
+              <div className="border rounded-xl overflow-hidden" style={{ borderColor: 'var(--color-border)' }}>
+                {detalles.map((d, i) => (
+                  <div key={d.id} className="flex items-center gap-3 px-3 py-2.5"
+                    style={{ borderTop: i === 0 ? 'none' : '1px solid var(--color-border)' }}>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-stone-800 truncate">{d.producto.nombre}</p>
+                      <p className="text-xs text-stone-400">
+                        Pedido {d.cantidadPedida} · Retirado {d.retirado} · <span className={d.pendiente ? 'text-amber-700' : 'text-green-700'}>Pendiente {d.pendiente}</span>
+                      </p>
+                    </div>
+                    <input
+                      type="number"
+                      min={0}
+                      max={d.pendiente}
+                      disabled={d.pendiente === 0}
+                      className="input"
+                      style={{ width: 90 }}
+                      placeholder="0"
+                      value={cantidades[d.id] ?? ''}
+                      onChange={e => setCantidades(c => ({ ...c, [d.id]: e.target.value }))}
+                    />
+                  </div>
+                ))}
               </div>
+
+              {totalAhora > 0 && totalAhora <= totalPendiente && (
+                <p className="text-xs text-stone-400">
+                  Se registran <strong>{totalAhora}</strong> unidades; quedarían <strong>{totalPendiente - totalAhora}</strong> pendientes por retirar.
+                </p>
+              )}
               {error && <p className="text-sm text-red-600">{error}</p>}
               <div className="flex gap-3 justify-end">
+                <button onClick={onCambiarVenta} className="btn-secondary mr-auto">Cambiar venta</button>
                 <button onClick={onClose} className="btn-secondary">Cancelar</button>
                 <button
                   onClick={handleRegistrar}
@@ -262,13 +394,10 @@ function RetiroParcialModal({ retiro, onClose }: { retiro: RetiroRow; onClose: (
               </div>
             </>
           )}
-        </div>
-      </div>
-    </div>
+        </>
   );
 }
 
-// ─── Reenviar código modal ────────────────────────────────────────────────────
 function ReenviarCodigoModal({ retiro, onClose }: { retiro: RetiroRow; onClose: () => void }) {
   const reenviar = useReenviarCodigoRetiro();
   const [email, setEmail]   = useState(retiro.venta.cliente.emailContacto ?? '');
@@ -349,106 +478,224 @@ function ReenviarCodigoModal({ retiro, onClose }: { retiro: RetiroRow; onClose: 
 }
 
 // ─── WhatsApp Galpón modal ────────────────────────────────────────────────────
-function WhatsAppGalponModal({ retiro, onClose }: { retiro: RetiroRow; onClose: () => void }) {
-  const productosLineas = retiro.venta.detalles
-    .map(d => `  • ${d.producto.nombre} (${d.producto.condicion ?? d.producto.tipo}): *${d.cantidadPedida} u.*`)
-    .join('\n');
+// ─── Mensajes predeterminados para el galpón (SIN precios ni emojis) ─────────
+// En WhatsApp *texto* va en negrita: solo el código y lo que falta retirar.
+type TipoMensajeGalpon = 'codigo' | 'retiro_parcial' | 'cancelacion';
 
-  const fecha   = retiro.venta.fechaRetiro ? fmtFecha(retiro.venta.fechaRetiro) : '—';
-  const hora    = retiro.horaEstimadaRetiro ? fmtHora(retiro.horaEstimadaRetiro) : null;
-  const metodo  = metodoPagoLabel[retiro.venta.metodoPago ?? '']   ?? '—';
-  const modalid = modalidadLabel[retiro.venta.modalidadPago ?? ''] ?? '—';
+const pallets = (n: number) => `${n} pallet${n === 1 ? '' : 's'}`;
 
-  const mensajeDefault =
-`🏭 *CÓDIGO DE RETIRO — WoodPallet*
+// Una sola línea si hay un tipo de pallet; si hay varios, un renglón por tipo
+const lineasPorTipo = (titulo: string, items: { nombre: string; cantidad: number }[], negrita = false) => {
+  const total = items.reduce((acc, i) => acc + i.cantidad, 0);
+  const b = (t: string) => (negrita ? `*${t}*` : t);
+  if (items.length === 1) return [`${titulo}: ${b(pallets(total))} (${items[0].nombre})`];
+  return [`${titulo}: ${b(pallets(total))}`, ...items.map(i => `- ${i.cantidad} ${i.nombre}`)];
+};
 
-👤 *Cliente:* ${retiro.venta.cliente.razonSocial}${retiro.venta.cliente.nombreContacto ? ` (${retiro.venta.cliente.nombreContacto})` : ''}
-🔑 *Código de retiro:* \`${retiro.codigoRetiro}\`
+const mensajeCodigoGalpon = (r: RetiroRow) =>
+  [
+    `Código de retiro: *${r.codigoRetiro}*`,
+    `Cliente: ${r.venta.cliente.razonSocial}`,
+    ...lineasPorTipo('Pallets a retirar', r.venta.detalles.map(d => ({ nombre: d.producto.nombre, cantidad: d.cantidadPedida }))),
+  ].join('\n');
 
-📅 *Fecha pactada:* ${fecha}${hora ? ` · ⏰ ${hora} hs` : ''}
-🏪 *Galpón:* ${retiro.galpon ?? '—'}
+const mensajeRetiroParcialGalpon = (r: RetiroRow) => {
+  const filas = r.venta.detalles.map(d => {
+    const retirado = retiradoDe(d);
+    return { nombre: d.producto.nombre, retirado, pendiente: Math.max(0, d.cantidadPedida - retirado) };
+  });
+  const pendiente = filas.reduce((acc, f) => acc + f.pendiente, 0);
 
-📦 *Productos a entregar:*
-${productosLineas}
+  return [
+    pendiente > 0 ? 'Retiro parcial' : 'Retiro completo',
+    `Código de retiro: *${r.codigoRetiro}*`,
+    `Cliente: ${r.venta.cliente.razonSocial}`,
+    ...lineasPorTipo('Ya retirados', filas.filter(f => f.retirado > 0).map(f => ({ nombre: f.nombre, cantidad: f.retirado }))),
+    ...(pendiente > 0
+      ? lineasPorTipo('Faltan retirar', filas.filter(f => f.pendiente > 0).map(f => ({ nombre: f.nombre, cantidad: f.pendiente })), true)
+      : ['Faltan retirar: *0 pallets*']),
+  ].join('\n');
+};
 
-💳 *Pago:* ${metodo} — ${modalid}
-${retiro.venta.observaciones ? `\n📝 *Obs:* ${retiro.venta.observaciones}` : ''}
-Por favor verificar el código antes de entregar la mercadería.
-_WoodPallet Manager_`;
+const mensajeCancelacionGalpon = (r: RetiroRow) =>
+  [
+    'Retiro cancelado',
+    `Código de retiro: *${r.codigoRetiro}*`,
+    `Cliente: ${r.venta.cliente.razonSocial}`,
+    '*Este código ya no es válido: no entregar pallets.*',
+  ].join('\n');
 
-  const [tel, setTel] = useState('');
-  const [msg, setMsg] = useState(mensajeDefault);
+// ─── Enviar código al galpón por WhatsApp ─────────────────────────────────────
+function EnviarGalponModal({ retiro, tipoInicial = 'codigo', onClose }: {
+  retiro: RetiroRow;
+  tipoInicial?: TipoMensajeGalpon;
+  onClose: () => void;
+}) {
+  const { data: galpones, isLoading } = useGalpones();
+  const enviar = useEnviarAGalpon();
+  const tieneRetiros = retiro.venta.detalles.some(d => retiradoDe(d) > 0);
+  const cancelado = retiro.estadoRetiro === 'cancelado' || retiro.venta.estadoPedido === 'cancelado';
 
-  const handleAbrir = () => {
-    const encoded = encodeURIComponent(msg);
-    const numero  = tel.replace(/\D/g, '');
-    const url     = numero
-      ? `https://wa.me/${numero}?text=${encoded}`
-      : `https://wa.me/?text=${encoded}`;
-    window.open(url, '_blank');
+  const [tipo, setTipo]           = useState<TipoMensajeGalpon>(
+    cancelado ? 'cancelacion' : tipoInicial === 'retiro_parcial' && tieneRetiros ? 'retiro_parcial' : 'codigo'
+  );
+  const [galponId, setGalponId]   = useState<number | null>(retiro.proveedorId ?? null);
+  const [editado, setEditado]     = useState<string | null>(null);
+  const [error, setError]         = useState('');
+  const [enviado, setEnviado]     = useState(false);
+
+  const galpon = galpones?.find(g => g.id === galponId) ?? null;
+  const mensajeBase =
+    tipo === 'cancelacion' ? mensajeCancelacionGalpon(retiro)
+    : tipo === 'codigo' ? mensajeCodigoGalpon(retiro)
+    : mensajeRetiroParcialGalpon(retiro);
+  const mensaje = editado ?? mensajeBase;
+  const numero  = telefonoWhatsApp(galpon?.telefono);
+
+  const cambiarTipo = (t: TipoMensajeGalpon) => { setTipo(t); setEditado(null); };
+
+  const handleEnviar = () => {
+    setError('');
+    if (!galpon) { setError('Seleccioná a qué galpón le enviás el código.'); return; }
+    if (!numero) { setError(`${galpon.nombreEmpresa} no tiene teléfono cargado. Agregalo en Proveedores.`); return; }
+    // Se abre WhatsApp en el mismo click (si se espera al servidor, el navegador bloquea la ventana)
+    window.open(linkWhatsApp(galpon.telefono, mensaje), '_blank');
+    enviar.mutate(
+      { id: retiro.id, proveedorId: galpon.id, tipoMensaje: tipo },
+      {
+        onSuccess: () => setEnviado(true),
+        onError: (e: unknown) => {
+          const err = e as { response?: { data?: { error?: string } } };
+          setError(err.response?.data?.error ?? 'Se abrió WhatsApp, pero no se pudo registrar el envío.');
+        },
+      },
+    );
   };
 
   return (
     <div className="modal-overlay">
-      <div className="modal max-w-lg animate-slide-up">
+      <div className="modal max-w-lg animate-slide-up" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
         <div className="modal-header">
           <div className="flex items-center gap-2.5">
             <div style={{ width: 30, height: 30, background: '#25D366', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <MessageCircle className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h2 className="modal-title">Enviar al galpón por WhatsApp</h2>
-              <p style={{ fontSize: '0.78rem', color: '#6B7280', margin: 0 }}>Código de retiro + detalle completo</p>
+              <h2 className="modal-title">Enviar código al galpón</h2>
+              <p style={{ fontSize: '0.78rem', color: '#6B7280', margin: 0 }}>Retiro #{retiro.venta.id} · código {retiro.codigoRetiro}</p>
             </div>
           </div>
           <button onClick={onClose} className="btn-icon"><X size={18} /></button>
         </div>
 
         <div className="modal-body space-y-4">
-          {/* Número del galpón */}
-          <div>
-            <label className="label">
-              <Phone className="w-3.5 h-3.5 inline mr-1" />
-              Número del galpón <span className="text-stone-400 font-normal">(opcional)</span>
-            </label>
-            <input
-              type="tel"
-              className="input"
-              value={tel}
-              onChange={e => setTel(e.target.value)}
-              placeholder="Ej: 5491144556677  (código de país + número, sin + ni espacios)"
-              autoFocus
-            />
-            <p className="text-xs text-stone-400 mt-1">
-              Si no ingresás número, WhatsApp te pedirá elegir el contacto manualmente.
-            </p>
-          </div>
+          {enviado ? (
+            <div className="text-center py-6">
+              <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
+              <p className="text-base font-semibold text-stone-800">Mensaje listo en WhatsApp</p>
+              <p className="text-sm text-stone-500 mt-1">
+                Se abrió el chat con <strong>{galpon?.nombreEmpresa}</strong>. Presioná enviar en WhatsApp.
+                Quedó registrado en el historial del retiro.
+              </p>
+              <button onClick={onClose} className="btn-primary mt-5">Cerrar</button>
+            </div>
+          ) : (
+            <>
+              {/* Galpón */}
+              <div>
+                <label className="label"><Warehouse className="w-3.5 h-3.5 inline mr-1" />Galpón donde retira el cliente</label>
+                {isLoading ? (
+                  <p className="text-sm text-stone-400">Cargando galpones...</p>
+                ) : (
+                  <div className="space-y-2">
+                    {(galpones ?? []).map(g => {
+                      const activo = g.id === galponId;
+                      return (
+                        <button key={g.id} type="button" onClick={() => setGalponId(g.id)}
+                          className="w-full text-left flex items-center gap-3 px-3 py-2.5 border rounded-xl transition-colors"
+                          style={{ borderColor: activo ? '#25D366' : 'var(--color-border)', background: activo ? '#F0FDF4' : 'transparent' }}>
+                          <span className="w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center"
+                            style={{ borderColor: activo ? '#16A34A' : '#D6D3D1' }}>
+                            {activo && <span className="w-2 h-2 rounded-full" style={{ background: '#16A34A' }} />}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-stone-800 truncate">{g.nombreEmpresa}</p>
+                            <p className="text-xs text-stone-400 truncate">{g.ubicacion || 'Sin ubicación'}</p>
+                          </div>
+                          {g.telefono?.trim()
+                            ? <span className="text-xs text-stone-500 shrink-0"><Phone className="w-3 h-3 inline mr-1" />{g.telefono}</span>
+                            : <span className="text-xs font-medium text-red-500 shrink-0">Sin teléfono</span>}
+                        </button>
+                      );
+                    })}
+                    {!galpones?.length && <p className="text-sm text-stone-400">No hay proveedores cargados.</p>}
+                  </div>
+                )}
+                {galpon && !numero && (
+                  <p className="text-xs text-red-600 mt-2">
+                    Este galpón no tiene teléfono. Cargalo en <strong>Proveedores → editar</strong> para poder enviarle el código.
+                  </p>
+                )}
+              </div>
 
-          {/* Preview del mensaje */}
-          <div>
-            <label className="label">
-              Mensaje <span className="text-stone-400 font-normal">(podés editarlo antes de enviar)</span>
-            </label>
-            <textarea
-              className="input resize-none font-mono text-xs leading-relaxed"
-              rows={14}
-              value={msg}
-              onChange={e => setMsg(e.target.value)}
-            />
-          </div>
+              {/* Tipo de mensaje (con el retiro cancelado solo se avisa la cancelación) */}
+              {cancelado ? (
+                <p className="text-sm text-red-600">El retiro está cancelado: se le avisa al galpón que el código ya no es válido.</p>
+              ) : (
+              <div>
+                <label className="label">Mensaje</label>
+                <div className="flex border rounded-xl overflow-hidden" style={{ borderColor: 'var(--color-border)' }}>
+                  {([['codigo', 'Código de retiro'], ['retiro_parcial', 'Aviso de retiro parcial']] as const).map(([t, label]) => {
+                    const deshabilitado = t === 'retiro_parcial' && !tieneRetiros;
+                    return (
+                      <button key={t} type="button" disabled={deshabilitado} onClick={() => cambiarTipo(t)}
+                        title={deshabilitado ? 'Todavía no hay retiros parciales registrados' : undefined}
+                        className="flex-1 px-3 py-2 text-xs font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        style={{ background: tipo === t ? '#7c4b2c' : 'transparent', color: tipo === t ? '#fff' : 'var(--color-text-muted)' }}>
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              )}
+
+              <div>
+                <label className="label">
+                  Vista previa <span className="text-stone-400 font-normal">(podés editarlo antes de enviar)</span>
+                </label>
+                <textarea
+                  className="input resize-none font-mono text-xs leading-relaxed"
+                  rows={8}
+                  value={mensaje}
+                  onChange={e => setEditado(e.target.value)}
+                />
+                {editado !== null && (
+                  <button type="button" onClick={() => setEditado(null)} className="text-xs text-stone-500 underline mt-1">
+                    Restaurar mensaje predeterminado
+                  </button>
+                )}
+              </div>
+
+              {error && <p className="text-sm text-red-600">{error}</p>}
+            </>
+          )}
         </div>
 
-        <div className="modal-footer">
-          <button onClick={onClose} className="btn-secondary">Cancelar</button>
-          <button
-            onClick={handleAbrir}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white transition-colors"
-            style={{ background: '#25D366', borderRadius: '0.375rem' }}
-          >
-            <MessageCircle className="w-4 h-4" />
-            Abrir WhatsApp
-          </button>
-        </div>
+        {!enviado && (
+          <div className="modal-footer">
+            <button onClick={onClose} className="btn-secondary">Cancelar</button>
+            <button
+              onClick={handleEnviar}
+              disabled={!galpon || !numero || enviar.isPending}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-50"
+              style={{ background: '#25D366', borderRadius: '0.375rem' }}
+            >
+              <Send className="w-4 h-4" />
+              Enviar por WhatsApp
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -461,7 +708,6 @@ function DetalleRetiroModal({ retiro, onClose }: { retiro: RetiroRow; onClose: (
   const [showCancelar, setShowCancelar]   = useState(false);
   const [showReenviar, setShowReenviar]   = useState(false);
   const [showWhatsApp, setShowWhatsApp]   = useState(false);
-  const [showParcial, setShowParcial]     = useState(false);
   const [copied, setCopied]               = useState(false);
 
   const copiarCodigo = () => {
@@ -505,7 +751,11 @@ function DetalleRetiroModal({ retiro, onClose }: { retiro: RetiroRow; onClose: (
                     <span className="text-xs font-semibold text-amber-700 uppercase tracking-wider">Código único de retiro</span>
                   </div>
                   <p className="text-4xl font-black tracking-[0.15em] text-stone-900 font-mono">{retiro.codigoRetiro}</p>
-                  <p className="text-xs text-stone-400 mt-2">Comunicale este código al encargado del galpón para validar la entrega.</p>
+                  <p className="text-xs text-stone-400 mt-2">
+                    {retiro.proveedor
+                      ? <>Galpón: <strong className="text-stone-600">{retiro.proveedor.nombreEmpresa}</strong>{retiro.proveedor.telefono ? ` · ${retiro.proveedor.telefono}` : ' · sin teléfono'}</>
+                      : 'Comunicale este código al encargado del galpón para validar la entrega.'}
+                  </p>
                 </div>
                 <div className="flex flex-col gap-2 shrink-0">
                   <button onClick={copiarCodigo}
@@ -513,18 +763,20 @@ function DetalleRetiroModal({ retiro, onClose }: { retiro: RetiroRow; onClose: (
                     <Copy className="w-3.5 h-3.5" />
                     {copied ? '¡Copiado!' : 'Copiar'}
                   </button>
-                  <button onClick={() => setShowReenviar(true)}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border border-amber-200 text-amber-700 hover:bg-amber-100 transition-colors">
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    Reenviar
-                  </button>
+                  {retiro.estadoRetiro !== 'cancelado' && (
+                    <button onClick={() => setShowReenviar(true)}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border border-amber-200 text-amber-700 hover:bg-amber-100 transition-colors">
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      Reenviar
+                    </button>
+                  )}
                   <button
                     onClick={() => setShowWhatsApp(true)}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-white transition-colors"
                     style={{ background: '#25D366' }}
                   >
-                    <MessageCircle className="w-3.5 h-3.5" />
-                    WhatsApp
+                    <Send className="w-3.5 h-3.5" />
+                    {retiro.estadoRetiro === 'cancelado' ? 'Avisar cancelación' : 'Enviar al galpón'}
                   </button>
                 </div>
               </div>
@@ -545,12 +797,6 @@ function DetalleRetiroModal({ retiro, onClose }: { retiro: RetiroRow; onClose: (
                   style={{ background: '#16A34A' }}>
                   <ShieldCheck className="w-4 h-4" />
                   {cambiar.isPending ? 'Confirmando...' : 'Confirmar retiro completado'}
-                </button>
-                <button onClick={() => setShowParcial(true)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-colors"
-                  style={{ borderColor: '#FDE68A', color: '#CA8A04' }}>
-                  <Package className="w-4 h-4" />
-                  Retiro parcial
                 </button>
                 <button onClick={() => setShowCancelar(true)}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border border-red-200 text-red-600 hover:bg-red-50 transition-colors">
@@ -580,7 +826,7 @@ function DetalleRetiroModal({ retiro, onClose }: { retiro: RetiroRow; onClose: (
                 <div>
                   <p className="text-sm font-semibold text-amber-800">Retiro parcial</p>
                   <p className="text-xs text-amber-700 mt-0.5">
-                    Se retiraron <strong>{retiro.cantidadRetiradaParcial}</strong> de{' '}
+                    Se retiraron <strong>{retiro.venta.detalles.reduce((acc, d) => acc + retiradoDe(d), 0)}</strong> de{' '}
                     <strong>{retiro.venta.detalles.reduce((acc, d) => acc + d.cantidadPedida, 0)}</strong> unidades
                     {retiro.fechaUltimoRetiroParcial && ` · último retiro el ${fmtFecha(retiro.fechaUltimoRetiroParcial)} a las ${fmtHora(retiro.fechaUltimoRetiroParcial)}`}
                   </p>
@@ -712,12 +958,18 @@ function DetalleRetiroModal({ retiro, onClose }: { retiro: RetiroRow; onClose: (
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <History className="w-4 h-4 text-stone-400" />
-                  <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Historial de reenvíos del código</span>
+                  <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Historial de envíos del código</span>
                 </div>
                 <div className="space-y-2">
                   {retiro.historialReenvios.map(h => (
                     <div key={h.id} className="flex items-center justify-between bg-stone-50 rounded-lg px-4 py-2.5 text-xs">
                       <div>
+                        {h.proveedor && (
+                          <p className="text-stone-700 font-medium">
+                            <MessageCircle className="w-3 h-3 inline mr-1 text-green-600" />
+                            WhatsApp a {h.proveedor.nombreEmpresa} · {h.tipoMensaje === 'retiro_parcial' ? 'aviso de retiro parcial' : h.tipoMensaje === 'cancelacion' ? 'aviso de cancelación' : 'código de retiro'}
+                          </p>
+                        )}
                         {h.emailEnviado    && <p className="text-stone-600"><MailIcon className="w-3 h-3 inline mr-1" />{h.emailEnviado}</p>}
                         {h.telefonoEnviado && <p className="text-stone-600"><Phone   className="w-3 h-3 inline mr-1" />{h.telefonoEnviado}</p>}
                       </div>
@@ -736,10 +988,16 @@ function DetalleRetiroModal({ retiro, onClose }: { retiro: RetiroRow; onClose: (
       </div>
 
       {showConfirmar && <ConfirmarRetiroModal retiro={retiro} onClose={() => setShowConfirmar(false)} />}
-      {showCancelar  && <CancelarRetiroModal  retiro={retiro} onClose={() => { setShowCancelar(false); onClose(); }} />}
+      {showCancelar  && (
+        <CancelarVentaModal
+          ventaId={retiro.venta.id}
+          titulo={`Cancelar retiro ${retiro.codigoRetiro}`}
+          onClose={() => setShowCancelar(false)}
+          onCancelada={onClose}
+        />
+      )}
       {showReenviar  && <ReenviarCodigoModal  retiro={retiro} onClose={() => setShowReenviar(false)} />}
-      {showWhatsApp  && <WhatsAppGalponModal  retiro={retiro} onClose={() => setShowWhatsApp(false)} />}
-      {showParcial   && <RetiroParcialModal   retiro={retiro} onClose={() => setShowParcial(false)} />}
+      {showWhatsApp  && <EnviarGalponModal    retiro={retiro} onClose={() => setShowWhatsApp(false)} />}
     </>
   );
 }
@@ -765,25 +1023,30 @@ function InfoBox({ label, value }: { label: string; value: string }) {
 
 // ─── Row de lista ─────────────────────────────────────────────────────────────
 function RetiroListRow({ r, onVerDetalle }: { r: RetiroRow; onVerDetalle: () => void }) {
+
   const productos = r.venta.detalles.slice(0, 2).map(d => `${d.producto.nombre} ×${d.cantidadPedida}`).join(', ');
   const masProductos = r.venta.detalles.length > 2 ? ` +${r.venta.detalles.length - 2}` : '';
+  const cancelado = r.estadoRetiro === 'cancelado' || r.venta.estadoPedido === 'cancelado';
+  const fondo = cancelado ? '#FEF2F2' : 'var(--color-surface)';
+  // Las filas canceladas quedan visibles pero tachadas
+  const tachado = cancelado ? { textDecoration: 'line-through', opacity: 0.55 } : undefined;
 
   return (
     <tr
       className="cursor-pointer border-b last:border-0"
-      style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', transition: 'background 0.15s' }}
+      style={{ background: fondo, borderColor: 'var(--color-border)', transition: 'background 0.15s' }}
       onMouseEnter={e => (e.currentTarget.style.background = '#fff')}
-      onMouseLeave={e => (e.currentTarget.style.background = 'var(--color-surface)')}
+      onMouseLeave={e => (e.currentTarget.style.background = fondo)}
       onClick={onVerDetalle}
     >
-      <td className="px-4 py-3 text-sm font-semibold text-stone-700">#{r.venta.id}</td>
+      <td className="px-4 py-3 text-sm font-semibold text-stone-700" style={tachado}>#{r.venta.id}</td>
       <td className="px-4 py-3">
-        <p className="text-sm font-medium text-stone-800">{r.venta.cliente.razonSocial}</p>
+        <p className="text-sm font-medium text-stone-800" style={tachado}>{r.venta.cliente.razonSocial}</p>
         {r.venta.cliente.nombreContacto && (
           <p className="text-xs text-stone-400">{r.venta.cliente.nombreContacto}</p>
         )}
       </td>
-      <td className="px-4 py-3 text-xs text-stone-600 max-w-50">
+      <td className="px-4 py-3 text-xs text-stone-600 max-w-50" style={tachado}>
         <span className="truncate block">{productos}{masProductos}</span>
       </td>
       <td className="px-4 py-3 text-xs text-stone-600">{r.galpon ?? '—'}</td>
@@ -796,7 +1059,7 @@ function RetiroListRow({ r, onVerDetalle }: { r: RetiroRow; onVerDetalle: () => 
         <EstadoBadge estadoPedido={r.venta.estadoPedido} />
       </td>
       <td className="px-4 py-3">
-        <button className="flex items-center gap-1 text-xs font-medium text-stone-500 hover:text-stone-800 transition-colors">
+        <button className="flex items-center gap-1 text-xs font-medium text-stone-500 hover:text-stone-800 transition-colors whitespace-nowrap">
           Ver detalle <ChevronRight className="w-3.5 h-3.5" />
         </button>
       </td>
@@ -816,6 +1079,8 @@ export default function RetirosPage() {
   const [filtroVendedor, setFiltroVendedor] = useState<'todos' | 'carlos' | 'juancruz'>('todos');
   const [filtroFecha, setFiltroFecha]   = useState('');
   const [detalleId, setDetalleId]       = useState<number | null>(null);
+  const [showParcial, setShowParcial]   = useState(false);
+  const [showCancelarRetiro, setShowCancelarRetiro] = useState(false);
 
   const retiroDetalle = useMemo(() => retiros?.find(r => r.id === detalleId) ?? null, [retiros, detalleId]);
 
@@ -879,14 +1144,32 @@ export default function RetirosPage() {
       {retiroDetalle && (
         <DetalleRetiroModal retiro={retiroDetalle} onClose={() => setDetalleId(null)} />
       )}
+      {showParcial && (
+        <RetiroParcialModal retiros={retiros ?? []} onClose={() => setShowParcial(false)} />
+      )}
+      {showCancelarRetiro && (
+        <CancelarRetiroSelectorModal retiros={retiros ?? []} onClose={() => setShowCancelarRetiro(false)} />
+      )}
 
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="titulo-modulo">Retiros en galpón</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Ventas con retiro en galpón · gestión operativa del día a día
-          </p>
+        <div className="flex items-start justify-between flex-wrap gap-3">
+          <div className="min-w-0">
+            <h1 className="titulo-modulo">Retiros en galpón</h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Ventas con retiro en galpón · gestión operativa del día a día
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+          <button onClick={() => setShowCancelarRetiro(true)} className="btn-secondary" style={{ color: '#DC2626' }}>
+            <XCircle size={16} />
+            Cancelar retiro
+          </button>
+          <button onClick={() => setShowParcial(true)} className="btn-secondary">
+            <Package size={16} />
+            Retiro parcial
+          </button>
+          </div>
         </div>
 
         {/* KPIs */}
@@ -1041,7 +1324,7 @@ export default function RetirosPage() {
               <option value="todos">Todos los estados</option>
               <option value="pendiente">Pendiente</option>
               <option value="confirmado">Confirmado</option>
-              <option value="parcial">Parcial</option>
+              <option value="parcial">Retiro parcial</option>
               <option value="completado">Completado</option>
               <option value="cancelado">Cancelado</option>
             </select>

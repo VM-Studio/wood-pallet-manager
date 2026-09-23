@@ -7,6 +7,7 @@ import {
   cambiarEstadoRetiro,
   reenviarCodigo,
   registrarRetiroParcial,
+  enviarAGalpon,
 } from '../controllers/retiros.controller';
 
 const router = Router();
@@ -18,5 +19,6 @@ router.get('/:id',      getRetiroById);
 router.put('/:id/estado',   cambiarEstadoRetiro);
 router.post('/:id/reenviar-codigo', reenviarCodigo);
 router.post('/:id/retiro-parcial', registrarRetiroParcial);
+router.post('/:id/enviar-galpon', enviarAGalpon);
 
 export default router;

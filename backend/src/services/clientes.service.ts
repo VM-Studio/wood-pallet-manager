@@ -57,6 +57,7 @@ export const crearClienteService = async (
     canalEntrada?: 'whatsapp' | 'formulario_web' | 'llamada' | 'recomendacion' | 'instagram' | 'email' | 'otro';
     direccionEntrega?: string;
     localidad?: string;
+    esLocal?: boolean;
     esExportador?: boolean;
     observaciones?: string;
   },
@@ -83,6 +84,7 @@ export const actualizarClienteService = async (
     canalEntrada?: 'whatsapp' | 'formulario_web' | 'llamada' | 'recomendacion' | 'instagram' | 'email' | 'otro';
     direccionEntrega?: string;
     localidad?: string;
+    esLocal?: boolean;
     esExportador?: boolean;
     observaciones?: string;
   },
@@ -163,17 +165,20 @@ export const getHistorialClienteService = async (id: number) => {
     },
   });
 
-  const totalPallets = cliente.ventas.reduce(
+  // Las ventas canceladas se listan en el historial pero no suman en los totales
+  const ventasVigentes = cliente.ventas.filter((v) => v.estadoPedido !== 'cancelado');
+
+  const totalPallets = ventasVigentes.reduce(
     (acc: number, venta) => acc + venta.detalles.reduce((a: number, d) => a + d.cantidadPedida, 0),
     0
   );
 
-  const totalFacturado = cliente.ventas.reduce(
+  const totalFacturado = ventasVigentes.reduce(
     (acc: number, venta) => acc + Number(venta.totalConIva || 0),
     0
   );
 
-  const totalCobrado = cliente.ventas.reduce((acc: number, venta) => {
+  const totalCobrado = ventasVigentes.reduce((acc: number, venta) => {
     return acc + venta.facturas.reduce((fa: number, f) => {
       return fa + f.pagos.reduce((pa: number, p) => pa + Number(p.monto || 0), 0);
     }, 0);
@@ -198,7 +203,7 @@ export const getHistorialClienteService = async (id: number) => {
       telefonoContacto: cliente.telefonoContacto,
     },
     estadisticas: {
-      totalVentas: cliente.ventas.length,
+      totalVentas: ventasVigentes.length,
       totalCotizaciones: cliente.cotizaciones.length,
       totalPallets,
       totalFacturado,

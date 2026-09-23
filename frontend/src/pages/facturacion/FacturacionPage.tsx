@@ -239,21 +239,24 @@ export default function FacturacionPage() {
   const totalVencidas = vencidas?.reduce((acc, f) => acc + (f.saldoPendiente ?? 0), 0) ?? 0;
 
   // ── Gráfico 1: Con factura vs Sin factura ─────────────────────────
+  // Las facturas anuladas (venta cancelada) no cuentan en los gráficos
+  const facturasVigentes = useMemo(() => (facturas ?? []).filter(f => f.estadoCobro !== 'anulada'), [facturas]);
+
   const dataConSinFactura = useMemo(() => {
-    if (!facturas?.length) return [];
-    const conFactura  = facturas.filter(f => !f.esSinFactura).length;
-    const sinFactura  = facturas.filter(f =>  f.esSinFactura).length;
+    if (!facturasVigentes.length) return [];
+    const conFactura  = facturasVigentes.filter(f => !f.esSinFactura).length;
+    const sinFactura  = facturasVigentes.filter(f =>  f.esSinFactura).length;
     return [
       { name: 'Con factura',  value: conFactura },
       { name: 'Sin factura',  value: sinFactura },
     ];
-  }, [facturas]);
+  }, [facturasVigentes]);
 
   // ── Gráfico 2: Modalidad de pago ──────────────────────────────────
   const dataModalidad = useMemo(() => {
-    if (!facturas?.length) return [];
+    if (!facturasVigentes.length) return [];
     const mapa: Record<string, number> = {};
-    facturas.forEach(f => {
+    facturasVigentes.forEach(f => {
       const key = f.modalidadPago ?? 'sin_especificar';
       mapa[key] = (mapa[key] || 0) + 1;
     });
@@ -266,7 +269,7 @@ export default function FacturacionPage() {
     return Object.entries(mapa)
       .map(([key, value]) => ({ name: labels[key] ?? key, value }))
       .sort((a, b) => b.value - a.value);
-  }, [facturas]);
+  }, [facturasVigentes]);
 
   if (isLoading) {
     return (
@@ -400,12 +403,12 @@ export default function FacturacionPage() {
                 </ResponsiveContainer>
                 <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', textAlign: 'center', pointerEvents: 'none' }}>
                   <p style={{ fontSize: '0.65rem', color: '#9CA3AF', lineHeight: 1.2 }}>Total</p>
-                  <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', lineHeight: 1.2 }}>{facturas.length}</p>
+                  <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', lineHeight: 1.2 }}>{facturasVigentes.length}</p>
                 </div>
               </div>
               <div className="flex flex-col gap-3 flex-1 min-w-0">
                 {dataConSinFactura.map((d, i) => {
-                  const pct = facturas.length > 0 ? Math.round((d.value / facturas.length) * 100) : 0;
+                  const pct = facturasVigentes.length > 0 ? Math.round((d.value / facturasVigentes.length) * 100) : 0;
                   const colors = ['#6B3A2A', '#E8D5C4'];
                   return (
                     <div key={d.name}>
@@ -555,15 +558,23 @@ export default function FacturacionPage() {
                 const totalCobrado = f.pagos?.reduce((acc, p) => acc + Number(p.monto), 0) ?? 0;
                 const saldo = Number(f.totalConIva) - totalCobrado;
                 const hoy = new Date();
-                const vencida = !!f.fechaVencimiento
+                const anulada = f.estadoCobro === 'anulada';
+                const vencida = !anulada && !!f.fechaVencimiento
                   && new Date(f.fechaVencimiento) < hoy
                   && f.estadoCobro !== 'cobrada_total';
+                const tachado = anulada ? { textDecoration: 'line-through', opacity: 0.55 } : undefined;
 
                 return (
-                  <tr key={f.id} style={vencida ? { background: 'rgba(254,242,242,0.5)' } : {}}>
-                    <td className="font-semibold text-gray-400 text-xs">#{f.id}</td>
+                  <tr key={f.id} style={anulada ? { background: '#FEF2F2' } : vencida ? { background: 'rgba(254,242,242,0.5)' } : {}}>
+                    <td className="font-semibold text-gray-400 text-xs" style={tachado}>#{f.id}</td>
                     <td>
-                      <p className="font-semibold text-gray-900 text-sm">{f.cliente?.razonSocial}</p>
+                      <p className="font-semibold text-gray-900 text-sm" style={tachado}>{f.cliente?.razonSocial}</p>
+                      {anulada && (
+                        <p className="text-xs text-red-600 mt-0.5" title={f.venta?.motivoCancelacion ?? undefined}
+                          style={{ maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          Venta #{f.ventaId} cancelada{f.venta?.motivoCancelacion ? `: ${f.venta.motivoCancelacion}` : ''}
+                        </p>
+                      )}
                       {f.cliente?.cuit && (
                         <p className="text-xs text-gray-400">{f.cliente.cuit}</p>
                       )}
@@ -581,7 +592,7 @@ export default function FacturacionPage() {
                       )}
                     </td>
                     <td>
-                      <p className="font-semibold text-gray-900 text-sm">
+                      <p className="font-semibold text-gray-900 text-sm" style={tachado}>
                         {formatPesos(Number(f.totalConIva))}
                       </p>
                       {saldo > 0 && saldo < Number(f.totalConIva) && (
@@ -627,7 +638,7 @@ export default function FacturacionPage() {
                     <td>
                       <div className="flex flex-col gap-1.5">
                         {/* Registrar cobro */}
-                        {f.estadoCobro !== 'cobrada_total' && (
+                        {f.estadoCobro !== 'cobrada_total' && !anulada && (
                           <button
                             onClick={() => setCobroData({
                               facturaId: f.id,

@@ -162,3 +162,66 @@ export const descargarReportePdf = async (desde: string, hasta: string) => {
   link.remove();
   window.URL.revokeObjectURL(blobUrl);
 };
+
+// ─── Rentabilidad por venta ───────────────────────────────────────────────────
+export type FuenteCosto = 'historico' | 'compra_venta' | 'ultima_compra' | 'lista_proveedor' | 'sin_costo';
+
+export interface RentabilidadProducto {
+  detalleId: number;
+  producto: string;
+  tipo: string;
+  condicion: string;
+  cantidad: number;
+  cantidadDevuelta: number;
+  precioUnitario: number;
+  facturacion: number;
+  costoUnitario: number | null;
+  costo: number | null;
+  ganancia: number | null;
+  porcentajeGanancia: number | null;
+  fuenteCosto: FuenteCosto;
+  referenciaCosto?: string;
+}
+
+export interface RentabilidadVenta {
+  ventaId: number;
+  fechaVenta: string;
+  cliente: string;
+  vendedor: string;
+  estadoPedido: string;
+  origenStock: string | null;
+  esHistorica: boolean;
+  pallets: number;
+  facturacion: number;
+  costo: number | null;
+  ganancia: number | null;
+  porcentajeGanancia: number | null;
+  costoCompleto: boolean;
+  flete: number;
+  senasa: number;
+  totalConIva: number;
+  cobrado: number;
+  porcentajeCobrado: number;
+  productos: RentabilidadProducto[];
+}
+
+export interface RentabilidadVentas {
+  resumen: {
+    cantidadVentas: number;
+    pallets: number;
+    facturacion: number;
+    costo: number;
+    ganancia: number;
+    porcentajeGanancia: number | null;
+    ventasSinCosto: number;
+  };
+  porTipo: { tipo: string; pallets: number; facturacion: number; ganancia: number; porcentajeGanancia: number | null }[];
+  ventas: RentabilidadVenta[];
+}
+
+export const useRentabilidadVentas = (mes: string, vista: string = 'todos') =>
+  useQuery<RentabilidadVentas>({
+    queryKey: ['rentabilidad-ventas', mes, vista],
+    queryFn: async () => (await api.get(`/reportes/rentabilidad-ventas?${new URLSearchParams({ mes, vista })}`)).data,
+    enabled: !!mes,
+  });
